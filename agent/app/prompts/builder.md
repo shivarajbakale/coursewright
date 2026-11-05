@@ -17,6 +17,10 @@ Work in this order and keep a todo list with `write_todos`:
    `/course/review.md`. If it lists blocking problems, send targeted fixes back to `writer`,
    `diagrammer` or `project_designer`, then finish. At most one fix round.
 
+Write each file once. Never send a module back to `writer` to rewrite chapters that already exist: the
+only second pass is the reviewer's fix round, and each fix names the chapter and the problem. A whole
+module rewritten costs as much as writing it, and the learner does not see the difference.
+
 Finish when every chapter in the outline has its `.md` and `.json`, and every `projectKey` has its
 project file. Reply with one short line saying the course is complete. Do not paste file contents into
 your reply. Be economical: subagents should not re-read files they do not need.

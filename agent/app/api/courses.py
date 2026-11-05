@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.api.common import course_detail, get_course_summary, list_courses, not_found, ok
@@ -50,6 +50,25 @@ def create_course(body: CreateCourse):
         conn.execute("UPDATE courses SET job_id=? WHERE id=?", (job_id, cid))
     with db() as conn:
         return ok({"course": get_course_summary(conn, cid), "jobId": job_id})
+
+
+@router.post("/courses/{course_id}/resume")
+def resume_course(course_id: str):
+    """Continue a build that stopped: the same job runs again from its checkpoint and the files on disk."""
+    with db() as conn:
+        c = row(conn, "SELECT id, job_id, status FROM courses WHERE id=?", (course_id,))
+    if not c:
+        raise not_found("Course not found")
+    if c["status"] == "ready" or not c["job_id"]:
+        raise HTTPException(status_code=409, detail="This course has no stopped build to continue")
+    if not store.resume(c["job_id"]):
+        raise HTTPException(status_code=409, detail="The build is still running")
+    from app.jobs.build_course import last_stage
+
+    store.emit(c["job_id"], last_stage(c["job_id"]), "Continuing the build where it stopped", {"resumed": True})
+    with db() as conn:
+        conn.execute("UPDATE courses SET status='building' WHERE id=?", (course_id,))
+        return ok({"course": get_course_summary(conn, course_id), "jobId": c["job_id"]})
 
 
 @router.get("/courses/{course_id}")

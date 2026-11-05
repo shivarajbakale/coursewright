@@ -218,15 +218,33 @@ async def run(job: dict) -> dict:
         await asyncio.to_thread(progress.prime)
         progress.emit("projects", "All course files are written; saving the course", {})
     else:
-        await _run_agents(job_id, job_dir, brief, progress, budget)
+        await _run_agents(job, job_dir, brief, progress, budget)
     await _finish(job_id, course_id, job_dir, progress)
     return {"courseId": course_id, "usage": {"inputTokens": progress.input_tokens, "outputTokens": progress.output_tokens}}
 
 
-async def _run_agents(job_id: str, job_dir, brief: dict, progress: "Progress", budget: int) -> None:
+def _course_complete(job_dir) -> bool:
+    """Every file the outline asks for is on disk and parses: the course can be saved as it stands."""
+    try:
+        parse_course_folder(job_dir / "course")
+        return True
+    except Exception:  # noqa: BLE001 - missing or partial files
+        return False
+
+
+# The budget is when polishing stops, not when a build fails. Past it, a complete course is saved as it
+# stands; an incomplete one keeps going, and only a build still unfinished at RUNAWAY x the budget (an
+# agent loop that is not converging) is stopped.
+RUNAWAY = 3
+
+
+async def _run_agents(job: dict, job_dir, brief: dict, progress: "Progress", budget: int) -> None:
     from langchain_core.messages import HumanMessage
 
     from app.agents.builder import build_agent
+
+    job_id = job["id"]
+    checked_at = 0  # tokens spent when completeness was last checked; parsing every chunk is wasteful
 
     async with checkpoint.saver() as cp:
         resuming = await checkpoint.has_checkpoint(cp, job_id)
@@ -243,20 +261,34 @@ async def _run_agents(job_id: str, job_dir, brief: dict, progress: "Progress", b
             stream_input = {"messages": [HumanMessage(content=_brief_text(brief))]}
 
         agent = build_agent(job_dir, checkpointer=cp)
-        async for chunk in agent.astream(
+        stream = agent.astream(
             stream_input,
             config={"recursion_limit": 1000, "configurable": {"thread_id": job_id}},
             stream_mode="updates",
             subgraphs=True,
-        ):
-            # Every DB write goes through a thread: a blocking write on the event loop can't finish while
-            # the async checkpointer (same file, same loop) holds the write lock, and times out.
-            await asyncio.to_thread(store.check_cancel, job_id)
-            await asyncio.to_thread(progress.on_update, chunk)
-            await asyncio.to_thread(progress.scan)
-            await asyncio.to_thread(store.set_usage, job_id, progress.input_tokens, progress.output_tokens)
-            if progress.input_tokens + progress.output_tokens > budget:
-                raise RuntimeError(f"Token budget exceeded ({budget} tokens); raise CW_BUILD_TOKEN_BUDGET to allow more")
+        )
+        try:
+            async for chunk in stream:
+                # Every DB write goes through a thread: a blocking write on the event loop can't finish while
+                # the async checkpointer (same file, same loop) holds the write lock, and times out.
+                await asyncio.to_thread(store.check_cancel, job_id)
+                await asyncio.to_thread(progress.on_update, chunk)
+                await asyncio.to_thread(progress.scan)
+                await asyncio.to_thread(store.set_usage, job_id, progress.input_tokens, progress.output_tokens)
+                spent = progress.input_tokens + progress.output_tokens
+                if spent > budget and spent - checked_at > 50_000:
+                    checked_at = spent
+                    if await asyncio.to_thread(_course_complete, job_dir):
+                        log.info("build %s: %d tokens, course complete; saving it as written", job_id, spent)
+                        progress.emit("projects", "The course is complete; saving it", {})
+                        break
+                    if spent > budget * RUNAWAY:
+                        raise RuntimeError(
+                            "The agents kept working without finishing the course. Start the build again; "
+                            "if it stops here twice, try a narrower topic."
+                        )
+        finally:
+            await stream.aclose()  # leaving early must still close the agent's stream and its subgraphs
     await asyncio.to_thread(progress.scan)
 
 

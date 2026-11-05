@@ -15,13 +15,13 @@ import {
   Title,
 } from '@mantine/core';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowRight, CircleStop, PartyPopper, TriangleAlert } from 'lucide-react';
+import { ArrowRight, CircleStop, PartyPopper, Play, RotateCcw, TriangleAlert } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
 import { AnchorLink, ButtonLink } from '@/components/links';
 import { ErrorState } from '@/components/state-panel';
 import { Reveal } from '@/components/reveal';
 import { StageScene, type SceneData, type SceneStage } from '@/illustrations';
-import { useCancelJob, useCourse, useJob, useJobEvents } from '@/hooks/useCoursewright';
+import { useCancelJob, useCourse, useJob, useJobEvents, useResumeCourse } from '@/hooks/useCoursewright';
 import type { JobEvent } from '@/api/types';
 
 const STAGES: { key: SceneStage; label: string; blurb: string }[] = [
@@ -62,12 +62,14 @@ export function GeneratingPage() {
   const course = useCourse(courseId);
   const jobId = course.data?.jobId ?? null;
   const job = useJob(jobId);
-  const { events } = useJobEvents(jobId);
+  const failed = job.data?.status === 'failed' || job.data?.status === 'cancelled' || course.data?.status === 'failed';
+  // Continue keeps the job id; flipping `live` back on reopens the event stream.
+  const { events } = useJobEvents(jobId, !failed);
   const cancel = useCancelJob();
+  const resume = useResumeCourse();
 
   const last = events[events.length - 1];
   const done = last?.stage === 'done' || job.data?.status === 'done';
-  const failed = job.data?.status === 'failed' || job.data?.status === 'cancelled' || course.data?.status === 'failed';
   const stageIndex = done ? STAGES.length : Math.max(0, STAGES.findIndex((s) => s.key === last?.stage));
   const current = STAGES[Math.min(stageIndex, STAGES.length - 1)];
   const data = useMemo(() => sceneData(course.data?.topic ?? '', events), [course.data?.topic, events]);
@@ -112,7 +114,9 @@ export function GeneratingPage() {
   return (
     <PageShell
       title={course.data.title}
-      description={done || ready ? 'Your course is ready' : `Building: ${current.blurb.toLowerCase()}`}
+      description={
+        done || ready ? 'Your course is ready' : failed ? 'The build stopped' : `Building: ${current.blurb.toLowerCase()}`
+      }
       archetype="sequence"
       breadcrumb={
         // Leaving costs nothing: the build keeps running and the page replays
@@ -148,7 +152,35 @@ export function GeneratingPage() {
 
         {failed && (
           <Alert color="red" variant="light" icon={<TriangleAlert size={16} />} title="The build stopped">
-            {job.data?.error ?? (job.data?.status === 'cancelled' ? 'You stopped the build' : 'The build failed without a message')}
+            <Stack gap="sm">
+              <Text size="sm">
+                {job.data?.error ??
+                  (job.data?.status === 'cancelled' ? 'You stopped the build' : 'The build failed without a message')}
+              </Text>
+              <Text size="sm" c="dimmed">
+                Continue picks up where it stopped and keeps everything already written.
+              </Text>
+              <Group gap="xs">
+                <Button
+                  size="xs"
+                  leftSection={<Play size={14} />}
+                  loading={resume.isPending}
+                  onClick={() => resume.mutate(courseId)}
+                >
+                  Continue build
+                </Button>
+                <Button
+                  size="xs"
+                  variant="default"
+                  leftSection={<RotateCcw size={14} />}
+                  onClick={() =>
+                    navigate({ to: '/new', search: { topic: course.data?.topic || course.data?.title || '' } })
+                  }
+                >
+                  Start again
+                </Button>
+              </Group>
+            </Stack>
           </Alert>
         )}
 

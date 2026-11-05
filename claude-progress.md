@@ -10,6 +10,19 @@
 
 ## Session Log
 
+### Session 006 — Builds never fail on budget; Continue (2026-11-05)
+
+- `CW_BUILD_TOKEN_BUDGET` is now when polishing stops, not when a build fails: past it, a course whose files
+  all parse is saved as written; an incomplete one keeps going; only a build still unfinished at 3x the
+  budget stops, with a plain message. The agent stream is closed on early exit.
+- Fixed: resuming a build raised NameError (`job` not in scope in `_run_agents`).
+- Builder prompt: write each file once; no whole-module rewrites (the Bloom filters build rewrote all four
+  modules after the first draft).
+- Continue: `POST /api/courses/:id/resume` re-queues the same job (checkpoint + files on disk) and drops its
+  stale notice. Continue buttons on the failed Library card and the stopped build page.
+- Verified live: Bloom filters build finished with a course_ready notice; Transformers from scratch, failed
+  on the old budget, continued from the UI by the owner and saved from disk. Agent pytest 56, make check green.
+
 ### Session 005 — Notifications (2026-11-05)
 
 - Agent: `notifications` table (migration 003), `app/notify.py` writes one notice per build or review that

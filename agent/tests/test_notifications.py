@@ -114,3 +114,4 @@ def test_notification_endpoints(client, monkeypatch):
     _run(monkeypatch, _job("build_course", {}, _course("Another course")), None)
     assert client.post("/api/notifications/mark-all-read").json()["data"]["updated"] >= 1
     assert all(n["read"] for n in client.get("/api/notifications").json()["data"])
+

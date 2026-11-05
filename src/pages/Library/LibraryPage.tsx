@@ -19,10 +19,10 @@ import { modals } from '@mantine/modals';
 import { useNavigate } from '@tanstack/react-router';
 import { AnchorLink, ButtonLink, CardLink } from '@/components/links';
 import { ErrorState, StatePanel } from '@/components/state-panel';
-import { ArrowRight, BookOpen, Hammer, Plus, RotateCcw, Trash2, TriangleAlert } from 'lucide-react';
+import { ArrowRight, BookOpen, Hammer, Play, Plus, RotateCcw, Trash2, TriangleAlert } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
 import { Reveal } from '@/components/reveal';
-import { useCourses, useDeleteCourse, useHealth, useJob, useRecentNotes } from '@/hooks/useCoursewright';
+import { useCourses, useDeleteCourse, useHealth, useJob, useRecentNotes, useResumeCourse } from '@/hooks/useCoursewright';
 import { timeAgo } from '@/lib/time';
 import type { CourseSummary } from '@/api/types';
 
@@ -267,12 +267,13 @@ function CourseCard({ course }: { course: CourseSummary }) {
 
 /**
  * A build that failed has nowhere to link to. It says why, briefly, and offers
- * the two things that can happen next: start the interview again on the same
- * topic, or remove the card.
+ * what can happen next: continue the build where it stopped (the default),
+ * start the interview again on the same topic, or remove the card.
  */
 function FailedCourseCard({ course }: { course: CourseSummary }) {
   const job = useJob(course.jobId);
   const remove = useDeleteCourse();
+  const resume = useResumeCourse();
   const navigate = useNavigate();
   const reason = job.data?.error;
 
@@ -300,6 +301,18 @@ function FailedCourseCard({ course }: { course: CourseSummary }) {
           {reason ? `The build stopped: ${reason}` : 'The build stopped before the course was written.'}
         </Text>
         <Group gap="xs">
+          <Button
+            size="xs"
+            leftSection={<Play size={14} />}
+            loading={resume.isPending}
+            onClick={() =>
+              resume.mutate(course.id, {
+                onSuccess: () => navigate({ to: '/courses/$courseId/building', params: { courseId: course.id } }),
+              })
+            }
+          >
+            Continue
+          </Button>
           <Button
             size="xs"
             variant="default"

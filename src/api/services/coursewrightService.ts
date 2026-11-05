@@ -60,6 +60,8 @@ export const courseService = {
   create: (brief: CourseBrief) =>
     post<{ course: CourseSummary; jobId: string }>('/courses', { brief }),
   remove: (id: string) => del<{ ok: true }>(`/courses/${id}`),
+  /** Continue a stopped build: the same job runs again from its checkpoint and the files it already wrote. */
+  resume: (id: string) => post<{ course: CourseSummary; jobId: string }>(`/courses/${id}/resume`, {}),
 };
 
 export const chapterService = {

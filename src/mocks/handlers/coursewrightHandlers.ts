@@ -230,6 +230,16 @@ export const coursewrightHandlers = [
     return ok(detail);
   }),
 
+  http.post('/api/courses/:id/resume', ({ params }) => {
+    const c = extraCourses.find((x) => x.id === params.id);
+    if (!c) return HttpResponse.json({ message: 'Course not found' }, { status: 404 });
+    if (c.status !== 'failed' || !c.jobId) return HttpResponse.json({ message: 'This course has no stopped build to continue' }, { status: 409 });
+    // Same job id, restarted clock: the mock build replays from the start.
+    jobs.set(c.jobId, { courseId: c.id, topic: c.topic, startedAt: Date.now(), cancelled: false });
+    c.status = 'building';
+    return ok({ course: c, jobId: c.jobId });
+  }),
+
   http.delete('/api/courses/:id', ({ params }) => {
     const i = extraCourses.findIndex((x) => x.id === params.id);
     if (i >= 0) extraCourses.splice(i, 1);

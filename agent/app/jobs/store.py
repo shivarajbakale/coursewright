@@ -158,6 +158,21 @@ def request_cancel(job_id: str) -> None:
         )
 
 
+def resume(job_id: str) -> bool:
+    """Put a failed or cancelled job back in the queue as the same job, so it continues: build_course picks up
+    its checkpointed thread and the files already on disk. Its old notice goes, since a new one follows."""
+    with db() as conn, tx(conn):
+        cur = conn.execute(
+            "UPDATE jobs SET status='queued', error=NULL, attempts=0, cancel_requested=0, finished_at=NULL,"
+            " worker_id=NULL, heartbeat_at=NULL WHERE id=? AND status IN ('failed','cancelled')",
+            (job_id,),
+        )
+        if cur.rowcount == 0:
+            return False
+        conn.execute("DELETE FROM notifications WHERE job_id=?", (job_id,))
+    return True
+
+
 def check_cancel(job_id: str) -> None:
     with db() as conn:
         r = row(conn, "SELECT cancel_requested FROM jobs WHERE id=?", (job_id,))

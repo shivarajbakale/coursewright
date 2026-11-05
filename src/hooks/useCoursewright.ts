@@ -83,6 +83,21 @@ export function useDeleteCourse() {
   });
 }
 
+/** Continue a stopped build where it left off. */
+export function useResumeCourse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => courseService.resume(id),
+    onSuccess: ({ jobId }, id) => {
+      qc.invalidateQueries({ queryKey: cwKeys.courses });
+      qc.invalidateQueries({ queryKey: cwKeys.course(id) });
+      qc.invalidateQueries({ queryKey: cwKeys.job(jobId) });
+      qc.invalidateQueries({ queryKey: notificationKeys.all });
+    },
+    onError: (e: { message?: string }) => toast.error(e.message ?? 'Could not continue the build'),
+  });
+}
+
 // ── Chapters ──────────────────────────────────────────────────────────────
 export function useChapter(id: string) {
   return useQuery({ queryKey: cwKeys.chapter(id), queryFn: () => chapterService.get(id), enabled: !!id });
@@ -280,7 +295,11 @@ export function useCancelJob() {
  * Streams a job's events over SSE. Events are stored server-side, so a
  * reconnect (or a refreshed page) replays from the start and nothing is lost.
  */
-export function useJobEvents(jobId: string | null | undefined) {
+/**
+ * `live` reopens the stream when a stopped build is continued: the job id
+ * stays the same, so without it the page would keep the closed stream.
+ */
+export function useJobEvents(jobId: string | null | undefined, live = true) {
   const [events, setEvents] = useState<JobEvent[]>([]);
   const [closed, setClosed] = useState(false);
 
@@ -310,7 +329,7 @@ export function useJobEvents(jobId: string | null | undefined) {
       setClosed(true);
     };
     return () => source.close();
-  }, [jobId]);
+  }, [jobId, live]);
 
   return { events, closed };
 }
