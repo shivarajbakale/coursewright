@@ -24,8 +24,8 @@
 </p>
 
 <p align="center">
-  <a href="docs/media/launch.mp4"><img src="docs/media/launch-poster.png" alt="Watch the 55-second launch video" width="560"></a><br>
-  <sub><a href="docs/media/launch.mp4">Watch the launch video</a> (55 seconds)</sub>
+  <a href="docs/media/launch.mp4"><img src="docs/media/launch-poster.png" alt="Watch the 49-second launch video" width="560"></a><br>
+  <sub><a href="docs/media/launch.mp4">Watch the launch video</a> (49 seconds)</sub>
 </p>
 
 ## Run it in a minute
