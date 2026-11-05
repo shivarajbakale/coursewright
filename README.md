@@ -23,6 +23,11 @@
   <img src="docs/media/demo.gif" alt="Naming a topic, answering a short interview, watching the agents build the course, then reading a chapter and taking notes beside it" width="900">
 </p>
 
+<p align="center">
+  <a href="docs/media/launch.mp4"><img src="docs/media/launch-poster.png" alt="Watch the 55-second launch video" width="560"></a><br>
+  <sub><a href="docs/media/launch.mp4">Watch the launch video</a> (55 seconds)</sub>
+</p>
+
 ## Run it in a minute
 
 You need Node 20 or newer. No API key, no backend: the app runs on realistic mock data, including a finished
