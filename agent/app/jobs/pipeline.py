@@ -14,6 +14,8 @@ Write phase:
                checked in code (title, length, one key-idea callout, banned words, 2-4 questions), one retry
     diagrams   for at most half the chapters, a checked Flowmovie for a process, Mermaid for a structure
     projects   one call per module
+    verify     per chapter, one call works through its numbers, code and answer keys; a chapter with a
+               mistake (or still failing the code checks) is revised from its draft
     review     one call over the whole course, then a targeted rewrite of at most MAX_FIXES chapters
 
 Every stage skips work whose files are already on disk and valid, so a stopped build continues where it
@@ -86,6 +88,10 @@ class Blocking(BaseModel):
 
 class ReviewOut(BaseModel):
     blocking: list[Blocking] = []
+
+
+class VerifyOut(BaseModel):
+    issues: list[str] = []
 
 
 class OutlineChatOut(BaseModel):
@@ -565,14 +571,14 @@ class Run:
                                  CHAPTER_CONCURRENCY, self.check_cancel)
         marker.write_text(out.model_dump_json(indent=2))
 
-    async def fix(self, outline: CourseOutline, ch: ChapterSpec, problem: str, notes: str) -> None:
+    async def fix(self, outline: CourseOutline, ch: ChapterSpec, problem: str, notes: str) -> bool:
         md = (self.course / "chapters" / f"{ch.key}.md").read_text()
         ex = _load_json(self.course / "chapters" / f"{ch.key}.json", ChapterExtras)
         out, left = await self.checked(
             "fixes", system=config.prompt("writer") + "\n\n" + rules(),
             user=(
                 self.chapter_prompt(outline, ch, notes)
-                + f"\n\nThe chapter is written; a reviewer found this problem:\n{problem}\n\nCurrent chapter:\n{md}\n\n"
+                + f"\n\nThe chapter is written; a reviewer found these problems:\n{problem}\n\nCurrent chapter:\n{md}\n\n"
                 "Current questions:\n" + json.dumps([q.model_dump() for q in ex.questions])
                 + "\n\nReturn the whole chapter with the problem fixed, changing nothing else."
             ),
@@ -586,11 +592,51 @@ class Run:
         if all(problem_kind(p) in before for p in left):
             out.diagramRequest = ex.diagramRequest
             self.write_chapter_files(ch.key, out)
+            return True
+        return False
+
+    async def verify_chapter(self, outline: CourseOutline, ch: ChapterSpec, notes: str, tally: dict) -> None:
+        """Work through one chapter (numbers, code, answer keys); revise it when something is wrong or it
+        still fails the code checks. A marker file records that it was checked, so Continue skips it."""
+        marker = self.course / "chapters" / f"{ch.key}.verified"
+        if marker.exists():
+            return
+        md = (self.course / "chapters" / f"{ch.key}.md").read_text()
+        ex = _load_json(self.course / "chapters" / f"{ch.key}.json", ChapterExtras)
+        qs = "\n".join(
+            f"Q{i + 1}: {q.prompt}\n" + "\n".join(f"  [{j}] {o}" for j, o in enumerate(q.options))
+            + f"\n  answer: {q.answer}\n  explanation: {q.explanation}"
+            for i, q in enumerate(ex.questions)
+        )
+        out = await self.call(
+            "verify", system=config.prompt("verifier"), user=f"{md}\n\nQuestions:\n{qs}", schema=VerifyOut,
+            max_tokens=3000,
+        )
+        code = chapter_problems(tidy(ChapterOut(markdown=md, questions=ex.questions), ch.title), ch.title)
+        problems = [i for i in out.issues if i.strip()] + code
+        if problems:
+            tally["fixed"] += await self.fix(outline, ch, "\n".join(f"- {p}" for p in problems), notes)
+        tally["checked"] += 1
+        marker.write_text(json.dumps({"issues": out.issues, "code": code}, indent=2))
+
+    async def verify(self, outline: CourseOutline, notes: str) -> None:
+        chapters = [ch for m in outline.modules for ch in m.chapters]
+        todo = [ch for ch in chapters if not (self.course / "chapters" / f"{ch.key}.verified").exists()]
+        if not todo:
+            return
+        await self.emit("chapters", f"Checking {len(todo)} chapters: numbers, code and answers", {})
+        tally = {"checked": 0, "fixed": 0}
+        await gather_limited([lambda ch=ch: self.verify_chapter(outline, ch, notes, tally) for ch in todo],
+                             CHAPTER_CONCURRENCY, self.check_cancel)
+        await self.emit("chapters", f"Checked {tally['checked']} chapters, corrected {tally['fixed']}", {})
 
     async def write(self, outline: CourseOutline) -> None:
         notes = self.research_notes()
         budget = config.build_token_budget()
         await self.chapters(outline, notes)
+        await self.check_cancel()
+        if self.ledger.total < budget:
+            await self.verify(outline, notes)
         await self.check_cancel()
         if self.ledger.total < budget:
             await self.diagrams(outline)

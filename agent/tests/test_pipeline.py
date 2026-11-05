@@ -49,6 +49,7 @@ class FakeModel:
         self.calls: list[str] = []
         self.bad_first = bad_first
         self.blocking = blocking
+        self.wrong: set[str] = set()  # chapter titles the verifier finds a mistake in
 
     async def parse(self, *, system, user, schema, **_):
         name = schema.__name__
@@ -72,6 +73,9 @@ class FakeModel:
             return schema.model_validate({"title": "Build a filter", "brief": "Build it.",
                                           "rubric": [{"criterion": "Works", "chapterKey": "nope"}],
                                           "milestones": [{"title": "First", "body": "Do it", "checkCmd": "pytest"}]}), usage
+        if name == "VerifyOut":
+            wrong = any(f"# {t}" in user for t in self.wrong)
+            return pipeline.VerifyOut(issues=["'2 + 2 = 5' should be 4"] if wrong else []), usage
         if name == "ReviewOut":
             blocking = [{"chapterKey": "c02-bits", "problem": "Uses 'bit' before defining it."}] if self.blocking else []
             return pipeline.ReviewOut.model_validate({"blocking": blocking}), usage
@@ -119,7 +123,8 @@ def test_build_runs_every_stage_in_order_and_counts_tokens_per_stage(fake):
     assert names.count("ChapterOut") == 3 + 1  # three chapters, one targeted fix after the review
     assert names.count("movie") == 1 and names.count("ProjectSpec") == 2 and names.count("ReviewOut") == 1
     stages = out["usage"]["stages"]
-    assert set(stages) == {"research", "curriculum", "chapters", "diagrams", "projects", "review", "fixes"}
+    assert set(stages) == {"research", "curriculum", "chapters", "verify", "diagrams", "projects", "review", "fixes"}
+    assert stages["verify"]["calls"] == 3
     assert stages["chapters"]["calls"] == 3
     assert out["usage"]["inputTokens"] == sum(s["inputTokens"] for s in stages.values())
     with db() as conn:
@@ -229,3 +234,23 @@ def test_problem_kinds_tell_length_from_callouts():
     assert kinds == {"the limit is", "Key idea"}
     quiz = pipeline.ChapterOut(markdown=f"# T\n\n{WORDS}\n\n> **Key idea:** x\n\n## Check yourself\n", questions=long.questions)
     assert [pipeline.problem_kind(p) for p in pipeline.chapter_problems(quiz, "T")] == ["quiz"]
+
+
+def test_the_verifier_sends_a_wrong_chapter_back_with_its_mistake(fake):
+    fake.wrong = {"A row of bits"}
+    seen: list[str] = []
+    real = fake.parse
+
+    async def spy(*, user, schema, **kw):
+        if schema.__name__ == "ChapterOut" and "found these problems" in user:
+            seen.append(user)
+        return await real(user=user, schema=schema, **kw)
+
+    fake.parse = spy
+    import app.agents.llm as llm_mod
+
+    llm_mod.parse = spy
+    cid, job = _build({"topic": "Bloom filters"}, "Verified course")
+    out = asyncio.run(build_course.run(job))
+    assert any("'2 + 2 = 5' should be 4" in u and "Current chapter:\n# A row of bits" in u for u in seen)
+    assert out["usage"]["stages"]["verify"]["calls"] == 3 and _status(cid) == "ready"
