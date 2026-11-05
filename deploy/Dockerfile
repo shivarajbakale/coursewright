@@ -7,6 +7,9 @@
 # ---- build: install once, build the SPA, bundle the runtime ------------------------------------------
 FROM node:20-bookworm-slim AS build
 WORKDIR /src
+# The npm that wrote package-lock.json: an older npm resolves peer dependencies differently and
+# `npm ci` then reports the lock as out of sync.
+RUN npm install -g npm@11.12.1 --no-audit --no-fund
 COPY package.json package-lock.json ./
 COPY vendor ./vendor
 RUN npm ci --no-audit --no-fund
