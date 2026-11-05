@@ -19,6 +19,9 @@ import { navItems } from '@/config/nav';
  * Items come from `src/config/nav.ts`, the single source of truth shared with
  * the ⌘K palette.
  */
+/** The footer controls are pointer targets: 44 px tall rows, 44 px icons when railed (WCAG 2.5.5). */
+const TARGET = 44;
+
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { railed, toggleRail } = useShellNav();
@@ -39,7 +42,7 @@ export function AppSidebar() {
         <ActionIcon
           variant={active ? 'light' : 'subtle'}
           color="gray"
-          size="lg"
+          size={TARGET}
           onClick={onClick}
           aria-label={label}
           aria-pressed={active || undefined}
@@ -52,11 +55,11 @@ export function AppSidebar() {
         onClick={onClick}
         aria-pressed={active || undefined}
         px="sm"
-        py={6}
+        mih={TARGET}
         bg={active ? 'var(--mantine-color-default-hover)' : undefined}
-        style={{ borderRadius: 'var(--mantine-radius-md)', display: 'block' }}
+        style={{ borderRadius: 'var(--mantine-radius-md)', display: 'flex', alignItems: 'center' }}
       >
-        <Group gap="sm" wrap="nowrap">
+        <Group gap="sm" wrap="nowrap" w="100%">
           {icon}
           <Text size="sm" style={{ flex: 1 }}>
             {label}
@@ -112,7 +115,7 @@ export function AppSidebar() {
       </ScrollArea>
 
       <Stack
-        gap={2}
+        gap={0}
         p="xs"
         align={railed ? 'center' : 'stretch'}
         style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
@@ -121,7 +124,7 @@ export function AppSidebar() {
         {control('Search', '⌘K', <Search size={16} />, openCommandPalette)}
         {control('Tutor', '⌘J', <MessagesSquare size={16} />, toggleTutor, tutorOpen)}
         <Box px={railed ? 0 : 4}>
-          <ThemeToggle />
+          <ThemeToggle size={TARGET} />
         </Box>
       </Stack>
     </Stack>

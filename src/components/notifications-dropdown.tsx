@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -51,13 +51,16 @@ function relativeTime(iso: string): string {
 }
 
 /** The sidebar row that opens the menu: a full row, or an icon when the sidebar is collapsed. */
-const MenuTarget = forwardRef<HTMLButtonElement, { railed: boolean; unread: number; label: string }>(
+const MenuTarget = forwardRef<
+  HTMLButtonElement,
+  { railed: boolean; unread: number; label: string; onKeyDown?: (e: React.KeyboardEvent) => void }
+>(
   function MenuTarget({ railed, unread, label, ...rest }, ref) {
     if (railed) {
       return (
         <Tooltip label="Notifications" position="right" withArrow>
           <Indicator color="red" size={14} offset={6} disabled={unread === 0} label={unread > 9 ? '9+' : unread}>
-            <ActionIcon ref={ref} variant="subtle" color="gray" size="lg" aria-label={label} {...rest}>
+            <ActionIcon ref={ref} variant="subtle" color="gray" size={44} aria-label={label} {...rest}>
               <Bell size={16} />
             </ActionIcon>
           </Indicator>
@@ -69,11 +72,11 @@ const MenuTarget = forwardRef<HTMLButtonElement, { railed: boolean; unread: numb
         ref={ref}
         aria-label={label}
         px="sm"
-        py={6}
-        style={{ borderRadius: 'var(--mantine-radius-md)', display: 'block' }}
+        mih={44}
+        style={{ borderRadius: 'var(--mantine-radius-md)', display: 'flex', alignItems: 'center' }}
         {...rest}
       >
-        <Group gap="sm" wrap="nowrap">
+        <Group gap="sm" wrap="nowrap" w="100%">
           <Bell size={16} />
           <Text size="sm" style={{ flex: 1 }}>
             Notifications
@@ -101,6 +104,8 @@ export function NotificationsDropdown({ railed = false }: { railed?: boolean }) 
   const markRead = useMarkRead();
   const markAllRead = useMarkAllRead();
 
+  // Controlled, so Esc on the row closes an open menu too (Mantine only listens inside the dropdown).
+  const [opened, setOpened] = useState(false);
   const list = notifications.data ?? [];
   const unread = list.filter((n) => !n.read).length;
 
@@ -110,9 +115,23 @@ export function NotificationsDropdown({ railed = false }: { railed?: boolean }) 
   };
 
   return (
-    <Menu position={railed ? 'right-end' : 'top-start'} width={380} withinPortal offset={8}>
+    <Menu
+      opened={opened}
+      onChange={setOpened}
+      position={railed ? 'right-end' : 'top-start'}
+      width={380}
+      withinPortal
+      offset={8}
+    >
       <Menu.Target>
-        <MenuTarget railed={railed} unread={unread} label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'} />
+        <MenuTarget
+          railed={railed}
+          unread={unread}
+          label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
+          onKeyDown={(e: React.KeyboardEvent) => {
+            if (e.key === 'Escape' && opened) setOpened(false);
+          }}
+        />
       </Menu.Target>
 
       <Menu.Dropdown p={0}>

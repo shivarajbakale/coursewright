@@ -3,8 +3,8 @@ import { Moon, Sun } from 'lucide-react';
 
 import { useTheme } from '@/components/theme-provider';
 
-/** Flips between light and dark. The design system is dark-first. */
-export function ThemeToggle() {
+/** Flips between light and dark. The design system is dark-first. `size` defaults to Mantine's `lg`. */
+export function ThemeToggle({ size = 'lg' }: { size?: number | 'lg' }) {
   const { theme, setTheme } = useTheme();
   const isDark =
     theme === 'dark' ||
@@ -16,7 +16,7 @@ export function ThemeToggle() {
     <ActionIcon
       variant="subtle"
       color="gray"
-      size="lg"
+      size={size}
       aria-label="Toggle theme"
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
     >
