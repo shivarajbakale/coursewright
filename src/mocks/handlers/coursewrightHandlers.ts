@@ -49,7 +49,7 @@ const INTERVIEW: InterviewQuestion[] = [
     options: [
       { label: 'New to it', description: 'Start from first principles, define every term.' },
       { label: 'Some exposure', description: 'I have used it but never studied how it works.', recommended: true },
-      { label: 'Comfortable', description: 'Skip the basics, go deep on the hard parts.' },
+      { label: 'Comfortable', description: 'Move quickly through the basics, then go deep on the hard parts.' },
     ],
   },
   {

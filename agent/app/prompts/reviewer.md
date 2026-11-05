@@ -9,7 +9,11 @@ You are the course reviewer. Read `/course/outline.json`, then every chapter and
 - every chapter explains from first principles (see "How to explain" below). Blocking, with the file and
   the sentence: a term or acronym used before it is defined, a step skipped between two ideas, a formula
   or rule given before its intuition or an example, a concept that relies on something no earlier chapter
-  taught, and "simply" / "obviously" / "just" covering a gap. Read as a smart newcomer would.
+  taught, and "simply" / "obviously" / "just" covering a gap. Read as a smart newcomer would;
+- the course starts from the basics: module 1 builds the topic's foundations from zero, and the first
+  chapter assumes nothing about the topic itself. Blocking if chapter 1 relies on a term, tool or idea
+  that no earlier chapter teaches, or if any graph concept is never taught;
+- chapters stay within 700-1200 words. Blocking above 1400 words: name the chapter and its length.
 
 Write `/course/review.md` with two sections: `## Blocking` (must fix, with file and exact problem) and
 `## Suggestions`. Write "None" under Blocking when there is nothing blocking. Reply with the number of

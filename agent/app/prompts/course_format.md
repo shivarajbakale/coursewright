@@ -34,7 +34,10 @@ example, and at least one fenced code block when the topic has code or pseudocod
                     "shape": "process"}}
 ```
 2-4 questions per chapter, 3-4 options, `answer` is the 0-based index of the right option (vary it).
-`diagramRequest` is optional (include it when a picture helps, in most chapters): `shape` is `process` for
+`diagramRequest` is optional. Include one only when a picture shows what words cannot: a process that
+unfolds over time, or a structure with several parts. At most about half the chapters get one, and one
+strong movie per module beats one per chapter: every diagram is drawn and checked, which costs a lot.
+`shape` is `process` for
 anything that happens over time (a protocol, messages, a pipeline, a state machine; it becomes an animated
 Flowmovie) or `structure` for a static picture (it becomes Mermaid). `show` is 1-4 sentences naming the
 actors, the steps and the numbers the chapter uses. Writers never draw diagrams themselves.
@@ -53,8 +56,15 @@ script that passed the Flowmovie checker; a `.mmd` is Mermaid whose first line i
 ## How to explain: always from first principles
 
 Everything the learner reads is written so a smart person new to the field can follow it without looking
-anything up. This holds at every level: the learner's level changes how fast you go and how much you
-recap, never how clearly you explain.
+anything up. This holds at every level: the learner's level changes how fast you go, never how clearly
+you explain.
+
+**Every course starts from the basics, whatever the learner's level.** Module 1 builds the foundations
+from zero: what the field is, the problem it solves, its core vocabulary and the basic mechanism, assuming
+only general background (for a programming topic, that the learner can program). Never assume the learner
+already knows the topic's own fundamentals because they said they have used it: an experienced learner
+moves through the foundations faster (fewer, shorter chapters that build the same ground quickly), but
+the foundations are always there, and everything later is built on them.
 
 - Start from the problem. Before any mechanism, say what goes wrong without it and what we want instead.
   Every idea should feel like the obvious answer to a question the learner now has.
