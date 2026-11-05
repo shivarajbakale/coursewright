@@ -1,4 +1,3 @@
-import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
   Affix,
@@ -21,6 +20,7 @@ import {
 } from '@mantine/core';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { readOnlyEditorOptions } from '@/features/blocks';
+import readonlyClasses from '@/components/readonly-blocks.module.css';
 import { BlockEditorView, useBlockEditor } from '@shivarajbakale/blocks';
 import { ArrowLeft, ArrowRight, Check, CircleCheck, CircleX, Clock, MessagesSquare, NotebookPen } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
@@ -206,9 +206,12 @@ export function ChapterPage() {
 function OnThisPage({ markdown, diagramTitles, hasQuestions }: { markdown: string; diagramTitles: string[]; hasQuestions: boolean }) {
   const headings = [...markdown.matchAll(/^##\s+(.+)$/gm)].map((m) => m[1].replace(/[*_`]/g, '').trim());
   const extra = [...diagramTitles, ...(hasQuestions ? ['Check yourself'] : [])];
+  // kit's editor draws headings as `div[data-line="heading"]`, not `h2`; diagram titles and
+  // "Check yourself" are Mantine text and headings outside it.
   const go = (text: string) => {
     const root = document.querySelector('main') ?? document;
-    const el = [...root.querySelectorAll('h1,h2,h3,p')].find((h) => h.textContent?.trim() === text);
+    const candidates = root.querySelectorAll('[data-line="heading"], h1, h2, h3, p');
+    const el = [...candidates].find((h) => h.textContent?.replace(/\s+/g, ' ').trim() === text);
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   if (headings.length + extra.length < 2) return null;
@@ -288,7 +291,7 @@ function ChapterBody({ chapter }: { chapter: Chapter }) {
   }, []);
 
   return (
-    <Box data-chapter-body ref={bodyRef} style={{ '--blocks-gutter': '0px' } as React.CSSProperties}>
+    <Box data-chapter-body ref={bodyRef} className={readonlyClasses.readonly}>
       <BlockEditorView editor={editor} menus={false} />
       <Affix position={{ bottom: 24, left: '50%' }} style={{ transform: 'translateX(-50%)' }}>
         <Transition mounted={!!selection} transition="slide-up">

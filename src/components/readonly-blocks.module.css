@@ -1,0 +1,9 @@
+/* Read-only block views (chapters, briefs): no drag-handle gutter and no 30vh
+   click target under the last block; both exist for editing. */
+.readonly {
+  --blocks-gutter: 0px;
+}
+
+.readonly :global(.ProseMirror.ProseMirror) {
+  padding-bottom: 0;
+}

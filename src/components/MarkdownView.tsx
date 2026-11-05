@@ -1,7 +1,7 @@
-import type React from 'react';
 import { Box } from '@mantine/core';
 import { BlockEditorView, useBlockEditor } from '@shivarajbakale/blocks';
 import { readOnlyEditorOptions } from '@/features/blocks';
+import classes from './readonly-blocks.module.css';
 
 /**
  * Read-only markdown through kit's block editor, so generated text renders
@@ -11,7 +11,7 @@ import { readOnlyEditorOptions } from '@/features/blocks';
 export function MarkdownView({ markdown, label }: { markdown: string; label?: string }) {
   const editor = useBlockEditor({ initial: markdown, label, ...readOnlyEditorOptions() });
   return (
-    <Box data-markdown-view style={{ '--blocks-gutter': '0px' } as React.CSSProperties}>
+    <Box data-markdown-view className={classes.readonly}>
       <BlockEditorView editor={editor} menus={false} />
     </Box>
   );
