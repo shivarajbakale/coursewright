@@ -1,0 +1,90 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Overview/Introduction" />
+
+# Rocketship design system
+
+This Storybook documents this product's own composites, the shell, and every
+page state in the generated app — the same app your CLI scaffolds. The
+primitives underneath come from Mantine and are documented at
+[mantine.dev](https://mantine.dev); what lives here is what we composed out of
+them.
+
+## How to read it
+
+{/* taxonomy:start */}
+
+| Section | What lives there |
+| --- | --- |
+| **Overview** | Landing pages — this introduction, the token swatch grid, the type scale, and the packaged widgets. |
+| **Shell** | The application chrome the generated app boots into. |
+| [Shell / Composition](?path=/docs/shell-composition-overview--docs) | The whole shell, assembled. _(1)_ |
+| [Shell / Layout](?path=/docs/shell-layout-overview--docs) | Sidebar, topbar, and the nav pieces inside them. _(6)_ |
+| [Shell / Overlays](?path=/docs/shell-overlays-overview--docs) | Chrome-level portals and error surfaces. _(3)_ |
+| [Shell / Content](?path=/docs/shell-content-overview--docs) | The page frame and its building blocks. _(4)_ |
+| [Shell / Motion](?path=/docs/shell-motion-overview--docs) | Entrance choreography. Everything that arrives on screen arrives through one of these. _(1)_ |
+| [Shell / Auth](?path=/docs/shell-auth-overview--docs) | Route protection. _(1)_ |
+| [Shell / Theme](?path=/docs/shell-theme-overview--docs) | Light/dark switching. _(2)_ |
+| **Pages** | Whole routes, each with its empty and populated states. |
+
+{/* taxonomy:end */}
+
+## Two toolbars you'll use a lot
+
+- **Theme** (top-right, mirror icon) — flips every story between **Dark**
+  and **Light**. Uses the app's `ThemeProvider` so what you see is exactly
+  what a user sees. No "dark variant" stories — P5 says one toolbar, never
+  two copies.
+- **Background** (top-right, photo icon) — paints the story canvas with
+  `Background`, `Card`, `Muted`, or `Accent`. Use `Card` when you're
+  showing a surface-shaped composite so the contrast is real, not synthesized.
+
+## Three panels you'll touch
+
+- **Controls** — every prop shows up here with the right input type: select
+  for enums, range slider for numbers, checkbox for booleans. Edit a value
+  and the story re-renders.
+- **Actions** — click handlers light up here. Stories wire them with
+  `handlers(['onClick', ...])` from `.storybook/story-helpers.tsx`.
+- **A11y** — Storybook's accessibility panel runs the same audits WCAG
+  uses. Yellow/Red badges are bugs, not suggestions.
+
+## Three rules every component here follows
+
+1. **Theme values only.** No raw hex / rgb / oklch, and no utility class of any
+   kind — Mantine owns colour, border, radius, shadow and layout. Retune
+   `src/theme.ts` and the whole app follows.
+2. **Mantine first, composite second.** A story here exists because the
+   product had an opinion Mantine has no reason to hold. If a component is
+   only a rename of a Mantine one, it should not exist.
+3. **One canvas, one theme.** Use the Theme toolbar; never ship a
+   `*-dark.tsx` story file.
+
+## The gates that keep this true
+
+Two commands, both inside `make check`:
+
+- `npm run storybook-lint` — reads `docs/storybook-taxonomy.json` and checks
+  every story file's title, story count, description, `autodocs` tag,
+  explicit `layout`, `argTypes`, and token-only colours. No per-file
+  allowlists: a story added today is graded today.
+- `npm run storybook-render` — mounts every story in a real Chromium at
+  **dark and light** and fails on a thrown play function, an empty canvas,
+  or horizontal overflow. It exists because Progress once shipped three
+  stories that rendered as a black rectangle and every text-based check
+  passed.
+
+## Where to find more
+
+- **Which component to reach for** — the capability map at
+  `.claude/skills/use-mantine/mantine-capabilities.md`: `Use when:` /
+  `Instead:` per family, with the reference slice in this repo.
+  `make capability-lint` keeps it true.
+- **Source of truth for design decisions** — `DECISIONS.md` at the repo
+  root, written before every feature lands.
+- **What was changed and why** — `claude-progress.md` session log.
+
+> If you're an agent and this Storybook is empty, run
+> `npm run storybook` from the project root. If you're a human and you
+> want to swap the palette, edit `src/theme.ts` — the page you're reading
+> rebuilds on save.

@@ -1,0 +1,39 @@
+{
+  "manifestVersion": 1,
+  "scaffolder": "create-react-app",
+  "scaffolderVersion": "0.3.0",
+  "framework": "react",
+  "language": "typescript",
+  "category": "frontend",
+  "projectName": "coursewright",
+  "description": "Personal course learner: breaks any topic into modules, chapters and projects, with notes and a RAG-backed tutor",
+  "entrypoint": "src/main.tsx",
+  "scripts": {
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "preview": "npm run preview",
+    "test": "npm test"
+  },
+  "defaultPort": 5173,
+  "healthcheck": {
+    "path": "/",
+    "expectedStatus": 200
+  },
+  "packageManager": "npm",
+  "capabilities": [
+    "react",
+    "vite",
+    "tanstack-router",
+    "tanstack-query",
+    "mantine",
+    "tailwind",
+    "react-hook-form",
+    "zod",
+    "msw"
+  ],
+  "monorepoHints": {
+    "packageNameField": "package.json#name",
+    "tsconfigExtendsField": "tsconfig.json#extends",
+    "portEnvVar": null
+  }
+}

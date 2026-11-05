@@ -1,0 +1,186 @@
+/*
+ * Instrument's component rules — what `src/theme.ts` cannot say as a prop.
+ *
+ * Each class is attached through a component's `classNames` in the theme, so a
+ * page never names one: a Card is closed with the hairline because it is a
+ * Card, not because a screen remembered to ask. This file is unlayered on
+ * purpose — Mantine's own styles sit in `@layer mantine`, and an unlayered
+ * rule beats a layered one without a more specific selector.
+ *
+ * Every colour is a token: `--app-*` from the resolver in `src/theme.ts`, or a
+ * `--mantine-color-*` the theme sets. No literal colour lives here.
+ */
+
+/* ── Surfaces: found by their edge, not a shadow ─────────────────────────── */
+
+.surface[data-with-border] {
+  border-color: var(--app-line);
+}
+
+.surface {
+  box-shadow: none;
+}
+
+.title {
+  letter-spacing: -0.02em;
+}
+
+/* ── Chrome: the rail and the top bar ─────────────────────────────────────── */
+
+.chrome {
+  background-color: var(--app-chrome);
+  border-color: var(--app-line);
+}
+
+/* ── Actions ─────────────────────────────────────────────────────────────── */
+
+.button {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* The quiet button is a faint wash of the ink closed with the hairline, so it
+   reads as pressable without competing with the one primary. */
+.button[data-variant='default'] {
+  background-color: var(--app-wash);
+  border-color: var(--app-line);
+}
+
+/* A tinted button carries the tone's edge as well as its wash. */
+.button[data-variant='light'] {
+  border: 1px solid color-mix(in oklab, var(--button-color) 25%, transparent);
+}
+
+.actionIcon[data-variant='default'] {
+  background-color: var(--app-surface);
+  border-color: var(--app-line);
+}
+
+/* ── Status: a wash, an edge and an ink ──────────────────────────────────── */
+
+.badge {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.badge[data-variant='light'] {
+  border: 1px solid color-mix(in oklab, var(--badge-color) 22%, transparent);
+}
+
+.alert {
+  border: 1px solid color-mix(in oklab, var(--alert-color) 24%, transparent);
+}
+
+/* The prototype writes the whole banner in its tone, at the support size. */
+.alertMessage {
+  color: var(--alert-color);
+}
+
+.notification {
+  background-color: var(--app-surface);
+  border: 1px solid var(--app-line);
+}
+
+/* ── Navigation: the selected place is the faint wash and the ink ────────── */
+
+.navLink[data-active] {
+  background-color: var(--app-wash);
+  color: var(--mantine-color-text);
+}
+
+.navLink[data-active] svg {
+  color: var(--mantine-color-brand-filled);
+}
+
+/* ── The segmented control: the choice pressed into its track ────────────── */
+
+.segmentedRoot {
+  background-color: var(--app-control);
+}
+
+.segmentedIndicator {
+  background-color: var(--mantine-color-body);
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--mantine-color-black) 40%, transparent);
+}
+
+.segmentedLabel {
+  white-space: nowrap;
+  font-weight: 550;
+  color: var(--app-faint);
+}
+
+.segmentedLabel[data-active] {
+  color: var(--mantine-color-text);
+}
+
+/* ── The small switch ────────────────────────────────────────────────────── */
+
+.switchTrack {
+  background-color: var(--app-wash);
+  border-color: transparent;
+}
+
+.switchThumb {
+  background-color: var(--app-faint);
+  border-color: transparent;
+}
+
+input:checked + .switchTrack {
+  background-color: var(--mantine-color-brand-filled);
+}
+
+input:checked + .switchTrack .switchThumb {
+  background-color: var(--app-chrome);
+}
+
+/* ── Fields: the card ground and the control edge ────────────────────────── */
+
+.input {
+  background-color: var(--app-surface);
+  border-color: var(--mantine-color-default-border);
+}
+
+.innerInput {
+  background-color: transparent;
+}
+
+/* ── Measures: a bar on the faint wash ───────────────────────────────────── */
+
+.track {
+  background-color: var(--app-wash);
+}
+
+/* ── Tables: headers lettered as a gauge, figures aligned by digit ───────── */
+
+/* The header cell's children — a sort button, a Text — set their own case and
+   size, so the lettering reaches in. */
+.th,
+.th * {
+  text-transform: uppercase;
+  font-size: 0.625rem;
+  letter-spacing: 0.09em;
+  font-weight: 600;
+  color: var(--app-faint);
+}
+
+.td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── What floats: the card, the control edge, a deep shadow ──────────────── */
+
+.overlay {
+  background-color: var(--app-surface);
+  border: 1px solid var(--mantine-color-default-border);
+}
+
+.overlayHeader {
+  background-color: var(--app-surface);
+}
+
+.tooltip {
+  background-color: var(--app-control);
+  color: var(--mantine-color-text);
+  border: 1px solid var(--mantine-color-default-border);
+}

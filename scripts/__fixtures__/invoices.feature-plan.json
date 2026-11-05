@@ -1,0 +1,278 @@
+{
+  "feature": {
+    "id": "invoices",
+    "title": "Invoices",
+    "problem": "Users can see who their customers are (Customers) but not what has been billed to them. There is no way to raise an invoice, see which are unpaid, or chase one — so billing happens in a spreadsheet nobody else can read.",
+    "nonGoals": [
+      "Payment collection — this feature records invoices, it does not charge cards.",
+      "PDF export. Deliberately deferred until the data model settles."
+    ]
+  },
+  "surfaces": [
+    {
+      "id": "list",
+      "name": "Invoices",
+      "route": "/invoices",
+      "archetype": "list-detail",
+      "moments": {
+        "peak": "the invoice sends and the row flips to Sent, with the amount and the due date beside it",
+        "end": "the list still in place, the sent invoice still selected, and nothing else due this week"
+      },
+      "purpose": "Find an invoice and act on it without losing the list.",
+      "primaryAction": "+ New invoice",
+      "panels": [
+        {
+          "id": "list",
+          "kind": "table",
+          "ratio": 0.55,
+          "toolbar": "⌕ Filter        [Status ▾]",
+          "rows": [
+            [
+              "☐ INV-0042",
+              "Acme",
+              "●Paid"
+            ],
+            [
+              "☑ INV-0041",
+              "Globex",
+              "○Due"
+            ],
+            [
+              "☐ INV-0040",
+              "Initech",
+              "●Paid"
+            ],
+            [
+              "☐ INV-0039",
+              "Umbrella",
+              "⊗Void"
+            ]
+          ],
+          "footer": "‹ 1 2 3 ›"
+        },
+        {
+          "id": "detail",
+          "kind": "detail",
+          "title": "INV-0042",
+          "badge": "●Paid",
+          "subtitle": "Acme Corp",
+          "fields": [
+            {
+              "label": "Amount",
+              "value": "$4,200"
+            },
+            {
+              "label": "Issued",
+              "value": "14 Aug"
+            },
+            {
+              "label": "Due",
+              "value": "12 Sep"
+            }
+          ],
+          "actions": [
+            "Archive",
+            "Delete"
+          ]
+        }
+      ],
+      "states": {
+        "loading": "Four row skeletons matching the row shape.",
+        "empty": "No invoices yet. They'll appear here once you send one.",
+        "error": "Couldn't load invoices.",
+        "success": "Rows render; selecting one fills the detail pane while the list stays mounted."
+      }
+    }
+  ],
+  "overlays": [
+    {
+      "id": "create",
+      "kind": "dialog",
+      "title": "New invoice",
+      "fields": [
+        {
+          "label": "Client",
+          "placeholder": "Acme       ▾"
+        },
+        {
+          "label": "Amount",
+          "placeholder": "4200"
+        },
+        {
+          "label": "Due",
+          "placeholder": "12 Sep 26 📅"
+        }
+      ],
+      "buttons": [
+        "Cancel",
+        "Create"
+      ]
+    },
+    {
+      "id": "delete",
+      "kind": "alert-dialog",
+      "title": "Delete \"INV-0042\"?",
+      "body": "This can't be undone.",
+      "buttons": [
+        "Cancel",
+        "Delete"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "surface": "list",
+      "control": "DataTable",
+      "why": "sorting, filtering, pagination and selection all present",
+      "rejected": "Table"
+    },
+    {
+      "surface": "list",
+      "control": "Combobox",
+      "why": "client filter has 40+ entries and the user knows the name",
+      "rejected": "Select"
+    },
+    {
+      "surface": "list",
+      "control": "Badge",
+      "why": "status is a label attached to a row, not a control",
+      "rejected": "Button"
+    },
+    {
+      "surface": "create",
+      "control": "Dialog",
+      "why": "three fields, short, and the list behind it is worth keeping visible",
+      "rejected": "route"
+    },
+    {
+      "surface": "delete",
+      "control": "AlertDialog",
+      "why": "destructive and irreversible, so it names the object",
+      "rejected": "Dialog"
+    },
+    {
+      "surface": "archive",
+      "control": "Sonner + undo",
+      "why": "reversible, so interrupting to confirm costs more than the mistake",
+      "rejected": "AlertDialog"
+    },
+    {
+      "surface": "detail",
+      "control": "Skeleton",
+      "why": "content shape is known ahead of the data",
+      "rejected": "Progress"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Invoice",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "number",
+          "type": "string",
+          "note": "INV-0042, generated"
+        },
+        {
+          "name": "clientId",
+          "type": "string"
+        },
+        {
+          "name": "amountCents",
+          "type": "number",
+          "note": "integer cents, never a float"
+        },
+        {
+          "name": "status",
+          "type": "'draft' | 'due' | 'paid' | 'void'"
+        },
+        {
+          "name": "dueAt",
+          "type": "ISO date"
+        }
+      ],
+      "relations": [
+        "belongs to one Client",
+        "optionally references one Customer"
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/invoices",
+      "auth": true,
+      "purpose": "paginated list, filterable by status + client"
+    },
+    {
+      "method": "POST",
+      "path": "/api/invoices",
+      "auth": true,
+      "purpose": "create a draft invoice"
+    },
+    {
+      "method": "GET",
+      "path": "/api/invoices/:id",
+      "auth": true,
+      "purpose": "detail pane"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/invoices/:id",
+      "auth": true,
+      "purpose": "archive / mark paid"
+    }
+  ],
+  "integration": [
+    {
+      "from": "config/nav.ts",
+      "to": "sidebar entry + ⌘K command",
+      "note": "one edit wires both"
+    },
+    {
+      "from": "invoiceKeys",
+      "to": "invalidated by create / patch",
+      "note": "reads and writes share the factory"
+    },
+    {
+      "from": "mocks/handlers/index.ts",
+      "to": "register invoiceHandlers",
+      "note": "MSW default-on"
+    },
+    {
+      "from": "router/router.tsx",
+      "to": "2 routes, one component",
+      "note": "keeps the list mounted on select"
+    }
+  ],
+  "blastRadius": {
+    "new": [
+      "src/api/types/invoice.types.ts",
+      "src/api/services/invoiceService.ts",
+      "src/mocks/handlers/invoiceHandlers.ts",
+      "src/hooks/useInvoices.ts",
+      "src/pages/Invoices/InvoicesPage.tsx",
+      "src/pages/Invoices/invoice-columns.tsx",
+      "src/pages/Invoices/InvoiceDetail.tsx",
+      "src/pages/Invoices/InvoiceForm.tsx",
+      "src/test/invoices.test.ts",
+      "src/test/invoices-ui-contract.test.tsx"
+    ],
+    "changed": [
+      "src/config/nav.ts",
+      "src/router/router.tsx",
+      "src/mocks/handlers/index.ts",
+      "src/api/types/index.ts"
+    ]
+  },
+  "verification": [
+    "npm run type-check",
+    "npm run lint",
+    "npm run ui-lint",
+    "npm run test",
+    "npm run ui-probe"
+  ]
+}

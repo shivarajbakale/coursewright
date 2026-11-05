@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "storybook/*": [".storybook/*"]
+    },
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  // `scripts` brings the UI probe under type-check. The two vite config files
+  // are deliberately absent: the app is on vite 5 while vitest bundles its own
+  // vite 7, so a config that hands vite-5 plugins to vitest's `defineConfig`
+  // has two irreconcilable `Plugin` types. Both configs are exercised for real
+  // every run — `npm test` and `npm run ui-probe` would not start otherwise.
+  "include": ["src", "electron", "scripts", ".storybook"],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}

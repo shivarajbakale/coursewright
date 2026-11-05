@@ -1,0 +1,34 @@
+<!doctype html>
+<!--
+  `data-mantine-color-scheme` is set here, before any JavaScript runs, so the
+  first paint is dark rather than a white flash the provider corrects a moment
+  later. Mantine reads the attribute, and it reads it alone — the `dark` class
+  that used to sit beside it existed for Tailwind's colour utilities and went
+  when they did.
+
+  No inline `color-scheme` beside it. Mantine's own stylesheet sets the property
+  from this attribute, and a style attribute here would outrank that rule
+  forever: the page would stay `color-scheme: dark` after a switch to light, and
+  every native `light-dark()` in the app — the auth panel's ground, for one —
+  would keep answering with its dark branch on a white page.
+-->
+<html lang="en" data-mantine-color-scheme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0B0D10" />
+    <title>Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link href="/src/App.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

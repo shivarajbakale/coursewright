@@ -1,0 +1,29 @@
+{
+  "feature": "feature-002",
+  "outcome": "One sentence naming what is true when this is done, phrased as something a user can observe rather than something the code contains.",
+  "scope": [
+    "Each line is work this contract covers.",
+    "Write these before the first edit. They are what the maker is allowed to touch."
+  ],
+  "exclusions": [
+    "Each line is work this contract does not cover, however tempting it looks from inside the change.",
+    "A contract that excludes nothing has not been thought about, and loop-lint refuses it."
+  ],
+  "verification": [
+    {
+      "id": "suite",
+      "check": "the new behaviour is covered, and nothing else regressed",
+      "command": "make test"
+    },
+    {
+      "id": "gate",
+      "check": "the whole check chain is green on this tree",
+      "command": "make check"
+    },
+    {
+      "id": "eye",
+      "check": "a person looked at the surface and it is not merely correct",
+      "observation": "screenshot or note recorded in the feature's evidence"
+    }
+  ]
+}

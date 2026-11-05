@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "loop-state.schema.json",
+  "title": "loop state",
+  "description": "What each maker/checker cycle did, and what the goal contract's checks returned. Written after each cycle, not at the end from memory. loop-lint enforces this shape; the two are kept in step by rule L7, which compares this file's required keys against the ones the gate actually demands.",
+  "type": "object",
+  "required": ["feature", "satisfied", "cycles"],
+  "additionalProperties": true,
+  "properties": {
+    "feature": {
+      "type": "string",
+      "description": "The feature id, matching the goal contract beside this file and the register."
+    },
+    "satisfied": {
+      "type": "boolean",
+      "description": "True only when the last cycle's checker returned pass."
+    },
+    "cycles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["n", "maker", "checker"],
+        "properties": {
+          "n": { "type": "integer", "minimum": 1, "description": "1-based, in order, one per cycle." },
+          "maker": { "type": "string", "description": "What changed in this cycle, in a sentence." },
+          "checker": {
+            "type": "object",
+            "required": ["verdict", "results"],
+            "properties": {
+              "verdict": { "enum": ["pass", "fail"] },
+              "results": {
+                "type": "array",
+                "description": "One entry per check the checker ran. A pass needs one for every check in the contract.",
+                "items": {
+                  "type": "object",
+                  "required": ["id"],
+                  "properties": {
+                    "id": { "type": "string", "description": "The verification id from the goal contract." },
+                    "exit": { "type": "integer", "description": "The exit code the command returned. Required for a command check in a passing cycle." },
+                    "note": { "type": "string", "description": "What was seen. Required for an observation check in a passing cycle." }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

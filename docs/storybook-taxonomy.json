@@ -1,0 +1,90 @@
+{
+ "$comment": "Single source of truth for Storybook hierarchy. scripts/storybook-lint.mjs enforces it; .storybook/Introduction.mdx renders from it. Change this file, not the titles.",
+ "order": [
+  "Overview",
+  "Shell",
+  "Pages"
+ ],
+ "roots": {
+  "Overview": {
+   "blurb": "Landing pages \u2014 this introduction, the token swatch grid, the type scale, and the packaged widgets.",
+   "depth": 2,
+   "sourceDirs": [
+    "src/components/_overview",
+    ".storybook"
+   ],
+   "sections": null
+  },
+  "Shell": {
+   "blurb": "The application chrome the generated app boots into.",
+   "depth": 3,
+   "sourceDirs": [
+    "src/components",
+    "src/components/auth"
+   ],
+   "sections": {
+    "Composition": {
+     "blurb": "The whole shell, assembled.",
+     "members": [
+      "shell"
+     ]
+    },
+    "Layout": {
+     "blurb": "Sidebar, topbar, and the nav pieces inside them.",
+     "members": [
+      "app-sidebar",
+      "topbar",
+      "nav-main",
+      "nav-user",
+      "team-switcher",
+      "notifications-dropdown"
+     ]
+    },
+    "Overlays": {
+     "blurb": "Chrome-level portals and error surfaces.",
+     "members": [
+      "command-palette",
+      "account-menu",
+      "ErrorBoundary"
+     ]
+    },
+    "Content": {
+     "blurb": "The page frame and its building blocks.",
+     "members": [
+      "page-shell",
+      "panel",
+      "stat-card",
+      "data-table"
+     ]
+    },
+    "Motion": {
+     "blurb": "Entrance choreography. Everything that arrives on screen arrives through one of these.",
+     "members": [
+      "reveal"
+     ]
+    },
+    "Auth": {
+     "blurb": "Route protection.",
+     "members": [
+      "AuthGuard"
+     ]
+    },
+    "Theme": {
+     "blurb": "Light/dark switching.",
+     "members": [
+      "theme-toggle",
+      "theme-provider"
+     ]
+    }
+   }
+  },
+  "Pages": {
+   "blurb": "Whole routes, each with its empty and populated states.",
+   "depth": 2,
+   "sourceDirs": [
+    "src/pages"
+   ],
+   "sections": null
+  }
+ }
+}

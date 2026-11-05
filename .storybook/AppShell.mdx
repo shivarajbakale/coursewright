@@ -1,0 +1,66 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Shell/Composition/Architecture" />
+
+# App Shell
+
+The rocketship shell has three layers, composed in [`src/App.tsx`](../src/App.tsx):
+
+```tsx
+<TooltipProvider>
+  <AuthGuard>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <Topbar />
+        <main>
+          <Outlet />
+        </main>
+      </SidebarInset>
+      <CommandPalette />
+    </SidebarProvider>
+  </AuthGuard>
+  <Toaster />
+</TooltipProvider>
+```
+
+The shell is a **fixed viewport** — `h-svh` with `overflow-hidden` all the way
+down. Nothing here scrolls; pages scroll internally through `PageShell`, which
+keeps headers and toolbars pinned.
+
+## Routes
+
+Public routes (`/login`, `/signup`) skip the chrome entirely — they render
+the AuthLayout (split-pane brand panel + form). Everything else mounts inside
+the authenticated chrome.
+
+## Stories in this section
+
+- [Authenticated](?path=/story/shell-composition-app-shell--authenticated) — full shell with a fixture dashboard
+- [Public](?path=/story/shell-composition-app-shell--public) — public AuthLayout
+- [Error](?path=/story/shell-composition-app-shell--error) — shell under an auth failure
+
+## Related
+
+### Layout
+- [App Sidebar](?path=/story/shell-layout-app-sidebar--default)
+- [Topbar](?path=/story/shell-layout-topbar--default)
+- [Nav Main](?path=/story/shell-layout-nav-main--default)
+- [Nav User](?path=/story/shell-layout-nav-user--default)
+- [Notifications Dropdown](?path=/story/shell-layout-notifications-dropdown--default)
+- [Team Switcher](?path=/story/shell-layout-team-switcher--default)
+
+### Auth
+- [Auth Guard](?path=/story/shell-auth-auth-guard--default)
+
+### Overlays
+- [Command Palette](?path=/story/shell-overlays-command-palette--default)
+- [Account Menu](?path=/story/shell-overlays-account-menu--default)
+- [Error Boundary](?path=/story/shell-overlays-error-boundary--default)
+
+### Content
+- [Page Shell](?path=/story/shell-content-page-shell--default)
+- [Stat Card](?path=/story/shell-content-stat-card--default)
+
+### Theme
+- [Theme Toggle](?path=/story/shell-theme-theme-toggle--default)

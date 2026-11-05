@@ -1,0 +1,35 @@
+/*
+ * The header's neutral sort affordance.
+ *
+ * Every sortable column used to draw a permanent up/down chevron, so a
+ * six-column header carried six glyphs that said "you could sort by this" and
+ * nothing about the table's current state. They read as noise in a list whose
+ * job is to be scanned.
+ *
+ * The chevron is now an affordance rather than a decoration: it appears when
+ * the pointer is over the header cell, or when the button has keyboard focus,
+ * which is exactly when someone is deciding whether to click it. The *active*
+ * arrow is not this element and is always drawn — a sorted column has to say so
+ * whether or not anything is hovering it.
+ *
+ * A media query and a `:hover` are not things an inline style can express, so
+ * this is a CSS module rather than a style prop.
+ */
+.sortHint {
+  opacity: 0;
+  transition: opacity var(--mantine-transition-duration, 150ms) ease;
+}
+
+th:hover .sortHint,
+.sortHint:focus-visible,
+button:focus-visible .sortHint {
+  opacity: 0.5;
+}
+
+/* A pointer is not the only way in. Where hover does not exist, the hint would
+   never appear at all, so it stays on. */
+@media (hover: none) {
+  .sortHint {
+    opacity: 0.4;
+  }
+}

@@ -1,0 +1,32 @@
+# Harness CI — runs this repo's own definition of done on every push/PR.
+# Single-sourced from rocketship harness-core; regenerate with
+# `node scripts/stamp-ci-workflows.mjs` in the scaffolder monorepo.
+name: Harness CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  check:
+    name: make check + rubric review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      # `make check` is the project's definition of done (harness primitive).
+      - name: Verify (make check)
+        run: make check
+
+      # The rubric checker — the "checker separated from the worker". Blocks the
+      # build (exit 1) if the repo is in a non-shippable state.
+      - name: Rubric review
+        run: node .claude/harness-review.mjs

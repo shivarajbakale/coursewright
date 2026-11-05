@@ -1,0 +1,58 @@
+/*
+ * Responsive column hiding for the customers table.
+ *
+ * These were Tailwind's `hidden w-56 @2xl:table-cell` utilities on each
+ * column's `meta`. There is no `@container` ancestor in this app, so those
+ * container queries always resolved against the viewport — the widths below
+ * are the same thresholds, written as the plain media queries they were
+ * already behaving as. A CSS module is Mantine's own answer for a rule an
+ * inline style cannot express, and a media query is one of those.
+ *
+ * Each column is hidden until the viewport can afford it, widest-first:
+ * plan (24rem), MRR (28rem), health (32rem), seats (36rem), owner (42rem).
+ */
+.col {
+  display: none;
+}
+
+.plan {
+  width: 8rem;
+}
+.mrr {
+  width: 7rem;
+}
+.health {
+  width: 8rem;
+}
+.seats {
+  width: 7rem;
+}
+.owner {
+  width: 14rem;
+}
+
+@media (min-width: 24rem) {
+  .plan {
+    display: table-cell;
+  }
+}
+@media (min-width: 28rem) {
+  .mrr {
+    display: table-cell;
+  }
+}
+@media (min-width: 32rem) {
+  .health {
+    display: table-cell;
+  }
+}
+@media (min-width: 36rem) {
+  .seats {
+    display: table-cell;
+  }
+}
+@media (min-width: 42rem) {
+  .owner {
+    display: table-cell;
+  }
+}

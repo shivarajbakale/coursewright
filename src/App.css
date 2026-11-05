@@ -1,0 +1,47 @@
+/*
+ * The app's own stylesheet — and there is very little of it on purpose.
+ *
+ * Mantine owns colour, type, radius, elevation, focus *and* layout, so almost
+ * everything that used to live here now lives in `src/theme.ts`, where it is a
+ * value the components read rather than a class a screen has to remember. What
+ * is left is the three things a theme object cannot express: which stylesheets
+ * load and in what order, the two body defaults below, and two painted
+ * backgrounds that are decoration rather than surface.
+ *
+ * Layer order. Mantine's own styles are wrapped in `@layer mantine` by
+ * `styles.layer.css`, which is why they are imported without a `layer()` of
+ * their own — adding one nests them into `mantine.mantine` and drops them out
+ * of the order declared here. `app` sits above so a rule in this file wins
+ * against a component default without needing a more specific selector.
+ */
+@layer mantine, app;
+
+@import '@mantine/core/styles.layer.css';
+@import '@mantine/notifications/styles.layer.css';
+@import '@mantine/dates/styles.layer.css';
+@import '@mantine/spotlight/styles.layer.css';
+@import '@mantine/charts/styles.layer.css';
+@import '@mantine/carousel/styles.layer.css';
+
+@layer app {
+  body {
+    /* Geist, set by the theme. Optical legibility on; no stylistic sets —
+       Geist's defaults are the prototype's letterforms. */
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Decoration, not surface: the auth panel's grid and the mask that fades it
+     out. Both are painted backgrounds with no content and no edge, which is why
+     they are CSS here rather than a component. */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, var(--mantine-color-default-border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--mantine-color-default-border) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .bg-radial-fade {
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+}
