@@ -4,7 +4,6 @@ import {
   Badge,
   Box,
   Button,
-  Center,
   Code,
   Flex,
   Group,
@@ -18,12 +17,13 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
-import { BookOpen, CircleAlert, Database, FileText, Globe, Info, Link2, MessageCircle, RefreshCw, Search } from 'lucide-react';
+import { BookOpen, CircleAlert, FileText, Globe, Info, Link2, MessageCircle, RefreshCw, Search } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
 import { timeAgo } from '@/lib/time';
 import { Reveal } from '@/components/reveal';
 import { Panel } from '@/components/panel';
 import { AnchorLink } from '@/components/links';
+import { ErrorState, StatePanel } from '@/components/state-panel';
 import type { Source, SourceKind } from '@/api/types';
 import { useAddSource, useCourses, useIndexStats, useReindex, useSearchTest, useSources } from '@/hooks/useCoursewright';
 
@@ -136,28 +136,18 @@ function SourcesTable({ courseTitle }: { courseTitle: (id: string | null) => str
     );
   } else if (sources.isError) {
     body = (
-      <Box p="lg">
-        <Alert color="red" variant="light" icon={<CircleAlert size={16} />} title="Sources didn’t load">
-          <Group gap="sm" mt={4}>
-            <Text size="sm">The index service didn’t answer.</Text>
-            <Button size="xs" variant="default" onClick={() => sources.refetch()}>
-              Retry
-            </Button>
-          </Group>
-        </Alert>
-      </Box>
+      <ErrorState
+        error={sources.error}
+        title="Sources didn’t load"
+        onRetry={() => sources.refetch()}
+        retrying={sources.isRefetching}
+      />
     );
   } else if (!rows.length) {
     body = (
-      <Center p="xl">
-        <Stack align="center" gap={6} maw={360} ta="center">
-          <Database size={28} color="var(--mantine-color-dimmed)" />
-          <Text fw={600}>{course ? 'Nothing indexed for this course' : 'Nothing indexed yet'}</Text>
-          <Text size="sm" c="dimmed">
-            Chapters and notes are indexed as they are written. Paste a link above to add your own reading.
-          </Text>
-        </Stack>
-      </Center>
+      <StatePanel art="index" title={course ? 'Nothing indexed for this course' : 'Nothing indexed yet'}>
+        Chapters and notes are indexed as they are written. Paste a link above to add your own reading.
+      </StatePanel>
     );
   } else {
     body = (
@@ -331,9 +321,7 @@ function TestRetrieval() {
       <Stack gap="sm" px="lg" pb="md">
 
         {search.isError && (
-          <Alert color="red" variant="light" icon={<CircleAlert size={16} />}>
-            The search failed. Check the index service and try again.
-          </Alert>
+          <ErrorState size="compact" error={search.error} title="The search didn’t run" />
         )}
 
         {search.isPending && (
@@ -345,9 +333,9 @@ function TestRetrieval() {
         )}
 
         {search.isSuccess && !hits.length && (
-          <Text size="sm" c="dimmed">
-            Nothing matched “{asked}”. Try the words a chapter would use.
-          </Text>
+          <StatePanel art="search" size="compact" title={`Nothing matched “${asked}”`}>
+            Try the words a chapter would use.
+          </StatePanel>
         )}
 
 

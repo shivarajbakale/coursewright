@@ -13,13 +13,13 @@ import {
   Skeleton,
   Stack,
   Text,
-  ThemeIcon,
   Title,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { useNavigate } from '@tanstack/react-router';
 import { AnchorLink, ButtonLink, CardLink } from '@/components/links';
-import { ArrowRight, BookOpen, Hammer, Plus, RotateCcw, Sparkles, Trash2, TriangleAlert } from 'lucide-react';
+import { ErrorState, StatePanel } from '@/components/state-panel';
+import { ArrowRight, BookOpen, Hammer, Plus, RotateCcw, Trash2, TriangleAlert } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
 import { Reveal } from '@/components/reveal';
 import { useCourses, useDeleteCourse, useHealth, useJob, useRecentNotes } from '@/hooks/useCoursewright';
@@ -73,9 +73,14 @@ export function LibraryPage() {
                   ))}
                 </SimpleGrid>
               ) : courses.isError ? (
-                <Alert color="red" title="Could not load your courses">
-                  {(courses.error as { message?: string }).message}
-                </Alert>
+                <Card withBorder radius="lg" p={0}>
+                  <ErrorState
+                    error={courses.error}
+                    title="Your courses didn’t load"
+                    onRetry={() => courses.refetch()}
+                    retrying={courses.isRefetching}
+                  />
+                </Card>
               ) : list.length === 0 ? (
                 <EmptyLibrary />
               ) : (
@@ -104,10 +109,18 @@ export function LibraryPage() {
                     <Skeleton h={18} />
                     <Skeleton h={18} />
                   </Stack>
+                ) : recent.isError ? (
+                  <ErrorState
+                    size="compact"
+                    error={recent.error}
+                    title="Recent notes didn’t load"
+                    onRetry={() => recent.refetch()}
+                    retrying={recent.isRefetching}
+                  />
                 ) : (recent.data ?? []).length === 0 ? (
-                  <Text size="sm" c="dimmed">
-                    No notes yet. Select text in a chapter and choose “Add to notes”.
-                  </Text>
+                  <StatePanel art="notebook" size="compact" title="No notes yet">
+                    Select text in a chapter and choose “Add to notes”.
+                  </StatePanel>
                 ) : (
                   <Stack gap={0} component="ul" p={0} m={0} style={{ listStyle: 'none' }} aria-label="Recent notes">
                     {recent.data!.map((n) => (
@@ -312,22 +325,19 @@ function FailedCourseCard({ course }: { course: CourseSummary }) {
 
 function EmptyLibrary() {
   return (
-    <Card withBorder radius="lg" p="xl">
-      <Stack align="center" gap="sm" ta="center">
-        <ThemeIcon size={48} radius="xl" variant="light">
-          <Sparkles size={22} />
-        </ThemeIcon>
-        <Title order={3} size="h4">
-          Learn something new
-        </Title>
-        <Text size="sm" c="dimmed" maw={420}>
-          Name a topic. A short interview tailors it to you, then agents build modules, chapters, diagrams and
-          projects.
-        </Text>
-        <ButtonLink to="/new" leftSection={<Plus size={16} />}>
-          Plan a course
-        </ButtonLink>
-      </Stack>
+    <Card withBorder radius="lg" p={0}>
+      <StatePanel
+        art="courses"
+        title="Learn something new"
+        actions={
+          <ButtonLink to="/new" leftSection={<Plus size={16} />}>
+            Plan a course
+          </ButtonLink>
+        }
+      >
+        Name a topic. A short interview tailors it to you, then agents build modules, chapters, diagrams and
+        projects.
+      </StatePanel>
     </Card>
   );
 }

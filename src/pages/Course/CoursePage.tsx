@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
 import {
-  Alert,
   Badge,
   Button,
   Grid,
@@ -20,6 +19,7 @@ import { PageShell } from '@/components/page-shell';
 import { ChapterNumber } from '@/components/chapter-number';
 import { Reveal } from '@/components/reveal';
 import { ButtonLink, NavLinkLink } from '@/components/links';
+import { ErrorState } from '@/components/state-panel';
 import { MermaidDiagram } from '@/components/diagrams/MermaidDiagram';
 import { useCourse, useDeleteCourse } from '@/hooks/useCoursewright';
 import { useTutor } from '@/copilot/tutorStore';
@@ -78,9 +78,19 @@ export function CoursePage() {
   if (course.isError || !c) {
     return (
       <PageShell title="Course">
-        <Alert color="red" title="Could not load this course">
-          {(course.error as { message?: string } | null)?.message ?? 'Not found.'}
-        </Alert>
+        <ErrorState
+          size="page"
+          error={course.error ?? { message: 'Not found', status: 404 }}
+          title="This course didn’t load"
+          missingTitle="This course doesn’t exist"
+          onRetry={() => course.refetch()}
+          retrying={course.isRefetching}
+          actions={
+            <ButtonLink to="/" variant="default">
+              Back to the library
+            </ButtonLink>
+          }
+        />
       </PageShell>
     );
   }

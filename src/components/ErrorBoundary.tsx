@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button, Code, Group, ScrollArea, Stack, Text, Title } from '@mantine/core';
+import { Spot } from '@/illustrations/spots';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -36,12 +37,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       }
 
       return (
-        <Stack align="center" justify="center" gap={0} mih={400} p="xl">
-          <Title order={2} size="h4" mb="xs">
-            Something went wrong
+        <Stack align="center" justify="center" gap={0} mih={400} p="xl" role="alert">
+          <Spot kind="broken" width={200} />
+          <Title order={2} size="h4" mt="sm" mb="xs">
+            This screen stopped working
           </Title>
           <Text c="dimmed" ta="center" maw={448} mb="md">
-            An unexpected error occurred. Please try again.
+            Something in the page broke while drawing it. Your courses and notes are safe. Try again, or go back to
+            the library.
           </Text>
           {import.meta.env.DEV && this.state.error && (
             // Dev only: the message is for whoever is building the app, and it
@@ -54,7 +57,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <Group gap="sm">
             <Button onClick={this.handleReset}>Try again</Button>
             <Button variant="default" onClick={() => (window.location.href = '/')}>
-              Go home
+              Back to the library
             </Button>
           </Group>
         </Stack>

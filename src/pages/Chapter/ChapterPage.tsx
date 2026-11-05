@@ -26,6 +26,7 @@ import { ArrowLeft, ArrowRight, Check, CircleCheck, CircleX, Clock, MessagesSqua
 import { PageShell } from '@/components/page-shell';
 import { Reveal } from '@/components/reveal';
 import { AnchorLink, ButtonLink } from '@/components/links';
+import { ErrorState } from '@/components/state-panel';
 import { FlowPlayer } from '@/components/diagrams/FlowPlayer';
 import { MermaidDiagram } from '@/components/diagrams/MermaidDiagram';
 import { useAttempt, useChapter, useChapterProgress, useCreateNote } from '@/hooks/useCoursewright';
@@ -72,9 +73,19 @@ export function ChapterPage() {
   if (chapter.isError || !chapter.data) {
     return (
       <PageShell title="Chapter">
-        <Alert color="red" title="Could not load this chapter">
-          {(chapter.error as { message?: string } | null)?.message ?? 'Not found.'}
-        </Alert>
+        <ErrorState
+          size="page"
+          error={chapter.error ?? { message: 'Not found', status: 404 }}
+          title="This chapter didn’t load"
+          missingTitle="This chapter doesn’t exist"
+          onRetry={() => chapter.refetch()}
+          retrying={chapter.isRefetching}
+          actions={
+            <ButtonLink to="/courses/$courseId" params={{ courseId }} variant="default">
+              Back to the course
+            </ButtonLink>
+          }
+        />
       </PageShell>
     );
   }

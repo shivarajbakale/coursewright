@@ -18,6 +18,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowRight, CircleStop, PartyPopper, TriangleAlert } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
 import { AnchorLink, ButtonLink } from '@/components/links';
+import { ErrorState } from '@/components/state-panel';
 import { Reveal } from '@/components/reveal';
 import { StageScene, type SceneData, type SceneStage } from '@/illustrations';
 import { useCancelJob, useCourse, useJob, useJobEvents } from '@/hooks/useCoursewright';
@@ -89,9 +90,19 @@ export function GeneratingPage() {
   if (course.isError || !course.data) {
     return (
       <PageShell title="Building course">
-        <Alert color="red" title="Course not found">
-          It may have been deleted
-        </Alert>
+        <ErrorState
+          size="page"
+          error={course.error ?? { message: 'Not found', status: 404 }}
+          title="This build didn’t load"
+          missingTitle="This course doesn’t exist"
+          onRetry={() => course.refetch()}
+          retrying={course.isRefetching}
+          actions={
+            <ButtonLink to="/" variant="default">
+              Back to the library
+            </ButtonLink>
+          }
+        />
       </PageShell>
     );
   }

@@ -1,6 +1,6 @@
+import { StatePanel } from '@/components/state-panel';
 import {
   ActionIcon,
-  Badge,
   Box,
   Button,
   Group,
@@ -231,17 +231,8 @@ function NotificationRow({
 
 function EmptyState() {
   return (
-    <Stack align="center" gap="xs" px="md" py="xl" ta="center">
-      <Bell size={24} color="var(--mantine-color-dimmed)" />
-      <Text size="sm" fw={500}>
-        You’re all caught up
-      </Text>
-      <Text size="xs" c="dimmed">
-        New activity will appear here.
-      </Text>
-      <Badge variant="light" color="gray" mt={4}>
-        No unread
-      </Badge>
-    </Stack>
+    <StatePanel art="inbox" size="compact" title="You’re all caught up">
+      New activity will appear here.
+    </StatePanel>
   );
 }

@@ -1,0 +1,97 @@
+/*
+ * Spot illustrations for empty and error states.
+ *
+ * The same line art as the build scenes: paper, hairline edges, ruled lines,
+ * one accent. Empty states mark the next thing to do in brand lime; error
+ * states mark the break in red. Colours are Mantine variables only.
+ */
+
+.root {
+  --sp-accent: var(--mantine-color-brand-5);
+  --sp-accent-wash: var(--mantine-color-brand-light);
+  --sp-paper: var(--mantine-color-dark-6);
+  --sp-paper-back: var(--mantine-color-dark-7);
+  --sp-edge: var(--mantine-color-default-border);
+  --sp-ink: color-mix(in oklab, var(--mantine-color-text) 55%, transparent);
+  --sp-rule: color-mix(in oklab, var(--mantine-color-text) 18%, transparent);
+
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+
+  @mixin light {
+    --sp-accent: var(--mantine-color-brand-7);
+    --sp-paper: var(--mantine-color-white);
+    --sp-paper-back: var(--mantine-color-gray-1);
+  }
+}
+
+.alert {
+  --sp-accent: var(--mantine-color-red-5);
+  --sp-accent-wash: var(--mantine-color-red-light);
+
+  @mixin light {
+    --sp-accent: var(--mantine-color-red-7);
+  }
+}
+
+.paper {
+  fill: var(--sp-paper);
+  stroke: var(--sp-edge);
+}
+.paperBack {
+  fill: var(--sp-paper-back);
+  stroke: var(--sp-edge);
+}
+.ghost {
+  fill: none;
+  stroke: var(--sp-ink);
+  stroke-dasharray: 4 5;
+}
+.rule {
+  fill: var(--sp-rule);
+}
+.ink {
+  fill: none;
+  stroke: var(--sp-ink);
+}
+.accent {
+  fill: none;
+  stroke: var(--sp-accent);
+}
+.accentFill {
+  fill: var(--sp-accent-wash);
+  stroke: var(--sp-accent);
+}
+.accentSolid {
+  fill: var(--sp-accent);
+}
+.floor {
+  fill: none;
+  stroke: var(--sp-edge);
+}
+
+/* One slow beat on the accent, so the drawing reads as alive, not broken. */
+.beat {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: beat 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes beat {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat {
+    animation: none;
+  }
+}

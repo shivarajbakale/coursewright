@@ -27,7 +27,8 @@ import { useParams } from '@tanstack/react-router';
 import { Check, Copy, FileCode2, Github, Lightbulb, Send, Wrench, CircleCheck } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
 import { Reveal } from '@/components/reveal';
-import { AnchorLink } from '@/components/links';
+import { AnchorLink, ButtonLink } from '@/components/links';
+import { ErrorState } from '@/components/state-panel';
 import { MarkdownView } from '@/components/MarkdownView';
 import { useProject, useSubmission, useSubmitProject, useToggleMilestone } from '@/hooks/useCoursewright';
 import { useTutor } from '@/copilot/tutorStore';
@@ -64,9 +65,19 @@ export function ProjectPage() {
   if (project.isError || !project.data) {
     return (
       <PageShell title="Project">
-        <Alert color="red" title="Could not load this project">
-          {(project.error as { message?: string } | null)?.message ?? 'Not found.'}
-        </Alert>
+        <ErrorState
+          size="page"
+          error={project.error ?? { message: 'Not found', status: 404 }}
+          title="This project didn’t load"
+          missingTitle="This project doesn’t exist"
+          onRetry={() => project.refetch()}
+          retrying={project.isRefetching}
+          actions={
+            <ButtonLink to="/courses/$courseId" params={{ courseId }} variant="default">
+              Back to the course
+            </ButtonLink>
+          }
+        />
       </PageShell>
     );
   }

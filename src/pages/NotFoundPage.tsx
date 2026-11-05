@@ -1,6 +1,7 @@
-import { Box, Button, Flex, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core';
+import { Box, Button, Center, Flex, Group, Stack, Text, Title } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Compass, Home, Search } from 'lucide-react';
+import { ArrowLeft, Home, Search } from 'lucide-react';
+import { Spot } from '@/illustrations/spots';
 
 /**
  * 404 — friendly "page not found" with three recovery actions.
@@ -20,9 +21,9 @@ export function NotFoundPage() {
     >
       <Box data-panel="not-found" pos="relative" w="100%" maw={448} ta="center">
         <Box pos="relative">
-          <ThemeIcon variant="light" size={56} radius="xl" mx="auto">
-            <Compass size={28} />
-          </ThemeIcon>
+          <Center>
+            <Spot kind="missing" width={200} />
+          </Center>
           <Text fz="3rem" fw={500} lh={1.1} mt="lg" ff="monospace" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
             404
           </Text>

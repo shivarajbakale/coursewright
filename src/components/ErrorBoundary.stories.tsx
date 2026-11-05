@@ -23,7 +23,7 @@ function Bomb(): React.ReactElement {
 
 /**
  * Canonical crash path — Bomb throws, the boundary catches, the default
- * fallback ("Something went wrong" + Try again + Go home) renders.
+ * fallback ("This screen stopped working" + Try again + Back to the library) renders.
  */
 export const Default: Story = {
   render: () => (
@@ -47,7 +47,7 @@ export const HealthyChildren: Story = {
 };
 
 /**
- * Custom fallback prop wins over the default "Something went wrong" panel.
+ * Custom fallback prop wins over the default "This screen stopped working" panel.
  * Renderers can ship branded empty-states this way.
  */
 export const CustomFallback: Story = {
@@ -85,9 +85,9 @@ export const NestedErrors: Story = {
   ),
   play: async () => {
     await waitFor(() => {
-      // The default fallback text ("Something went wrong") is rendered by
+      // The default fallback text ("This screen stopped working") is rendered by
       // the inner boundary; the outer fallback must not appear.
-      expect(document.body.textContent).toContain('Something went wrong');
+      expect(document.body.textContent).toContain('This screen stopped working');
       expect(document.body.querySelector('[data-testid="outer-fallback"]')).toBeNull();
     });
   },
@@ -117,7 +117,7 @@ export const ResetWorks: Story = {
     // Click it — Bomb re-throws on the next render, fallback reappears.
     await userEvent.click(tryAgain);
     await waitFor(() => {
-      expect(document.body.textContent).toContain('Something went wrong');
+      expect(document.body.textContent).toContain('This screen stopped working');
     });
   },
 };

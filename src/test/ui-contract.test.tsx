@@ -44,6 +44,7 @@ describe('Course overview', () => {
 
   it('gives a missing course a designed error state', async () => {
     renderCourseRoutes(CoursePage, '/courses/nope');
-    expect(await screen.findByText('Could not load this course')).toBeInTheDocument();
+    expect(await screen.findByText('This course doesn’t exist')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toContainElement(screen.getByText('Back to the library'));
   });
 });

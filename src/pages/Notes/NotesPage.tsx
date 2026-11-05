@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import {
   ActionIcon,
-  Alert,
   Box,
   Breadcrumbs,
   Button,
@@ -16,17 +15,17 @@ import {
   Stack,
   Text,
   TextInput,
-  ThemeIcon,
   Title,
   UnstyledButton,
 } from '@mantine/core';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
-import { CircleAlert, FileQuestion, FilePlus2, ListTree, NotebookPen, Search } from 'lucide-react';
+import { FilePlus2, ListTree, Search } from 'lucide-react';
 import { PageIcon, PageTree, type PageMove } from '@shivarajbakale/ui';
 import { PageShell } from '@/components/page-shell';
 import { Reveal } from '@/components/reveal';
 import { AnchorLink, NavLinkLink } from '@/components/links';
+import { ErrorState, StatePanel } from '@/components/state-panel';
 import type { NoteSummary } from '@/api/types';
 import {
   useCourses,
@@ -67,17 +66,21 @@ function SearchResults({ query, onOpen }: { query: string; onOpen: (id: string) 
   }
   if (search.isError) {
     return (
-      <Text size="sm" c="red" p="xs">
-        Search failed. Try again in a moment.
-      </Text>
+      <ErrorState
+        size="compact"
+        error={search.error}
+        title="Search didn’t run"
+        onRetry={() => search.refetch()}
+        retrying={search.isRefetching}
+      />
     );
   }
   const hits = search.data ?? [];
   if (!hits.length) {
     return (
-      <Text size="sm" c="dimmed" p="xs">
+      <StatePanel art="search" size="compact" title="No matches">
         No page mentions “{query}”.
-      </Text>
+      </StatePanel>
     );
   }
   return (
@@ -107,6 +110,7 @@ function NotesSidebar({
   notes,
   loading,
   error,
+  treeError,
   onRetry,
   selectedId,
   onOpen,
@@ -118,6 +122,8 @@ function NotesSidebar({
   notes: NoteSummary[];
   loading: boolean;
   error: boolean;
+  /** The failed request, so the state can say whether the service is down or broke. */
+  treeError?: unknown;
   onRetry: () => void;
   selectedId: string | null;
   onOpen: (id: string) => void;
@@ -165,14 +171,7 @@ function NotesSidebar({
             ))}
           </Stack>
         ) : error ? (
-          <Stack gap="xs" p="xs" align="flex-start">
-            <Text size="sm" c="red">
-              The pages didn’t load.
-            </Text>
-            <Button size="xs" variant="default" onClick={onRetry}>
-              Retry
-            </Button>
-          </Stack>
+          <ErrorState size="compact" error={treeError} title="Pages didn’t load" onRetry={onRetry} />
         ) : (
           <PageTree
             key={selectedId ?? 'none'}
@@ -232,16 +231,14 @@ function RecentPages({
   if (recent.isError) {
     return (
       <NotesPane toolbar={toolbar}>
-        <NotesColumn inset="xl">
-          <Alert mt="lg" color="red" variant="light" icon={<CircleAlert size={16} />} title="Recent pages didn’t load">
-            <Group gap="sm" mt={4}>
-              <Text size="sm">The notes service didn’t answer.</Text>
-              <Button size="xs" variant="default" onClick={() => recent.refetch()}>
-                Retry
-              </Button>
-            </Group>
-          </Alert>
-        </NotesColumn>
+        <Center h="100%" mih={360} p="xl">
+          <ErrorState
+            error={recent.error}
+            title="Recent pages didn’t load"
+            onRetry={() => recent.refetch()}
+            retrying={recent.isRefetching}
+          />
+        </Center>
       </NotesPane>
     );
   }
@@ -250,21 +247,18 @@ function RecentPages({
     return (
       <NotesPane toolbar={toolbar}>
         <Center h="100%" mih={360} p="xl">
-          <Stack align="center" gap="sm" maw={380} ta="center">
-            <ThemeIcon size={48} radius="xl" variant="light">
-              <NotebookPen size={24} />
-            </ThemeIcon>
-            <Title order={2} size="h3">
-              Your notebook is empty
-            </Title>
-            <Text size="sm" c="dimmed">
-              Write things down in your own words as you read. Pages nest inside pages, link to chapters, and the tutor
-              can read them.
-            </Text>
-            <Button leftSection={<FilePlus2 size={16} />} onClick={onNew} loading={creating}>
-              Write your first page
-            </Button>
-          </Stack>
+          <StatePanel
+            art="notebook"
+            title="Your notebook is empty"
+            actions={
+              <Button leftSection={<FilePlus2 size={16} />} onClick={onNew} loading={creating}>
+                Write your first page
+              </Button>
+            }
+          >
+            Write things down in your own words as you read. Pages nest inside pages, link to chapters, and the tutor
+            can read them.
+          </StatePanel>
         </Center>
       </NotesPane>
     );
@@ -343,27 +337,18 @@ function OpenPage({ pageId, notes, leading }: { pageId: string; notes: NoteSumma
     return (
       <NotesPane toolbar={leading ? <Group gap="xs">{leading}</Group> : undefined}>
       <Center h="100%" mih={360} p="xl">
-        <Stack align="center" gap="sm" maw={380} ta="center">
-          <ThemeIcon size={48} radius="xl" variant="light" color={missing ? 'gray' : 'red'}>
-            {missing ? <FileQuestion size={24} /> : <CircleAlert size={24} />}
-          </ThemeIcon>
-          <Title order={2} size="h3">
-            {missing ? 'This page doesn’t exist' : 'The page didn’t load'}
-          </Title>
-          <Text size="sm" c="dimmed">
-            {missing ? 'It may have been deleted, or the link is wrong.' : 'The notes service didn’t answer. Try again.'}
-          </Text>
-          <Group gap="xs">
-            {!missing && (
-              <Button variant="default" onClick={() => note.refetch()}>
-                Retry
-              </Button>
-            )}
-            <Button variant={missing ? 'filled' : 'subtle'} onClick={() => navigate({ to: '/notes' })}>
+        <ErrorState
+          error={missing ? { message: 'Not found', status: 404 } : note.error}
+          title="This page didn’t load"
+          missingTitle="This page doesn’t exist"
+          onRetry={() => note.refetch()}
+          retrying={note.isRefetching}
+          actions={
+            <Button variant={missing ? 'filled' : 'subtle'} color={missing ? undefined : 'gray'} onClick={() => navigate({ to: '/notes' })}>
               All notes
             </Button>
-          </Group>
-        </Stack>
+          }
+        />
       </Center>
       </NotesPane>
     );
@@ -481,6 +466,7 @@ export function NotesPage() {
       notes={notes}
       loading={tree.isLoading}
       error={tree.isError}
+      treeError={tree.error}
       onRetry={() => tree.refetch()}
       selectedId={pageId ?? null}
       onOpen={open}
