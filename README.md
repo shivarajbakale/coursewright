@@ -150,7 +150,7 @@ npm run dev:stack
 
 Open **http://localhost:5173**. The command starts all three processes (agent on 8123, tutor runtime on 4000,
 web on 5173) and **Ctrl-C** stops them all. The first start creates the database in `agent/data/`, adds a
-sample course on Raft consensus and indexes it, which takes about half a minute.
+sample course on Raft consensus and indexes it, which takes a few seconds.
 
 ### 5. Check that the key works
 
