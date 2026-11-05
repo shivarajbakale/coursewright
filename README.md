@@ -15,7 +15,7 @@
   <a href="#run-it-in-a-minute">Run it</a> ·
   <a href="#what-you-get">Features</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#the-full-stack">Full stack</a> ·
+  <a href="#set-it-up-with-your-own-ai-key">Set up</a> ·
   <a href="LICENSE">MIT licence</a>
 </p>
 
@@ -35,7 +35,7 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
-To build real courses and talk to a real tutor, run [the full stack](#the-full-stack) with a model key.
+To build your own courses and talk to the tutor, [set it up with your own AI key](#set-it-up-with-your-own-ai-key).
 
 ## What you get
 
@@ -97,37 +97,101 @@ resizable panels; light and dark themes; and empty and error states that tell yo
 More: [architecture](docs/plan/architecture.md) · [API contract](docs/plan/api-contract.md) ·
 [agent service](agent/README.md).
 
-## The full stack
+## Set it up with your own AI key
 
-Three processes: the web app, the CopilotKit runtime for the tutor, and the Python agent service.
+`npm run dev` above runs the web app alone on demo data. To build your own courses and talk to the tutor,
+run the full app: the web app, the tutor runtime and the Python agent service, with a model key. It takes
+about five minutes.
+
+### 1. What you need
+
+| | Check | Get it |
+| --- | --- | --- |
+| Node.js 20 or newer | `node -v` | [nodejs.org](https://nodejs.org) |
+| uv (Python tooling; installs Python 3.12 for you) | `uv --version` | `curl -LsSf https://astral.sh/uv/install.sh \| sh` or `brew install uv` |
+| A model API key | | Claude: [console.anthropic.com](https://console.anthropic.com) → **API keys** → **Create key** (starts with `sk-ant-`). Or any Anthropic-compatible provider, [see below](#use-another-model). |
+
+### 2. Install
 
 ```bash
-# once
+git clone https://github.com/shivarajbakale/coursewright.git
+cd coursewright
+npm install
 cd agent && uv sync && cd ..
-cp agent/.env.example agent/.env     # then add your ANTHROPIC_API_KEY
-
-# every time
-npm run dev:stack                    # agent :8123 · runtime :4000 · web :5173
 ```
+
+### 3. Add your key
+
+```bash
+cp agent/.env.example agent/.env
+```
+
+Open `agent/.env` and put your key after the `=`, with no quotes or spaces:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
+
+`agent/.env` is ignored by git, so the key stays on your machine. These are all the keys the app reads:
+
+| Key | Needed? | What it does |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | **Yes**, to build courses and use the tutor | The model that runs every agent |
+| `ANTHROPIC_BASE_URL`, `CW_MODEL` | No | Use another provider or model ([below](#use-another-model)) |
+| `VOYAGE_API_KEY` | No | Better search over your courses and notes ([voyageai.com](https://www.voyageai.com)); without it a local embedder is used |
+| `GITHUB_TOKEN` | No | Higher GitHub rate limits when reviewing project code |
+| `CW_BUILD_TOKEN_BUDGET` | No | Tokens after which a build stops polishing and saves the course (default 4,000,000) |
+
+### 4. Start it
+
+```bash
+npm run dev:stack
+```
+
+Open **http://localhost:5173**. The command starts all three processes (agent on 8123, tutor runtime on 4000,
+web on 5173) and **Ctrl-C** stops them all. The first start creates the database in `agent/data/`, adds a
+sample course on Raft consensus and indexes it, which takes about half a minute.
+
+### 5. Check that the key works
+
+- `curl http://localhost:8123/api/health` shows `"anthropic": true`.
+- The Library has no "No model connected" banner.
+- **New course** asks questions about *your* topic. Without a working key it falls back to four fixed questions.
+
+### Use another model
+
+Any provider with an Anthropic-compatible API works. For MiniMax, put these three lines in `agent/.env`:
+
+```bash
+ANTHROPIC_API_KEY=your-minimax-key
+ANTHROPIC_BASE_URL=https://api.minimax.io/anthropic
+CW_MODEL=MiniMax-M3
+```
+
+`CW_MODEL` also picks a Claude model, e.g. `CW_MODEL=claude-sonnet-5-5`; the default is `claude-opus-5-5`.
+
+**About cost:** building a course runs a team of agents and makes many model calls, typically several
+million tokens per course. Check your provider's pricing first; a smaller model (Sonnet, or MiniMax) costs far
+less. Reading, notes, quizzes and search use no model calls.
+
+### If something doesn't work
+
+| What you see | What to do |
+| --- | --- |
+| The "No model connected" banner stays | The key wasn't read. Check the file is `agent/.env` (not `.env` at the root), the line is exactly `ANTHROPIC_API_KEY=...`, then stop and restart `npm run dev:stack`: keys are read at start. |
+| `uv: command not found` | Install uv (step 1), then open a new terminal. |
+| "address already in use" | Something else is using port 5173, 4000 or 8123. Stop it, or move a process with `RUNTIME_PORT`, `AGENT_URL`, `VITE_API_URL` and `VITE_RUNTIME_URL`. |
+| The tutor says "Runtime info request failed with status 502" | The tutor runtime isn't running. Start everything with `npm run dev:stack`, not `npm run dev`. |
+| A build stopped | Open it from the Library and press **Continue**: it picks up where it stopped. |
+| You want a clean slate | Stop the app and delete `agent/data/`. The sample course comes back on the next start. |
+
+Every setting is listed in [agent/README.md](agent/README.md#environment).
 
 | Process | Port | Built with |
 | --- | --- | --- |
 | Web app | 5173 | React 19, TypeScript, Vite, Mantine 9, TanStack Router and Query |
 | Tutor runtime | 4000 | CopilotKit runtime (Node) |
 | Agent service | 8123 | Python 3.12, FastAPI, deepagents / LangGraph, SQLite with sqlite-vec and FTS5 |
-
-**Models.** Claude by default. Any Anthropic-compatible provider works too; for MiniMax, set these in
-`agent/.env`:
-
-```bash
-ANTHROPIC_API_KEY=<your MiniMax key>
-ANTHROPIC_BASE_URL=https://api.minimax.io/anthropic
-CW_MODEL=MiniMax-M3
-```
-
-**Without a key** everything except the model still works: the seeded Raft course, reading, quizzes, progress,
-notes, sources and search. Add `VOYAGE_API_KEY` for better retrieval; without it a local embedder is used. All
-settings are in [agent/README.md](agent/README.md#environment).
 
 ## Develop
 
