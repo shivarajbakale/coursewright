@@ -13,12 +13,15 @@ import App from '@/App';
 import { ThemeProvider } from '@/components/theme-provider';
 import { LoginPage } from '@/pages/Auth/LoginPage';
 import { SignupPage } from '@/pages/Auth/SignupPage';
-import { Dashboard } from '@/pages/Dashboard';
-import { InboxPage } from '@/pages/InboxPage';
-import { TeamPage } from '@/pages/TeamPage';
-import { BillingPage } from '@/pages/BillingPage';
-import { CustomersPage } from '@/pages/Customers/CustomersPage';
-import { CustomerDetailPage } from '@/pages/Customers/CustomerDetailPage';
+import { LibraryPage } from '@/pages/Library/LibraryPage';
+import { NewCoursePage } from '@/pages/NewCourse/NewCoursePage';
+import { GeneratingPage } from '@/pages/Generating/GeneratingPage';
+import { CoursePage } from '@/pages/Course/CoursePage';
+import { ChapterPage } from '@/pages/Chapter/ChapterPage';
+import { ProjectPage } from '@/pages/Project/ProjectPage';
+import { TutorPage } from '@/pages/Tutor/TutorPage';
+import { NotesPage } from '@/pages/Notes/NotesPage';
+import { SourcesPage } from '@/pages/Sources/SourcesPage';
 import { Settings } from '@/pages/Settings';
 
 /**
@@ -43,11 +46,15 @@ import { Settings } from '@/pages/Settings';
   had already happened once.
 */
 export const PAGES = [
-  { name: 'Dashboard', path: '/' },
-  { name: 'Customers', path: '/customers' },
-  { name: 'Inbox', path: '/inbox' },
-  { name: 'Team', path: '/team' },
-  { name: 'Billing', path: '/billing' },
+  { name: 'Library', path: '/' },
+  { name: 'New course', path: '/new' },
+  { name: 'Course', path: '/courses/c-raft' },
+  { name: 'Chapter', path: '/courses/c-raft/chapters/ch-2-2' },
+  { name: 'Project', path: '/courses/c-raft/projects/p-2' },
+  { name: 'Building', path: '/courses/c-rust/building' },
+  { name: 'Tutor', path: '/tutor' },
+  { name: 'Notes', path: '/notes' },
+  { name: 'Sources', path: '/sources' },
   { name: 'Login', path: '/login' },
   { name: 'Signup', path: '/signup' },
   { name: 'Settings', path: '/settings' },
@@ -72,16 +79,16 @@ export function AppAt({ path }: { path: string }) {
     const routeTree = rootRoute.addChildren([
       createRoute({ path: '/login', component: LoginPage, getParentRoute: () => rootRoute }),
       createRoute({ path: '/signup', component: SignupPage, getParentRoute: () => rootRoute }),
-      createRoute({ path: '/', component: Dashboard, getParentRoute: () => rootRoute }),
-      createRoute({ path: '/customers', component: CustomersPage, getParentRoute: () => rootRoute }),
-      createRoute({
-        path: '/customers/$customerId',
-        component: CustomerDetailPage,
-        getParentRoute: () => rootRoute,
-      }),
-      createRoute({ path: '/inbox', component: InboxPage, getParentRoute: () => rootRoute }),
-      createRoute({ path: '/team', component: TeamPage, getParentRoute: () => rootRoute }),
-      createRoute({ path: '/billing', component: BillingPage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/', component: LibraryPage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/new', component: NewCoursePage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/courses/$courseId', component: CoursePage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/courses/$courseId/building', component: GeneratingPage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/courses/$courseId/chapters/$chapterId', component: ChapterPage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/courses/$courseId/projects/$projectId', component: ProjectPage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/tutor', component: TutorPage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/notes', component: NotesPage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/notes/$pageId', component: NotesPage, getParentRoute: () => rootRoute }),
+      createRoute({ path: '/sources', component: SourcesPage, getParentRoute: () => rootRoute }),
       createRoute({ path: '/settings', component: Settings, getParentRoute: () => rootRoute }),
     ]);
     return createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [path] }) });

@@ -6,7 +6,9 @@ import './App.css';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Topbar } from '@/components/topbar';
 import { CommandPalette } from '@/components/command-palette';
-import { AuthGuard } from '@/components/auth/AuthGuard';
+import { TutorProvider } from '@/copilot/TutorCopilot';
+import { TutorPanel } from '@/copilot/TutorPanel';
+import { useTutor } from '@/copilot/tutorStore';
 import { NAVBAR_RAIL_WIDTH, NAVBAR_WIDTH, useShellNav } from '@/hooks/use-shell-nav';
 
 /**
@@ -36,6 +38,8 @@ function App() {
   const pathname = useRouterState({ select: s => s.location.pathname });
   const isPublic = PUBLIC_ROUTES.includes(pathname);
   const { railed, mobileOpen, toggleRail, closeMobile } = useShellNav();
+  const tutorOpen = useTutor((s) => s.panelOpen) && !pathname.startsWith('/tutor');
+  const toggleTutor = useTutor((s) => s.togglePanel);
 
   // `ignoreInputs` is explicit because the default would change behaviour: it
   // is off for Command/Control chords, and Mantine's `useHotkeys` — which owned
@@ -47,6 +51,11 @@ function App() {
     meta: { name: 'Toggle the sidebar', description: 'Collapse the navigation to a rail' },
   });
 
+  useHotkey('Mod+J', toggleTutor, {
+    ignoreInputs: false,
+    meta: { name: 'Toggle the tutor', description: 'Open or close the tutor panel' },
+  });
+
   useEffect(() => {
     closeMobile();
   }, [pathname, closeMobile]);
@@ -56,7 +65,7 @@ function App() {
   }
 
   return (
-    <AuthGuard>
+    <TutorProvider>
       <AppShell
         header={{ height: 56 }}
         navbar={{
@@ -64,6 +73,7 @@ function App() {
           breakpoint: 'sm',
           collapsed: { mobile: !mobileOpen },
         }}
+        aside={{ width: 420, breakpoint: 'md', collapsed: { desktop: !tutorOpen, mobile: !tutorOpen } }}
         padding={0}
         h="100svh"
         style={{ overflow: 'hidden' }}
@@ -88,9 +98,10 @@ function App() {
             <Outlet />
           </Box>
         </AppShell.Main>
+        <AppShell.Aside>{tutorOpen && <TutorPanel />}</AppShell.Aside>
       </AppShell>
       <CommandPalette />
-    </AuthGuard>
+    </TutorProvider>
   );
 }
 

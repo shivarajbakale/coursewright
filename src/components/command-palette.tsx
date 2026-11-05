@@ -104,7 +104,7 @@ function filterActions(
 }
 
 const quickActions = [
-  { title: 'New project', to: '/projects', icon: Plus, keywords: ['new', 'add', 'create'] },
+  { title: 'New course', to: '/new', icon: Plus, keywords: ['new', 'add', 'create', 'learn'] },
 ];
 
 /** DOM id for one action, so `aria-activedescendant` has something to point at. */

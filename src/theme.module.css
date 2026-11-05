@@ -136,7 +136,9 @@ input:checked + .switchTrack .switchThumb {
 
 /* ── Fields: the card ground and the control edge ────────────────────────── */
 
-.input {
+/* Not the unstyled variant: kit's PageHeader title is an unstyled Textarea
+   and must read as a heading, not a field. */
+.input:not([data-variant='unstyled']) {
   background-color: var(--app-surface);
   border-color: var(--mantine-color-default-border);
 }

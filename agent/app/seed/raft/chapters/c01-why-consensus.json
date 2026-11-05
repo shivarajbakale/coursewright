@@ -1,0 +1,41 @@
+{
+  "questions": [
+    {
+      "prompt": "Why must the state machine fed by a Raft log be deterministic?",
+      "options": [
+        "Because Raft compresses the log and needs repeatable output to compress well",
+        "Because replicas only agree on the sequence of commands, so identical state depends on each command producing the same effect everywhere",
+        "Because the leader replays the state machine to check followers for corruption",
+        "Because non-deterministic commands would make leader election slower"
+      ],
+      "answer": 1,
+      "explanation": "Raft replicates commands, not state. Replicas stay identical only if applying the same command in the same state always yields the same result. Raft never replays or inspects follower state machines, so the 'leader checks followers' option is tempting but wrong.",
+      "conceptKeys": ["replicated-state-machine"]
+    },
+    {
+      "prompt": "What does the FLP impossibility result imply for Raft's design?",
+      "options": [
+        "Raft must use synchronized clocks to be safe",
+        "Raft cannot tolerate any crashed server",
+        "Raft keeps safety unconditionally but cannot guarantee it always makes progress in a fully asynchronous network",
+        "Raft must tolerate Byzantine failures to reach agreement"
+      ],
+      "answer": 2,
+      "explanation": "FLP shows no deterministic algorithm can guarantee termination in an asynchronous system with even one crash. Raft gives up guaranteed liveness, relying on timeouts only for progress, while safety never depends on timing. Using synchronized clocks for safety is exactly what Raft avoids.",
+      "conceptKeys": ["consensus"]
+    },
+    {
+      "prompt": "A primary-backup system promotes a backup whenever the primary stops answering for one second. What is the main danger?",
+      "options": [
+        "Split brain: the old primary may still be alive and accepting writes alongside the new one",
+        "The backups will apply commands in a different order from each other",
+        "The system becomes unable to handle reads",
+        "There is no danger as long as the timeout is long enough"
+      ],
+      "answer": 0,
+      "explanation": "A missed heartbeat cannot distinguish a crashed primary from a slow or partitioned one, so promotion can produce two primaries. Making the timeout longer reduces how often this happens but never rules it out, which is why consensus uses quorums rather than timeouts for safety.",
+      "conceptKeys": ["consensus", "replicated-state-machine"]
+    }
+  ],
+  "diagrams": []
+}

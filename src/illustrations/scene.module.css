@@ -1,0 +1,206 @@
+/*
+ * Shared tokens, paint classes and the two ambient motions (float, pulse) for
+ * every stage scene. Colours are Mantine variables only; the light scheme
+ * swaps the grounds to white/gray and the inks to the darker step of each ramp
+ * so strokes and text keep their contrast.
+ */
+
+.root {
+  --sc-accent: var(--mantine-color-brand-5);
+  --sc-accent-ink: var(--mantine-color-brand-5);
+  --sc-accent-edge: var(--mantine-color-brand-7);
+  --sc-blue: var(--mantine-color-blue-5);
+  --sc-blue-ink: var(--mantine-color-blue-5);
+  --sc-amber: var(--mantine-color-yellow-5);
+  --sc-amber-ink: var(--mantine-color-yellow-5);
+  --sc-red: var(--mantine-color-red-3);
+  --sc-red-ink: var(--mantine-color-red-3);
+  --sc-on-accent: var(--mantine-color-dark-9);
+  --sc-deep: var(--mantine-color-dark-8);
+  --sc-surface: var(--mantine-color-dark-7);
+  --sc-raised: var(--mantine-color-dark-6);
+  --sc-faint: var(--mantine-color-dark-5);
+  --sc-line: var(--mantine-color-dark-4);
+  --sc-dot: var(--mantine-color-dark-6);
+  --sc-text: var(--mantine-color-text);
+  --sc-soft: var(--mantine-color-dark-1);
+  --sc-dim: var(--mantine-color-dimmed);
+  --sc-shade: var(--mantine-color-black);
+  --sc-lens: color-mix(in srgb, var(--mantine-color-dark-9) 60%, transparent);
+
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--mantine-font-family);
+
+  @mixin light {
+    --sc-accent-ink: var(--mantine-color-brand-7);
+    --sc-accent-edge: var(--mantine-color-brand-6);
+    --sc-blue-ink: var(--mantine-color-blue-7);
+    --sc-amber-ink: var(--mantine-color-yellow-7);
+    --sc-red: var(--mantine-color-red-4);
+    --sc-red-ink: var(--mantine-color-red-7);
+    --sc-deep: var(--mantine-color-gray-1);
+    --sc-surface: var(--mantine-color-gray-0);
+    --sc-raised: var(--mantine-color-white);
+    --sc-faint: var(--mantine-color-gray-3);
+    --sc-line: var(--mantine-color-gray-4);
+    --sc-dot: var(--mantine-color-gray-3);
+    --sc-soft: var(--mantine-color-gray-7);
+    --sc-shade: var(--mantine-color-gray-6);
+    --sc-lens: color-mix(in srgb, var(--mantine-color-white) 70%, transparent);
+  }
+}
+
+.fill {
+  height: 100%;
+}
+
+.mono {
+  font-family: var(--mantine-font-family-monospace);
+}
+
+/* fills */
+.fAccent {
+  fill: var(--sc-accent);
+}
+.fAccentInk {
+  fill: var(--sc-accent-ink);
+}
+.fBlue {
+  fill: var(--sc-blue);
+}
+.fBlueInk {
+  fill: var(--sc-blue-ink);
+}
+.fAmber {
+  fill: var(--sc-amber);
+}
+.fAmberInk {
+  fill: var(--sc-amber-ink);
+}
+.fRed {
+  fill: var(--sc-red);
+}
+.fOnAccent {
+  fill: var(--sc-on-accent);
+}
+.fDeep {
+  fill: var(--sc-deep);
+}
+.fSurface {
+  fill: var(--sc-surface);
+}
+.fRaised {
+  fill: var(--sc-raised);
+}
+.fFaint {
+  fill: var(--sc-faint);
+}
+.fLine {
+  fill: var(--sc-line);
+}
+.fDot {
+  fill: var(--sc-dot);
+}
+.fText {
+  fill: var(--sc-text);
+}
+.fSoft {
+  fill: var(--sc-soft);
+}
+.fDim {
+  fill: var(--sc-dim);
+}
+.fLens {
+  fill: var(--sc-lens);
+}
+.fNone {
+  fill: none;
+}
+.fShadow {
+  fill: var(--sc-shade);
+  opacity: 0.35;
+}
+
+/* strokes */
+.sAccent {
+  stroke: var(--sc-accent);
+}
+.sAccentInk {
+  stroke: var(--sc-accent-ink);
+}
+.sAccentEdge {
+  stroke: var(--sc-accent-edge);
+}
+.sBlue {
+  stroke: var(--sc-blue);
+}
+.sAmber {
+  stroke: var(--sc-amber);
+}
+.sLine {
+  stroke: var(--sc-line);
+}
+.sFaint {
+  stroke: var(--sc-faint);
+}
+.sRaised {
+  stroke: var(--sc-raised);
+}
+.sSurface {
+  stroke: var(--sc-surface);
+}
+
+/* ambient motion */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.float {
+  animation: float 4.2s ease-in-out infinite;
+}
+.pulse {
+  animation: pulse 2.4s ease-in-out infinite;
+}
+.d1 {
+  animation-delay: -0.8s;
+}
+.d2 {
+  animation-delay: -1.6s;
+}
+.d3 {
+  animation-delay: -2.6s;
+}
+.d4 {
+  animation-delay: -3.3s;
+}
+
+/* A scene whose job has stopped (failed or cancelled) stops moving: the motion
+   says "the build is running", and only while it is. */
+.still * {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float,
+  .pulse {
+    animation: none;
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "title": "Raft log replication and commitment",
+  "brief": "## What you'll build\n\nThe other half of core Raft: `Start(command)` on the leader, AppendEntries with the consistency check, conflict truncation, `nextIndex`/`matchIndex`, the current-term commit rule, and an applier that delivers committed entries, in order, on an `applyCh`. Hook the applier up to your project 1 state machine and you have a replicated key-value store.\n\n## Why\n\nThis is where Raft's safety properties are earned: Log Matching from the consistency check, Leader Completeness from the election restriction you already wrote, and State Machine Safety from committing only current-term entries. The tests deliberately recreate the Figure 8 scenario on an unreliable network.\n\n## Constraints\n\n- Suggested language: **Go**, extending your project 2 code.\n- `Start` returns immediately with `(index, term, isLeader)`; it must not wait for commitment.\n- Truncate follower logs only from the first index whose term actually conflicts.\n- Advance `commitIndex` only by counting replicas of entries from the leader's current term.\n- Append a no-op entry when a server becomes leader (make it invisible to the state machine).\n- Send entries on `applyCh` without holding the Raft mutex.",
+  "starter": [
+    {
+      "path": "raft/replication.go",
+      "note": "Start(), the per-peer replicate loop, sendAppendEntries and handling of success and failure replies (including fast backup)."
+    },
+    {
+      "path": "raft/append_entries.go",
+      "note": "The AppendEntries handler: term check, consistency check, conflict truncation, append, and commitIndex update."
+    },
+    {
+      "path": "raft/commit.go",
+      "note": "advanceCommitIndex() with the current-term rule and the applier goroutine that feeds applyCh."
+    },
+    {
+      "path": "kvraft/server.go",
+      "note": "A KV server that submits commands via Start and applies them from applyCh to the project 1 state machine."
+    },
+    {
+      "path": "raft/replication_test.go",
+      "note": "Tests: basic agreement, follower failure, leader failure, rejoin of a partitioned leader, Figure 8 on an unreliable network."
+    }
+  ],
+  "hints": [
+    "Get basic agreement on a reliable network working before anything else: one command, three servers, all apply it at the same index.",
+    "Update matchIndex from the arguments you sent (PrevLogIndex + len(Entries)), never from len(rf.log) at reply time.",
+    "Ignore an AppendEntries reply if your term changed or you are no longer leader since sending it.",
+    "Implement fast backup (XTerm, XIndex, XLen) early. The unreliable-network tests have followers hundreds of entries behind and one-step backup will time out.",
+    "If Figure 8 tests fail with 'apply out of order' or mismatched commands, log every commitIndex change with the term of the entry at that index. A commit of a previous-term entry by counting replicas is the bug."
+  ],
+  "rubric": [
+    {
+      "criterion": "AppendEntries enforces the PrevLogIndex/PrevLogTerm check and truncates only on real conflicts",
+      "chapterKey": "c07-appendentries-log-matching"
+    },
+    {
+      "criterion": "Leader tracks nextIndex/matchIndex correctly and backs up quickly using conflict hints",
+      "chapterKey": "c07-appendentries-log-matching"
+    },
+    {
+      "criterion": "Only current-term entries are committed by counting; a no-op is appended at the start of each term",
+      "chapterKey": "c08-commitment"
+    },
+    {
+      "criterion": "Committed entries are applied exactly once, in index order, on every server",
+      "chapterKey": "c08-commitment"
+    },
+    {
+      "criterion": "Logs, terms and votes are persisted and the cluster recovers after any server restarts",
+      "chapterKey": null
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Basic agreement",
+      "body": "Implement Start, AppendEntries and the applier. Submit 10 commands to a three-server cluster on a reliable network. **Done when** every server delivers the same 10 commands in the same order on applyCh (with no-ops filtered out before they reach the state machine).",
+      "checkCmd": "go test ./raft -run TestBasicAgree -race"
+    },
+    {
+      "title": "Failures and rejoin",
+      "body": "Disconnect a follower, commit entries, reconnect it and check it catches up. Partition the leader away, let the old leader accept entries that can never commit, heal the partition, and check its uncommitted entries are overwritten. **Done when** the failure tests pass.",
+      "checkCmd": "go test ./raft -run 'TestFailAgree|TestFailNoAgree|TestRejoin|TestBackup' -race"
+    },
+    {
+      "title": "Figure 8 and persistence",
+      "body": "Run the unreliable Figure 8 test: random crashes, restarts and message loss, with servers frequently holding uncommitted previous-term entries. **Done when** it passes 30 times in a row and no server ever applies two different commands at the same index.",
+      "checkCmd": "go test ./raft -run 'TestFigure8Unreliable|TestPersist' -race -count=30"
+    },
+    {
+      "title": "Replicated KV store",
+      "body": "Wire kvraft to Raft. Clients send Put/Append/Get to the leader, which calls Start and waits for the entry to be applied. **Done when** concurrent clients see consistent values across leader changes on a reliable network.",
+      "checkCmd": "go test ./kvraft -run TestBasicKV -race"
+    }
+  ]
+}

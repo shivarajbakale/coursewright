@@ -88,6 +88,7 @@ function rootFor(relPath) {
   const dir = path.dirname(relPath);
   if (dir === 'components/_overview') return 'Overview';
   if (dir.startsWith('pages')) return 'Pages';
+  if (dir === 'illustrations') return 'Illustrations';
   if (dir === 'components' || dir === 'components/auth') return 'Shell';
   return null;
 }
@@ -97,7 +98,7 @@ function expectedTitle(relPath) {
   const base = path.basename(relPath, '.stories.tsx');
   const root = rootFor(relPath);
   if (!root) return null;
-  if (root === 'Overview' || root === 'Pages') return `${root}/${displayName(base)}`;
+  if (root === 'Overview' || root === 'Pages' || root === 'Illustrations') return `${root}/${displayName(base)}`;
   const owner = MEMBER_INDEX.get(base);
   if (!owner) return { unmapped: true, root, base };
   if (!owner.startsWith(`${root}/`)) {

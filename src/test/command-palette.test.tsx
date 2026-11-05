@@ -87,12 +87,12 @@ describe('command palette', () => {
     renderPalette();
     await open(user);
 
-    // "overview" is a keyword on Dashboard; it appears in no item's label.
-    await user.type(screen.getByRole('combobox'), 'overview');
+    // "embeddings" is a keyword on Sources; it appears in no item's label.
+    await user.type(screen.getByRole('combobox'), 'embeddings');
     await waitFor(() => {
       const options = screen.getAllByRole('option');
       expect(options).toHaveLength(1);
-      expect(options[0]).toHaveTextContent('Dashboard');
+      expect(options[0]).toHaveTextContent('Sources');
     });
   });
 

@@ -45,3 +45,28 @@
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
 }
+
+/* CopilotKit's chat reads its own tokens; point them at Mantine's so the
+   tutor sits on the app's surfaces in both schemes. */
+@layer app {
+  [data-copilotkit] {
+    --background: var(--mantine-color-body);
+    --foreground: var(--mantine-color-text);
+  }
+}
+
+/* Reduced motion, for the transitions no component owns. Mantine's buttons and
+   the kit's controls tween colour and transform on state changes; with the OS
+   asking for no motion those land on their end state at once. Framer entrances
+   answer the same setting in `lib/motion.ts`; spinners keep turning, because a
+   loader that stops reads as a hung page. */
+@layer app {
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0s !important;
+      transition-delay: 0s !important;
+    }
+  }
+}

@@ -35,3 +35,10 @@ dist-ssr
 
 # Screenshots written by `make ui-shots` for the ui-evaluator subagent.
 .ui-probe/
+
+# Python agent service
+agent/data/
+agent/.venv/
+agent/**/__pycache__/
+agent/.pytest_cache/
+agent/.env

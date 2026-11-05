@@ -143,7 +143,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 
 - **Use when:** Any run of body copy, a caption, a value, a secondary line.
 - **Instead:** `Title` for anything that is a heading in the document outline.
-- **Ours:** `src/components/stat-card.tsx`, `src/pages/Dashboard.tsx`
+- **Ours:** `src/components/stat-card.tsx`, `src/pages/Settings.tsx`
 - **Gotcha:** Secondary copy is `c="dimmed"`, not a colour of its own, and
   emphasis is `fw={500}` / `fw={600}` — ui-probe module C fails a view carrying
   more than five distinct size × weight pairs, so reach for the existing pair
@@ -208,7 +208,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** `Text fw={600}`, never: emphasis and "this is your match" are
   different claims, and `<mark>` is the one the browser and the screen reader
   already understand.
-- **Ours:** `src/pages/TeamPage.tsx` (the member rows mark what the search
+- **Ours:** `src/pages/Chapter/ChapterPage.tsx` (the member rows mark what the search
   matched)
 - **Gotcha:** `Highlight` matches case- and accent-insensitively across the
   whole string and marks every occurrence; `wholeWord` stops "the" lighting up
@@ -240,7 +240,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Use when:** Free text, one line or many.
 - **Instead:** `Select` / `Autocomplete` whenever the value is one of a known
   set — never make someone type a value the app already has.
-- **Ours:** `src/pages/Auth/LoginPage.tsx`, `src/pages/Customers/customer-form.tsx`
+- **Ours:** `src/pages/Auth/LoginPage.tsx`, `src/pages/Settings.tsx`
 - **Gotcha:** `label`, `description` and `error` are props, not siblings —
   Mantine wires the `for`/`aria-describedby`/`aria-invalid` links itself, and a
   hand-rolled `<label>` beside the input breaks them. With react-hook-form,
@@ -252,7 +252,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Use when:** A quantity the user types or steps — seats, a limit, a price.
 - **Instead:** `TextInput type="number"`, never: it returns a string, accepts
   `1e5` and `--3`, and its native spinner cannot be styled or removed.
-- **Ours:** `src/pages/Customers/customer-form.tsx`
+- **Ours:** *(not wired — no Coursewright screen uses it yet)*
 - **Gotcha:** `onChange` gives `number | string` — the string is what an
   in-progress entry like `"-"` or `""` looks like, so a handler that assumes a
   number writes `NaN` into form state. Pair `min`/`max` with
@@ -282,7 +282,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** `Radio.Group` below five when the options deserve description,
   `Autocomplete`/`Combobox` above ten or when the user knows the name and typing
   beats scanning, `SegmentedControl` when the choice re-renders a view.
-- **Ours:** `src/pages/TeamPage.tsx`
+- **Ours:** `src/pages/Tutor/TutorPage.tsx`
 - **Gotcha:** `data` values are **strings only** — a numeric id must be
   stringified going in and parsed coming out. `searchable` is a prop, not a
   different component. And **mounting one under jsdom costs ~25 seconds**:
@@ -326,7 +326,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
   displayed — a range, a density, a view mode.
 - **Instead:** `Tabs` when each option has its own panel of content,
   `Radio.Group` when the choice is submitted rather than applied.
-- **Ours:** `src/pages/Dashboard.tsx`, `src/pages/InboxPage.tsx`
+- **Ours:** *(not wired — no Coursewright screen uses it yet)*
 - **Gotcha:** `data` values are strings, and the control does not scroll — past
   five segments it squeezes rather than wraps. Two things about it are theme
   decisions this app has already made, both in `src/theme.ts`: a label neither
@@ -378,8 +378,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
   to invite.
 - **Instead:** `MultiSelect` the moment the set is fixed. A tag the backend has
   never heard of is a support ticket.
-- **Ours:** `src/pages/TeamPage.tsx` (the invite dialog takes a list of
-  addresses)
+- **Ours:** *(not wired — no Coursewright screen uses it yet)*
 - **Gotcha:** Values are strings, committed on Enter or on a suggestion click —
   `acceptValueOnBlur` decides whether a half-typed tag survives losing focus, and
   `splitChars` turns a pasted comma list into tags. Duplicates are dropped
@@ -556,8 +555,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
   address inside a checkout.
 - **Instead:** a `Title` above a `Stack` when the grouping is only visual. A
   fieldset is a claim about the form's structure, not a box.
-- **Ours:** `src/pages/Customers/customer-form.tsx` (freezes every field while
-  the create is in flight)
+- **Ours:** *(not wired — no Coursewright screen uses it yet)*
 - **Gotcha:** `disabled` disables every control inside it in one prop, which is
   the cheapest honest way to freeze a form while it submits.
   `variant="unstyled"` keeps the semantics without the border.
@@ -627,7 +625,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Use when:** A known fraction — quota used, steps done, upload position.
 - **Instead:** `Loader` when the total is unknown, `RingProgress` when the
   number is the content rather than a bar beside it.
-- **Ours:** `src/components/stat-card.tsx`, `src/pages/Customers/customer-columns.tsx`
+- **Ours:** `src/components/stat-card.tsx`, `src/pages/Course/CoursePage.tsx`
 - **Gotcha:** `value` is 0–100, not 0–1. Multi-segment bars use the compound
   form (`Progress.Root` + `Progress.Section`); a bar without a nearby number is
   decoration.
@@ -637,7 +635,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Use when:** A short status or category attached to a record.
 - **Instead:** `Text size="xs" c="dimmed"` when it is a label rather than a
   status; a badge that never changes is noise.
-- **Ours:** `src/pages/Customers/customer-columns.tsx`, `src/pages/BillingPage.tsx`
+- **Ours:** `src/pages/Settings.tsx`
 - **Gotcha:** Status must survive colour blindness — the word inside carries the
   meaning, `color` only reinforces it.
 
@@ -657,7 +655,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
   readable underneath.
 - **Instead:** `Skeleton` while the first data loads — there is nothing to cover
   yet; `loading` on the `Button` when only the action is busy.
-- **Ours:** `src/pages/Customers/customer-form.tsx`
+- **Ours:** *(not wired — no Coursewright screen uses it yet)*
 - **Gotcha:** It needs a positioned parent (`Box pos="relative"`), and it
   disables nothing: everything underneath stays focusable and clickable from the
   keyboard. Pair it with `Fieldset variant="unstyled" disabled`, which takes the
@@ -697,7 +695,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** a **route** the moment the task is long, deep-linkable,
   expensive, or worth refreshing without losing; `Drawer` when the task is a
   side panel.
-- **Ours:** `src/pages/Customers/CustomersPage.tsx`, `src/pages/TeamPage.tsx`
+- **Ours:** *(not wired — no Coursewright screen uses it yet)*
 - **Gotcha:** Always controlled (`opened` / `onClose`) — pair it with
   `useDisclosure`. Focus moves to the element carrying `data-autofocus`; without
   that attribute it lands on the close button, and the first keystroke is lost.
@@ -707,7 +705,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Use when:** Secondary context alongside the page — a detail pane, a filter
   panel, the mobile form of a modal.
 - **Instead:** `Modal` when the task interrupts, a route when it is the page.
-- **Ours:** `src/pages/Customers/CustomersPage.tsx`
+- **Ours:** `src/pages/Notes/NotesPage.tsx`
 - **Gotcha:** Same API as `Modal`, including the focus trap. `position="bottom"`
   is the phone idiom; a right drawer on a narrow screen is a modal with extra
   steps.
@@ -775,7 +773,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** a real `Modal` when the surface has content of its own; **no
   dialog at all** when the action is reversible — apply it and offer undo in a
   notification.
-- **Ours:** `src/pages/Customers/CustomerDetailPage.tsx`,
+- **Ours:** `src/pages/Notes/NotesPage.tsx`
   `src/components/theme-provider.tsx` (mounts the provider)
 - **Gotcha:** `modals.openConfirmModal` needs `ModalsProvider` above it or it
   silently does nothing. Name the object in the title — `Delete "Acme"?` — and
@@ -879,7 +877,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** separate routes when the view should survive a reload or be
   linkable; a sidebar rail past six sections; never tabs for settings, whose
   sections are destinations.
-- **Ours:** `src/pages/Customers/CustomerDetailPage.tsx`
+- **Ours:** `src/pages/Settings.tsx`
 - **Gotcha:** Panels stay mounted by default; a heavy panel wants
   `keepMounted={false}`. Content the user must **compare** never goes in tabs.
 
@@ -900,8 +898,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Use when:** A long list is served in pages and the page belongs in the URL.
 - **Instead:** the table's own pager where one already exists; infinite scroll
   only when the list has no end and nobody needs to come back to a position.
-- **Ours:** `src/components/data-table.tsx` (opt-in through `pageSize`),
-  `src/pages/Customers/CustomersPage.tsx`
+- **Ours:** `src/components/data-table.tsx`
 - **Gotcha:** `value` is 1-based, so the 0-based page index TanStack keeps has
   to be shifted on the way in and out. Filtering is the other half: it shrinks
   the row set under a page index that was valid a keystroke ago, and nothing
@@ -953,7 +950,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** the repo's `DataTable` the instant sorting, filtering, pagination
   or selection appears — do not grow a `Table` into one by hand. A card grid
   when the record is visual.
-- **Ours:** `src/components/data-table.tsx`, `src/pages/BillingPage.tsx`
+- **Ours:** `src/components/data-table.tsx`, `src/pages/Sources/SourcesPage.tsx`
 - **Gotcha:** The compound parts are required (`Table.Thead`, `Table.Tbody`,
   `Table.Tr`, `Table.Th`, `Table.Td`) — a raw `<tr>` inside is both a lint
   failure and an unstyled row. `stickyHeader` needs a scroll container with a
@@ -966,7 +963,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
   only in the layout.
 - **Instead:** `Table` when the rows are many records rather than one record's
   attributes. `SimpleGrid` when the pairs are not label/value at all.
-- **Ours:** `src/pages/Customers/CustomerDetailPage.tsx`
+- **Ours:** *(not wired — no Coursewright screen uses it yet)*
 - **Gotcha:** The compound parts are required — `DataList.Item` wrapping a
   `DataList.ItemLabel` and a `DataList.ItemValue`. The customer record used to
   be a 1px-gap `SimpleGrid` over a `Box component="dl"` with a local `Meta`
@@ -983,7 +980,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
   Mantine had no such component. Mantine 9 ships it with the same shape
   (`icon`, `title`, `description`, `EmptyState.Actions`), so the composite was
   deleted rather than maintained beside it.
-- **Ours:** `src/pages/Customers/CustomersPage.tsx`, `src/pages/InboxPage.tsx`
+- **Ours:** *(not wired — no Coursewright screen uses it yet)*
 - **Gotcha:** `icon` takes an **element**, not a component reference —
   `icon={<Building2 size={20} />}`, not `icon={Building2}`. The
   actions slot is `EmptyState.Actions`; children dropped in loose are laid out
@@ -998,7 +995,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
   all of them says nothing and costs the reader half a second before any of them
   can be read. `NumberFormatter` when the figure should be formatted but not
   animated.
-- **Ours:** `src/pages/Dashboard.tsx`
+- **Ours:** *(not wired — no Coursewright screen uses it yet)*
 - **Gotcha:** It does **not** carry Mantine's `data-reduce-motion`, so
   `respectReducedMotion` on the provider does not reach it — pass
   `animationDuration={0}` yourself when `useMotionEnabled()` is false, or probe
@@ -1033,7 +1030,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Use when:** An icon that needs a tinted surface — an empty state's glyph, a
   list row's category mark.
 - **Instead:** `ActionIcon` the moment it is clickable.
-- **Ours:** `src/components/app-sidebar.tsx`, `src/pages/InboxPage.tsx`
+- **Ours:** `src/components/app-sidebar.tsx`, `src/pages/Settings.tsx`
 - **Gotcha:** It is decorative by default; if it carries meaning, the meaning
   belongs in adjacent text.
 
@@ -1062,7 +1059,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Use when:** The trend or the comparison is the point.
 - **Instead:** a table when the user came for exact values; a chart plus a table
   is often the honest answer.
-- **Ours:** `src/pages/Dashboard.tsx`, `src/components/stat-card.tsx`
+- **Ours:** `src/components/stat-card.tsx`
 - **Gotcha:** Recharts underneath, so the container needs an explicit height
   (`h={220}`), and series colours are **theme colour names** (`'blue.6'`), not
   hex. Import the package's CSS or the axes render bare.
@@ -1084,7 +1081,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** `Tabs` when the sections are peers and switching is instant; a
   route when a section is really a page. Never hide something the user needs in
   order to finish.
-- **Ours:** `src/pages/BillingPage.tsx` (the billing questions)
+- **Ours:** `src/pages/Course/CoursePage.tsx` (the billing questions)
 - **Gotcha:** Set `order` (`h2`–`h6`): the control renders as a heading and the
   library will not pick the level for you, so the page outline is your
   responsibility. `multiple` allows more than one open panel;
@@ -1200,7 +1197,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** `Flex` when the direction itself is responsive, `SimpleGrid` when
   the children are cells rather than siblings. Never a `div` with a flex class —
   there is no CSS to back it.
-- **Ours:** `src/components/topbar.tsx`, `src/pages/TeamPage.tsx`
+- **Ours:** `src/components/topbar.tsx`, `src/pages/Settings.tsx`
 - **Gotcha:** `Group` does not wrap by default in the way a flex row does —
   `wrap="wrap"` is a prop. Neither shrinks its children; a long label needs
   `truncate` on the child, not on the group.
@@ -1212,7 +1209,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** `Grid` when columns have different spans; `Box display="grid"`
   with an explicit `gridTemplateColumns` when the track sizing is bespoke — an
   `auto-fit` / `minmax` layout is the one `SimpleGrid` cannot state.
-- **Ours:** `src/pages/Settings.tsx`, `src/pages/BillingPage.tsx`
+- **Ours:** `src/pages/Settings.tsx`
 - **Gotcha:** `cols={{ base: 1, sm: 2, lg: 4 }}` — a bare number is a fixed
   column count at every width, which is how a dashboard ends up with four
   columns on a phone.
@@ -1224,7 +1221,7 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
 - **Instead:** a plain `div` only when it carries nothing at all — no class, no
   style, just grouping two nodes. The moment it needs spacing, a size or a
   colour it is a `Box`.
-- **Ours:** `src/components/data-table.tsx`, `src/pages/InboxPage.tsx`
+- **Ours:** `src/components/data-table.tsx`, `src/pages/Auth/AuthLayout.tsx`
 - **Gotcha:** `Box` takes the whole style-prop set (`p`, `w`, `pos`, `bg`), and
   what is left over goes in `style` — `minHeight: 0`, `overflow`, a
   `gridTemplateColumns`. Reach for `style`, not a class.
@@ -1376,6 +1373,40 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
   *light* scheme's `primaryShade`, and keeps it in dark. With a palette whose
   dark fill is light and whose light fill is dark, that is white text on the
   lime. Return a scheme-dependent CSS variable rather than a colour.
+
+#### `useDisclosure` — @mantine/hooks
+
+- **Use when:** a boolean that opens and closes one surface — a Drawer, a Modal,
+  a collapsible pane — and you want `open`/`close`/`toggle` handlers by name.
+- **Instead:** a Zustand store when more than one component opens the surface
+  (the tutor panel is `useTutor` in `src/copilot/tutorStore.ts`).
+- **Ours:** `src/pages/Notes/NotesPage.tsx` (the page tree as a Drawer on small
+  screens).
+- **Gotcha:** the handlers are stable, so they are safe in effect deps; the
+  boolean is not a URL state — a Drawer that should survive a refresh belongs
+  in the route.
+
+#### `useDebouncedValue` — @mantine/hooks
+
+- **Use when:** a value drives a query and should settle before it does — a
+  search box feeding a Query hook.
+- **Instead:** a debounced callback (`useDebouncedCallback`) when the work is a
+  side effect, such as an autosave PATCH, not a derived value.
+- **Ours:** `src/pages/Notes/NotesPage.tsx` (note search).
+- **Gotcha:** returns a tuple `[debounced, cancel]`; destructure the first item,
+  and key the Query on the debounced value, never the raw one.
+
+#### `useComputedColorScheme` — @mantine/core
+
+- **Use when:** code outside Mantine's styling needs the resolved scheme —
+  a third-party renderer that takes a theme name (Mermaid) or a library that
+  themes from a `.dark` ancestor (CopilotKit).
+- **Instead:** CSS variables and `light-dark()` for anything Mantine renders;
+  they switch without a re-render.
+- **Ours:** `src/components/diagrams/MermaidDiagram.tsx`,
+  `src/copilot/TutorCopilot.tsx`.
+- **Gotcha:** pass a fallback (`useComputedColorScheme('dark')`) so the first
+  render before hydration picks the app's identity scheme, not light.
 
 #### `useHotkeys` — @mantine/hooks
 

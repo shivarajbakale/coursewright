@@ -1,0 +1,91 @@
+{
+  "title": "Distributed Systems: consensus with Raft",
+  "topic": "Raft consensus",
+  "summary": "Learn how a cluster of unreliable machines can agree on a single ordered log, using Raft as the worked example. You will move from replicated state machines and quorums through leader election, log replication and the commit rule, to snapshots, membership changes and linearizable clients, building a working Raft-backed key-value store along the way.",
+  "colour": "indigo",
+  "icon": "🗳️",
+  "concepts": [
+    {"key": "replicated-state-machine", "name": "Replicated state machine", "summary": "Identical deterministic state machines that apply the same log of commands in the same order end up in the same state."},
+    {"key": "consensus", "name": "Consensus", "summary": "Getting a group of servers to agree on a sequence of values despite failures, with safety that never depends on timing."},
+    {"key": "failure-models", "name": "Failure models", "summary": "The faults a protocol tolerates: crash-stop and crash-recover servers, lost or delayed messages and network partitions, but not Byzantine behaviour."},
+    {"key": "majority-quorum", "name": "Majority quorum", "summary": "Any decision needs agreement from more than half the cluster, and any two majorities share at least one server."},
+    {"key": "terms", "name": "Terms", "summary": "Monotonically increasing epochs that act as a logical clock, with at most one leader per term."},
+    {"key": "server-roles", "name": "Server roles", "summary": "Every server is a follower, a candidate or the leader, and moves between these roles on timeouts and higher terms."},
+    {"key": "raft-rpcs", "name": "Raft RPCs", "summary": "RequestVote and AppendEntries are the only two RPCs basic Raft needs; InstallSnapshot is added for compaction."},
+    {"key": "persistent-state", "name": "Persistent state", "summary": "currentTerm, votedFor and the log must reach stable storage before a server answers an RPC; everything else can be rebuilt."},
+    {"key": "leader-election", "name": "Leader election", "summary": "A follower that hears nothing for an election timeout becomes a candidate and wins the term with votes from a majority."},
+    {"key": "randomized-timeouts", "name": "Randomized timeouts", "summary": "Spreading election timeouts over a range makes split votes rare and resolves them quickly."},
+    {"key": "election-restriction", "name": "Election restriction", "summary": "Voters refuse candidates whose log is less up-to-date than their own, so every new leader already holds all committed entries."},
+    {"key": "log-replication", "name": "Log replication", "summary": "The leader pushes entries with AppendEntries, using a consistency check on the previous entry to force follower logs to match its own."},
+    {"key": "commitment", "name": "Commitment", "summary": "An entry is committed once the leader has stored an entry from its current term on a majority; committed entries are then applied in order."},
+    {"key": "log-compaction", "name": "Log compaction", "summary": "Snapshots replace a prefix of the log with the state it produced, and InstallSnapshot ships them to followers that fall behind."},
+    {"key": "membership-changes", "name": "Membership changes", "summary": "Changing the set of servers safely, one server at a time or via joint consensus, so two independent majorities never exist."},
+    {"key": "client-interaction", "name": "Client interaction", "summary": "Client sessions, duplicate detection and ReadIndex or leases turn Raft into a linearizable service."}
+  ],
+  "edges": [
+    {"from": "replicated-state-machine", "to": "consensus"},
+    {"from": "failure-models", "to": "consensus"},
+    {"from": "failure-models", "to": "majority-quorum"},
+    {"from": "consensus", "to": "terms"},
+    {"from": "terms", "to": "server-roles"},
+    {"from": "server-roles", "to": "raft-rpcs"},
+    {"from": "terms", "to": "persistent-state"},
+    {"from": "raft-rpcs", "to": "leader-election"},
+    {"from": "majority-quorum", "to": "leader-election"},
+    {"from": "persistent-state", "to": "leader-election"},
+    {"from": "leader-election", "to": "randomized-timeouts"},
+    {"from": "leader-election", "to": "election-restriction"},
+    {"from": "raft-rpcs", "to": "log-replication"},
+    {"from": "log-replication", "to": "election-restriction"},
+    {"from": "log-replication", "to": "commitment"},
+    {"from": "election-restriction", "to": "commitment"},
+    {"from": "commitment", "to": "log-compaction"},
+    {"from": "commitment", "to": "membership-changes"},
+    {"from": "majority-quorum", "to": "membership-changes"},
+    {"from": "commitment", "to": "client-interaction"}
+  ],
+  "modules": [
+    {
+      "key": "m1",
+      "title": "Foundations",
+      "summary": "Why replicated systems need consensus, which failures we design for, and the vocabulary Raft is built from: quorums, terms, roles and RPCs.",
+      "chapters": [
+        {"key": "c01-why-consensus", "title": "Why consensus?", "readingMinutes": 8, "conceptKeys": ["replicated-state-machine", "consensus"]},
+        {"key": "c02-failures-and-quorums", "title": "Failures and majority quorums", "readingMinutes": 8, "conceptKeys": ["failure-models", "majority-quorum"]},
+        {"key": "c03-terms-roles-rpcs", "title": "Terms, roles and the two RPCs", "readingMinutes": 10, "conceptKeys": ["terms", "server-roles", "raft-rpcs", "persistent-state"]}
+      ],
+      "projectKey": "p1-kv-state-machine"
+    },
+    {
+      "key": "m2",
+      "title": "Leader election",
+      "summary": "How a Raft cluster picks exactly one leader per term, recovers quickly from split votes, and makes sure the winner already holds every committed entry.",
+      "chapters": [
+        {"key": "c04-elections-and-timeouts", "title": "Elections and timeouts", "readingMinutes": 9, "conceptKeys": ["leader-election", "persistent-state"]},
+        {"key": "c05-split-votes", "title": "Split votes and randomized timeouts", "readingMinutes": 7, "conceptKeys": ["randomized-timeouts", "leader-election"]},
+        {"key": "c06-election-restriction", "title": "The election restriction", "readingMinutes": 8, "conceptKeys": ["election-restriction"]}
+      ],
+      "projectKey": "p2-leader-election"
+    },
+    {
+      "key": "m3",
+      "title": "Log replication",
+      "summary": "How the leader forces follower logs to match its own, and the precise rule that decides when an entry is committed and safe to apply.",
+      "chapters": [
+        {"key": "c07-appendentries-log-matching", "title": "AppendEntries and log matching", "readingMinutes": 10, "conceptKeys": ["log-replication"]},
+        {"key": "c08-commitment", "title": "Commitment and the current-term rule", "readingMinutes": 10, "conceptKeys": ["commitment", "election-restriction"]}
+      ],
+      "projectKey": "p3-log-replication"
+    },
+    {
+      "key": "m4",
+      "title": "Operating Raft",
+      "summary": "What a production Raft needs beyond the core algorithm: bounded logs via snapshots, safe cluster reconfiguration, and exactly-once, linearizable client semantics.",
+      "chapters": [
+        {"key": "c09-snapshots", "title": "Snapshots and log compaction", "readingMinutes": 9, "conceptKeys": ["log-compaction"]},
+        {"key": "c10-membership-and-clients", "title": "Membership changes and clients", "readingMinutes": 11, "conceptKeys": ["membership-changes", "client-interaction"]}
+      ],
+      "projectKey": "p4-snapshots-and-clients"
+    }
+  ]
+}

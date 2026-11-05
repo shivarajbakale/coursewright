@@ -1,0 +1,38 @@
+@keyframes flow {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(300px);
+    opacity: 0;
+  }
+}
+
+.flow {
+  animation: flow 3s linear infinite;
+}
+.f1 {
+  animation-delay: -0.6s;
+}
+.f2 {
+  animation-delay: -1.2s;
+}
+.f3 {
+  animation-delay: -1.8s;
+}
+.f4 {
+  animation-delay: -2.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow {
+    animation: none;
+  }
+}

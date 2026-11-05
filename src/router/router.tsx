@@ -1,55 +1,49 @@
 import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 import App from '@/App';
-import { Dashboard } from '@/pages/Dashboard';
 import { Settings } from '@/pages/Settings';
-import { InboxPage } from '@/pages/InboxPage';
-import { TeamPage } from '@/pages/TeamPage';
-import { BillingPage } from '@/pages/BillingPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { LoginPage } from '@/pages/Auth/LoginPage';
 import { SignupPage } from '@/pages/Auth/SignupPage';
-import { CustomersPage } from '@/pages/Customers/CustomersPage';
-import { CustomerDetailPage } from '@/pages/Customers/CustomerDetailPage';
+import { LibraryPage } from '@/pages/Library/LibraryPage';
+import { NewCoursePage } from '@/pages/NewCourse/NewCoursePage';
+import { GeneratingPage } from '@/pages/Generating/GeneratingPage';
+import { CoursePage } from '@/pages/Course/CoursePage';
+import { ChapterPage } from '@/pages/Chapter/ChapterPage';
+import { ProjectPage } from '@/pages/Project/ProjectPage';
+import { TutorPage } from '@/pages/Tutor/TutorPage';
+import { NotesPage } from '@/pages/Notes/NotesPage';
+import { SourcesPage } from '@/pages/Sources/SourcesPage';
 
 const rootRoute = createRootRoute({ component: App, notFoundComponent: NotFoundPage });
 
-// Public (no auth) — the AuthGuard in App.tsx lets these through.
 const loginRoute = createRoute({ path: '/login', component: LoginPage, getParentRoute: () => rootRoute });
 const signupRoute = createRoute({ path: '/signup', component: SignupPage, getParentRoute: () => rootRoute });
-
-// Protected
-const indexRoute = createRoute({ path: '/', component: Dashboard, getParentRoute: () => rootRoute });
-
-// The collection and one of its members are two routes, not two panes. The
-// list is what you scan and filter; the account is what you read, and it gets
-// the whole width to do it in. See docs/principles/screen-archetypes.md — the
-// `list` and `detail` shapes.
-const customersRoute = createRoute({
-  path: '/customers',
-  component: CustomersPage,
-  getParentRoute: () => rootRoute,
-});
-const customerDetailRoute = createRoute({
-  path: '/customers/$customerId',
-  component: CustomerDetailPage,
-  getParentRoute: () => rootRoute,
-});
-
+const libraryRoute = createRoute({ path: '/', component: LibraryPage, getParentRoute: () => rootRoute });
+const newRoute = createRoute({ path: '/new', component: NewCoursePage, getParentRoute: () => rootRoute });
+const buildingRoute = createRoute({ path: '/courses/$courseId/building', component: GeneratingPage, getParentRoute: () => rootRoute });
+const courseRoute = createRoute({ path: '/courses/$courseId', component: CoursePage, getParentRoute: () => rootRoute });
+const chapterRoute = createRoute({ path: '/courses/$courseId/chapters/$chapterId', component: ChapterPage, getParentRoute: () => rootRoute });
+const projectRoute = createRoute({ path: '/courses/$courseId/projects/$projectId', component: ProjectPage, getParentRoute: () => rootRoute });
+const tutorRoute = createRoute({ path: '/tutor', component: TutorPage, getParentRoute: () => rootRoute });
+const notesRoute = createRoute({ path: '/notes', component: NotesPage, getParentRoute: () => rootRoute });
+const notePageRoute = createRoute({ path: '/notes/$pageId', component: NotesPage, getParentRoute: () => rootRoute });
+const sourcesRoute = createRoute({ path: '/sources', component: SourcesPage, getParentRoute: () => rootRoute });
 const settingsRoute = createRoute({ path: '/settings', component: Settings, getParentRoute: () => rootRoute });
-const inboxRoute = createRoute({ path: '/inbox', component: InboxPage, getParentRoute: () => rootRoute });
-const teamRoute = createRoute({ path: '/team', component: TeamPage, getParentRoute: () => rootRoute });
-const billingRoute = createRoute({ path: '/billing', component: BillingPage, getParentRoute: () => rootRoute });
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
-  indexRoute,
-  customersRoute,
-  customerDetailRoute,
+  libraryRoute,
+  newRoute,
+  buildingRoute,
+  courseRoute,
+  chapterRoute,
+  projectRoute,
+  tutorRoute,
+  notesRoute,
+  notePageRoute,
+  sourcesRoute,
   settingsRoute,
-  inboxRoute,
-  teamRoute,
-  billingRoute,
 ]);
 
 const router = createRouter({ routeTree });

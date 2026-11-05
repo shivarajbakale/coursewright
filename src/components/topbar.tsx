@@ -1,11 +1,11 @@
 import { ActionIcon, Burger, Button, Divider, Group, Kbd, Text } from '@mantine/core';
 import { useRouterState } from '@tanstack/react-router';
-import { PanelLeft, Search } from 'lucide-react';
+import { MessagesSquare, PanelLeft, Search } from 'lucide-react';
+import { useTutor } from '@/copilot/tutorStore';
 
 import { useShellNav } from '@/hooks/use-shell-nav';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { AccountMenu } from '@/components/account-menu';
-import { NotificationsDropdown } from '@/components/notifications-dropdown';
 import { openCommandPalette } from '@/components/command-palette';
 import { pageTitleFor } from '@/config/nav';
 
@@ -26,6 +26,8 @@ export function Topbar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const title = pageTitleFor(pathname);
   const { railed, mobileOpen, toggleRail, toggleMobile } = useShellNav();
+  const tutorOpen = useTutor((s) => s.panelOpen);
+  const toggleTutor = useTutor((s) => s.togglePanel);
 
   return (
     <Group
@@ -75,6 +77,15 @@ export function Topbar() {
 
       <Group gap={6} wrap="nowrap" ml="auto">
         <Button
+          variant={tutorOpen ? 'light' : 'default'}
+          size="xs"
+          leftSection={<MessagesSquare size={14} />}
+          onClick={toggleTutor}
+          aria-pressed={tutorOpen}
+        >
+          Tutor
+        </Button>
+        <Button
           variant="default"
           size="xs"
           onClick={openCommandPalette}
@@ -84,7 +95,6 @@ export function Topbar() {
         >
           Search…
         </Button>
-        <NotificationsDropdown />
         <ThemeToggle />
         <Divider orientation="vertical" my={10} ml={4} />
         <AccountMenu />

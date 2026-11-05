@@ -1,0 +1,54 @@
+{
+  "questions": [
+    {
+      "prompt": "A follower receives a RequestVote for its current term, but it has already voted for a different candidate in that term. What does it reply?",
+      "options": [
+        "VoteGranted: false, because it votes at most once per term",
+        "VoteGranted: true, because the newer request overrides the old vote",
+        "VoteGranted: true only if the new candidate has a longer log",
+        "It does not reply at all"
+      ],
+      "answer": 0,
+      "explanation": "Votes are first-come-first-served and limited to one per term; that limit, combined with majority overlap, gives Election Safety. A longer log does not let a server change its vote: log comparison only decides whether a vote may be granted, never whether one may be revoked.",
+      "conceptKeys": [
+        "leader-election"
+      ]
+    },
+    {
+      "prompt": "A candidate in term 4 receives an AppendEntries from another server claiming to be leader with term 4. What should it do?",
+      "options": [
+        "Reject it, since a candidate only accepts messages with a strictly higher term",
+        "Start a new election in term 5",
+        "Recognise the sender as leader and return to follower",
+        "Keep collecting votes and compare totals with the other leader"
+      ],
+      "answer": 2,
+      "explanation": "If the leader's term is at least as large as the candidate's currentTerm, the leader is legitimate (there is at most one leader per term), so the candidate steps down. Only a strictly smaller term is rejected.",
+      "conceptKeys": [
+        "leader-election"
+      ]
+    },
+    {
+      "prompt": "Why does a candidate check that its currentTerm still equals the election's term before counting a granted vote?",
+      "options": [
+        "Because a vote from an earlier election might otherwise be counted toward a later one",
+        "Because RPC replies can be forged",
+        "Because votes must be persisted in term order",
+        "Because the leader needs the term to initialise nextIndex"
+      ],
+      "answer": 0,
+      "explanation": "Replies can arrive late. If the candidate has since moved to a new term, a stale grant was cast for a different election and counting it could give a false majority. Forgery is outside Raft's non-Byzantine failure model.",
+      "conceptKeys": [
+        "leader-election",
+        "persistent-state"
+      ]
+    }
+  ],
+  "diagrams": [
+    {
+      "kind": "flow",
+      "title": "A leader election in a five-server cluster",
+      "source": "title A Raft leader election\n\ns1 \"Server 1\" state follower\ns2 \"Server 2\" state follower\ns3 \"Server 3\" state follower\ns4 \"Server 4\" state follower\ns5 \"Server 5\" state follower\nterm  \"S1 current term\" counter 1\nvotes \"Votes for S1\" counter 0\n\ns1 -> s2, s3, s4, s5\ns2, s3, s4, s5 -> s1\n\nstyle follower #8a94a6\nstyle candidate #f2a93b\nstyle leader #4caf7a\nstyle granted #4caf7a\n\n# Five followers in term 1. The old leader has crashed, so heartbeats have stopped.\npause \"Each follower runs its own randomized election timer, 150 to 300 ms.\"\n\n# S1's election timeout fires first, so it becomes a candidate for term 2.\ns1 : candidate  \"No AppendEntries arrived before the timer expired.\"\nterm +1  \"currentTerm goes from 1 to 2 and is written to stable storage.\"\nvotes +1  \"A candidate always votes for itself: votedFor = S1, persisted.\"\n\n# S1 asks every other server for its vote with RequestVote.\ntogether\n  new rv2 at s1\n  new rv3 at s1\n  new rv4 at s1\n  new rv5 at s1\ntogether stagger 100ms\n  rv2 -> s2\n  rv3 -> s3\n  rv4 -> s4\n  rv5 -> s5\npause \"Each request carries term 2, candidateId, lastLogIndex and lastLogTerm.\"\n\n# S2 and S3 see a newer term and an up-to-date log, so they grant their votes.\ntogether\n  remove rv2\n  remove rv3\n  new ok2 at s2 granted\n  new ok3 at s3 granted\ntogether stagger 150ms\n  ok2 -> s1\n  ok3 -> s1\nvotes +2  \"Each voter records votedFor = S1 before replying, so it cannot vote twice in term 2.\"\n\n# Three of five votes is a majority, so S1 becomes leader for term 2.\ntogether\n  remove ok2\n  remove ok3\ns1 : leader  \"Two candidates cannot both get 3 of 5 votes in the same term.\"\n\n# The late votes from S4 and S5 still arrive, but S1 has already won.\ntogether\n  remove rv4\n  remove rv5\n  new ok4 at s4 granted\n  new ok5 at s5 granted\ntogether stagger 100ms\n  ok4 -> s1\n  ok5 -> s1\nvotes +2  \"Extra votes change nothing; a majority was enough.\"\ntogether\n  remove ok4\n  remove ok5\n\n# The new leader sends empty AppendEntries heartbeats to assert its authority.\ntogether\n  new hb2 at s1\n  new hb3 at s1\n  new hb4 at s1\n  new hb5 at s1\ntogether stagger 80ms\n  hb2 -> s2\n  hb3 -> s3\n  hb4 -> s4\n  hb5 -> s5\npause \"Each follower adopts term 2 and resets its election timer, so no new election starts.\"\n"
+    }
+  ]
+}

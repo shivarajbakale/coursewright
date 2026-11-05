@@ -1,23 +1,10 @@
 /**
- * MSW handler registry.
- *
- * Add one handler array per resource. The `add-api-endpoint` and `add-feature`
- * skills append here automatically.
+ * MSW handler registry. One handler array per resource.
  */
-import { billingHandlers } from './billingHandlers';
+import { coursewrightHandlers } from './coursewrightHandlers';
 import { notificationHandlers } from './notificationHandlers';
-import { customerHandlers } from './customerHandlers';
-import { teamHandlers } from './teamHandlers';
 
-export const handlers = [
-  ...customerHandlers,
-  ...notificationHandlers,
-  ...teamHandlers,
-  ...billingHandlers,
-  // ...add your resource handlers here
-];
+export const handlers = [...coursewrightHandlers, ...notificationHandlers];
 
-export { billingHandlers } from './billingHandlers';
+export { coursewrightHandlers } from './coursewrightHandlers';
 export { notificationHandlers } from './notificationHandlers';
-export { customerHandlers } from './customerHandlers';
-export { teamHandlers } from './teamHandlers';

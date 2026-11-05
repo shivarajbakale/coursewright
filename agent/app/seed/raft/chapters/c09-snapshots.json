@@ -1,0 +1,41 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does a snapshot store lastIncludedTerm and not just the state machine's state?",
+      "options": [
+        "So the AppendEntries consistency check for the entry right after the snapshot still has a PrevLogTerm to compare",
+        "So the follower knows which leader created the snapshot",
+        "So the state machine can replay the discarded entries",
+        "Because RequestVote requires it to break ties"
+      ],
+      "answer": 0,
+      "explanation": "After compaction, the first remaining entry's predecessor is the last entry inside the snapshot. Without its term the Log Matching check could not run. The last log term used in RequestVote also falls back to it when the log is empty, but that is a consequence, not a tie-breaker.",
+      "conceptKeys": ["log-compaction"]
+    },
+    {
+      "prompt": "A follower receives an InstallSnapshot covering up to index 500 (term 4), and it already has entries up to index 520, with index 500 having term 4. What should it do?",
+      "options": [
+        "Discard its entire log and load the snapshot",
+        "Reject the snapshot because its log is longer",
+        "Keep entries 501 to 520, discard the ones the snapshot covers, and reply",
+        "Apply the snapshot on top of its current state machine without changing the log"
+      ],
+      "answer": 2,
+      "explanation": "If the entry at lastIncludedIndex matches, the snapshot is just a prefix of the follower's log, so the following entries are still valid and the leader may be counting on them. Discarding the whole log is only correct when there is no matching entry.",
+      "conceptKeys": ["log-compaction"]
+    },
+    {
+      "prompt": "Which of these must be included in a key-value server's snapshot?",
+      "options": [
+        "Only the key-value map",
+        "The key-value map and the per-client deduplication table",
+        "The leader's nextIndex and matchIndex arrays",
+        "The full list of discarded log entries"
+      ],
+      "answer": 1,
+      "explanation": "Anything that affects how future commands are applied belongs in the snapshot. Without the dedup table, a server restored from a snapshot would re-execute retried requests. nextIndex and matchIndex are volatile leader state, not state machine state.",
+      "conceptKeys": ["log-compaction"]
+    }
+  ],
+  "diagrams": []
+}

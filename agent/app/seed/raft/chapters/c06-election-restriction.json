@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Voter V's log ends with an entry at index 8, term 4. Candidate C's log ends at index 5, term 6. Does V's up-to-date check pass?",
+      "options": [
+        "No, because C's log is shorter",
+        "Yes, because C's last entry has a later term",
+        "Only if V has not seen term 6 before",
+        "It depends on which entries are committed"
+      ],
+      "answer": 1,
+      "explanation": "Raft compares the last entry's term first and only falls back to length when the terms are equal. A last term of 6 beats 4 regardless of length. Length is the tempting answer, but a long log can be full of uncommitted entries from a stale leader.",
+      "conceptKeys": [
+        "election-restriction"
+      ]
+    },
+    {
+      "prompt": "Why does Raft restrict which candidates can win instead of letting a new leader fetch missing committed entries after it is elected?",
+      "options": [
+        "Because entries only flow from leader to followers and a leader never overwrites its own log, so it must already hold every committed entry",
+        "Fetching entries would require Byzantine fault tolerance",
+        "Because followers delete their logs during an election",
+        "Because the leader cannot send RPCs until it has committed an entry"
+      ],
+      "answer": 0,
+      "explanation": "Raft's simplicity comes from one-way flow and Leader Append-Only. If a leader lacked a committed entry it would overwrite it on followers. Other algorithms do transfer entries to a new leader, but at the cost of extra mechanism that Raft avoids.",
+      "conceptKeys": [
+        "election-restriction"
+      ]
+    },
+    {
+      "prompt": "Logs (terms per entry): S1 = 1 1 2, S2 = 1 1 1 1, S3 = 1 1 2 2, in a three-server cluster. Which server can NOT be elected?",
+      "options": [
+        "S1",
+        "S3",
+        "S2",
+        "All three can be elected"
+      ],
+      "answer": 2,
+      "explanation": "S2's last term is 1, so both S1 and S3 (last term 2) refuse it and it gets only its own vote. S1 is tempting because it is shortest, but its last term 2 beats S2, so with S2's vote and its own it has a majority of 2. S3 beats both.",
+      "conceptKeys": [
+        "election-restriction"
+      ]
+    }
+  ],
+  "diagrams": []
+}

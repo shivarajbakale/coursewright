@@ -3,7 +3,5 @@
  */
 
 export * from './api.types';
-export * from './customer.types';
 export * from './notification.types';
-export * from './team.types';
-export * from './billing.types';
+export * from './coursewright.types';

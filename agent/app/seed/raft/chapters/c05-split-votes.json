@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "What can a split vote cause in a Raft cluster?",
+      "options": [
+        "Two leaders in the same term",
+        "A committed entry being lost",
+        "A follower voting twice in one term",
+        "A term that ends with no leader, delaying progress"
+      ],
+      "answer": 3,
+      "explanation": "Split votes only hurt liveness: the term ends leaderless and a new election must run. Two leaders in one term is impossible because each server still votes once per term and majorities overlap.",
+      "conceptKeys": [
+        "randomized-timeouts",
+        "leader-election"
+      ]
+    },
+    {
+      "prompt": "An operator sets heartbeat interval to 100 ms and election timeout to a random value in 110 to 130 ms. What is the most likely symptom?",
+      "options": [
+        "Frequent unnecessary elections, because one delayed heartbeat lets a follower time out",
+        "Log entries being committed out of order",
+        "Followers refusing to vote for anyone",
+        "Nothing; this satisfies broadcastTime << electionTimeout"
+      ],
+      "answer": 0,
+      "explanation": "The election timeout should be several heartbeat intervals long so a single lost or slow heartbeat does not trigger an election. Here a follower gets roughly one heartbeat per timeout, so any jitter causes leader churn. Safety is unaffected, so out-of-order commits cannot happen.",
+      "conceptKeys": [
+        "randomized-timeouts"
+      ]
+    },
+    {
+      "prompt": "Why should a server pick a fresh random timeout every time it resets its election timer, rather than choosing one value at startup?",
+      "options": [
+        "Because the term number is used as the random seed",
+        "So that two servers that happened to tie once are unlikely to tie again on the retry",
+        "Because the leader assigns each follower's timeout in its heartbeat",
+        "To make sure the timeout increases exponentially after each failure"
+      ],
+      "answer": 1,
+      "explanation": "If two servers drew nearly equal fixed timeouts, they would collide in every election. Re-randomizing on each reset breaks the tie with high probability on the next round. Raft does not use exponential backoff for elections, and leaders do not assign timeouts.",
+      "conceptKeys": [
+        "randomized-timeouts"
+      ]
+    }
+  ],
+  "diagrams": []
+}

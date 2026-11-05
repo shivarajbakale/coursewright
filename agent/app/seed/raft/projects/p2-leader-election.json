@@ -1,0 +1,68 @@
+{
+  "title": "Raft leader election",
+  "brief": "## What you'll build\n\nThe election half of Raft on top of your project 1 log, persister and network: terms, the three roles, RequestVote, randomized election timeouts and heartbeats (empty AppendEntries). By the end, a cluster of 3 to 7 servers elects exactly one leader, keeps it while it is healthy, and replaces it within about a second when it crashes or is partitioned away.\n\n## Why\n\nElections are where Raft's safety argument starts: one vote per term, persisted before replying, and majorities that overlap. They are also where most concurrency bugs first appear, so it pays to get them solid before log replication adds more moving parts.\n\n## Constraints\n\n- Suggested language: **Go**, using goroutines, one mutex per Raft instance, and your `labnet` from project 1.\n- Persist `currentTerm` and `votedFor` with your persister **before** replying to any RPC.\n- Heartbeats at most 10 per second; election timeout randomized in a range such as 300 to 600 ms so the tester's network delays do not cause constant elections.\n- Implement the up-to-date log check in RequestVote now, even though logs stay empty in this project; project 3 depends on it.\n- Never hold the mutex while sending an RPC or sleeping.",
+  "starter": [
+    {
+      "path": "raft/raft.go",
+      "note": "The Raft struct (persistent and volatile state, role), Make() to start a server, and GetState() returning (term, isLeader)."
+    },
+    {
+      "path": "raft/election.go",
+      "note": "The ticker goroutine, startElection, the RequestVote handler and the vote-counting logic."
+    },
+    {
+      "path": "raft/rpc_types.go",
+      "note": "RequestVoteArgs/Reply and AppendEntriesArgs/Reply structs exactly as in Figure 2."
+    },
+    {
+      "path": "raft/persist.go",
+      "note": "persist() and readPersist() encoding currentTerm, votedFor and the log into the project 1 persister."
+    },
+    {
+      "path": "raft/election_test.go",
+      "note": "Tests: initial election, re-election after leader failure, many elections under churn, and persistence across restarts."
+    }
+  ],
+  "hints": [
+    "Write one helper, becomeFollower(term), that sets currentTerm, clears votedFor, sets role and persists. Call it everywhere you see a higher term, in requests and in replies.",
+    "Use a single ticker goroutine that wakes every 10 to 20 ms and checks whether time.Now() is past an electionDeadline field. That is much easier to get right than resetting time.Timer objects.",
+    "When a vote reply arrives, check that you are still a candidate and that currentTerm equals the term you started the election in before counting it.",
+    "Only reset the election timer when you grant a vote or receive AppendEntries from the current leader, not on every RequestVote you receive.",
+    "If you see two leaders, print (server, term, role) on every transition and look for a server that voted twice in one term: you are almost certainly not persisting votedFor, or not clearing it only when the term changes."
+  ],
+  "rubric": [
+    {
+      "criterion": "Exactly one leader per term under repeated crashes and partitions",
+      "chapterKey": "c04-elections-and-timeouts"
+    },
+    {
+      "criterion": "currentTerm and votedFor are persisted before any RPC reply, and survive restart",
+      "chapterKey": "c03-terms-roles-rpcs"
+    },
+    {
+      "criterion": "Election timeouts are randomized and re-randomized on every reset; heartbeats keep a healthy leader in place",
+      "chapterKey": "c05-split-votes"
+    },
+    {
+      "criterion": "RequestVote implements the last-term-then-last-index up-to-date check",
+      "chapterKey": "c06-election-restriction"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "First leader",
+      "body": "Start three servers on a reliable network. **Done when** exactly one reports `isLeader` within a second, every server agrees on the term, and the term stays unchanged for several seconds (heartbeats are working).",
+      "checkCmd": "go test ./raft -run TestInitialElection -race"
+    },
+    {
+      "title": "Re-election",
+      "body": "Disconnect the leader. A new leader must appear among the remaining majority within a second or so. Reconnect the old leader: it must step down when it sees the higher term. Disconnect two of three servers: no leader may be elected. **Done when** the re-election test passes.",
+      "checkCmd": "go test ./raft -run TestReElection -race"
+    },
+    {
+      "title": "Many elections and restarts",
+      "body": "Run seven servers, repeatedly disconnect random subsets and restart servers (reloading persisted state). Assert there is never more than one leader in any term. **Done when** the test passes 50 times in a row.",
+      "checkCmd": "go test ./raft -run 'TestManyElections|TestPersistElection' -race -count=50"
+    }
+  ]
+}

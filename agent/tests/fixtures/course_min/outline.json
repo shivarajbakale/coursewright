@@ -1,0 +1,20 @@
+{
+  "title": "Hash tables in practice",
+  "topic": "Hash tables",
+  "summary": "A tiny fixture course used by the materialise test.",
+  "colour": "teal",
+  "icon": "🧮",
+  "concepts": [
+    {"key": "hashing", "name": "Hashing", "summary": "Mapping keys to buckets."},
+    {"key": "collisions", "name": "Collisions", "summary": "Two keys in one bucket."}
+  ],
+  "edges": [{"from": "hashing", "to": "collisions"}],
+  "modules": [
+    {"key": "m1", "title": "Basics", "summary": "Hashing and collisions.",
+     "chapters": [
+       {"key": "c01-hashing", "title": "Hash functions", "readingMinutes": 5, "conceptKeys": ["hashing"]},
+       {"key": "c02-collisions", "title": "Handling collisions", "readingMinutes": 6, "conceptKeys": ["collisions"]}
+     ],
+     "projectKey": "p1-map"}
+  ]
+}

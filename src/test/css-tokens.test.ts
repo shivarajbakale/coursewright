@@ -84,11 +84,23 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+function moduleCss(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(join(ROOT, dir))) {
+    const rel = join(dir, entry);
+    if (statSync(join(ROOT, rel)).isDirectory()) moduleCss(rel, out);
+    else if (entry.endsWith('.module.css')) out.push(rel);
+  }
+  return out;
+}
+
 describe('CSS token references', () => {
   const files = [...sourceFiles('src'), ...sourceFiles('.storybook')].filter(
     (f) => !f.endsWith('css-tokens.test.ts')
   );
   const declaredInSource = inlineDeclarations(files);
+  // A CSS module that declares `--x:` on its own class (the illustrations'
+  // scene tokens) declares it as surely as App.css does.
+  for (const f of moduleCss('src')) for (const n of declarations(stripComments(readFileSync(join(ROOT, f), 'utf8')))) declaredInSource.add(n);
 
   /** Every `var(--x)` with no fallback, as `file:line --x`. */
   function references(): { file: string; line: number; name: string }[] {

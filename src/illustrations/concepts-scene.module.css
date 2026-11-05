@@ -1,0 +1,21 @@
+@keyframes draw {
+  0% {
+    stroke-dashoffset: 260;
+  }
+  60%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.draw {
+  stroke-dasharray: 260;
+  animation: draw 3.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw {
+    animation: none;
+    stroke-dasharray: none;
+  }
+}

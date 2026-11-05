@@ -1,0 +1,360 @@
+/* Flowmovie stock styles — include via `flowmovie/flowmovie.css`.
+ * All class names use the fm- prefix; colors come from CSS variables with
+ * dark defaults so hosts can retheme without touching the SVG. */
+.fm-player {
+  --fm-bg: #101216;
+  --fm-bg-raise: #16191f;
+  --fm-panel: #1c2027;
+  --fm-panel-deep: #0c0e11;
+  --fm-line: #2c333e;
+  --fm-ink: #ece9e2;
+  --fm-ink-dim: #b9b4a8;
+  --fm-ink-faint: #9a968c;
+  --fm-accent: #f2a93b;
+  --fm-accent-ink: #1a1408;
+  --fm-accent-soft: rgba(242, 169, 59, .13);
+  --fm-paper: #f4efe3;
+  --fm-paper-ink: #211c14;
+  --fm-paper-dim: #5d564a;
+  --fm-bad: #e5635e;
+  --fm-radius: 14px;
+  /* Stage design language (src/theme.js holds the same defaults). */
+  --fm-stage: #0d0f13;
+  --fm-grid: rgba(236, 233, 226, .035);
+  --fm-node: #171a20;
+  --fm-node-top: #1d2129;
+  --fm-node-well: #121419;
+  --fm-well-edge: rgba(0, 0, 0, .35);
+  --fm-node-edge: rgba(236, 233, 226, .08);
+  --fm-node-hi: rgba(255, 255, 255, .05);
+  --fm-slot: rgba(236, 233, 226, .07);
+  --fm-port: rgba(236, 233, 226, .24);
+  --fm-link: rgba(236, 233, 226, .16);
+  --fm-token: #0f1115;
+  --fm-token-top: #171a21;
+  --fm-font: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--fm-ink);
+  font-family: var(--fm-font);
+  container-type: inline-size;
+  container-name: fm-player;
+}
+.fm-player:focus { outline: none; }
+.fm-player:focus-visible { outline: 2px solid var(--fm-accent); outline-offset: 2px; }
+
+.fm-screen {
+  background: var(--fm-stage);
+  border: 1px solid var(--fm-line);
+  border-radius: var(--fm-radius);
+  box-shadow: 0 12px 32px -16px rgba(0, 0, 0, .8);
+  overflow: hidden;
+}
+.fm-screen-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; border-bottom: 1px solid var(--fm-line);
+}
+.fm-movie-title {
+  font-size: 14px; color: var(--fm-ink-dim); margin: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fm-scene-label {
+  margin-left: auto; font-size: 13px; color: var(--fm-ink-faint);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.fm-stage-root { position: relative; }
+
+/* The explanation bubble: a tooltip beside the place the action is at,
+ * in a spot that covers no other card, token or link. The renderer sets
+ * left/top every frame (its glide is in JS, so no transition on them). */
+.fm-callout {
+  position: absolute; left: 0; top: 0; z-index: 5; width: max-content; max-width: 280px;
+  padding: 9px 12px 10px; border-radius: 10px;
+  background: rgba(22, 25, 31, .96); color: var(--fm-ink);
+  box-shadow: 0 0 0 1px var(--fm-node-edge), 0 16px 40px -12px rgba(0, 0, 0, .85);
+  opacity: 0; transition: opacity .2s ease-out;
+  pointer-events: none;
+}
+.fm-callout.show { opacity: 1; }
+/* Authorship badges are author tooling, not narration: kept in the DOM
+ * (hosts and tests can read them) but not shown to viewers. */
+.fm-caption .fm-badge { display: none; }
+
+.fm-caption {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 12px 16px; border-top: 1px solid var(--fm-line);
+  font-size: 15px; line-height: 1.5; min-height: 48px;
+}
+.fm-caption-text { color: var(--fm-ink); text-wrap: pretty; }
+.fm-caption { flex-wrap: wrap; }
+/* What is happening, then why, then what it leads to, in plain words. */
+.fm-beat {
+  display: grid; gap: 4px;
+  font-size: 13px; line-height: 1.45; color: var(--fm-ink);
+  transition: opacity .25s ease-out;
+}
+.fm-beat[hidden] { display: none; }
+.fm-beat p { margin: 0; text-wrap: pretty; }
+.fm-beat-why { color: var(--fm-ink-dim); }
+.fm-beat-effect { color: var(--fm-accent); font-size: 12.5px; }
+/* A token named in the text wears its stage pill's state dot. */
+.fm-tok { font-weight: 600; white-space: nowrap; }
+.fm-tok i {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin: 0 5px 0 1px;
+  vertical-align: middle; background: var(--fm-ink-faint); position: relative; top: -1px;
+}
+/* Between beats the last one stays up, quieter, so nothing blinks. */
+.fm-beat-settled .fm-beat-what { opacity: .7; }
+/* On-stage narration (default): a subtitle over the stage's bottom edge. */
+.fm-stage-frame { position: relative; }
+.fm-stage-overlay {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
+  display: flex; justify-content: center; padding: 0 16px 14px; pointer-events: none;
+}
+.fm-caption.fm-caption-stage {
+  border-top: 0; min-height: 0; max-width: min(88%, 600px); padding: 8px 14px;
+  justify-content: center; text-align: center;
+  background: rgba(8, 9, 11, .74); border-radius: 10px; font-size: 15px; line-height: 1.45;
+  box-shadow: 0 0 0 1px var(--fm-node-edge), 0 10px 30px -14px rgba(0, 0, 0, .8);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.fm-caption-stage .fm-caption-text {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+}
+@container fm-player (max-width: 720px) {
+  /* Too narrow to overlay: the subtitle flows under the stage. */
+  .fm-stage-overlay { position: static; padding: 0; }
+  .fm-caption.fm-caption-stage {
+    max-width: none; width: 100%; border-radius: 0; box-shadow: none; background: transparent;
+    border-top: 1px solid var(--fm-line); font-size: 13px; line-height: 1.4; padding: 10px 12px;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  .fm-callout { padding: 7px 10px 8px; max-width: 220px; }
+  .fm-callout .fm-beat { font-size: 12px; }
+  .fm-callout .fm-beat-effect { font-size: 11.5px; }
+}
+
+/* Transport: the timeline spans the full width on top; controls sit in
+ * one row below (scene/step/play group left, time and speed right). */
+.fm-transport {
+  container-type: inline-size;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 2px 2px;
+}
+.fm-controls { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.fm-tgroup { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.fm-tbtn {
+  appearance: none; border: 0; background: transparent;
+  color: var(--fm-ink-dim); border-radius: 10px; width: 40px; height: 40px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 0; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; flex: none;
+  transition: background 160ms ease-out, color 160ms ease-out, transform 120ms ease-out;
+}
+.fm-tbtn:hover { background: var(--fm-bg-raise); color: var(--fm-ink); }
+.fm-tbtn:active { transform: scale(.95); }
+.fm-tbtn:focus-visible { outline: 2px solid var(--fm-accent); outline-offset: 1px; }
+.fm-tbtn-play {
+  width: auto; min-width: 96px; padding: 0 16px 0 12px;
+  background: var(--fm-accent); color: var(--fm-accent-ink); border-radius: 999px; font-weight: 600;
+}
+.fm-tbtn-play:hover { background: var(--fm-accent); color: var(--fm-accent-ink); filter: brightness(1.08); }
+.fm-icon { display: block; fill: currentColor; stroke: none; }
+.fm-icon-line { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.fm-icon-wrap { display: inline-flex; }
+.fm-icon-wrap[hidden] { display: none; }
+.fm-play-word { font-size: 14px; }
+
+.fm-scrub-wrap { position: relative; height: 22px; }
+input.fm-scrub {
+  -webkit-appearance: none; appearance: none; display: block;
+  width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer;
+  --fm-p: 0%;
+}
+input.fm-scrub:focus { outline: none; }
+input.fm-scrub::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--fm-accent) var(--fm-p), var(--fm-line) var(--fm-p));
+}
+input.fm-scrub::-moz-range-track { height: 4px; border-radius: 2px; background: var(--fm-line); }
+input.fm-scrub::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--fm-accent); }
+input.fm-scrub::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border-radius: 50%;
+  background: var(--fm-ink); box-shadow: 0 0 0 3px rgba(0, 0, 0, .35);
+  transition: transform 120ms ease-out;
+}
+input.fm-scrub::-moz-range-thumb {
+  width: 14px; height: 14px; border: 0; border-radius: 50%;
+  background: var(--fm-ink); box-shadow: 0 0 0 3px rgba(0, 0, 0, .35);
+}
+input.fm-scrub:hover::-webkit-slider-thumb, input.fm-scrub:active::-webkit-slider-thumb { transform: scale(1.15); }
+input.fm-scrub:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--fm-accent); }
+/* Scene marks sit on the track itself; the 7px inset matches the thumb
+ * radius, which is where the browser maps 0% and 100%. */
+.fm-marks { position: absolute; left: 7px; right: 7px; top: 50%; height: 0; pointer-events: none; }
+.fm-marks i {
+  position: absolute; top: -4px; width: 2px; height: 8px; margin-left: -1px;
+  background: var(--fm-panel-deep); border-radius: 1px;
+}
+.fm-marks i:first-child { display: none; }
+
+/* Timeline hover preview. */
+.fm-preview {
+  position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 6; width: 208px;
+  transform: translateX(-50%) translateY(4px); opacity: 0; pointer-events: none;
+  background: rgba(16, 18, 22, .97); border-radius: 10px; padding: 6px 6px 8px;
+  box-shadow: 0 0 0 1px var(--fm-node-edge), 0 18px 40px -14px rgba(0, 0, 0, .9);
+  transition: opacity 140ms ease-out, transform 140ms ease-out;
+  display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: baseline;
+}
+.fm-preview.show { opacity: 1; transform: translateX(-50%); }
+.fm-preview-thumb { grid-column: 1 / -1; border-radius: 6px; overflow: hidden; background: var(--fm-stage); }
+.fm-preview-thumb .fm-canvas-wrap { pointer-events: none; }
+.fm-preview-thumb .fm-callout, .fm-preview-thumb .fm-tip { display: none; }
+.fm-preview-time { font-size: 12px; font-weight: 600; color: var(--fm-ink); font-variant-numeric: tabular-nums; padding-left: 2px; }
+.fm-preview-cap { font-size: 12px; color: var(--fm-ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Auto-hide while playing (UI only). */
+.fm-transport { transition: opacity 240ms ease-out; }
+.fm-player.fm-idle .fm-transport { opacity: 0; }
+.fm-player.fm-idle .fm-transport:focus-within { opacity: 1; }
+
+.fm-time {
+  margin-left: auto; display: inline-flex; gap: 4px; white-space: nowrap;
+  font-size: 13px; color: var(--fm-ink-faint); font-variant-numeric: tabular-nums;
+}
+.fm-t:first-child { color: var(--fm-ink); }
+.fm-t-sep { opacity: .5; }
+.fm-tbtn-steps {
+  width: auto; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 13px;
+  border: 1px solid var(--fm-line); gap: 6px;
+}
+.fm-tbtn-steps .fm-icon { width: 16px; height: 16px; }
+.fm-tbtn-steps[aria-pressed="true"] {
+  background: var(--fm-accent-soft); color: var(--fm-accent); border-color: var(--fm-accent);
+}
+select.fm-speed {
+  font: inherit; font-size: 13px; font-weight: 500; color: var(--fm-ink);
+  background: var(--fm-bg-raise); border: 1px solid var(--fm-line); border-radius: 8px;
+  padding: 0 8px; height: 32px; cursor: pointer; flex: none;
+}
+
+@container (max-width: 480px) {
+  .fm-tbtn-scene, .fm-tbtn-restart, .fm-play-word, .fm-steps-word, .fm-t-sep, .fm-t-total { display: none; }
+  .fm-tbtn-steps { padding: 0 8px; }
+  .fm-tbtn-play { min-width: 0; width: 44px; padding: 0; }
+  .fm-controls { gap: 8px; }
+}
+.fm-errors {
+  display: none; margin-top: 12px; background: rgba(229, 99, 94, .09);
+  border: 1px solid var(--fm-bad); border-radius: var(--fm-radius); padding: 12px 16px;
+}
+.fm-errors.show { display: block; }
+.fm-errors ul { margin: 0; padding-left: 20px; font-size: 13px; }
+.fm-errors li { margin: 3px 0; }
+
+flow-movie { display: block; }
+
+.fm-canvas-wrap { position: relative; width: 100%; }
+
+/* Full screen: the player fills the screen; the stage takes the space the
+ * title, caption bar and transport leave. The fallback (no Fullscreen API,
+ * e.g. iPhone Safari) covers the window instead. */
+.fm-player.fm-fullscreen {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; height: 100%; box-sizing: border-box; margin: 0;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+    max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  background: var(--fm-bg);
+}
+.fm-player.fm-fullscreen-fallback { position: fixed; inset: 0; z-index: 2147483000; height: 100dvh; }
+.fm-fullscreen .fm-screen { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fm-fullscreen .fm-stage-frame, .fm-fullscreen .fm-stage-root {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+}
+.fm-fullscreen .fm-canvas-wrap { aspect-ratio: auto !important; flex: 1; min-height: 0; }
+.fm-player:fullscreen::backdrop { background: var(--fm-bg, #101216); }
+canvas.fm-canvas {
+  display: block; position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  /* One finger scrolls the page; two fingers pan and zoom the stage. */
+  touch-action: pan-x pan-y;
+  background: var(--fm-stage);
+}
+canvas.fm-canvas:focus { outline: none; }
+canvas.fm-canvas:focus-visible { outline: 2px solid var(--fm-accent); outline-offset: -2px; }
+
+canvas.fm-minimap {
+  position: absolute; right: 12px; bottom: 12px; z-index: 4;
+  border: 1px solid var(--fm-line); border-radius: 10px;
+  box-shadow: 0 10px 28px -12px rgba(0, 0, 0, .7);
+  cursor: crosshair;
+}
+/* Zoom buttons sit top-right, clear of narration, and appear only while
+ * the pointer is over the stage or focus is inside it. */
+.fm-canvas-controls {
+  position: absolute; right: 12px; top: 12px; z-index: 4;
+  display: flex; flex-direction: column; gap: 6px;
+  opacity: 0; pointer-events: none; transition: opacity 160ms ease-out;
+}
+.fm-canvas-wrap:hover .fm-canvas-controls,
+.fm-canvas-wrap:focus-within .fm-canvas-controls { opacity: 1; pointer-events: auto; }
+.fm-ccbtn {
+  appearance: none; width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font: inherit; font-size: 16px; line-height: 1;
+  color: var(--fm-ink); background: var(--fm-bg-raise);
+  border: 1px solid var(--fm-line); border-radius: 10px; cursor: pointer;
+  transition: background 160ms ease-out, border-color 160ms ease-out;
+}
+.fm-ccbtn:hover { border-color: var(--fm-accent); background: var(--fm-accent-soft); }
+
+/* Accessibility layer: a real button over every card and token the canvas
+ * draws. Invisible to the pointer (the canvas hit-tests), visible only as
+ * a focus ring for keyboard users. */
+.fm-a11y { position: absolute; inset: 0; pointer-events: none; overflow: hidden; overflow: clip; z-index: 2; }
+.fm-a11y-item {
+  position: absolute; margin: 0; padding: 0; border: 0; border-radius: 14px;
+  background: transparent; color: transparent; font-size: 0; outline: none; pointer-events: none;
+}
+.fm-a11y-item:focus-visible { outline: 2px solid var(--fm-accent); outline-offset: 3px; }
+
+/* Tooltips (content from the pose). While one is up, the event callout
+ * steps aside so the two never overlap; it returns when the tooltip goes. */
+.fm-canvas-wrap:has(.fm-tip.show) .fm-callout.show { opacity: 0; }
+.fm-tip {
+  position: absolute; left: 0; top: 0; z-index: 6; min-width: 168px; max-width: 240px;
+  padding: 10px 12px 11px; border-radius: 10px; font-size: 12px; line-height: 1.35;
+  background: rgba(22, 25, 31, .97); color: var(--fm-ink); pointer-events: none;
+  box-shadow: 0 0 0 1px var(--fm-node-edge), 0 16px 40px -12px rgba(0, 0, 0, .85);
+  opacity: 0; transform: translateY(3px);
+  transition: opacity 160ms cubic-bezier(.2, 0, 0, 1), transform 160ms cubic-bezier(.2, 0, 0, 1);
+}
+.fm-tip.show { opacity: 1; transform: none; }
+.fm-tip-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 7px; font-weight: 600; }
+.fm-tip-head span { color: var(--fm-ink-faint); font-weight: 500; font-variant-numeric: tabular-nums; }
+.fm-tip ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.fm-tip li { display: grid; grid-template-columns: 6px 1fr auto; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
+.fm-tip li i { width: 6px; height: 6px; border-radius: 50%; }
+.fm-tip li b { font-weight: 500; }
+.fm-tip li em { font-style: normal; color: var(--fm-ink-faint); }
+.fm-tip-foot { color: var(--fm-ink-faint); margin-top: 6px; }
+.fm-tip-pin { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--fm-node-edge); color: var(--fm-ink-faint); font-size: 11px; }
+
+/* Story mode: prose steps scroll beside a sticky stage; scroll is the clock. */
+.fm-story { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 40px; align-items: start; }
+.fm-story-stage { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+.fm-story-steps { display: grid; gap: 0; padding: 30vh 0 45vh; }
+.fm-story .fm-step {
+  min-height: 70vh; display: flex; flex-direction: column; justify-content: center;
+  opacity: .35; transition: opacity 240ms ease-out;
+}
+.fm-story .fm-step.fm-step-active { opacity: 1; }
+.fm-story .fm-caption { display: none; }
+@media (max-width: 760px) {
+  .fm-story { grid-template-columns: 1fr; gap: 0; }
+  .fm-story-stage { top: env(safe-area-inset-top, 0px); height: auto; z-index: 2; background: var(--fm-bg, #101216); padding-block: 8px; }
+  .fm-story-steps { padding: 10vh 0 40vh; }
+  .fm-story .fm-step { min-height: 60vh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-callout, .fm-tbtn, .fm-tip, .fm-preview, .fm-transport, .fm-story .fm-step, input.fm-scrub::-webkit-slider-thumb { transition-duration: .01ms !important; }
+}

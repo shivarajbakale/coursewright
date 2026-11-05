@@ -1,0 +1,73 @@
+{
+  "title": "Snapshots, exactly-once clients and linearizable reads",
+  "brief": "## What you'll build\n\nTurn your replicated KV store into one you could actually operate. Add **snapshots** with `InstallSnapshot` so the log stays bounded, **client sessions** so retried writes apply exactly once, and **linearizable reads** using ReadIndex. As a stretch goal, add **single-server membership changes**.\n\n## Why\n\nWithout compaction, memory and restart time grow without bound. Without deduplication, a leader crash between commit and reply makes clients double-apply writes. Without a leadership check on reads, a deposed leader serves stale data. These are the gaps between textbook Raft and a service people can depend on.\n\n## Constraints\n\n- Suggested language: **Go**, extending projects 1 to 3.\n- The KV server snapshots when the persisted Raft state exceeds a configurable `maxRaftState` bytes.\n- The snapshot includes the KV map **and** the client session table.\n- All log access goes through index-translation helpers that account for `lastIncludedIndex`.\n- Persist Raft state and snapshot together, atomically.\n- Reads must not go through the log; use ReadIndex (leases optional, behind a flag).\n- Membership changes (stretch): one server at a time, and only after the leader has committed an entry in its current term.",
+  "starter": [
+    {
+      "path": "raft/snapshot.go",
+      "note": "Snapshot(index, state), the InstallSnapshot RPC types and handler, and index translation helpers that use lastIncludedIndex."
+    },
+    {
+      "path": "kvraft/session.go",
+      "note": "Client ID and sequence number handling: the per-client (lastSeq, lastResult) table consulted during apply."
+    },
+    {
+      "path": "kvraft/client.go",
+      "note": "A Clerk that remembers the last known leader, generates a unique client ID, and retries with the same sequence number until it gets an answer."
+    },
+    {
+      "path": "kvraft/read_index.go",
+      "note": "ReadIndex: wait for the current-term no-op to commit, record commitIndex, confirm leadership with a heartbeat round, wait for lastApplied."
+    },
+    {
+      "path": "raft/config_change.go",
+      "note": "Stretch: AddServer/RemoveServer appending a configuration entry, and using the latest configuration in the log for majorities."
+    }
+  ],
+  "hints": [
+    "Do snapshots first, and start by making every existing project 3 test pass with log indices offset by a nonzero lastIncludedIndex, before writing InstallSnapshot at all.",
+    "When the leader's nextIndex for a follower is at or below lastIncludedIndex, send InstallSnapshot instead of AppendEntries; after it succeeds set nextIndex to lastIncludedIndex + 1.",
+    "In the InstallSnapshot handler, ignore snapshots older than the one you have, and keep log entries after lastIncludedIndex if the entry there matches the snapshot's term.",
+    "The apply loop must handle two kinds of messages, commands and snapshots, and a snapshot must reset lastApplied. Make sure an in-flight command for an older index is not applied after a newer snapshot.",
+    "For dedup, store the cached result alongside lastSeq. A retried Get or Append must return the original answer, not recompute it from the current state."
+  ],
+  "rubric": [
+    {
+      "criterion": "Log stays bounded under load; InstallSnapshot brings a far-behind follower up to date",
+      "chapterKey": "c09-snapshots"
+    },
+    {
+      "criterion": "Snapshot includes lastIncludedIndex/Term, the KV map and the session table, persisted atomically with Raft state",
+      "chapterKey": "c09-snapshots"
+    },
+    {
+      "criterion": "Retried client requests are applied exactly once across leader crashes",
+      "chapterKey": "c10-membership-and-clients"
+    },
+    {
+      "criterion": "Reads are linearizable via ReadIndex and never served by a deposed leader",
+      "chapterKey": "c10-membership-and-clients"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Snapshots",
+      "body": "Implement Snapshot and InstallSnapshot. Run a workload large enough to trigger many snapshots, crash and restart servers, and disconnect one follower long enough that it needs a snapshot to catch up. **Done when** the persisted Raft state never exceeds 8 × maxRaftState and all servers converge.",
+      "checkCmd": "go test ./raft -run 'TestSnapshot' -race -count=10"
+    },
+    {
+      "title": "Exactly-once clients",
+      "body": "Add client IDs and sequence numbers. The tester drops replies and crashes leaders between commit and reply. **Done when** every Append appears exactly once in the final values.",
+      "checkCmd": "go test ./kvraft -run 'TestUnreliable|TestCrashRetry' -race -count=10"
+    },
+    {
+      "title": "Linearizable reads",
+      "body": "Implement ReadIndex. Partition the leader into a minority and confirm it refuses (or never answers) reads, while the majority side serves fresh values. A linearizability checker (such as Porcupine) validates the client history. **Done when** the checker accepts every run.",
+      "checkCmd": "go test ./kvraft -run TestLinearizableReads -race -count=10"
+    },
+    {
+      "title": "Stretch: membership changes",
+      "body": "Implement AddServer and RemoveServer one server at a time, with new servers joining as learners until caught up. Grow a cluster from 3 to 5 and shrink it back while clients run. **Done when** no two leaders ever share a term and all committed writes survive.",
+      "checkCmd": "go test ./raft -run TestMembership -race"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A leader in term 6 sees that an entry from term 4 is now stored on a majority. No entries from term 6 exist yet. What does it do?",
+      "options": [
+        "Marks the term 4 entry committed, since it is on a majority",
+        "Rewrites the entry with term 6 and then commits it",
+        "Waits, and commits it only once an entry from term 6 after it is on a majority",
+        "Asks the term 4 leader to confirm the commit"
+      ],
+      "answer": 2,
+      "explanation": "Figure 8 shows an old-term entry on a majority can still be overwritten by a server with a newer last term. Only current-term entries are committed by counting; earlier ones are committed indirectly beneath them. Rewriting an entry's term is never allowed: entries keep the term they were created in.",
+      "conceptKeys": [
+        "commitment"
+      ]
+    },
+    {
+      "prompt": "In Figure 8 (d), why can S5 win the election even though S1, S2 and S3 hold the term 2 entry at index 2?",
+      "options": [
+        "Because S5's log is longer",
+        "Because S5's last entry has term 3, which is more up-to-date than the term 2 entries on its voters",
+        "Because S1 voted for S5",
+        "Because S5 has the highest server ID"
+      ],
+      "answer": 1,
+      "explanation": "The up-to-date check compares last terms first. S2, S3 and S4 have last terms 2, 2 and 1, all below 3, so they vote for S5. S5's log is not longer: S2 and S3 have the same length.",
+      "conceptKeys": [
+        "commitment",
+        "election-restriction"
+      ]
+    },
+    {
+      "prompt": "Why does a newly elected leader append a no-op entry at the start of its term?",
+      "options": [
+        "To reset every follower's election timer",
+        "To overwrite any uncommitted entries on followers",
+        "Because AppendEntries cannot be sent with an empty Entries slice",
+        "So it can commit an entry from its own term promptly, which also commits all inherited entries and tells it the true commitIndex"
+      ],
+      "answer": 3,
+      "explanation": "Under the current-term rule, inherited entries cannot commit until a current-term entry does. A no-op makes that happen without waiting for a client. Heartbeats already reset timers and can be empty, so those options are tempting but not the reason.",
+      "conceptKeys": [
+        "commitment"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -3,6 +3,7 @@
  "order": [
   "Overview",
   "Shell",
+  "Illustrations",
   "Pages"
  ],
  "roots": {
@@ -54,7 +55,9 @@
       "page-shell",
       "panel",
       "stat-card",
-      "data-table"
+      "data-table",
+      "MarkdownView",
+      "links"
      ]
     },
     "Motion": {
@@ -77,6 +80,14 @@
      ]
     }
    }
+  },
+  "Illustrations": {
+   "blurb": "The animated scenes on the Generating screen, one per course-building stage, drawn from live job data.",
+   "depth": 2,
+   "sourceDirs": [
+    "src/illustrations"
+   ],
+   "sections": null
   },
   "Pages": {
    "blurb": "Whole routes, each with its empty and populated states.",

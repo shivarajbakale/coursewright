@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A follower's log has an entry at index 10 with term 3. The leader's log also has index 10 with term 3. What can you conclude?",
+      "options": [
+        "Only that the two entries at index 10 hold the same command",
+        "Nothing until the leader sends an AppendEntries",
+        "The entry at index 10 is committed",
+        "The two logs are identical at index 10 and at every index before it"
+      ],
+      "answer": 3,
+      "explanation": "That is the Log Matching Property: same index and term means same command and identical preceding entries, maintained inductively by the PrevLogIndex/PrevLogTerm check. It says nothing about commitment, since an entry can match on two servers without being on a majority.",
+      "conceptKeys": [
+        "log-replication"
+      ]
+    },
+    {
+      "prompt": "A follower receives an AppendEntries whose entries it already holds, but it also holds further entries after them that match the leader. What should it do?",
+      "options": [
+        "Keep its log as is; only truncate from an index whose term actually conflicts",
+        "Truncate its log after PrevLogIndex and append the RPC's entries",
+        "Reject the RPC because it is a duplicate",
+        "Truncate its whole log and ask for a snapshot"
+      ],
+      "answer": 0,
+      "explanation": "A delayed or reordered RPC may carry a prefix of what the follower already has. Truncating blindly would delete acknowledged entries the leader may have counted toward commitment. The rule is to delete only from the first index whose term conflicts.",
+      "conceptKeys": [
+        "log-replication"
+      ]
+    },
+    {
+      "prompt": "After an AppendEntries succeeds, how should the leader update matchIndex for that follower?",
+      "options": [
+        "Set it to the leader's current last log index",
+        "Set it to PrevLogIndex + len(Entries) from the RPC that was sent",
+        "Increment it by one",
+        "Set it to the leader's commitIndex"
+      ],
+      "answer": 1,
+      "explanation": "The leader's log may have grown while the RPC was in flight, so using its current last index could claim the follower holds entries it never received. Only the entries actually sent are known to match.",
+      "conceptKeys": [
+        "log-replication"
+      ]
+    }
+  ],
+  "diagrams": []
+}

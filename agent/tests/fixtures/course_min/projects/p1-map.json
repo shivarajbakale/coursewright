@@ -1,0 +1,5 @@
+{"title": "Build a hash map", "brief": "Implement a hash map with chaining.",
+ "starter": [{"path": "hashmap.py", "note": "your map"}],
+ "hints": ["Start with a fixed number of buckets."],
+ "rubric": [{"criterion": "Handles collisions", "chapterKey": "c02-collisions"}, {"criterion": "Unknown chapter maps to null", "chapterKey": "nope"}],
+ "milestones": [{"title": "Put and get", "body": "Implement put/get.", "checkCmd": "pytest -k put_get"}]}

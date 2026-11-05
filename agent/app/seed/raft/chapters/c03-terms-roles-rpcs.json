@@ -1,0 +1,55 @@
+{
+  "questions": [
+    {
+      "prompt": "A leader in term 7 receives an AppendEntries reply carrying term 9. What does it do?",
+      "options": [
+        "Sets currentTerm to 9 and becomes a follower",
+        "Ignores the reply because only requests can change its term",
+        "Increments its term to 10 and starts a new election",
+        "Retries the AppendEntries with term 9"
+      ],
+      "answer": 0,
+      "explanation": "Any request or response with a higher term makes a server adopt that term and revert to follower. Starting an election is tempting but wrong: there may already be a perfectly good leader in term 9, and the stale leader should wait for it rather than disrupt it.",
+      "conceptKeys": [
+        "terms",
+        "server-roles"
+      ]
+    },
+    {
+      "prompt": "Why must votedFor be written to stable storage before a server replies to RequestVote?",
+      "options": [
+        "So the leader can audit how each server voted",
+        "So a restarted server cannot vote for a different candidate in the same term, which could produce two leaders",
+        "Because the election timeout is stored alongside it",
+        "It does not need to be; only the log must be persisted"
+      ],
+      "answer": 1,
+      "explanation": "If the vote were only in memory, a crash and restart would let the server vote again in the same term. Two candidates could then each assemble a majority, violating Election Safety. The log alone is not enough, which is why currentTerm and votedFor are also persistent.",
+      "conceptKeys": [
+        "persistent-state"
+      ]
+    },
+    {
+      "prompt": "Which state can a Raft server safely lose in a crash?",
+      "options": [
+        "currentTerm",
+        "The log entries it has acknowledged",
+        "commitIndex and lastApplied",
+        "votedFor"
+      ],
+      "answer": 2,
+      "explanation": "commitIndex can be relearned from the leader and lastApplied restarts at 0 with the state machine rebuilt from the log or snapshot. The other three are the persistent state listed in Figure 2, and losing any of them can break safety.",
+      "conceptKeys": [
+        "persistent-state",
+        "raft-rpcs"
+      ]
+    }
+  ],
+  "diagrams": [
+    {
+      "kind": "mermaid",
+      "title": "Raft server roles and transitions",
+      "source": "stateDiagram-v2\n    [*] --> Follower : starts up\n    Follower --> Candidate : election timeout, no leader heard\n    Candidate --> Candidate : election timeout, split vote, new term\n    Candidate --> Leader : receives votes from a majority\n    Candidate --> Follower : discovers current leader or higher term\n    Leader --> Follower : discovers server with higher term"
+    }
+  ]
+}

@@ -251,6 +251,11 @@ export const theme = createTheme({
       classNames: { root: classes.badge },
     },
     ThemeIcon: { defaultProps: { variant: 'light' } },
+
+    /* A spinner is state, not decoration: it says "still working". The slot
+       names it as a loading indicator, which is what the ui-probe's motion
+       rules (M1, M3) read to tell a spinner from an ambient loop. */
+    Loader: { defaultProps: { 'data-slot': 'loader' } },
     Alert: {
       defaultProps: { variant: 'light', radius: 'md' },
       classNames: { root: classes.alert, message: classes.alertMessage },

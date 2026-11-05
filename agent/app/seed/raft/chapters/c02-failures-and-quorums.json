@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "How many server failures can a six-server Raft cluster tolerate while still making progress?",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": 1,
+      "explanation": "A majority of 6 is 4, so the cluster keeps working with 2 servers down. Three is tempting because it is half of six, but with 3 down only 3 remain, which is not more than half, so no leader can be elected and nothing can commit.",
+      "conceptKeys": [
+        "majority-quorum"
+      ]
+    },
+    {
+      "prompt": "A five-server cluster partitions into {S1, S2} and {S3, S4, S5}. S1 was the leader. What happens on S1's side?",
+      "options": [
+        "S1 keeps committing entries because it is still the legitimate leader",
+        "S1 and S2 elect a new leader for a higher term",
+        "S1 may append entries to its log but cannot commit any of them",
+        "S1 immediately deletes its log to avoid conflicts"
+      ],
+      "answer": 2,
+      "explanation": "Committing needs acknowledgements from a majority (3 of 5), and S1 can reach only S2. It can still append entries locally, but they stay uncommitted and may later be overwritten. It cannot win a new election either, for the same counting reason.",
+      "conceptKeys": [
+        "majority-quorum",
+        "failure-models"
+      ]
+    },
+    {
+      "prompt": "Which of these faults falls outside Raft's failure model?",
+      "options": [
+        "A server crashes and restarts with its disk intact",
+        "A network switch drops and reorders packets for a minute",
+        "A data centre link fails, splitting the cluster into two groups",
+        "A server's disk is silently reverted to an old backup and it rejoins the cluster"
+      ],
+      "answer": 3,
+      "explanation": "Raft tolerates crash-recover servers, lossy networks and partitions. A server whose persistent state has been rolled back may vote twice in a term or forget entries it acknowledged, which is effectively Byzantine behaviour and can break safety.",
+      "conceptKeys": [
+        "failure-models"
+      ]
+    }
+  ],
+  "diagrams": []
+}

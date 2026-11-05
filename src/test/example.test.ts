@@ -1,90 +1,71 @@
 import { describe, it, expect } from 'vitest';
-import { http, HttpResponse } from 'msw';
-import { server } from '../mocks/node';
-import type { Customer } from '@/api/types';
 
 /**
- * Reference test for the Customers slice.
+ * Reference test for the Coursewright API mocks.
  *
- * Shows the pattern the `add-feature` skill follows: exercise a resource through
- * its MSW handlers (the same ones the app uses), and override a handler to test
- * a failure path.
- *
- * The handlers use relative paths (e.g. `/api/customers`) so MSW resolves them
- * against the current origin — exactly as in the browser. Under jsdom (this
- * project's test environment) that origin is `location.origin`, so we build
- * request URLs from it to guarantee handler and request agree.
+ * Exercises the MSW handlers the app boots on (the same routes and `{ data }`
+ * envelope the Python service serves, docs/plan/api-contract.md), so the
+ * frontend keeps running with no backend.
  */
 const api = (path: string) => `${location.origin}${path}`;
+const json = (body: unknown) => ({
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
 
-describe('Customers API (MSW handlers)', () => {
-  it('lists customers', async () => {
-    const res = await fetch(api('/api/customers'));
+describe('Coursewright API (MSW handlers)', () => {
+  it('lists courses in the { data } envelope', async () => {
+    const res = await fetch(api('/api/courses'));
     const body = await res.json();
-
     expect(res.ok).toBe(true);
-    expect(body.success).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
     expect(body.data.length).toBeGreaterThan(0);
+    expect(body.data[0]).toMatchObject({ id: expect.any(String), status: expect.any(String) });
   });
 
-  it('creates then fetches a customer', async () => {
-    const create = await fetch(api('/api/customers'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Test Account', domain: 'testaccount.com', plan: 'pro', seats: 4 }),
-    });
-    const created = (await create.json()).data as Customer;
-
-    expect(create.status).toBe(201);
-    expect(created.name).toBe('Test Account');
-    expect(created.status).toBe('trialing');
-    // Price is derived from the plan and the seat count, not sent by the
-    // client — a caller that could post its own MRR could post any number, and
-    // the dashboard sums this field.
-    expect(created.mrrCents).toBe(4 * 2900);
-
-    const get = await fetch(api(`/api/customers/${created.id}`));
-    const fetched = (await get.json()).data as Customer;
-    expect(fetched.id).toBe(created.id);
+  it('returns a course with modules, chapters and concepts', async () => {
+    const body = await (await fetch(api('/api/courses/c-raft'))).json();
+    expect(body.data.modules.length).toBeGreaterThan(0);
+    expect(body.data.modules[0].chapters.length).toBeGreaterThan(0);
+    expect(body.data.concepts.length).toBeGreaterThan(0);
   });
 
-  it('recomputes MRR when the seat count changes', async () => {
-    const list = await fetch(api('/api/customers'));
-    const all = (await list.json()).data as Customer[];
-    // A live per-seat account, chosen explicitly: enterprise is contracted
-    // rather than per-seat and a churned account bills nothing, so picking
-    // whatever happens to be first would make this test pass by not asserting.
-    const target = all.find((c) => c.plan === 'pro' && c.status === 'active');
-    expect(target, 'fixture should contain an active pro account').toBeDefined();
-
-    const res = await fetch(api(`/api/customers/${target!.id}`), {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seats: target!.seats + 1 }),
-    });
-    const updated = (await res.json()).data as Customer;
-
-    expect(res.ok).toBe(true);
-    expect(updated.seats).toBe(target!.seats + 1);
-    // The handler prices the subscription rather than trusting the patch — a
-    // caller that could post its own MRR could post any number, and the
-    // dashboard sums this field.
-    expect(updated.mrrCents).toBe((target!.seats + 1) * 2900);
+  it('grades a check-yourself answer', async () => {
+    const ch = (await (await fetch(api('/api/chapters/ch-2-2'))).json()).data;
+    const q = ch.questions[0];
+    const res = (await (await fetch(api(`/api/questions/${q.id}/attempts`), json({ chosen: q.answer }))).json()).data;
+    expect(res.correct).toBe(true);
   });
 
-  it('returns 404 for a missing customer', async () => {
-    const res = await fetch(api('/api/customers/does-not-exist'));
-    expect(res.status).toBe(404);
+  it('asks interview questions one at a time, then finishes', async () => {
+    const first = (await (await fetch(api('/api/interview/next'), json({ topic: 'Raft', answers: [] }))).json()).data;
+    expect(first.done).toBe(false);
+    expect(first.question.options.length).toBeGreaterThan(1);
+    const answers = Array.from({ length: 6 }, (_, i) => ({ question: `q${i}`, answer: ['a'] }));
+    const last = (await (await fetch(api('/api/interview/next'), json({ topic: 'Raft', answers }))).json()).data;
+    expect(last.done).toBe(true);
   });
 
-  it('surfaces server errors (handler override)', async () => {
-    server.use(
-      http.get('/api/customers', () =>
-        HttpResponse.json({ success: false, message: 'boom' }, { status: 500 })
-      )
-    );
-    const res = await fetch(api('/api/customers'));
-    expect(res.status).toBe(500);
+  it('creates, edits and deletes a note', async () => {
+    const page = (await (await fetch(api('/api/notes'), json({ title: 'Scratch', markdown: 'hi' }))).json()).data;
+    const patched = (
+      await (
+        await fetch(api(`/api/notes/${page.id}`), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ markdown: '# changed' }),
+        })
+      ).json()
+    ).data;
+    expect(patched.markdown).toBe('# changed');
+    const del = await fetch(api(`/api/notes/${page.id}`), { method: 'DELETE' });
+    expect(del.ok).toBe(true);
+    expect((await fetch(api(`/api/notes/${page.id}`))).status).toBe(404);
+  });
+
+  it('retrieves passages for a query', async () => {
+    const hits = (await (await fetch(api('/api/search/test'), json({ query: 'leader election timeout' }))).json()).data;
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].chapterId).toBeTruthy();
   });
 });

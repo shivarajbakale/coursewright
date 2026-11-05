@@ -60,10 +60,9 @@ export function renderRoutes(
   return { ...result, router, queryClient };
 }
 
-/** A Customers page, mounted with both of the slice's routes registered. */
-export function renderCustomers(Component: React.FunctionComponent, initialEntry = '/customers') {
+export function renderCourseRoutes(Component: React.FunctionComponent, initialEntry = '/') {
   return renderRoutes(Component, {
-    paths: ['/customers', '/customers/$customerId'],
+    paths: ['/', '/courses/$courseId', '/courses/$courseId/chapters/$chapterId'],
     initialEntries: [initialEntry],
   });
 }

@@ -164,8 +164,10 @@ describe('motion', () => {
 
       // Navigate through the app's own nav, not the router API: the defect
       // lived in the shell's outlet, and reaching past it would have missed it.
-      const link = host.querySelector<HTMLAnchorElement>('a[href="/customers"]');
-      expect(link, 'the sidebar has no link to /customers to navigate with').not.toBeNull();
+      // Sources: a data-backed page reached from the rail, as /customers was in
+      // the template this probe was written against.
+      const link = host.querySelector<HTMLAnchorElement>('a[href="/sources"]');
+      expect(link, 'the sidebar has no link to /sources to navigate with').not.toBeNull();
       link!.click();
 
       const crossing = await collectMotion(host, 'route change', {

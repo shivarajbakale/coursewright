@@ -1,0 +1,19 @@
+@keyframes scan {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-90px, 30px);
+  }
+}
+
+.scan {
+  animation: scan 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan {
+    animation: none;
+  }
+}

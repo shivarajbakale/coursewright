@@ -1,20 +1,56 @@
 # Coursewright
 
-Personal course learner: breaks any topic into modules, chapters and projects, with notes and a RAG-backed tutor
+A personal course learner. Name a topic, answer a short interview, and a team of Claude agents builds you a
+course: modules, chapters with diagrams and Flowmovie movies, check-yourself questions and a project per
+module. Read in the chapter reader, keep Notion-style notes (built on kit), and ask a tutor (CopilotKit +
+a deepagents agent) that answers from your own course with citations, through hybrid RAG over SQLite.
 
-Generated with [create-react-app](https://www.npmjs.com/package/create-react-app).
+- Architecture: [docs/plan/architecture.md](docs/plan/architecture.md)
+- API contract (frontend and agent service): [docs/plan/api-contract.md](docs/plan/api-contract.md)
+- Agent service: [agent/README.md](agent/README.md)
 
 ## Run
 
 ```bash
 npm install
-npm run dev
+npm run dev          # web only, on mock data (MSW), no backend needed
 ```
 
-The app starts on http://localhost:5173. Mock Service Worker is enabled by
-default (`VITE_ENABLE_MOCKING=true` in `.env`), so it boots with realistic
-mock data and **needs no backend**. Point it at a real API by setting
-`VITE_API_URL` and flipping `VITE_ENABLE_MOCKING=false`.
+The whole stack (agent service, CopilotKit runtime, web against the real API):
+
+```bash
+cd agent && uv sync && cd ..
+echo "ANTHROPIC_API_KEY=sk-ant-..." >> agent/.env     # optional: VOYAGE_API_KEY=..., GITHUB_TOKEN=...
+npm run dev:stack    # agent :8123, runtime :4000, web :5173
+```
+
+Without `ANTHROPIC_API_KEY` everything except Claude works: the seeded Raft course, reading, quizzes,
+progress, notes, sources and retrieval. The interview falls back to four fixed questions, course builds
+fail with a clear message, and the tutor says it has no key. Without `VOYAGE_API_KEY` retrieval uses a
+local hashed embedder.
+
+| Process | Port | Command |
+| --- | --- | --- |
+| web (Vite, React 19, Mantine 9, kit) | 5173 | `npm run dev` |
+| CopilotKit runtime (Node) | 4000 | `npm run runtime` |
+| agent service (FastAPI, deepagents, SQLite) | 8123 | `npm run agent` |
+
+## Screens
+
+| Route | Screen |
+| --- | --- |
+| `/` | Library: courses, builds in progress, recent notes |
+| `/new` | Interview: one question at a time, then generate |
+| `/courses/:id/building` | Generating: live job events with an animated scene per stage |
+| `/courses/:id` | Course overview: modules, chapters, projects, weak spots, concept map |
+| `/courses/:id/chapters/:chapterId` | Chapter reader: diagrams, movies, questions, add to notes, ask tutor |
+| `/courses/:id/projects/:projectId` | Project: milestones, hints, rubric, GitHub code review |
+| `/tutor` | Tutor: full-page chat, scoped to a course |
+| `/notes/:pageId?` | Notes: kit page tree, page header and block editor, autosave, backlinks |
+| `/sources` | Sources: index stats, add URL, re-index, test retrieval |
+
+The tutor also opens beside any screen (⌘J or the Tutor button) and knows the chapter, note and selection
+you're on.
 
 ## What's inside
 

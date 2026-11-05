@@ -1,6 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { Box, Group, ScrollArea, Stack, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
-import { GalleryVerticalEnd, type LucideIcon } from 'lucide-react';
+import { GraduationCap, type LucideIcon } from 'lucide-react';
 
 import { NavMain, type NavMainItem } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -26,7 +26,7 @@ export function AppSidebar() {
   const railed = useShellNav((s) => s.railed);
 
   // Workspace badge — single-tenant for now, so we show the product name.
-  const workspace = { name: 'Console', logo: GalleryVerticalEnd as LucideIcon, plan: 'Workspace' };
+  const workspace = { name: 'Coursewright', logo: GraduationCap as LucideIcon, plan: 'Personal course learner' };
 
   const navMain: NavMainItem[] = navItems.map((item) => ({
     title: item.title,

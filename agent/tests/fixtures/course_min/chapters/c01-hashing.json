@@ -1,0 +1,2 @@
+{"questions": [{"prompt": "What does a hash function return in a hash table?", "options": ["A bucket index", "A sorted list", "A tree node"], "answer": 0, "explanation": "It maps the key to a bucket.", "conceptKeys": ["hashing"]}],
+ "diagrams": [{"kind": "mermaid", "title": "Lookup", "source": "flowchart LR\n  K[key] --> H[hash] --> B[bucket]"}]}

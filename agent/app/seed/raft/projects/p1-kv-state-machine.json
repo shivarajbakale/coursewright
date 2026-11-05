@@ -1,0 +1,68 @@
+{
+  "title": "A deterministic key-value state machine and its log",
+  "brief": "## What you'll build\n\nThe foundation every later project sits on: a **deterministic key-value state machine**, an **append-only log** of commands that drives it, a **persister** that survives crashes, and a tiny **simulated network** you can make lossy, slow or partitioned. There is no consensus yet. One process plays every replica, and you feed the same log to several copies of the state machine to prove they converge.\n\n## Why\n\nRaft only agrees on a log. Everything it promises depends on the thing consuming that log being deterministic and on persistent state really surviving a crash. Getting those pieces right now means that when later projects fail, you know the bug is in your Raft code, not underneath it. The simulated network is what you will use to test elections and replication under failure.\n\n## Constraints\n\n- Suggested language: **Go** (the starter paths assume it). Python with `asyncio` works too; mirror the layout.\n- The state machine supports `Put`, `Append` and `Get`, and must not read clocks, random numbers or map iteration order.\n- Log indices start at **1**. Index 0 is a sentinel with term 0, which simplifies `PrevLogIndex` handling later.\n- The persister stores an opaque byte blob and must write atomically (write to a temp file, `fsync`, rename).\n- The simulated network must support: dropping a configurable fraction of messages, adding random delay, reordering, and disconnecting a server entirely.",
+  "starter": [
+    {
+      "path": "kvsm/statemachine.go",
+      "note": "The KV map, the Command type and Apply(cmd) returning a result. No I/O, no clocks, no randomness."
+    },
+    {
+      "path": "kvsm/log.go",
+      "note": "A Log type with Append, EntryAt(i), TermAt(i), LastIndex, LastTerm and TruncateFrom(i), using 1-based indices and a sentinel at 0."
+    },
+    {
+      "path": "kvsm/persister.go",
+      "note": "Save(state []byte) and Load() []byte, writing atomically so a crash mid-write leaves the previous version intact."
+    },
+    {
+      "path": "labnet/network.go",
+      "note": "A simulated RPC network: Call(from, to, method, args, reply) with knobs for loss, delay, reordering and disconnecting servers."
+    },
+    {
+      "path": "kvsm/kvsm_test.go",
+      "note": "Tests that several state machines fed the same log converge, that a reloaded log matches the saved one, and that the network knobs behave."
+    }
+  ],
+  "hints": [
+    "Start with the state machine alone and a test that applies the same random sequence of commands to three instances and compares their maps.",
+    "Treat the log as the source of truth: the state machine should be rebuildable from scratch by replaying the log from index 1.",
+    "Hide index arithmetic behind EntryAt and TermAt from day one. In project 4, snapshots will offset every index, and you will only need to change these helpers.",
+    "Encode the log with encoding/gob or JSON inside a single blob, and test persistence by saving, discarding the in-memory object, and loading into a fresh one.",
+    "For the network, run each delivery in its own goroutine with a random sleep; that gives you delay and reordering in one move. A disconnected server should make Call return false after a timeout, not block forever."
+  ],
+  "rubric": [
+    {
+      "criterion": "State machine is deterministic: replicas fed the same log end in identical states",
+      "chapterKey": "c01-why-consensus"
+    },
+    {
+      "criterion": "Log uses 1-based indices with a term-0 sentinel and exposes LastIndex/LastTerm",
+      "chapterKey": "c03-terms-roles-rpcs"
+    },
+    {
+      "criterion": "Persister writes atomically and survives a simulated crash mid-save",
+      "chapterKey": "c03-terms-roles-rpcs"
+    },
+    {
+      "criterion": "Simulated network can drop, delay, reorder and partition, with tests for each",
+      "chapterKey": "c02-failures-and-quorums"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Deterministic state machine",
+      "body": "Implement `Apply` for Put, Append and Get. Write a test that generates 1,000 random commands, applies them to three instances, and asserts the maps are equal. **Done when** the test passes under `-race` with `-count=20`.",
+      "checkCmd": "go test ./kvsm -run TestDeterministicApply -race -count=20"
+    },
+    {
+      "title": "Log and persistence",
+      "body": "Implement the log type and the persister. Save a log of 500 entries, reload it into a new object, and check every `(index, term, command)` matches. Simulate a crash by killing a save halfway (write to the temp file, skip the rename) and confirm the previous version loads. **Done when** both tests pass.",
+      "checkCmd": "go test ./kvsm -run 'TestLogPersist|TestCrashDuringSave'"
+    },
+    {
+      "title": "A network you can break",
+      "body": "Implement `labnet` with loss, delay, reordering and disconnect. Test that with 30% loss roughly 70% of calls succeed, that a disconnected server never receives anything, and that reconnecting restores delivery. **Done when** the network tests pass reliably across 10 runs.",
+      "checkCmd": "go test ./labnet -count=10"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why is adding or removing one server at a time safe without a transitional configuration?",
+      "options": [
+        "Because any majority of the old configuration and any majority of the new one must share a server",
+        "Because a single new server cannot vote until the change commits",
+        "Because servers switch configurations at the same instant",
+        "Because the leader pauses all elections during the change"
+      ],
+      "answer": 0,
+      "explanation": "When the configurations differ by one server, their majorities always overlap, so two leaders cannot be elected in one term even while servers disagree about the configuration. Servers do not switch simultaneously, and new configurations take effect as soon as they are appended, not when committed.",
+      "conceptKeys": [
+        "membership-changes"
+      ]
+    },
+    {
+      "prompt": "A leader applies a client's Append, then crashes before replying. The client retries with the new leader. What prevents the Append from being applied twice?",
+      "options": [
+        "The new leader refuses commands that look identical to a recent log entry",
+        "The state machine tracks each client's highest applied sequence number and returns the cached result for duplicates",
+        "The client waits for the old leader to restart",
+        "Raft's Log Matching Property removes duplicate entries"
+      ],
+      "answer": 1,
+      "explanation": "The duplicate is appended to the log as a new entry, so Raft itself cannot tell. Deduplication lives in the replicated state machine, keyed by client ID and sequence number, so every replica makes the same decision. Log Matching is about consistency between logs, not duplicate commands.",
+      "conceptKeys": [
+        "client-interaction"
+      ]
+    },
+    {
+      "prompt": "With ReadIndex, why does the leader send a round of heartbeats before answering a read?",
+      "options": [
+        "To replicate the read as a log entry",
+        "To advance followers' commitIndex",
+        "To reset followers' election timers so the read is not interrupted",
+        "To confirm it is still the leader, so no newer leader can have committed writes it has not seen"
+      ],
+      "answer": 3,
+      "explanation": "A partitioned leader may not know it has been replaced. Acknowledgements from a majority prove no other leader existed at the time of the read. Resetting timers is a side effect, not the purpose, and ReadIndex deliberately avoids writing the read to the log.",
+      "conceptKeys": [
+        "client-interaction"
+      ]
+    }
+  ],
+  "diagrams": []
+}
