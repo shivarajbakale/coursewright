@@ -50,7 +50,7 @@ export function TutorPanel() {
         </Box>
       )}
       <Box style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <TutorChat />
+        <TutorChat compact />
       </Box>
     </Stack>
   );

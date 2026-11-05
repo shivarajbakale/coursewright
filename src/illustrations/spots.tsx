@@ -17,6 +17,7 @@ export type SpotKind =
   | 'index' // nothing indexed
   | 'search' // a search matched nothing
   | 'inbox' // nothing new
+  | 'tutor' // a conversation not started
   | 'offline' // the service did not answer
   | 'missing' // the thing does not exist
   | 'broken'; // the service answered with an error
@@ -119,6 +120,20 @@ const DRAWINGS: Record<SpotKind, ReactNode> = {
       <Badge cx={100} cy={56}>
         <path d="M95 56l4 4 6-8" />
       </Badge>
+    </>
+  ),
+  // A page of the course, and a reply forming beside it.
+  tutor: (
+    <>
+      <rect x="38" y="30" width="64" height="80" rx="8" className={s.paper} />
+      <Rules x={48} y={44} widths={[40, 44, 30, 42, 26]} gap={10} />
+      <path d="M90 74h-6" className={s.ink} />
+      <g className={s.beat}>
+        <path d="M112 30h46a8 8 0 0 1 8 8v26a8 8 0 0 1-8 8h-30l-12 10v-10h-4a8 8 0 0 1-8-8V38a8 8 0 0 1 8-8z" className={s.accentFill} />
+        <circle cx="122" cy="51" r="2.5" className={s.accentSolid} />
+        <circle cx="134" cy="51" r="2.5" className={s.accentSolid} />
+        <circle cx="146" cy="51" r="2.5" className={s.accentSolid} />
+      </g>
     </>
   ),
   // The app and the service, unplugged: the cable ends short of the socket.

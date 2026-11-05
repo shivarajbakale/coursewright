@@ -72,11 +72,12 @@
   stroke: var(--sp-edge);
 }
 
-/* One slow beat on the accent, so the drawing reads as alive, not broken. */
+/* A few slow beats on the accent when the state appears, then it rests:
+   a permanent animation is decoration that never stops costing frames. */
 .beat {
   transform-box: fill-box;
   transform-origin: center;
-  animation: beat 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: beat 3.2s cubic-bezier(0.22, 1, 0.36, 1) 2;
 }
 
 @keyframes beat {

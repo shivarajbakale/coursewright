@@ -12,7 +12,9 @@
 import { useEffect } from 'react';
 import { z } from 'zod';
 import { useNavigate } from '@tanstack/react-router';
-import { Center, Loader, useComputedColorScheme } from '@mantine/core';
+import { Box, Button, Center, Loader, Stack, useComputedColorScheme } from '@mantine/core';
+import { ArrowUpRight } from 'lucide-react';
+import { StatePanel } from '@/components/state-panel';
 import {
   CopilotChat,
   CopilotKitProvider,
@@ -148,19 +150,82 @@ function TutorConnecting() {
   );
 }
 
-export function TutorChat({ threadId }: { threadId?: string }) {
+/** Questions that show what the tutor can do: quiz, plan, explain, animate. */
+const TUTOR_STARTERS = [
+  'Quiz me on what I read this week',
+  'What should I learn next, and why?',
+  'Explain the hardest idea in this course with an analogy',
+  'Show me the most important process as a movie',
+];
+
+/**
+ * The empty conversation: what the tutor is for, and four questions to start
+ * with. Drawn by the app rather than CopilotKit, whose welcome screen is
+ * skipped whenever a thread id is passed and otherwise adds a second page
+ * heading.
+ */
+function TutorEmpty({ compact }: { compact?: boolean }) {
+  const ask = useTutor((s) => s.ask);
   return (
-    <>
+    <StatePanel
+      art="tutor"
+      size={compact ? 'compact' : 'section'}
+      title="Ask your tutor"
+      actions={
+        <Stack gap={6} w="100%" maw={360} mt={compact ? 4 : 'xs'} aria-label="Starter questions">
+          {TUTOR_STARTERS.map((q) => (
+            <Button
+              key={q}
+              variant="default"
+              size={compact ? 'xs' : 'sm'}
+              fw={400}
+              justify="space-between"
+              rightSection={<ArrowUpRight size={14} />}
+              h="auto"
+              py={compact ? 6 : 8}
+              onClick={() => ask(q)}
+              styles={{ label: { whiteSpace: 'normal', textAlign: 'left', lineHeight: 1.4 } }}
+            >
+              {q}
+            </Button>
+          ))}
+        </Stack>
+      }
+    >
+      It answers from your courses and notes, cites the chapter each answer comes from, and says when they don’t
+      cover it.
+    </StatePanel>
+  );
+}
+
+function TutorEmptyOverlay({ compact }: { compact?: boolean }) {
+  const { agent } = useAgent({ agentId: TUTOR_AGENT });
+  if (agent.messages.length > 0 || agent.isRunning) return null;
+  return (
+    // Sits over the message area and stops short of the input, so the input
+    // stays where it will be once the conversation starts.
+    <Box pos="absolute" top={0} left={0} right={0} bottom={compact ? 110 : 120} style={{ overflowY: 'auto', zIndex: 1 }}>
+      <Center mih="100%" px="md">
+        <TutorEmpty compact={compact} />
+      </Center>
+    </Box>
+  );
+}
+
+export function TutorChat({ threadId, compact }: { threadId?: string; compact?: boolean }) {
+  return (
+    <Box pos="relative" h="100%">
       <PendingPrompt />
+      <TutorEmptyOverlay compact={compact} />
       <CopilotChat
         agentId={TUTOR_AGENT}
         threadId={threadId}
         connectingIndicator={TutorConnecting}
+        welcomeScreen={false}
         labels={{
           chatInputPlaceholder: 'Ask about this course…',
-          welcomeMessageText: 'Ask anything about your course. Answers cite the chapters they come from.',
         }}
       />
-    </>
+    </Box>
   );
 }
