@@ -22,6 +22,8 @@ Shape the chapter like this:
 4. A worked example with real numbers or real code, walked through line by line.
 5. Where it gets subtle: the edge cases and the mistakes learners make, and why they are mistakes.
 
+Refer to another chapter by its title ("in Embeddings and vector search"), never by a number. Keep every
+number in a worked example consistent: recompute sums and formulas before you write them.
 Concepts listed as already taught may be used freely; anything else is defined on first use. Don't
 re-teach an earlier chapter: refer back to it in one sentence. Write in second person, short sentences,
 no filler. Be accurate; when something is subtle, say so plainly.

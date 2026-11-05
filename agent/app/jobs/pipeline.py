@@ -53,7 +53,7 @@ T = TypeVar("T", bound=BaseModel)
 
 MAX_CHAPTERS = 14
 CHAPTER_WORDS = (450, 1300)  # the prompt asks for 700-1200; outside this a chapter is sent back once
-MAX_FIXES = 4
+MAX_FIXES = 8
 CHAPTER_CONCURRENCY = 4
 BANNED = re.compile(r"\b(simply|obviously|trivially)\b|\bit is easy to see\b", re.I)
 KEY_IDEA = "> **Key idea:**"
@@ -213,6 +213,13 @@ def tidy(out: ChapterOut, title: str) -> ChapterOut:
     return out.model_copy(update={"markdown": md})
 
 
+PROBLEM_KINDS = ("must start with", "the limit is", "is only", "Key idea", "Remove these words", "quiz", "questions")
+
+
+def problem_kind(problem: str) -> str:
+    return next((k for k in PROBLEM_KINDS if k in problem), problem)
+
+
 def chapter_problems(out: ChapterOut, title: str) -> list[str]:
     md = out.markdown.strip()
     problems = []
@@ -230,6 +237,8 @@ def chapter_problems(out: ChapterOut, title: str) -> list[str]:
     banned = sorted({m.group(0).lower() for m in BANNED.finditer(md)})
     if banned:
         problems.append(f"Remove these words, and explain the step they skip instead: {', '.join(banned)}.")
+    if re.search(r"^#+\s*(check yourself|quiz|questions)\b|^\**answer:\s*\d", md, re.I | re.M):
+        problems.append("Remove the quiz from the markdown: questions belong only in `questions`.")
     if not 2 <= len(out.questions) <= 4:
         problems.append(f"Give 2-4 questions; there are {len(out.questions)}.")
     return problems
@@ -444,7 +453,12 @@ class Run:
                 ex = None
             if ex and ex.diagramRequest:
                 asked.append((ch, ex.diagramRequest))
-        return asked[: math.ceil(len(chapters) / 2)]
+        keep = asked[: math.ceil(len(chapters) / 2)]
+        for ch, _ in asked[len(keep):]:  # beyond the cap: no request left that nothing will draw
+            side = self.course / "chapters" / f"{ch.key}.json"
+            ex = _load_json(side, ChapterExtras)
+            side.write_text(ex.model_copy(update={"diagramRequest": None}).model_dump_json(indent=2, exclude_none=True))
+        return keep
 
     async def draw(self, ch: ChapterSpec, req: DiagramRequest) -> None:
         from app.agents.diagrammer import DiagramSaver, make_movie, make_mermaid
@@ -529,17 +543,21 @@ class Run:
             schema=ReviewOut, max_tokens=4000,
         )
         by_key = {ch.key: ch for m in outline.modules for ch in m.chapters}
-        # Chapters still failing the code checks (kept after their retry) go first, then the review's.
-        flagged: dict[str, str] = {}
+        # The review's findings (wrong facts, wrong answers) come first; a chapter still failing the code
+        # checks rides along with its finding, or takes a slot that's left.
+        code: dict[str, str] = {}
         for key, ch in by_key.items():
             md = (self.course / "chapters" / f"{key}.md").read_text()
             ex = _load_json(self.course / "chapters" / f"{key}.json", ChapterExtras)
             found = chapter_problems(tidy(ChapterOut(markdown=md, questions=ex.questions), ch.title), ch.title)
             if found:
-                flagged[key] = " ".join(found)
+                code[key] = " ".join(found)
+        flagged: dict[str, str] = {}
         for b in out.blocking:
             if b.chapterKey in by_key:
                 flagged[b.chapterKey] = (flagged.get(b.chapterKey, "") + " " + b.problem).strip()
+        for key, text in code.items():
+            flagged[key] = (flagged.get(key, "") + " " + text).strip()
         fixes = [Blocking(chapterKey=k, problem=v) for k, v in flagged.items()][:MAX_FIXES]
         if fixes:
             await self.emit("projects", f"Fixing {len(fixes)} chapter(s) the review flagged", {})
@@ -562,7 +580,10 @@ class Run:
             previous=lambda o: o.markdown,
         )
         out = tidy(out, ch.title)
-        if not left:  # never replace a chapter with a worse one
+        # Keep the fix unless it adds a kind of problem the chapter didn't have (an accuracy fix that is
+        # still a little long beats the wrong fact it replaces).
+        before = {problem_kind(p) for p in chapter_problems(tidy(ChapterOut(markdown=md, questions=ex.questions), ch.title), ch.title)}
+        if all(problem_kind(p) in before for p in left):
             out.diagramRequest = ex.diagramRequest
             self.write_chapter_files(ch.key, out)
 

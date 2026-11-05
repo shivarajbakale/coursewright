@@ -219,3 +219,13 @@ def test_a_reply_with_no_content_is_asked_again(monkeypatch):
     monkeypatch.setattr(llm, "_client", lambda: SimpleNamespace(messages=Messages()))
     out, usage = asyncio.run(llm.parse(system="s", user="u", schema=pipeline.ResearchOut))
     assert out.notes == "n" and usage == {"inputTokens": 10, "outputTokens": 5} and not replies
+
+
+def test_problem_kinds_tell_length_from_callouts():
+    long = pipeline.ChapterOut(markdown=f"# T\n\n{WORDS} {WORDS}\n\n> **Key idea:** x", questions=[
+        QuestionSpec(prompt="?", options=["a", "b"], answer=0)] * 2)
+    two = pipeline.ChapterOut(markdown=f"# T\n\n{WORDS}\n\n> **Key idea:** x\n> **Key idea:** y", questions=long.questions)
+    kinds = {pipeline.problem_kind(p) for o in (long, two) for p in pipeline.chapter_problems(o, "T")}
+    assert kinds == {"the limit is", "Key idea"}
+    quiz = pipeline.ChapterOut(markdown=f"# T\n\n{WORDS}\n\n> **Key idea:** x\n\n## Check yourself\n", questions=long.questions)
+    assert [pipeline.problem_kind(p) for p in pipeline.chapter_problems(quiz, "T")] == ["quiz"]
