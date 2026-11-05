@@ -9,6 +9,8 @@ import { Topbar } from '@/components/topbar';
 import { CommandPalette } from '@/components/command-palette';
 import { TutorProvider } from '@/copilot/TutorCopilot';
 import { TutorPanel } from '@/copilot/TutorPanel';
+import { ResizeHandle } from '@/components/resize-handle';
+import { useResizableWidth } from '@/hooks/use-resizable-width';
 import { useTutor } from '@/copilot/tutorStore';
 import { NAVBAR_RAIL_WIDTH, NAVBAR_WIDTH, useShellNav } from '@/hooks/use-shell-nav';
 
@@ -40,6 +42,7 @@ function App() {
   const isPublic = PUBLIC_ROUTES.includes(pathname);
   const { railed, mobileOpen, toggleRail, closeMobile } = useShellNav();
   const isMobile = useMediaQuery('(max-width: 47.99em)') ?? false;
+  const tutorWidth = useResizableWidth({ storageKey: 'cw.tutor-width', initial: 420, min: 340, max: 760 });
   const tutorOpen = useTutor((s) => s.panelOpen) && !pathname.startsWith('/tutor');
   const toggleTutor = useTutor((s) => s.togglePanel);
 
@@ -77,7 +80,9 @@ function App() {
           breakpoint: 'sm',
           collapsed: { mobile: !mobileOpen },
         }}
-        aside={{ width: 420, breakpoint: 'md', collapsed: { desktop: !tutorOpen, mobile: !tutorOpen } }}
+        aside={{ width: tutorWidth.width, breakpoint: 'md', collapsed: { desktop: !tutorOpen, mobile: !tutorOpen } }}
+        // No width animation while the tutor panel is being dragged: the edge follows the pointer.
+        transitionDuration={tutorWidth.dragging ? 0 : undefined}
         padding={0}
         h="100svh"
         style={{ overflow: 'hidden' }}
@@ -104,7 +109,14 @@ function App() {
             <Outlet />
           </Box>
         </AppShell.Main>
-        <AppShell.Aside>{tutorOpen && <TutorPanel />}</AppShell.Aside>
+        <AppShell.Aside>
+          {tutorOpen && (
+            <>
+              <ResizeHandle label="Resize tutor panel" edge="start" state={tutorWidth} />
+              <TutorPanel />
+            </>
+          )}
+        </AppShell.Aside>
       </AppShell>
       <CommandPalette />
     </TutorProvider>

@@ -26,6 +26,8 @@ import { PageShell } from '@/components/page-shell';
 import { Reveal } from '@/components/reveal';
 import { AnchorLink, NavLinkLink } from '@/components/links';
 import { ErrorState, StatePanel } from '@/components/state-panel';
+import { ResizeHandle } from '@/components/resize-handle';
+import { useResizableWidth } from '@/hooks/use-resizable-width';
 import type { NoteSummary } from '@/api/types';
 import {
   useCourses,
@@ -461,6 +463,8 @@ export function NotesPage() {
     });
   };
 
+  const treeWidth = useResizableWidth({ storageKey: 'cw.notes-tree-width', initial: 248, min: 180, max: 480 });
+
   const sidebar = (
     <NotesSidebar
       notes={notes}
@@ -501,15 +505,17 @@ export function NotesPage() {
         <Flex h="100%" style={{ minHeight: 0 }}>
           <Box
             className={classes.tree}
-            w={{ sm: 200, xl: 248 }}
+            w={treeWidth.width}
             px="xs"
             pt="sm"
             pb="xs"
             visibleFrom="sm"
+            pos="relative"
             style={{ flexShrink: 0, minHeight: 0 }}
             data-section="pages"
           >
             {sidebar}
+            <ResizeHandle label="Resize page list" edge="end" state={treeWidth} />
           </Box>
           <Box style={{ flex: 1, minWidth: 0, minHeight: 0 }} data-section={pageId ? 'page' : 'recent'}>
             <Reveal key={pageId ?? 'recent'} style={{ height: '100%' }}>
