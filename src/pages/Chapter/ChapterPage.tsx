@@ -29,9 +29,9 @@ import { AnchorLink, ButtonLink } from '@/components/links';
 import { ErrorState } from '@/components/state-panel';
 import { FlowPlayer } from '@/components/diagrams/FlowPlayer';
 import { MermaidDiagram } from '@/components/diagrams/MermaidDiagram';
-import { useAttempt, useChapter, useChapterProgress, useCreateNote } from '@/hooks/useCoursewright';
+import { useAttempt, useChapter, useChapterProgress, useEnsureChapterNote } from '@/hooks/useCoursewright';
+import { ChapterNotes, type ChapterNotesHandle } from './ChapterNotes';
 import { useTutor } from '@/copilot/tutorStore';
-import { toast } from '@/lib/notify';
 import type { Chapter, Question } from '@/api/types';
 
 /**
@@ -40,11 +40,38 @@ import type { Chapter, Question } from '@/api/types';
  * your notes or ask the tutor about them; the tutor panel (⌘J) already knows
  * which chapter you're on.
  */
+const NOTES_OPEN_KEY = 'cw.chapter-notes-open';
+
 export function ChapterPage() {
   const { courseId, chapterId } = useParams({ from: '/courses/$courseId/chapters/$chapterId' });
   const chapter = useChapter(chapterId);
   const progress = useChapterProgress(chapterId, courseId);
   const setContext = useTutor((s) => s.setContext);
+
+  // The notes panel stays open across chapters once you open it: note-takers take notes on every chapter.
+  const [notesOpen, setNotesOpenState] = useState(() => {
+    try {
+      return localStorage.getItem(NOTES_OPEN_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setNotesOpen = (open: boolean) => {
+    setNotesOpenState(open);
+    try {
+      localStorage.setItem(NOTES_OPEN_KEY, open ? '1' : '0');
+    } catch {
+      /* private window: open for this visit only */
+    }
+  };
+  const notesRef = useRef<ChapterNotesHandle>(null);
+  const ensureNote = useEnsureChapterNote(chapterId);
+  /** Add to notes: the quote goes into this chapter's notes page, and the panel opens on it. */
+  const quote = async (markdown: string) => {
+    if (notesRef.current) await notesRef.current.quote(markdown);
+    else await ensureNote.mutateAsync(markdown);
+    setNotesOpen(true);
+  };
 
   useEffect(() => {
     setContext({ courseId, chapterId, noteId: null, selection: null });
@@ -113,6 +140,14 @@ export function ChapterPage() {
             {ch.readingMinutes} min
           </Badge>
           <Button
+            variant={notesOpen ? 'light' : 'default'}
+            leftSection={<NotebookPen size={16} />}
+            aria-pressed={notesOpen}
+            onClick={() => setNotesOpen(!notesOpen)}
+          >
+            Notes
+          </Button>
+          <Button
             variant="default"
             leftSection={<MessagesSquare size={16} />}
             onClick={() => useTutor.getState().openPanel()}
@@ -133,10 +168,10 @@ export function ChapterPage() {
       <Reveal>
       {/* Text and its outline sit side by side, the outline right after the
           text's measure rather than pinned to the far edge of a wide screen. */}
-      <Group align="flex-start" gap={48} wrap="nowrap">
+      <Group align="flex-start" gap={48} wrap="nowrap" justify={notesOpen ? 'space-between' : undefined}>
       <Stack maw={820} gap="xl" pb="xl" style={{ flex: 1, minWidth: 0 }}>
         <Box component="section" data-section="reading">
-          <ChapterBody key={ch.id} chapter={ch} />
+          <ChapterBody key={ch.id} chapter={ch} onQuote={quote} />
         </Box>
 
         {ch.diagrams.length > 0 && (
@@ -200,9 +235,14 @@ export function ChapterPage() {
           )}
         </Group>
       </Stack>
-      <Box w={240} visibleFrom="lg" style={{ flexShrink: 0, alignSelf: 'stretch' }}>
-        <OnThisPage markdown={ch.markdown} diagramTitles={ch.diagrams.map((d) => d.title)} hasQuestions={ch.questions.length > 0} />
-      </Box>
+      {/* The notes take the outline's place: beside the text there is room for one of them. */}
+      {notesOpen ? (
+        <ChapterNotes key={ch.id} ref={notesRef} chapterId={ch.id} onClose={() => setNotesOpen(false)} />
+      ) : (
+        <Box w={240} visibleFrom="lg" style={{ flexShrink: 0, alignSelf: 'stretch' }}>
+          <OnThisPage markdown={ch.markdown} diagramTitles={ch.diagrams.map((d) => d.title)} hasQuestions={ch.questions.length > 0} />
+        </Box>
+      )}
       </Group>
       </Reveal>
     </PageShell>
@@ -256,7 +296,7 @@ function findText(root: HTMLElement, needle: string): Range | null {
   return null;
 }
 
-function ChapterBody({ chapter }: { chapter: Chapter }) {
+function ChapterBody({ chapter, onQuote }: { chapter: Chapter; onQuote: (markdown: string) => Promise<void> }) {
   const navigate = useNavigate();
   // The markdown's first heading repeats the page title, which PageShell already shows.
   const editor = useBlockEditor({
@@ -268,7 +308,7 @@ function ChapterBody({ chapter }: { chapter: Chapter }) {
     }),
   });
   const [selection, setSelection] = useState('');
-  const createNote = useCreateNote();
+  const [quoting, setQuoting] = useState(false);
   const highlight = useTutor((st) => st.highlight);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -313,17 +353,15 @@ function ChapterBody({ chapter }: { chapter: Chapter }) {
                   size="xs"
                   variant="subtle"
                   leftSection={<NotebookPen size={14} />}
-                  loading={createNote.isPending}
+                  loading={quoting}
                   onClick={async () => {
-                    const page = await createNote.mutateAsync({
-                      title: `From ${chapter.title}`,
-                      icon: '',
-                      markdown: `> ${selection.replace(/\n+/g, '\n> ')}\n\nFrom [${chapter.title}](/courses/${chapter.courseId}/chapters/${chapter.id})\n`,
-                      courseId: chapter.courseId,
-                      chapterId: chapter.id,
-                    });
-                    toast.success(`Saved to “${page.title}”`);
-                    setSelection('');
+                    setQuoting(true);
+                    try {
+                      await onQuote(`> ${selection.replace(/\n+/g, '\n> ')}`);
+                      setSelection('');
+                    } finally {
+                      setQuoting(false);
+                    }
                   }}
                 >
                   Add to notes

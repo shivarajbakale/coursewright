@@ -32,6 +32,9 @@ def test_seed_is_idempotent(client):
         finally:
             conn.close()
 
+    # One run first: it also indexes notes that earlier tests wrote and nothing indexed yet. Idempotent
+    # means that from there, running it again changes nothing.
+    asyncio.run(seed_and_index())
     before = counts()
     assert before["courses"] >= 1 and before["chapters"] >= 10 and before["chunks"] > 0
     asyncio.run(seed_and_index())

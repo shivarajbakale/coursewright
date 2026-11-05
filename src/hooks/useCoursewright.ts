@@ -20,7 +20,7 @@ import {
   type NoteCreate,
   type NotePatch,
 } from '@/api/services/coursewrightService';
-import type { CourseBrief, JobEvent } from '@/api/types';
+import type { CourseBrief, JobEvent, NotePage } from '@/api/types';
 
 export const cwKeys = {
   health: ['health'] as const,
@@ -34,6 +34,7 @@ export const cwKeys = {
   noteRecent: ['notes', 'recent'] as const,
   noteSearch: (q: string) => ['notes', 'search', q] as const,
   note: (id: string) => ['notes', 'page', id] as const,
+  chapterNote: (chapterId: string) => ['notes', 'chapter', chapterId] as const,
   sources: ['sources'] as const,
   sourceStats: ['sources', 'stats'] as const,
   job: (id: string) => ['jobs', id] as const,
@@ -205,12 +206,40 @@ export function useUpdateNote() {
     mutationFn: ({ id, patch }: { id: string; patch: NotePatch }) => noteService.update(id, patch),
     onSuccess: (page, { patch }) => {
       qc.setQueryData(cwKeys.note(page.id), page);
+      // The chapter panel caches the same page under its chapter; keep it current so reopening shows the edit.
+      if (page.chapterId && qc.getQueryData<NotePage | null>(cwKeys.chapterNote(page.chapterId))?.id === page.id) {
+        qc.setQueryData(cwKeys.chapterNote(page.chapterId), page);
+      }
       if ('title' in patch || 'icon' in patch || 'parentId' in patch || 'position' in patch) {
         qc.invalidateQueries({ queryKey: cwKeys.noteTree });
       }
       qc.invalidateQueries({ queryKey: cwKeys.noteRecent });
     },
     onError: () => toast.error('Could not save the page'),
+  });
+}
+
+/** The chapter's own notes page (null until something is written). */
+export function useChapterNote(chapterId: string, enabled = true) {
+  return useQuery({
+    queryKey: cwKeys.chapterNote(chapterId),
+    queryFn: () => noteService.forChapter(chapterId),
+    enabled: enabled && !!chapterId,
+  });
+}
+
+/** Create the chapter's notes page on first write, or append a quoted passage to it. */
+export function useEnsureChapterNote(chapterId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (append?: string) => noteService.ensureForChapter(chapterId, append),
+    onSuccess: (page) => {
+      qc.setQueryData(cwKeys.chapterNote(chapterId), page);
+      qc.setQueryData(cwKeys.note(page.id), page);
+      qc.invalidateQueries({ queryKey: cwKeys.noteTree });
+      qc.invalidateQueries({ queryKey: cwKeys.noteRecent });
+    },
+    onError: () => toast.error('Could not save to your notes'),
   });
 }
 

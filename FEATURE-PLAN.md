@@ -1,29 +1,29 @@
 <!-- feature-plan:v1 — generated, do not hand-edit.
-     Regenerate with: node scripts/feature-plan.mjs notifications.feature-plan.json -->
+     Regenerate with: node scripts/feature-plan.mjs chapter-notes.feature-plan.json -->
 
-# Notifications
+# Notes beside a chapter
 
-`notifications` · 1 surface
+`chapter-notes` · 1 surface
 
 ## Problem
 
-Course builds take minutes and project reviews run in the background, and both are built for leaving and coming back. Nothing tells you when one finished or failed: you find out only by reopening the Library or the project. A notifications menu exists from the template but nothing opens it, and the agent service has no notifications at all.
+While reading a chapter there is no place to write. The only route is selecting text and pressing Add to notes, which creates a new page every time and takes you nowhere: you can't type your own words next to the text, and a chapter's notes end up scattered across many pages.
 
 ## Not in this feature
 
-- A separate inbox page. The menu holds the history; the template's 'View all' link to /inbox goes.
-- Browser or OS push notifications, email, or sound.
-- Notifying every background re-index of a note. Only work you started and are waiting on is worth a notice.
+- Inline margin annotations anchored to paragraphs.
+- Notes beside project briefs (same panel later, not now).
+- A new editor: the panel uses the Notes page's block editor.
 
 ## Surfaces
 
-### Notifications · `sidebar row above Search, opens a menu on any screen`
+### Chapter with notes · `/courses/$courseId/chapters/$chapterId`
 
-Archetype: `list` — See what finished or failed while you were away, and jump to it.
+Archetype: `detail` — Read the chapter and write about it side by side.
 
-**Peak** — the row badge shows 1 and the top line reads 'Rust ownership and borrowing is ready', one click from the course
+**Peak** — you type a thought next to the paragraph that prompted it, without leaving the chapter
 
-**End** — the course open, the notice marked read, the badge gone
+**End** — the chapter finished, and its notes page holds your words and the passages you quoted, one click from Notes
 
 **Desktop @1440**
 
@@ -31,29 +31,27 @@ Archetype: `list` — See what finished or failed while you were away, and jump 
 ┌────────────────────────────────────────────────────────────────────────────┐
 │ ▨ Acme      ⌕ Search…                                       ⌘K   ◐   ⬤     │
 ├───────────────┬────────────────────────────────────────────────────────────┤
-│ Library       │ Notifications                            [ Mark all read ] │
+│ Library       │ Chapter with notes                               [ Notes ] │
 │ New course    │                                                            │
 │ Tutor         │ ┌────────────────────────────────────────────────────────┐ │
-│ Notes         │ │ Notifications                 [Mark all read]          │ │
-│ Sources       │ ├────────────────────────────────────────────────────────┤ │
-│ Settings      │ │ ● ✓ Rust ownership and borrowing is ready   2m         │ │
-│ Notifications…│ │ ● ✕ Build failed: Postgres query engine     1h         │ │
-│               │ │   ✓ Review ready: Build a Raft log          1d         │ │
-│               │ │   ✕ Couldn't index raft.github.io/raft.pdf  3d         │ │
-│               │ ├────────────────────────────────────────────────────────┤ │
-│               │ │                   latest 30, scrolls                   │ │
-│               │ └────────────────────────────────────────────────────────┘ │
-│               │ ┌────────────────────────────────────────────────────────┐ │
-│               │ │ Notifications                 [Mark all read]          │ │
-│               │ ├────────────────────────────────────────────────────────┤ │
-│               │ │ ● ✓ Rust ownership and borrowing is ready   2m         │ │
-│               │ │ ● ✕ Build failed: Postgres query engine     1h         │ │
-│               │ │   ✓ Review ready: Build a Raft log          1d         │ │
-│               │ │   ✕ Couldn't index raft.github.io/raft.pdf  3d         │ │
-│               │ ├────────────────────────────────────────────────────────┤ │
-│               │ │                   latest 30, scrolls                   │ │
+│ Notes         │ │ 2.1 Queries, keys, values                              │ │
+│ Sources       │ │ chapter text, 820px column                             │ │
+│ Settings      │ │ ────────────────────────────────────────────────────── │ │
+│ Chapter with …│ │ Selection                   [Add to notes] [Ask tutor] │ │
 │               │ └────────────────────────────────────────────────────────┘ │
 │               │                                                            │
+│               │ ┌────────────────────────────────────────────────────────┐ │
+│               │ │ Your notes                                       Saved │ │
+│               │ │ Notes: Queries, keys, values                           │ │
+│               │ │ ────────────────────────────────────────────────────── │ │
+│               │ │ > quoted passage                                       │ │
+│               │ │ your own words…                                        │ │
+│               │ │ ────────────────────────────────────────────────────── │ │
+│               │ │ [Open in Notes]  [Close]                               │ │
+│               │ └────────────────────────────────────────────────────────┘ │
+│               │                                                            │
+│               │ ────────────────────────────────────────────────────────── │
+│               │                                                  [ Notes ] │
 └───────────────┴────────────────────────────────────────────────────────────┘
 ```
 
@@ -61,19 +59,12 @@ Archetype: `list` — See what finished or failed while you were away, and jump 
 
 ```
 ┌──────────────────────────┐
-│ ☰  Notifications     ⌕   │
+│ ☰  Chapter with notes⌕   │
 ├──────────────────────────┤
 │ ┌──────────────────────┐ │
-│ │ Notifications       …│ │
-│ ├──────────────────────┤ │
-│ │ ● ✓ Rust ownership … │ │
-│ │ ● ✕ Build failed: P… │ │
-│ │   ✓ Review ready: B… │ │
-│ │   ✕ Couldn't index … │ │
-│ ├──────────────────────┤ │
-│ │  latest 30, scrolls  │ │
+│ │ Selection  [Add to … │ │
 │ └──────────────────────┘ │
-│    [ Mark all read ]     │
+│        [ Notes ]         │
 └──────────────────────────┘
 ```
 
@@ -82,28 +73,28 @@ Archetype: `list` — See what finished or failed while you were away, and jump 
 ```
         loading                     empty                      error
 ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ Inbox spot drawing:  │   │ ⚠                    │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ 'You're all caught   │   │ Compact ErrorState   │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ up. Builds and       │   │ in the menu:         │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ reviews tell you     │   │ 'Notifications       │
-│                      │   │ here when they       │   │ didn't load' with    │
-│                      │   │ finish.'             │   │ Try again; the       │
-│                      │   │                      │   │ sidebar row shows no │
-│                      │   │ [ Mark all read ]    │   │ badge.               │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ No note yet: the     │   │ ⚠                    │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ editor is open and   │   │ Compact ErrorState   │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ empty with the       │   │ in the panel: 'Your  │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ placeholder 'Write   │   │ notes didn't load'   │
+│                      │   │ about this chapter'; │   │ with Try again; the  │
+│                      │   │ the page is created  │   │ chapter stays        │
+│                      │   │ on the first         │   │ readable.            │
+│                      │   │ keystroke, not on    │   │                      │
+│                      │   │ open.                │   │ [ Try again ]        │
 │                      │   │                      │   │                      │
-│                      │   │                      │   │ [ Try again ]        │
+│                      │   │ [ Notes ]            │   │                      │
 └──────────────────────┘   └──────────────────────┘   └──────────────────────┘
  Skeleton mirrors rows       one CTA, 3 lines max      retry, never raw text
 ```
 
-Success: Rows newest first, unread on a faint wash with a dot; clicking marks read and opens the course, project or Sources.
+Success: The block editor with the chapter's note; it saves after a pause in typing and shows Saving / Saved.
 
 Held to:
 
-- B8 — exactly one <h1>, and it names the collection
-- B8 — a collection region (<table>, <ul>, <ol> or role=list) is present
-- B8 — a filter or scope control, pinned above the rows rather than inside them
-- B8 — one primary action, outside the scroll region
+- B5 — exactly one <h1>, and it names the subject
+- B5 — content in at least two declared sections (data-section)
+- B5 — the primary action is pinned outside the scroll region
 
 ## Components
 
@@ -114,59 +105,48 @@ the choices between families live in
 
 | Surface | Control | Why this one | Not |
 | --- | --- | --- | --- |
-| menu | `Menu` | a short list of links opened from one control and dismissed on choice; the existing NotificationsDropdown is already a Menu with rows, unread wash and Mark all read | `Popover` |
-| menu | `Sidebar row with Badge count` | the app has no topbar; the sidebar footer already holds Search and Tutor as rows, so Notifications sits with them and collapses to an icon like they do | `Indicator on a floating ActionIcon` |
-| menu | `StatePanel / ErrorState` | the empty and error states use the same family as every other screen | `plain Text` |
+| chapter | `In-page side pane with ResizeHandle` | notes sit beside the text you're reading and stay put while you scroll; the same drag handle as the tutor panel, so widths behave the same | `Drawer (covers the text)` |
+| chapter | `Notes page's block editor (BlockEditorView)` | one editor across the app: chapter mentions, diagram and quiz blocks all work, and the page opens unchanged in Notes | `Textarea` |
+| chapter | `Header Button 'Notes' (toggle, open state remembered)` | one obvious way in, next to Ask the tutor; remembered so a note-taker doesn't reopen it every chapter | `Floating action button` |
 
 ## Data model
 
-- **Notification**
-  - `id`: string
-  - `kind`: 'course_ready' | 'course_failed' | 'review_ready' | 'review_failed' | 'source_failed'
-  - `title`: string — one line, names the course or project
-  - `body`: string — the failure reason, or what to do next
-  - `href`: string — where a click goes
-  - `courseId`: string | null
-  - `read`: boolean
-  - `createdAt`: ISO date
-  - _relations:_ optionally references one Course (deleted with it)
+- **NotePage (existing)**
+  - `chapterId`: string | null — already in the schema; marks the one notes page for a chapter
+  - `parentId`: string | null — chapter notes nest under one page per course
+  - _relations:_ at most one live page per chapter; nested under the course's notes page
 
 ## API endpoints
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| GET | `/api/notifications` | no | latest 30, newest first |
-| PATCH | `/api/notifications/:id` | no | { read: true } |
-| POST | `/api/notifications/mark-all-read` | no | returns { updated } |
+| GET | `/api/chapters/:id/note` | no | the chapter's notes page, or null |
+| POST | `/api/chapters/:id/note` | no | get-or-create it (nested under the course page); optional { append } adds a quoted passage |
 
 ## Integration points
 
 ```
-  agent/app/jobs/worker.py  ──▶  notify.on_job_finished   (one row per build or review that finishes or fails; cancelled writes nothing)
-  agent ingest of a URL     ──▶  source_failed notice   (note re-indexes stay silent)
-  notificationKeys          ──▶  refetch every 30 s, and when a watched job ends   (badge stays current without a socket)
-  app-sidebar footer        ──▶  Notifications row above Search   (collapses to an icon like Search and Tutor)
-  mocks                     ──▶  Coursewright-shaped notices + ?mock=empty|fail   (both states reachable in dev)
+  Add to notes (selection)  ──▶  POST /chapters/:id/note { append }   (quotes go into the chapter's page and the panel opens, instead of a new page per quote)
+  ChapterPage header        ──▶  Notes toggle   (On this page outline hides while the panel is open)
+  tutor context             ──▶  noteId of the open chapter note   (the tutor can read what you wrote)
+  Notes page tree           ──▶  course page > chapter pages   (the same pages, editable either place)
 ```
 
 ## Blast radius
 
 ```
-new (4)
-  ├── agent/app/db/migrations/003_notifications.sql
-  ├── agent/app/api/notifications.py
-  ├── agent/app/notify.py
-  └── agent/tests/test_notifications.py
+new (3)
+  ├── src/pages/Chapter/ChapterNotes.tsx
+  ├── agent/tests/test_chapter_notes.py
+  └── src/test/chapter-notes.test.tsx
 
-changed (8)
-  ├── agent/app/jobs/worker.py
-  ├── agent/app/main.py
-  ├── src/api/types/notification.types.ts
-  ├── src/components/notifications-dropdown.tsx
-  ├── src/components/app-sidebar.tsx
-  ├── src/hooks/useNotifications.ts
-  ├── src/mocks/handlers/notificationHandlers.ts
-  └── src/mocks/scenarios.ts
+changed (6)
+  ├── agent/app/api/chapters.py
+  ├── src/api/services/coursewrightService.ts
+  ├── src/hooks/useCoursewright.ts
+  ├── src/pages/Chapter/ChapterPage.tsx
+  ├── src/pages/Notes/NoteEditor.tsx
+  └── src/mocks/handlers/coursewrightHandlers.ts
 ```
 
 ## Verification plan

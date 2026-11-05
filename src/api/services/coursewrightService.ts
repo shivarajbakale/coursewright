@@ -106,6 +106,11 @@ export const noteService = {
   create: (body: NoteCreate) => post<NotePage>('/notes', body as Body),
   update: (id: string, body: NotePatch) => patch<NotePage>(`/notes/${id}`, body as Body),
   remove: (id: string) => del<{ ok: true }>(`/notes/${id}`),
+  /** A chapter's own notes page, or null when nothing has been written yet. */
+  forChapter: (chapterId: string) => get<NotePage | null>(`/chapters/${chapterId}/note`),
+  /** Get or create the chapter's notes page; `append` adds markdown (a quoted passage) at its end. */
+  ensureForChapter: (chapterId: string, append?: string) =>
+    post<NotePage>(`/chapters/${chapterId}/note`, append ? { append } : {}),
 };
 
 export const sourceService = {

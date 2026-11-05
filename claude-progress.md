@@ -10,6 +10,14 @@
 
 ## Session Log
 
+### Session 007 — Resizable panes; notes beside a chapter (2026-11-05)
+
+- Tutor panel and Notes page list are resizable (`ResizeHandle` + `useResizableWidth`, widths remembered).
+- Chapter notes: a Notes button opens a resizable panel with the chapter's own notes page (created on the
+  first keystroke, nested under one page per course, marked chapterNote/courseNotes in properties).
+  `GET/POST /api/chapters/:id/note`; Add to notes now quotes into that page instead of a new page each time.
+- Verified: make check, make a11y, agent pytest 58, end to end on the real stack.
+
 ### Session 006 — Builds never fail on budget; Continue (2026-11-05)
 
 - `CW_BUILD_TOKEN_BUDGET` is now when polishing stops, not when a build fails: past it, a course whose files

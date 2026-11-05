@@ -1,103 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Box, Button, Group, Loader, Stack, Text, Tooltip } from '@mantine/core';
-import { BookOpen, Check, CircleAlert, Link2, MessageCircleQuestion } from 'lucide-react';
+import { Box, Button, Group, Stack, Text, Tooltip } from '@mantine/core';
+import { BookOpen, Link2, MessageCircleQuestion } from 'lucide-react';
 import { PageHeader, PageIcon } from '@shivarajbakale/ui';
 import { BlockEditorView, useBlockEditor } from '@shivarajbakale/blocks';
 import type { CourseSummary, NotePage } from '@/api/types';
-import type { NotePatch } from '@/api/services/coursewrightService';
-import { useUpdateNote } from '@/hooks/useCoursewright';
 import { useTutor } from '@/copilot/tutorStore';
 import { coursewrightEditorOptions, useChapterOptions } from '@/features/blocks';
 import { AnchorLink } from '@/components/links';
 import { NotesColumn, NotesPane } from './NotesPane';
+import { SaveIndicator } from './SaveIndicator';
+import { useDebouncedSave } from './useDebouncedSave';
 import classes from './notes.module.css';
 import { parseCover, parseIcon, serializeCover, serializeIcon, timeAgo } from './noteModel';
-
-const SAVE_DELAY = 800;
-
-type SaveState = 'saved' | 'saving' | 'error';
-
-/**
- * Saves patches after a pause in typing. Each field keeps its own latest value,
- * so a title edit and a body edit inside one pause go out as one PATCH. Leaving
- * the page (unmount) sends whatever is still waiting.
- */
-function useDebouncedSave(id: string) {
-  const update = useUpdateNote();
-  const mutate = useRef(update.mutate);
-  mutate.current = update.mutate;
-  const pending = useRef<NotePatch>({});
-  const timer = useRef<number | null>(null);
-  const inFlight = useRef(0);
-  const [state, setState] = useState<SaveState>('saved');
-
-  const flush = useRef(() => {});
-  flush.current = () => {
-    if (timer.current) window.clearTimeout(timer.current);
-    timer.current = null;
-    const patch = pending.current;
-    if (!Object.keys(patch).length) return;
-    pending.current = {};
-    inFlight.current += 1;
-    mutate.current(
-      { id, patch },
-      {
-        onSuccess: () => {
-          inFlight.current -= 1;
-          if (!inFlight.current && !timer.current) setState('saved');
-        },
-        onError: () => {
-          inFlight.current -= 1;
-          setState('error');
-        },
-      }
-    );
-  };
-
-  const schedule = (patch: NotePatch, immediate = false) => {
-    pending.current = { ...pending.current, ...patch };
-    setState('saving');
-    if (timer.current) window.clearTimeout(timer.current);
-    if (immediate) flush.current();
-    else timer.current = window.setTimeout(() => flush.current(), SAVE_DELAY);
-  };
-
-  useEffect(() => () => flush.current(), []);
-
-  return { schedule, state };
-}
-
-function SaveIndicator({ state }: { state: SaveState }) {
-  if (state === 'saving') {
-    return (
-      <Group gap={6} wrap="nowrap" aria-live="polite">
-        <Loader size={12} />
-        <Text size="xs" c="dimmed">
-          Saving…
-        </Text>
-      </Group>
-    );
-  }
-  if (state === 'error') {
-    return (
-      <Group gap={6} wrap="nowrap" aria-live="polite">
-        <CircleAlert size={14} color="var(--mantine-color-red-6)" />
-        <Text size="xs" c="red">
-          Couldn’t save. Keep typing to retry
-        </Text>
-      </Group>
-    );
-  }
-  return (
-    <Group gap={6} wrap="nowrap" aria-live="polite">
-      <Check size={14} color="var(--mantine-color-dimmed)" />
-      <Text size="xs" c="dimmed">
-        Saved
-      </Text>
-    </Group>
-  );
-}
 
 /**
  * One note page: kit's PageHeader (title, icon, cover) over kit's block

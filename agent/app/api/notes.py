@@ -208,3 +208,87 @@ def delete_note(note_id: str):
                 delete_source(conn, s["id"])
         conn.execute("DELETE FROM note_pages WHERE id=?", (note_id,))  # children cascade
     return ok({"ok": True})
+
+
+# ---- A chapter's own notes page ------------------------------------------------------------------------
+# One live page per chapter, marked {"chapterNote": true} so older one-off "Add to notes" pages (which also
+# carry chapter_id) are not mistaken for it. It nests under one page per course, marked {"courseNotes": true}.
+
+
+def _chapter_note(conn: sqlite3.Connection, chapter_id: str) -> sqlite3.Row | None:
+    return row(
+        conn,
+        "SELECT * FROM note_pages WHERE chapter_id=? AND trashed_at IS NULL"
+        " AND json_extract(properties, '$.chapterNote') = 1 ORDER BY created_at LIMIT 1",
+        (chapter_id,),
+    )
+
+
+def _course_parent(conn: sqlite3.Connection, course_id: str, title: str) -> str:
+    r = row(
+        conn,
+        "SELECT id FROM note_pages WHERE course_id=? AND trashed_at IS NULL"
+        " AND json_extract(properties, '$.courseNotes') = 1 ORDER BY created_at LIMIT 1",
+        (course_id,),
+    )
+    if r:
+        return r["id"]
+    pid, t = new_id(), now()
+    pos = conn.execute("SELECT COALESCE(MAX(position)+1, 0) FROM note_pages WHERE parent_id IS NULL").fetchone()[0]
+    conn.execute(
+        """INSERT INTO note_pages(id, parent_id, position, title, icon, properties, markdown, course_id,
+                                  created_at, updated_at) VALUES (?,NULL,?,?, '', ?, '', ?,?,?)""",
+        (pid, pos, title, jdump({"courseNotes": True}), course_id, t, t),
+    )
+    return pid
+
+
+@router.get("/chapters/{chapter_id}/note")
+def get_chapter_note(chapter_id: str):
+    with db() as conn:
+        if not row(conn, "SELECT 1 FROM chapters WHERE id=?", (chapter_id,)):
+            raise not_found("Chapter not found")
+        r = _chapter_note(conn, chapter_id)
+        return ok(note_page(conn, r["id"]) if r else None)
+
+
+class ChapterNoteIn(BaseModel):
+    # Markdown added at the end of the page, e.g. a quoted passage.
+    append: str | None = None
+
+
+@router.post("/chapters/{chapter_id}/note")
+def ensure_chapter_note(chapter_id: str, body: ChapterNoteIn):
+    """Get or create the chapter's notes page, optionally appending markdown to it."""
+    with db() as conn, tx(conn):
+        ch = row(
+            conn,
+            "SELECT c.id, c.title, c.course_id, co.title AS course_title FROM chapters c"
+            " JOIN courses co ON co.id = c.course_id WHERE c.id=?",
+            (chapter_id,),
+        )
+        if not ch:
+            raise not_found("Chapter not found")
+        page = _chapter_note(conn, chapter_id)
+        t = now()
+        if not page:
+            parent = _course_parent(conn, ch["course_id"], ch["course_title"])
+            nid = new_id()
+            pos = conn.execute("SELECT COALESCE(MAX(position)+1, 0) FROM note_pages WHERE parent_id=?", (parent,)).fetchone()[0]
+            conn.execute(
+                """INSERT INTO note_pages(id, parent_id, position, title, icon, properties, markdown, course_id,
+                                          chapter_id, created_at, updated_at) VALUES (?,?,?,?, '', ?, '', ?,?,?,?)""",
+                (nid, parent, pos, f"Notes: {ch['title']}", jdump({"chapterNote": True}), ch["course_id"], chapter_id, t, t),
+            )
+            page = row(conn, "SELECT * FROM note_pages WHERE id=?", (nid,))
+        changed = bool(body.append and body.append.strip())
+        if changed:
+            current = (page["markdown"] or "").rstrip()
+            markdown = (current + "\n\n" if current else "") + body.append.strip() + "\n"
+            conn.execute("UPDATE note_pages SET markdown=?, updated_at=? WHERE id=?", (markdown, t, page["id"]))
+            sync_links(conn, page["id"], markdown)
+        nid = page["id"]
+    if changed:
+        _enqueue_index(nid)
+    with db() as conn:
+        return ok(note_page(conn, nid))

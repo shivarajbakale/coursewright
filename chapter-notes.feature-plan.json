@@ -1,0 +1,168 @@
+{
+  "feature": {
+    "id": "chapter-notes",
+    "title": "Notes beside a chapter",
+    "problem": "While reading a chapter there is no place to write. The only route is selecting text and pressing Add to notes, which creates a new page every time and takes you nowhere: you can't type your own words next to the text, and a chapter's notes end up scattered across many pages.",
+    "nonGoals": [
+      "Inline margin annotations anchored to paragraphs.",
+      "Notes beside project briefs (same panel later, not now).",
+      "A new editor: the panel uses the Notes page's block editor."
+    ]
+  },
+  "surfaces": [
+    {
+      "id": "chapter",
+      "name": "Chapter with notes",
+      "route": "/courses/$courseId/chapters/$chapterId",
+      "archetype": "detail",
+      "moments": {
+        "peak": "you type a thought next to the paragraph that prompted it, without leaving the chapter",
+        "end": "the chapter finished, and its notes page holds your words and the passages you quoted, one click from Notes"
+      },
+      "purpose": "Read the chapter and write about it side by side.",
+      "primaryAction": "Notes",
+      "panels": [
+        {
+          "id": "reading",
+          "kind": "detail",
+          "title": "2.1 Queries, keys, values",
+          "subtitle": "chapter text, 820px column",
+          "fields": [
+            {
+              "label": "Selection",
+              "value": "[Add to notes] [Ask tutor]"
+            }
+          ]
+        },
+        {
+          "id": "notes",
+          "kind": "detail",
+          "title": "Your notes",
+          "badge": "Saved",
+          "subtitle": "Notes: Queries, keys, values",
+          "fields": [
+            {
+              "label": "> quoted passage",
+              "value": ""
+            },
+            {
+              "label": "your own words…",
+              "value": ""
+            }
+          ],
+          "actions": [
+            "Open in Notes",
+            "Close"
+          ]
+        }
+      ],
+      "states": {
+        "loading": "Two text skeleton lines in the panel while the chapter's note loads.",
+        "empty": "No note yet: the editor is open and empty with the placeholder 'Write about this chapter'; the page is created on the first keystroke, not on open.",
+        "error": "Compact ErrorState in the panel: 'Your notes didn't load' with Try again; the chapter stays readable.",
+        "success": "The block editor with the chapter's note; it saves after a pause in typing and shows Saving / Saved."
+      }
+    }
+  ],
+  "overlays": [],
+  "components": [
+    {
+      "surface": "chapter",
+      "control": "In-page side pane with ResizeHandle",
+      "why": "notes sit beside the text you're reading and stay put while you scroll; the same drag handle as the tutor panel, so widths behave the same",
+      "rejected": "Drawer (covers the text)"
+    },
+    {
+      "surface": "chapter",
+      "control": "Notes page's block editor (BlockEditorView)",
+      "why": "one editor across the app: chapter mentions, diagram and quiz blocks all work, and the page opens unchanged in Notes",
+      "rejected": "Textarea"
+    },
+    {
+      "surface": "chapter",
+      "control": "Header Button 'Notes' (toggle, open state remembered)",
+      "why": "one obvious way in, next to Ask the tutor; remembered so a note-taker doesn't reopen it every chapter",
+      "rejected": "Floating action button"
+    }
+  ],
+  "entities": [
+    {
+      "name": "NotePage (existing)",
+      "fields": [
+        {
+          "name": "chapterId",
+          "type": "string | null",
+          "note": "already in the schema; marks the one notes page for a chapter"
+        },
+        {
+          "name": "parentId",
+          "type": "string | null",
+          "note": "chapter notes nest under one page per course"
+        }
+      ],
+      "relations": [
+        "at most one live page per chapter",
+        "nested under the course's notes page"
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/chapters/:id/note",
+      "auth": false,
+      "purpose": "the chapter's notes page, or null"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chapters/:id/note",
+      "auth": false,
+      "purpose": "get-or-create it (nested under the course page); optional { append } adds a quoted passage"
+    }
+  ],
+  "integration": [
+    {
+      "from": "Add to notes (selection)",
+      "to": "POST /chapters/:id/note { append }",
+      "note": "quotes go into the chapter's page and the panel opens, instead of a new page per quote"
+    },
+    {
+      "from": "ChapterPage header",
+      "to": "Notes toggle",
+      "note": "On this page outline hides while the panel is open"
+    },
+    {
+      "from": "tutor context",
+      "to": "noteId of the open chapter note",
+      "note": "the tutor can read what you wrote"
+    },
+    {
+      "from": "Notes page tree",
+      "to": "course page > chapter pages",
+      "note": "the same pages, editable either place"
+    }
+  ],
+  "blastRadius": {
+    "new": [
+      "src/pages/Chapter/ChapterNotes.tsx",
+      "agent/tests/test_chapter_notes.py",
+      "src/test/chapter-notes.test.tsx"
+    ],
+    "changed": [
+      "agent/app/api/chapters.py",
+      "src/api/services/coursewrightService.ts",
+      "src/hooks/useCoursewright.ts",
+      "src/pages/Chapter/ChapterPage.tsx",
+      "src/pages/Notes/NoteEditor.tsx",
+      "src/mocks/handlers/coursewrightHandlers.ts"
+    ]
+  },
+  "nav": [
+    "Library",
+    "New course",
+    "Tutor",
+    "Notes",
+    "Sources",
+    "Settings"
+  ]
+}

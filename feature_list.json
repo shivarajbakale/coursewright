@@ -224,6 +224,26 @@
         "Chrome on the real stack: a link added on Sources that could not be fetched produced a source_failed notice in the menu (test rows removed afterwards)"
       ],
       "notes": "Spec: FEATURE-PLAN.md (notifications.feature-plan.json)"
+    },
+    {
+      "id": "chapter-notes",
+      "priority": 12,
+      "area": "Chapter",
+      "title": "Notes beside a chapter",
+      "user_visible_behavior": "A Notes button on a chapter opens a resizable panel with that chapter's own notes page (created on the first keystroke, nested under the course in Notes). Add to notes on selected text quotes into that page and opens the panel.",
+      "status": "passing",
+      "verification": [
+        "make check",
+        "agent pytest",
+        "Chrome: open panel, type, save, quote a selection, open in Notes"
+      ],
+      "evidence": [
+        "make check: green (334 web tests, 153 ui-probe, plan-lint 2 plans in sync)",
+        "make a11y: green",
+        "cd agent && uv run pytest: 58 passed (test_chapter_notes.py new; seed idempotence test now seeds once before counting)",
+        "Chrome on the real stack: Notes opens the panel; typing created 'Notes: Elections and timeouts' under the course page and saved the full sentence; Add to notes appended the quote to the same page; close/reopen kept the text; Open in Notes opened it; the next chapter opened its own empty notes (test pages removed afterwards)"
+      ],
+      "notes": "Spec: FEATURE-PLAN.md (chapter-notes.feature-plan.json)"
     }
   ]
 }

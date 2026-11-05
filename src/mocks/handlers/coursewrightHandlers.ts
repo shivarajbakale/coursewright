@@ -354,6 +354,35 @@ export const coursewrightHandlers = [
     notes.set(page.id, page);
     return ok(page, { status: 201 });
   }),
+  // A chapter's own notes page, nested under one page per course (agent/app/api/notes.py).
+  http.get('/api/chapters/:id/note', ({ params }) => {
+    const page = [...notes.values()].find((n) => n.chapterId === params.id && n.properties.chapterNote === 'true');
+    return ok(page ?? null);
+  }),
+  http.post('/api/chapters/:id/note', async ({ params, request }) => {
+    const { append } = ((await request.json().catch(() => ({}))) ?? {}) as { append?: string };
+    const chapterId = String(params.id);
+    let page = [...notes.values()].find((n) => n.chapterId === chapterId && n.properties.chapterNote === 'true');
+    if (!page) {
+      const chapter = raftDetail().modules.flatMap((m) => m.chapters).find((c) => c.id === chapterId);
+      let parent = [...notes.values()].find((n) => n.courseId === RAFT_ID && n.properties.courseNotes === 'true');
+      if (!parent) {
+        parent = { id: uid(), parentId: null, position: notes.size, title: raftSummary().title, icon: '', cover: null,
+          properties: { courseNotes: 'true' }, markdown: '', courseId: RAFT_ID, chapterId: null,
+          updatedAt: new Date().toISOString(), backlinks: [] };
+        notes.set(parent.id, parent);
+      }
+      page = { id: uid(), parentId: parent.id, position: 0, title: `Notes: ${chapter?.title ?? 'Chapter'}`, icon: '',
+        cover: null, properties: { chapterNote: 'true' }, markdown: '', courseId: RAFT_ID, chapterId,
+        updatedAt: new Date().toISOString(), backlinks: [] };
+      notes.set(page.id, page);
+    }
+    if (append?.trim()) {
+      page.markdown = `${page.markdown.trimEnd() ? `${page.markdown.trimEnd()}\n\n` : ''}${append.trim()}\n`;
+      page.updatedAt = new Date().toISOString();
+    }
+    return ok(page);
+  }),
   http.get('/api/notes/:id', ({ params }) => {
     const n = notes.get(String(params.id));
     return n ? ok(n) : HttpResponse.json({ message: 'Page not found' }, { status: 404 });
