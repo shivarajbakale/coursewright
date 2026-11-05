@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
   Affix,
@@ -119,7 +120,10 @@ export function ChapterPage() {
       }
     >
       <Reveal>
-      <Stack maw={780} gap="xl" pb="xl">
+      {/* Text and its outline sit side by side, the outline right after the
+          text's measure rather than pinned to the far edge of a wide screen. */}
+      <Group align="flex-start" gap={48} wrap="nowrap">
+      <Stack maw={820} gap="xl" pb="xl" style={{ flex: 1, minWidth: 0 }}>
         <Box component="section" data-section="reading">
           <ChapterBody key={ch.id} chapter={ch} />
         </Box>
@@ -185,8 +189,40 @@ export function ChapterPage() {
           )}
         </Group>
       </Stack>
+      <Box w={240} visibleFrom="lg" style={{ flexShrink: 0, alignSelf: 'stretch' }}>
+        <OnThisPage markdown={ch.markdown} diagramTitles={ch.diagrams.map((d) => d.title)} hasQuestions={ch.questions.length > 0} />
+      </Box>
+      </Group>
       </Reveal>
     </PageShell>
+  );
+}
+
+/**
+ * "On this page": the chapter's own headings, sticky beside the text, so a
+ * long chapter is navigated rather than scrolled. Clicking scrolls the heading
+ * into view inside the page's scroll area.
+ */
+function OnThisPage({ markdown, diagramTitles, hasQuestions }: { markdown: string; diagramTitles: string[]; hasQuestions: boolean }) {
+  const headings = [...markdown.matchAll(/^##\s+(.+)$/gm)].map((m) => m[1].replace(/[*_`]/g, '').trim());
+  const extra = [...diagramTitles, ...(hasQuestions ? ['Check yourself'] : [])];
+  const go = (text: string) => {
+    const root = document.querySelector('main') ?? document;
+    const el = [...root.querySelectorAll('h1,h2,h3,p')].find((h) => h.textContent?.trim() === text);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  if (headings.length + extra.length < 2) return null;
+  return (
+    <Stack gap={2} pos="sticky" top={0} pt={4} component="nav" aria-label="On this page">
+      <Text size="sm" fw={600} mb={4}>
+        On this page
+      </Text>
+      {[...headings, ...extra].map((h) => (
+        <Anchor key={h} component="button" type="button" size="sm" c="dimmed" ta="left" py={3} onClick={() => go(h)}>
+          {h}
+        </Anchor>
+      ))}
+    </Stack>
   );
 }
 
@@ -252,7 +288,7 @@ function ChapterBody({ chapter }: { chapter: Chapter }) {
   }, []);
 
   return (
-    <Box data-chapter-body ref={bodyRef}>
+    <Box data-chapter-body ref={bodyRef} style={{ '--blocks-gutter': '0px' } as React.CSSProperties}>
       <BlockEditorView editor={editor} menus={false} />
       <Affix position={{ bottom: 24, left: '50%' }} style={{ transform: 'translateX(-50%)' }}>
         <Transition mounted={!!selection} transition="slide-up">

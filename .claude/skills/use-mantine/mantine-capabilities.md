@@ -1374,6 +1374,16 @@ against, and `npm run ui-lint` fails the build on a utility class anywhere in
   dark fill is light and whose light fill is dark, that is white text on the
   lime. Return a scheme-dependent CSS variable rather than a colour.
 
+#### `useMediaQuery` — @mantine/hooks
+
+- **Use when:** structure, not styling, changes at a breakpoint — a region that exists on one size and not
+  another, such as the shell's mobile-only top bar.
+- **Instead:** `visibleFrom` / `hiddenFrom` and responsive style props when the element only shows, hides or
+  resizes; they need no re-render and no JavaScript.
+- **Ours:** `src/App.tsx` (the header exists below `sm` only).
+- **Gotcha:** it returns `undefined` on the first render before the query resolves; default it
+  (`?? false`) and pass the breakpoint in `em` to match Mantine's own breakpoints.
+
 #### `useDisclosure` — @mantine/hooks
 
 - **Use when:** a boolean that opens and closes one surface — a Drawer, a Modal,

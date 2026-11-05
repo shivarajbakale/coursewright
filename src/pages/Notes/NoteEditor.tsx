@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Badge, Box, Button, Divider, Group, Loader, Stack, Text, Tooltip } from '@mantine/core';
+import { Box, Button, Group, Loader, Stack, Text, Tooltip } from '@mantine/core';
 import { BookOpen, Check, CircleAlert, Link2, MessageCircleQuestion } from 'lucide-react';
 import { PageHeader, PageIcon } from '@shivarajbakale/ui';
 import { BlockEditorView, useBlockEditor } from '@shivarajbakale/blocks';
@@ -10,6 +10,8 @@ import { useUpdateNote } from '@/hooks/useCoursewright';
 import { useTutor } from '@/copilot/tutorStore';
 import { coursewrightEditorOptions, useChapterOptions } from '@/features/blocks';
 import { AnchorLink } from '@/components/links';
+import { NotesColumn, NotesPane } from './NotesPane';
+import classes from './notes.module.css';
 import { parseCover, parseIcon, serializeCover, serializeIcon, timeAgo } from './noteModel';
 
 const SAVE_DELAY = 800;
@@ -97,20 +99,6 @@ function SaveIndicator({ state }: { state: SaveState }) {
   );
 }
 
-function PropertyRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
-  return (
-    <Group gap="sm" wrap="nowrap" mih={32} align="center">
-      <Group gap={8} w={{ base: 96, sm: 140 }} wrap="nowrap" style={{ flexShrink: 0 }}>
-        {icon}
-        <Text size="sm" c="dimmed">
-          {label}
-        </Text>
-      </Group>
-      <Box style={{ minWidth: 0 }}>{children}</Box>
-    </Group>
-  );
-}
-
 /**
  * One note page: kit's PageHeader (title, icon, cover) over kit's block
  * editor, both saving through `useUpdateNote` after a pause. Mount it keyed by
@@ -120,10 +108,14 @@ export function NoteEditor({
   page,
   courses,
   breadcrumb,
+  leading,
 }: {
   page: NotePage;
   courses: CourseSummary[];
-  breadcrumb?: React.ReactNode;
+  /** The page's path, ending in its live title. */
+  breadcrumb?: (title: string) => React.ReactNode;
+  /** Controls at the toolbar's start — the narrow-screen "Pages" button. */
+  leading?: React.ReactNode;
 }) {
   const navigate = useNavigate();
   const { schedule, state } = useDebouncedSave(page.id);
@@ -168,98 +160,107 @@ export function NoteEditor({
     });
 
   return (
-    <Stack gap={0}>
-      <Group justify="space-between" wrap="nowrap" gap="sm" px={{ base: "sm", sm: "xl" }} py="xs" mih={44}>
-        <Box style={{ minWidth: 0 }}>{breadcrumb}</Box>
-        <Group gap="md" wrap="nowrap" style={{ flexShrink: 0 }}>
-          <SaveIndicator state={state} />
-          <Text size="xs" c="dimmed" visibleFrom="md">
-            Edited {timeAgo(page.updatedAt)}
-          </Text>
-          <Button size="xs" variant="light" leftSection={<MessageCircleQuestion size={14} />} onClick={askTutor}>
-            Ask tutor about this page
-          </Button>
-        </Group>
-      </Group>
-
-      <PageHeader
-        title={title}
-        onTitleChange={(t) => {
-          setTitle(t);
-          schedule({ title: t });
-        }}
-        onTitleEnter={() => editor.focus()}
-        icon={icon}
-        onIconChange={(next) => {
-          setIcon(next);
-          schedule({ icon: serializeIcon(next) }, true);
-        }}
-        cover={cover}
-        onCoverChange={(next) => {
-          setCover(next);
-          schedule({ cover: serializeCover(next) }, true);
-        }}
-      >
-        {(course || page.chapterId) && (
-          <Stack gap={0} mt="xs">
-            {course && (
-              <PropertyRow icon={<BookOpen size={15} color="var(--mantine-color-dimmed)" />} label="Course">
-                <AnchorLink to="/courses/$courseId" params={{ courseId: course.id }} size="sm" fw={500}>
-                  {course.icon} {course.title}
-                </AnchorLink>
-              </PropertyRow>
-            )}
-            {page.chapterId && page.courseId && (
-              <PropertyRow icon={<Link2 size={15} color="var(--mantine-color-dimmed)" />} label="Chapter">
-                <AnchorLink
-                  to="/courses/$courseId/chapters/$chapterId"
-                  params={{ courseId: page.courseId, chapterId: page.chapterId }}
-                  size="sm"
-                  fw={500}
-                >
-                  ↗ Open the linked chapter
-                </AnchorLink>
-              </PropertyRow>
-            )}
-          </Stack>
-        )}
-      </PageHeader>
-
-      <Box px={{ base: "xs", sm: "xl" }} pb="xl">
-        <BlockEditorView editor={editor} />
-
-        <Divider my="xl" />
-        <Stack gap="xs" component="section" aria-labelledby={`backlinks-${page.id}`}>
-          <Group gap="xs">
-            <Text id={`backlinks-${page.id}`} size="sm" fw={600}>
-              Backlinks
-            </Text>
-            <Badge size="sm" variant="light" color="gray">
-              {page.backlinks.length}
-            </Badge>
+    <NotesPane
+      toolbar={
+        <>
+          <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+            {leading}
+            {breadcrumb?.(title)}
           </Group>
-          {page.backlinks.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              No other page links here yet. Link to this page from another note and it shows up here.
-            </Text>
-          ) : (
+          <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>
+            <Tooltip label={`Edited ${timeAgo(page.updatedAt)}`} openDelay={400}>
+              <Box>
+                <SaveIndicator state={state} />
+              </Box>
+            </Tooltip>
+            <Button size="xs" variant="default" leftSection={<MessageCircleQuestion size={14} />} onClick={askTutor}>
+              Ask tutor
+            </Button>
+          </Group>
+        </>
+      }
+    >
+      <NotesColumn>
+        <Box className={classes.header}>
+          <PageHeader
+            title={title}
+            onTitleChange={(t) => {
+              setTitle(t);
+              schedule({ title: t });
+            }}
+            onTitleEnter={() => editor.focus()}
+            icon={icon}
+            onIconChange={(next) => {
+              setIcon(next);
+              schedule({ icon: serializeIcon(next) }, true);
+            }}
+            cover={cover}
+            onCoverChange={(next) => {
+              setCover(next);
+              schedule({ cover: serializeCover(next) }, true);
+            }}
+          >
+            {(course || (page.chapterId && page.courseId)) && (
+              <Group gap="xs" mt={6} wrap="nowrap" style={{ minWidth: 0 }}>
+                <BookOpen size={14} color="var(--mantine-color-dimmed)" style={{ flexShrink: 0 }} />
+                {course && (
+                  <AnchorLink to="/courses/$courseId" params={{ courseId: course.id }} size="sm" c="dimmed" truncate>
+                    {course.title}
+                  </AnchorLink>
+                )}
+                {page.chapterId && page.courseId && (
+                  <>
+                    {course && (
+                      <Text size="sm" c="dimmed" aria-hidden>
+                        ·
+                      </Text>
+                    )}
+                    <AnchorLink
+                      to="/courses/$courseId/chapters/$chapterId"
+                      params={{ courseId: page.courseId, chapterId: page.chapterId }}
+                      size="sm"
+                      c="dimmed"
+                      style={{ flexShrink: 0 }}
+                    >
+                      <Group gap={4} wrap="nowrap" component="span">
+                        <Link2 size={14} />
+                        Linked chapter
+                      </Group>
+                    </AnchorLink>
+                  </>
+                )}
+              </Group>
+            )}
+          </PageHeader>
+        </Box>
+
+        <Box mt="sm" className={classes.body}>
+          <BlockEditorView editor={editor} />
+        </Box>
+
+        <Stack gap={6} mt="xl" pt="md" component="section" aria-labelledby={`backlinks-${page.id}`} className={classes.backlinks}>
+          <Text id={`backlinks-${page.id}`} size="sm" c="dimmed">
+            {page.backlinks.length === 0
+              ? 'No backlinks yet. Link to this page from another note and it shows up here.'
+              : `Linked from ${page.backlinks.length} page${page.backlinks.length === 1 ? '' : 's'}`}
+          </Text>
+          {page.backlinks.length > 0 && (
             <Group gap="xs">
               {page.backlinks.map((b) => (
-                <Tooltip key={b.id} label="Open page" openDelay={400}>
-                  <Button
-                    size="xs"
-                    variant="default"
-                    leftSection={<PageIcon icon={parseIcon(b.icon)} size={14} />}
-                    onClick={() => navigate({ to: '/notes/$pageId', params: { pageId: b.id } })}
-                  >
-                    {b.title || 'Untitled'}
-                  </Button>
-                </Tooltip>
+                <Button
+                  key={b.id}
+                  size="xs"
+                  variant="default"
+                  leftSection={<PageIcon icon={parseIcon(b.icon)} size={14} />}
+                  onClick={() => navigate({ to: '/notes/$pageId', params: { pageId: b.id } })}
+                >
+                  {b.title || 'Untitled'}
+                </Button>
               ))}
             </Group>
           )}
         </Stack>
-      </Box>
-    </Stack>
+      </NotesColumn>
+    </NotesPane>
   );
 }

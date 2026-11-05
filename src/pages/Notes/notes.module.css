@@ -1,0 +1,68 @@
+/*
+ * Notes — two panes that fill the viewport, Notion-style.
+ *
+ * Three things a style prop cannot say:
+ *  1. PageShell's title band is replaced by the panes. Its h1 stays in the
+ *     document (screen readers, the probe) but is visually hidden; the open
+ *     page's own title is what the eye reads.
+ *  2. The tree and the page are separated by a hairline, not two cards.
+ *  3. Kit's PageHeader reserves 64px above the icon and a 96px side gutter for
+ *     a full-width Notion page. Here it sits in a measured column under a
+ *     toolbar, so both are narrowed — through its public `--page-header-gutter`
+ *     and the one structural selector for its inner box when there is no cover.
+ */
+
+.root {
+  height: 100%;
+  min-height: 0;
+}
+
+/* The PageShell header band: kept for the outline, removed from the layout. */
+.root > section > header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tree {
+  border-inline-end: 1px solid var(--app-line, var(--mantine-color-default-border));
+}
+
+.toolbar {
+  border-bottom: 1px solid var(--app-line, var(--mantine-color-default-border));
+}
+
+.header {
+  --page-header-gutter: 0px;
+}
+
+/* The title, the course line and the backlinks start where the editor's text
+   starts — past the block editor's gutter for its + and grip handles. */
+.header > header > div {
+  padding-inline-start: var(--blocks-gutter, 3.25rem);
+}
+
+.backlinks {
+  margin-inline-start: var(--blocks-gutter, 3.25rem);
+}
+
+/* The editor leaves 30vh under the last block as a click target. Here the
+   backlinks follow it, so that much space only pushes them off screen. */
+.body :global(.ProseMirror.ProseMirror) {
+  padding-bottom: var(--mantine-spacing-md);
+}
+
+.header > header:not([data-with-cover]) > div {
+  padding-top: var(--mantine-spacing-lg);
+}
+
+
+.backlinks {
+  border-top: 1px solid var(--app-line, var(--mantine-color-default-border));
+}

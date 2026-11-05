@@ -176,7 +176,7 @@ export function GeneratingPage() {
           </Grid.Col>
           <Grid.Col span={{ base: 12, lg: 4 }}>
             <Card withBorder radius="lg" p={0}>
-              <Text size="xs" c="dimmed" tt="uppercase" fw={600} px="md" pt="md" pb="xs">
+              <Text size="sm" fw={600} px="md" pt="md" pb="xs">
                 What the agents did
               </Text>
               <ScrollArea h={420} px="md" pb="md">

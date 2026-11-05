@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ActionIcon, NavLink, Stack, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, NavLink, Stack, Tooltip } from '@mantine/core';
 import { type LucideIcon } from 'lucide-react';
 
 /**
@@ -52,9 +52,6 @@ export function NavMain({ items, railed = false }: { items: NavMainItem[]; raile
 
   return (
     <Stack gap={2} p="xs" component="nav" aria-label="Primary">
-      <Text size="xs" fw={500} c="dimmed" px="xs" pb={4}>
-        Platform
-      </Text>
       {items.map((item) =>
         item.items?.length ? (
           <NavLink

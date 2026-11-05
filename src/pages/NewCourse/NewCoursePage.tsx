@@ -16,12 +16,11 @@ import {
   Text,
   Textarea,
   TextInput,
-  ThemeIcon,
   Timeline,
   Title,
 } from '@mantine/core';
-import { useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight, Check, Sparkles, Wand2 } from 'lucide-react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { ArrowLeft, ArrowRight, Check, Sparkles } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
 import { AnchorLink } from '@/components/links';
 import { Reveal } from '@/components/reveal';
@@ -47,7 +46,9 @@ export function NewCoursePage() {
   const create = useCreateCourse();
 
   const [phase, setPhase] = useState<Phase>('topic');
-  const [topic, setTopic] = useState('');
+  // "Start again" on a failed course links here with ?topic=…
+  const search = useSearch({ strict: false }) as { topic?: unknown };
+  const [topic, setTopic] = useState(typeof search.topic === 'string' ? search.topic : '');
   const [answers, setAnswers] = useState<(InterviewAnswer & { header: string })[]>([]);
   const [question, setQuestion] = useState<InterviewQuestion | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
@@ -164,7 +165,7 @@ export function NewCoursePage() {
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}>
           <Card withBorder radius="lg" p="lg">
-            <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb="sm">
+            <Text size="sm" fw={600} mb="sm">
               Your brief
             </Text>
             <Timeline active={answers.length + (topic && phase !== 'topic' ? 0 : -1)} bulletSize={20} lineWidth={2}>
@@ -208,14 +209,9 @@ function TopicStep({
   return (
     <Card withBorder radius="lg" p="xl">
       <Stack gap="lg">
-        <Group gap="sm">
-          <ThemeIcon size={36} radius="md" variant="light">
-            <Sparkles size={18} />
-          </ThemeIcon>
-          <Title order={2} size="h3">
-            What do you want to learn?
-          </Title>
-        </Group>
+        <Title order={2} size="h3">
+          What do you want to learn?
+        </Title>
         <Textarea
           autosize
           minRows={2}
@@ -391,14 +387,9 @@ function SummaryCard({
   return (
     <Card withBorder radius="lg" p="xl">
       <Stack gap="lg">
-        <Group gap="sm">
-          <ThemeIcon size={36} radius="md" variant="light">
-            <Wand2 size={18} />
-          </ThemeIcon>
-          <Title order={2} size="h3">
-            Ready to build “{topic}”
-          </Title>
-        </Group>
+        <Title order={2} size="h3">
+          Ready to build “{topic}”
+        </Title>
         {summary && <Text>{summary}</Text>}
         <Stack gap="xs">
           {answers.map((a) => (

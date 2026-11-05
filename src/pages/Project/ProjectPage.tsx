@@ -3,6 +3,8 @@ import {
   Accordion,
   Alert,
   Badge,
+  Box,
+  Tabs,
   Breadcrumbs,
   Button,
   Card,
@@ -45,6 +47,7 @@ const FINDING = {
 export function ProjectPage() {
   const { courseId, projectId } = useParams({ from: '/courses/$courseId/projects/$projectId' });
   const project = useProject(projectId);
+  const [tabState, setTabState] = useState<string | null>(null);
   const setContext = useTutor((s) => s.setContext);
 
   useEffect(() => {
@@ -69,6 +72,8 @@ export function ProjectPage() {
   }
   const p = project.data;
   const done = p.milestones.filter((m) => m.doneAt).length;
+  const tab = tabState ?? (done > 0 || p.submissions.length > 0 ? 'milestones' : 'brief');
+  const setTab = setTabState;
 
   return (
     <PageShell
@@ -84,69 +89,89 @@ export function ProjectPage() {
           </Text>
         </Breadcrumbs>
       }
-      actions={
-        <Badge size="lg" variant="light">
-          {done} of {p.milestones.length} milestones
-        </Badge>
-      }
     >
       <Reveal>
-      <Grid gap="lg">
-        <Grid.Col span={{ base: 12, lg: 7 }}>
-          <Stack gap="lg">
-            <Card withBorder radius="lg" p="lg" data-section="brief">
-              <MarkdownView key={p.id} markdown={p.brief} label="Project brief" />
-            </Card>
-            <Milestones project={p} />
-            <Hints project={p} />
-          </Stack>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, lg: 5 }}>
-          <Stack gap="lg">
-            <Card withBorder radius="lg" p="lg" data-section="starter">
-              <Text fw={600} mb="sm">
-                Starter layout
-              </Text>
-              <Stack gap="xs">
-                {p.starter.map((f) => (
-                  <Group key={f.path} gap="sm" wrap="nowrap" align="flex-start">
-                    <FileCode2 size={16} style={{ flexShrink: 0, marginTop: 2 }} />
-                    <Stack gap={0}>
-                      <Code>{f.path}</Code>
-                      <Text size="xs" c="dimmed">
-                        {f.note}
-                      </Text>
-                    </Stack>
-                  </Group>
-                ))}
-              </Stack>
-            </Card>
-            <Card withBorder radius="lg" p="lg" data-section="rubric">
-              <Text fw={600} mb="sm">
-                Rubric
-              </Text>
-              <Stack gap="xs">
-                {p.rubric.map((r) => (
-                  <Group key={r.criterion} justify="space-between" wrap="nowrap" align="flex-start">
-                    <Text size="sm">{r.criterion}</Text>
-                    {r.chapterId && (
-                      <AnchorLink
-                        size="xs"
-                        to="/courses/$courseId/chapters/$chapterId"
-                        params={{ courseId, chapterId: r.chapterId }}
-                        style={{ flexShrink: 0 }}
-                      >
-                        Chapter
-                      </AnchorLink>
-                    )}
-                  </Group>
-                ))}
-              </Stack>
-            </Card>
-            <Review project={p} courseId={courseId} />
-          </Stack>
-        </Grid.Col>
-      </Grid>
+        {/* Three tabs, each one screen: what to build, how far you are, and the
+            code review next to the rubric it grades against. */}
+        <Tabs value={tab} onChange={(v) => setTab(v ?? 'brief')} keepMounted={false}>
+          <Tabs.List mb="lg">
+            <Tabs.Tab value="brief">Brief</Tabs.Tab>
+            <Tabs.Tab value="milestones">
+              Milestones · {done}/{p.milestones.length}
+            </Tabs.Tab>
+            <Tabs.Tab value="review">Code review</Tabs.Tab>
+          </Tabs.List>
+          <Tabs.Panel value="brief">
+            <Grid gap="xl">
+              <Grid.Col span={{ base: 12, lg: 7 }}>
+                <Box component="section" data-section="brief">
+                  <MarkdownView key={p.id} markdown={p.brief} label="Project brief" />
+                </Box>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, lg: 5 }}>
+                <Card withBorder radius="lg" p="md" data-section="starter">
+                  <Text fw={600} mb="sm">
+                    Starter layout
+                  </Text>
+                  <Stack gap="xs">
+                    {p.starter.map((f) => (
+                      <Group key={f.path} gap="sm" wrap="nowrap" align="flex-start">
+                        <FileCode2 size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                        <Stack gap={0}>
+                          <Code>{f.path}</Code>
+                          <Text size="xs" c="dimmed">
+                                {f.note}
+                          </Text>
+                        </Stack>
+                      </Group>
+                    ))}
+                  </Stack>
+                </Card>
+              </Grid.Col>
+            </Grid>
+          </Tabs.Panel>
+          <Tabs.Panel value="milestones">
+            <Grid gap="xl">
+              <Grid.Col span={{ base: 12, lg: 7 }}>
+                <Milestones project={p} />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, lg: 5 }}>
+                <Hints project={p} />
+              </Grid.Col>
+            </Grid>
+          </Tabs.Panel>
+          <Tabs.Panel value="review">
+            <Grid gap="xl">
+              <Grid.Col span={{ base: 12, lg: 7 }}>
+                <Review project={p} courseId={courseId} />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, lg: 5 }}>
+                <Card withBorder radius="lg" p="md" data-section="rubric">
+                  <Text fw={600} mb="sm">
+                    Rubric
+                  </Text>
+                  <Stack gap="xs">
+                    {p.rubric.map((r) => (
+                      <Group key={r.criterion} justify="space-between" wrap="nowrap" align="flex-start">
+                        <Text size="sm">{r.criterion}</Text>
+                        {r.chapterId && (
+                          <AnchorLink
+                                size="xs"
+                                to="/courses/$courseId/chapters/$chapterId"
+                                params={{ courseId, chapterId: r.chapterId }}
+                                style={{ flexShrink: 0 }}
+                          >
+                                Chapter
+                          </AnchorLink>
+                        )}
+                      </Group>
+                    ))}
+                  </Stack>
+                </Card>
+              </Grid.Col>
+            </Grid>
+          </Tabs.Panel>
+        </Tabs>
       </Reveal>
     </PageShell>
   );

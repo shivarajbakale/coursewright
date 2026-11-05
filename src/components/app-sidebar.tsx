@@ -1,86 +1,127 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Box, Group, ScrollArea, Stack, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
-import { GraduationCap, type LucideIcon } from 'lucide-react';
+import { ActionIcon, Box, Group, Kbd, ScrollArea, Stack, Text, ThemeIcon, Tooltip, UnstyledButton } from '@mantine/core';
+import { GraduationCap, MessagesSquare, PanelLeft, Search } from 'lucide-react';
 
 import { NavMain, type NavMainItem } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { openCommandPalette } from '@/components/command-palette';
 import { useShellNav } from '@/hooks/use-shell-nav';
-import { useSession } from '@/lib/auth';
+import { useTutor } from '@/copilot/tutorStore';
 import { navItems } from '@/config/nav';
 
 /**
- * Everything inside the shell's navbar: workspace badge, primary navigation,
- * account block.
- *
- * It is a plain column now rather than a family of nine kit components. The
- * navbar's width, its position and its mobile behaviour belong to Mantine's
- * `AppShell` in `App.tsx`; what belongs here is the content and the one thing
- * the content has to know — whether it is being drawn in the rail.
+ * Everything the shell needs, in one column: the product mark and the rail
+ * toggle, primary navigation, and the three global controls (search ⌘K, tutor
+ * ⌘J, theme). There is no desktop top bar: it only repeated the page title the
+ * page already shows, and cost a row of height on every screen.
  *
  * Items come from `src/config/nav.ts`, the single source of truth shared with
  * the ⌘K palette.
  */
 export function AppSidebar() {
-  const { data: session } = useSession();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const railed = useShellNav((s) => s.railed);
-
-  // Workspace badge — single-tenant for now, so we show the product name.
-  const workspace = { name: 'Coursewright', logo: GraduationCap as LucideIcon, plan: 'Personal course learner' };
+  const { railed, toggleRail } = useShellNav();
+  const tutorOpen = useTutor((s) => s.panelOpen);
+  const toggleTutor = useTutor((s) => s.togglePanel);
 
   const navMain: NavMainItem[] = navItems.map((item) => ({
     title: item.title,
     url: item.to,
     icon: item.icon,
     isActive:
-      item.to === '/'
-        ? pathname === '/'
-        : pathname === item.to || pathname.startsWith(`${item.to}/`),
+      item.to === '/' ? pathname === '/' : pathname === item.to || pathname.startsWith(`${item.to}/`),
   }));
 
-  const user = session
-    ? {
-        name: session.user.name,
-        email: session.user.email,
-        avatar: session.user.image ?? '',
-      }
-    : { name: 'Guest', email: '', avatar: '' };
+  const control = (label: string, hint: string, icon: React.ReactNode, onClick: () => void, active = false) =>
+    railed ? (
+      <Tooltip label={`${label} (${hint})`} position="right" withArrow>
+        <ActionIcon
+          variant={active ? 'light' : 'subtle'}
+          color="gray"
+          size="lg"
+          onClick={onClick}
+          aria-label={label}
+          aria-pressed={active || undefined}
+        >
+          {icon}
+        </ActionIcon>
+      </Tooltip>
+    ) : (
+      <UnstyledButton
+        onClick={onClick}
+        aria-pressed={active || undefined}
+        px="sm"
+        py={6}
+        bg={active ? 'var(--mantine-color-default-hover)' : undefined}
+        style={{ borderRadius: 'var(--mantine-radius-md)', display: 'block' }}
+      >
+        <Group gap="sm" wrap="nowrap">
+          {icon}
+          <Text size="sm" style={{ flex: 1 }}>
+            {label}
+          </Text>
+          <Kbd size="xs">{hint}</Kbd>
+        </Group>
+      </UnstyledButton>
+    );
 
   return (
     <Stack gap={0} h="100%" style={{ minHeight: 0, overflow: 'hidden' }}>
-      <Box p="xs" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
-        <UnstyledButton
-          component={Link}
-          to="/"
-          aria-label={`${workspace.name} home`}
-          p={6}
-          style={{ borderRadius: 'var(--mantine-radius-md)', display: 'block' }}
-        >
-          <Group gap="sm" wrap="nowrap" justify={railed ? 'center' : undefined}>
-            <ThemeIcon size={32} radius="md" variant="filled">
-              <workspace.logo size={16} />
-            </ThemeIcon>
-            {!railed && (
-              <div style={{ minWidth: 0 }}>
-                <Text size="sm" fw={500} truncate>
-                  {workspace.name}
-                </Text>
-                <Text size="xs" c="dimmed" truncate>
-                  {workspace.plan}
-                </Text>
-              </div>
-            )}
-          </Group>
-        </UnstyledButton>
-      </Box>
+      <Group
+        p="xs"
+        gap="xs"
+        justify={railed ? 'center' : 'space-between'}
+        wrap="nowrap"
+        style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+      >
+        {!railed && (
+          <UnstyledButton
+            component={Link}
+            to="/"
+            aria-label="Coursewright home"
+            p={4}
+            style={{ borderRadius: 'var(--mantine-radius-md)' }}
+          >
+            <Group gap="sm" wrap="nowrap">
+              <ThemeIcon size={28} radius="md" variant="filled">
+                <GraduationCap size={16} />
+              </ThemeIcon>
+              <Text size="sm" fw={600}>
+                Coursewright
+              </Text>
+            </Group>
+          </UnstyledButton>
+        )}
+        <Tooltip label={railed ? 'Expand sidebar (⌘B)' : 'Collapse sidebar (⌘B)'} position="right" withArrow>
+          <ActionIcon
+            onClick={toggleRail}
+            variant="subtle"
+            color="gray"
+            visibleFrom="sm"
+            aria-label={railed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-expanded={!railed}
+          >
+            <PanelLeft size={16} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
 
       <ScrollArea style={{ minHeight: 0, flex: 1 }}>
         <NavMain items={navMain} railed={railed} />
       </ScrollArea>
 
-      <Box p="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
-        <NavUser user={user} railed={railed} />
-      </Box>
+      <Stack
+        gap={2}
+        p="xs"
+        align={railed ? 'center' : 'stretch'}
+        style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
+      >
+        {control('Search', '⌘K', <Search size={16} />, openCommandPalette)}
+        {control('Tutor', '⌘J', <MessagesSquare size={16} />, toggleTutor, tutorOpen)}
+        <Box px={railed ? 0 : 4}>
+          <ThemeToggle />
+        </Box>
+      </Stack>
     </Stack>
   );
 }

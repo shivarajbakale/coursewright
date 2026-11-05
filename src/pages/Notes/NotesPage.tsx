@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import {
+  ActionIcon,
   Alert,
   Box,
   Breadcrumbs,
@@ -10,9 +11,7 @@ import {
   Drawer,
   Flex,
   Group,
-  Paper,
   ScrollArea,
-  SimpleGrid,
   Skeleton,
   Stack,
   Text,
@@ -23,11 +22,11 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
-import { CircleAlert, FileQuestion, FilePlus2, ListTree, NotebookPen, Plus, Search } from 'lucide-react';
+import { CircleAlert, FileQuestion, FilePlus2, ListTree, NotebookPen, Search } from 'lucide-react';
 import { PageIcon, PageTree, type PageMove } from '@shivarajbakale/ui';
 import { PageShell } from '@/components/page-shell';
 import { Reveal } from '@/components/reveal';
-import { AnchorLink, CardLink } from '@/components/links';
+import { AnchorLink, NavLinkLink } from '@/components/links';
 import type { NoteSummary } from '@/api/types';
 import {
   useCourses,
@@ -40,6 +39,8 @@ import {
   useUpdateNote,
 } from '@/hooks/useCoursewright';
 import { NoteEditor } from './NoteEditor';
+import { NotesColumn, NotesPane } from './NotesPane';
+import classes from './notes.module.css';
 import {
   ancestry,
   buildTree,
@@ -146,7 +147,7 @@ function NotesSidebar({
   return (
     <Stack gap="xs" h="100%" style={{ minHeight: 0 }}>
       <TextInput
-        size="sm"
+        size="xs"
         placeholder="Search notes"
         aria-label="Search notes"
         leftSection={<Search size={14} />}
@@ -189,133 +190,159 @@ function NotesSidebar({
           />
         )}
       </ScrollArea>
-      <Button
-        variant="subtle"
-        color="gray"
-        justify="flex-start"
-        leftSection={<Plus size={14} />}
-        onClick={() => onAdd(null)}
-        style={{ flexShrink: 0 }}
-      >
-        New page
-      </Button>
     </Stack>
   );
 }
 
 // ── The right column with no page open: recent pages ─────────────────────────
 
-function RecentPages({ onNew, creating }: { onNew: () => void; creating: boolean }) {
+function RecentPages({
+  notes,
+  onNew,
+  creating,
+  leading,
+}: {
+  notes: NoteSummary[];
+  onNew: () => void;
+  creating: boolean;
+  leading?: React.ReactNode;
+}) {
   const recent = useRecentNotes();
+  const toolbar = (
+    <Group gap="xs" wrap="nowrap">
+      {leading}
+      <Text size="sm">Notes</Text>
+    </Group>
+  );
 
   if (recent.isLoading) {
     return (
-      <Stack gap="md" p="xl">
-        <Skeleton h={22} w={160} />
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} h={88} radius="md" />
-          ))}
-        </SimpleGrid>
-      </Stack>
+      <NotesPane toolbar={toolbar}>
+        <NotesColumn inset="xl">
+          <Stack gap="xs" pt="lg">
+            <Skeleton h={20} w={140} mb="xs" />
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} h={36} radius="sm" />
+            ))}
+          </Stack>
+        </NotesColumn>
+      </NotesPane>
     );
   }
   if (recent.isError) {
     return (
-      <Box p="xl">
-        <Alert color="red" variant="light" icon={<CircleAlert size={16} />} title="Recent pages didn’t load">
-          <Group gap="sm" mt={4}>
-            <Text size="sm">The notes service didn’t answer.</Text>
-            <Button size="xs" variant="default" onClick={() => recent.refetch()}>
-              Retry
-            </Button>
-          </Group>
-        </Alert>
-      </Box>
+      <NotesPane toolbar={toolbar}>
+        <NotesColumn inset="xl">
+          <Alert mt="lg" color="red" variant="light" icon={<CircleAlert size={16} />} title="Recent pages didn’t load">
+            <Group gap="sm" mt={4}>
+              <Text size="sm">The notes service didn’t answer.</Text>
+              <Button size="xs" variant="default" onClick={() => recent.refetch()}>
+                Retry
+              </Button>
+            </Group>
+          </Alert>
+        </NotesColumn>
+      </NotesPane>
     );
   }
   const pages = recent.data ?? [];
   if (!pages.length) {
     return (
-      <Center h="100%" p="xl">
-        <Stack align="center" gap="sm" maw={380} ta="center">
-          <ThemeIcon size={48} radius="xl" variant="light">
-            <NotebookPen size={24} />
-          </ThemeIcon>
-          <Title order={2} size="h3">
-            Your notebook is empty
-          </Title>
-          <Text size="sm" c="dimmed">
-            Write things down in your own words as you read. Pages nest inside pages, link to chapters, and the tutor can
-            read them.
-          </Text>
-          <Button leftSection={<FilePlus2 size={16} />} onClick={onNew} loading={creating}>
-            Write your first page
-          </Button>
-        </Stack>
-      </Center>
+      <NotesPane toolbar={toolbar}>
+        <Center h="100%" mih={360} p="xl">
+          <Stack align="center" gap="sm" maw={380} ta="center">
+            <ThemeIcon size={48} radius="xl" variant="light">
+              <NotebookPen size={24} />
+            </ThemeIcon>
+            <Title order={2} size="h3">
+              Your notebook is empty
+            </Title>
+            <Text size="sm" c="dimmed">
+              Write things down in your own words as you read. Pages nest inside pages, link to chapters, and the tutor
+              can read them.
+            </Text>
+            <Button leftSection={<FilePlus2 size={16} />} onClick={onNew} loading={creating}>
+              Write your first page
+            </Button>
+          </Stack>
+        </Center>
+      </NotesPane>
     );
   }
 
+  const byId = new Map(notes.map((n) => [n.id, n]));
+
   return (
-    <Stack gap="md" p="xl">
-      <Group justify="space-between">
-        <Title order={2} size="h4">
-          Recently edited
-        </Title>
-        <Button size="xs" variant="default" leftSection={<Plus size={14} />} onClick={onNew} loading={creating}>
-          New page
-        </Button>
-      </Group>
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
-        {pages.map((p) => (
-          <CardLink
-            key={p.id}
-            to="/notes/$pageId"
-            params={{ pageId: p.id }}
-            withBorder
-            radius="md"
-            p="md"
-          >
-            <Stack gap={8}>
-              <PageIcon icon={parseIcon(p.icon)} size={24} />
-              <Text fw={600} size="sm" lineClamp={1}>
-                {p.title || 'Untitled'}
-              </Text>
-              <Text size="xs" c="dimmed">
-                Edited {timeAgo(p.updatedAt)}
-              </Text>
-            </Stack>
-          </CardLink>
-        ))}
-      </SimpleGrid>
-    </Stack>
+    <NotesPane toolbar={toolbar}>
+      <NotesColumn inset="xl">
+        <Stack gap="xs" pt="lg">
+          <Title order={2} size="h4">
+            Recently edited
+          </Title>
+          <Stack gap={0} component="ul" p={0} m={0} style={{ listStyle: 'none' }} aria-label="Recently edited pages">
+            {pages.map((p) => {
+              const parent = p.parentId ? byId.get(p.parentId) : undefined;
+              return (
+                <Box component="li" key={p.id}>
+                  <NavLinkLink
+                    to="/notes/$pageId"
+                    params={{ pageId: p.id }}
+                    leftSection={<PageIcon icon={parseIcon(p.icon)} size={18} />}
+                    label={
+                      <Group gap="xs" wrap="nowrap" justify="space-between">
+                        <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+                          <Text size="sm" fw={500} truncate>
+                            {p.title || 'Untitled'}
+                          </Text>
+                          {parent && (
+                            <Text size="sm" c="dimmed" truncate>
+                              in {parent.title || 'Untitled'}
+                            </Text>
+                          )}
+                        </Group>
+                        <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
+                          {timeAgo(p.updatedAt)}
+                        </Text>
+                      </Group>
+                    }
+                  />
+                </Box>
+              );
+            })}
+          </Stack>
+        </Stack>
+      </NotesColumn>
+    </NotesPane>
   );
 }
 
 // ── The right column with a page open ────────────────────────────────────────
 
-function OpenPage({ pageId, notes }: { pageId: string; notes: NoteSummary[] }) {
+function OpenPage({ pageId, notes, leading }: { pageId: string; notes: NoteSummary[]; leading?: React.ReactNode }) {
   const note = useNote(pageId);
   const courses = useCourses();
   const navigate = useNavigate();
 
   if (note.isLoading) {
     return (
-      <Stack gap="md" px="xl" py="lg" maw={760} mx="auto">
-        <Skeleton h={120} radius="md" />
-        <Skeleton h={48} w={48} radius="md" />
-        <Skeleton h={36} w="60%" />
-        <Skeleton h={16} />
-        <Skeleton h={16} w="90%" />
-        <Skeleton h={16} w="70%" />
-      </Stack>
+      <NotesPane toolbar={<Skeleton h={14} w={180} />}>
+        <NotesColumn inset="calc(var(--mantine-spacing-sm) + var(--blocks-gutter, 3.25rem))">
+          <Stack gap="md" pt="lg">
+            <Skeleton h={56} w={56} radius="md" />
+            <Skeleton h={36} w="60%" />
+            <Skeleton h={16} />
+            <Skeleton h={16} w="90%" />
+            <Skeleton h={16} w="70%" />
+          </Stack>
+        </NotesColumn>
+      </NotesPane>
     );
   }
   if (note.isError || !note.data) {
     const missing = (note.error as { status?: number } | null)?.status === 404 || !notes.some((n) => n.id === pageId);
     return (
-      <Center h="100%" p="xl">
+      <NotesPane toolbar={leading ? <Group gap="xs">{leading}</Group> : undefined}>
+      <Center h="100%" mih={360} p="xl">
         <Stack align="center" gap="sm" maw={380} ta="center">
           <ThemeIcon size={48} radius="xl" variant="light" color={missing ? 'gray' : 'red'}>
             {missing ? <FileQuestion size={24} /> : <CircleAlert size={24} />}
@@ -338,11 +365,12 @@ function OpenPage({ pageId, notes }: { pageId: string; notes: NoteSummary[] }) {
           </Group>
         </Stack>
       </Center>
+      </NotesPane>
     );
   }
 
   const path = ancestry(notes, pageId);
-  const breadcrumb = (
+  const breadcrumb = (current: string) => (
     <Breadcrumbs separatorMargin={6} styles={{ root: { flexWrap: 'nowrap', minWidth: 0 } }}>
       <AnchorLink to="/notes" size="sm" c="dimmed">
         Notes
@@ -360,13 +388,20 @@ function OpenPage({ pageId, notes }: { pageId: string; notes: NoteSummary[] }) {
           {p.title || 'Untitled'}
         </AnchorLink>
       ))}
+      <Text size="sm" truncate maw={240}>
+        {current || 'Untitled'}
+      </Text>
     </Breadcrumbs>
   );
 
   return (
-    <Box maw={900} mx="auto">
-      <NoteEditor key={note.data.id} page={note.data} courses={courses.data ?? []} breadcrumb={breadcrumb} />
-    </Box>
+    <NoteEditor
+      key={note.data.id}
+      page={note.data}
+      courses={courses.data ?? []}
+      breadcrumb={breadcrumb}
+      leading={leading}
+    />
   );
 }
 
@@ -456,49 +491,54 @@ export function NotesPage() {
     />
   );
 
+  const openTitle = pageId ? notes.find((n) => n.id === pageId)?.title || 'Untitled' : 'Notes';
+  // Narrow screens have no tree pane; the toolbar's first control opens it in a drawer.
+  const pagesButton = (
+    <ActionIcon hiddenFrom="sm" variant="subtle" color="gray" aria-label="Pages" onClick={drawer.open}>
+      <ListTree size={16} />
+    </ActionIcon>
+  );
+
   return (
-    <PageShell
-      title="Notes"
-      // `detail`, not `list-detail`: the page tree is the notebook's navigation
-      // (narrow, like a rail) and the open page is the subject that gets the
-      // width. list-detail's master is the wider pane, which a page tree is not.
-      archetype="detail"
-      scroll={false}
-      actions={
-        <>
-          <Button
-            hiddenFrom="sm"
-            variant="default"
-            leftSection={<ListTree size={16} />}
-            onClick={drawer.open}
+    <Box className={classes.root}>
+      <PageShell
+        // The band is visually hidden (notes.module.css): the open page's own
+        // header is the title the eye reads, and this h1 names it for the outline.
+        title={openTitle}
+        // `detail`, not `list-detail`: the page tree is the notebook's navigation
+        // (narrow, like a rail) and the open page is the subject that gets the
+        // width. list-detail's master is the wider pane, which a page tree is not.
+        archetype="detail"
+        scroll={false}
+        bodyProps={{ px: 0, pb: 0 }}
+      >
+        <Flex h="100%" style={{ minHeight: 0 }}>
+          <Box
+            className={classes.tree}
+            w={{ sm: 200, xl: 248 }}
+            px="xs"
+            pt="sm"
+            pb="xs"
+            visibleFrom="sm"
+            style={{ flexShrink: 0, minHeight: 0 }}
+            data-section="pages"
           >
-            Pages
-          </Button>
-          <Button leftSection={<Plus size={16} />} onClick={() => add(null)} loading={create.isPending}>
-            New page
-          </Button>
-        </>
-      }
-    >
-      <Flex gap="md" h="100%" style={{ minHeight: 0 }}>
-        <Paper withBorder radius="md" p="xs" w={272} visibleFrom="sm" style={{ flexShrink: 0, minHeight: 0 }} data-section="pages">
-          {sidebar}
-        </Paper>
-        <Paper withBorder radius="md" style={{ flex: 1, minWidth: 0, minHeight: 0 }} data-section={pageId ? 'page' : 'recent'}>
-          <ScrollArea h="100%">
-            <Reveal key={pageId ?? 'recent'}>
-            {pageId ? (
-              <OpenPage pageId={pageId} notes={notes} />
-            ) : (
-              <RecentPages onNew={() => add(null)} creating={create.isPending} />
-            )}
+            {sidebar}
+          </Box>
+          <Box style={{ flex: 1, minWidth: 0, minHeight: 0 }} data-section={pageId ? 'page' : 'recent'}>
+            <Reveal key={pageId ?? 'recent'} style={{ height: '100%' }}>
+              {pageId ? (
+                <OpenPage pageId={pageId} notes={notes} leading={pagesButton} />
+              ) : (
+                <RecentPages notes={notes} onNew={() => add(null)} creating={create.isPending} leading={pagesButton} />
+              )}
             </Reveal>
-          </ScrollArea>
-        </Paper>
-      </Flex>
-      <Drawer opened={drawerOpen} onClose={drawer.close} title="Pages" size="xs">
-        <Box h="calc(100dvh - 90px)">{sidebar}</Box>
-      </Drawer>
-    </PageShell>
+          </Box>
+        </Flex>
+        <Drawer opened={drawerOpen} onClose={drawer.close} title="Pages" size="xs">
+          <Box h="calc(100dvh - 90px)">{sidebar}</Box>
+        </Drawer>
+      </PageShell>
+    </Box>
   );
 }

@@ -63,7 +63,7 @@ export function TutorPage() {
               onChange={(v) => setContext({ courseId: v })}
             />
             <Card withBorder radius="lg" p="md">
-              <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb="xs">
+              <Text size="sm" fw={600} mb="xs">
                 Try asking
               </Text>
               <Stack gap={6}>

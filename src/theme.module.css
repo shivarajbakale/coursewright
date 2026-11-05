@@ -153,17 +153,15 @@ input:checked + .switchTrack .switchThumb {
   background-color: var(--app-wash);
 }
 
-/* ── Tables: headers lettered as a gauge, figures aligned by digit ───────── */
+/* ── Tables: sentence-case headers at a readable size, figures by digit ──── */
 
-/* The header cell's children — a sort button, a Text — set their own case and
-   size, so the lettering reaches in. */
+/* The header cell's children — a sort button, a Text — set their own size, so
+   the rule reaches in. 10px all-caps headers read as fine print. */
 .th,
 .th * {
-  text-transform: uppercase;
-  font-size: 0.625rem;
-  letter-spacing: 0.09em;
-  font-weight: 600;
-  color: var(--app-faint);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--mantine-color-dimmed);
 }
 
 .td {

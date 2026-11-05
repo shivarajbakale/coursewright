@@ -6,12 +6,11 @@ import {
   Button,
   Center,
   Code,
-  Grid,
+  Flex,
   Group,
   Loader,
-  Paper,
+  ScrollArea,
   Select,
-  SimpleGrid,
   Skeleton,
   Stack,
   Table,
@@ -21,9 +20,9 @@ import {
 } from '@mantine/core';
 import { BookOpen, CircleAlert, Database, FileText, Globe, Info, Link2, MessageCircle, RefreshCw, Search } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
+import { timeAgo } from '@/lib/time';
 import { Reveal } from '@/components/reveal';
 import { Panel } from '@/components/panel';
-import { StatCard } from '@/components/stat-card';
 import { AnchorLink } from '@/components/links';
 import type { Source, SourceKind } from '@/api/types';
 import { useAddSource, useCourses, useIndexStats, useReindex, useSearchTest, useSources } from '@/hooks/useCoursewright';
@@ -43,17 +42,6 @@ const STATUS: Record<Source['status'], { label: string; color: string }> = {
 
 const NOWRAP: React.CSSProperties = { whiteSpace: 'nowrap' };
 
-const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-function timeAgo(iso: string): string {
-  const s = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
-  const abs = Math.abs(s);
-  if (abs < 45) return 'just now';
-  if (abs < 3600) return rtf.format(Math.round(s / 60), 'minute');
-  if (abs < 86400) return rtf.format(Math.round(s / 3600), 'hour');
-  if (abs < 86400 * 30) return rtf.format(Math.round(s / 86400), 'day');
-  return new Date(iso).toLocaleDateString('en', { month: 'short', day: 'numeric' });
-}
-
 /** Chunk text is markdown; show it as prose. */
 function plain(md: string): string {
   return md.replace(/^\s*>\s?/gm, '').replace(/[*_`#]+/g, '').trim();
@@ -67,6 +55,20 @@ function isUrl(value: string): boolean {
     return false;
   }
 }
+
+/**
+ * A ScrollArea that shrinks inside a flex column whose height is only capped
+ * (max-height), not set: the viewport flexes instead of reading `height: 100%`
+ * of a parent that has no definite height.
+ */
+const FLEX_SCROLL = {
+  root: { display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0 },
+  viewport: { flex: '1 1 auto', minHeight: 0, height: 'auto' },
+} as const;
+
+/** A panel that is as tall as its content, up to the height of its row, laid out as a column. */
+const FLEX_PANEL: React.CSSProperties = { display: 'flex', flexDirection: 'column', maxHeight: '100%', minHeight: 0 };
+const FLEX_CONTENT: React.CSSProperties = { display: 'flex', flexDirection: 'column', minHeight: 0, flex: '1 1 auto' };
 
 // ── Add a URL ────────────────────────────────────────────────────────────────
 
@@ -89,8 +91,9 @@ function AddUrl() {
     <Box component="form" onSubmit={submit}>
       <Group gap="xs" align="flex-start" wrap="nowrap">
         <TextInput
+          size="xs"
           aria-label="Link to add"
-          placeholder="https://raft.github.io/raft.pdf"
+          placeholder="Add a link to index, e.g. https://raft.github.io/raft.pdf"
           leftSection={<Link2 size={14} />}
           value={uri}
           onChange={(e) => {
@@ -100,7 +103,7 @@ function AddUrl() {
           error={error}
           style={{ flex: 1 }}
         />
-        <Button type="submit" loading={add.isPending} disabled={!uri.trim()}>
+        <Button size="xs" type="submit" loading={add.isPending} disabled={!uri.trim()}>
           Add URL
         </Button>
       </Group>
@@ -160,13 +163,14 @@ function SourcesTable({ courseTitle }: { courseTitle: (id: string | null) => str
     body = (
       // A six-column table keeps its columns and scrolls sideways in a narrow
       // column rather than crushing them; the scroll is declared, not accidental.
-      <Table.ScrollContainer minWidth={720} scrollAreaProps={{ viewportProps: { 'data-scroll-x': 'allow' } as React.ComponentProps<'div'> }}>
-        <Table verticalSpacing="xs" highlightOnHover>
+      <ScrollArea styles={FLEX_SCROLL}>
+      <Table.ScrollContainer minWidth={560} scrollAreaProps={{ viewportProps: { 'data-scroll-x': 'allow' } as React.ComponentProps<'div'> }}>
+        <Table verticalSpacing={6} highlightOnHover>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Source</Table.Th>
               <Table.Th>Type</Table.Th>
-              <Table.Th>Course</Table.Th>
+              <Table.Th visibleFrom="xl">Course</Table.Th>
               <Table.Th ta="right">Chunks</Table.Th>
               <Table.Th>Status</Table.Th>
               <Table.Th>Updated</Table.Th>
@@ -179,10 +183,10 @@ function SourcesTable({ courseTitle }: { courseTitle: (id: string | null) => str
               return (
                 <Table.Tr key={s.id}>
                   <Table.Td>
-                    <Text size="sm" fw={500} truncate maw={220} title={s.title}>
+                    <Text size="sm" fw={500} truncate maw={240} title={s.title}>
                       {s.title}
                     </Text>
-                    {s.uri && s.uri !== s.title && (
+                    {s.kind === 'url' && s.uri && s.uri !== s.title && (
                       <Text size="xs" c="dimmed" truncate maw={220} title={s.uri}>
                         {s.uri}
                       </Text>
@@ -193,8 +197,8 @@ function SourcesTable({ courseTitle }: { courseTitle: (id: string | null) => str
                       {kind.label}
                     </Badge>
                   </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" c={s.courseId ? undefined : 'dimmed'} truncate maw={150}>
+                  <Table.Td visibleFrom="xl">
+                    <Text size="sm" c={s.courseId ? undefined : 'dimmed'} truncate maw={140}>
                       {courseTitle(s.courseId)}
                     </Text>
                   </Table.Td>
@@ -233,13 +237,20 @@ function SourcesTable({ courseTitle }: { courseTitle: (id: string | null) => str
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
+      </ScrollArea>
     );
   }
 
   return (
     <Panel
       title="All sources"
-      description={sources.data ? `${rows.length} of ${sources.data.length} shown` : undefined}
+      description={
+        sources.data ? (course ? `${rows.length} of ${sources.data.length} shown` : `${rows.length} sources`) : undefined
+      }
+      style={FLEX_PANEL}
+      contentProps={{ p: 0, style: FLEX_CONTENT }}
+      flex={1}
+      miw={0}
       actions={
         <Select
           aria-label="Filter by course"
@@ -253,7 +264,7 @@ function SourcesTable({ courseTitle }: { courseTitle: (id: string | null) => str
         />
       }
     >
-      <Box px="lg" pb="md">
+      <Box px="lg" py="sm" style={{ flexShrink: 0 }}>
         <AddUrl />
       </Box>
       {body}
@@ -281,33 +292,43 @@ function TestRetrieval() {
   const hits = search.data ?? [];
 
   return (
-    <Panel title="Test retrieval" description="What the tutor would find for a question, best match first.">
-      <Stack gap="sm" px="lg" pb="lg">
-        <Box component="form" onSubmit={run}>
-          <Stack gap="xs">
-            <TextInput
-              label="Query"
-              placeholder="split vote"
-              leftSection={<Search size={14} />}
-              value={query}
-              onChange={(e) => setQuery(e.currentTarget.value)}
+    <Panel
+      title="Test retrieval"
+      description="What the tutor would read, best match first."
+      style={FLEX_PANEL}
+      contentProps={{ p: 0, style: FLEX_CONTENT }}
+      w={{ base: '100%', lg: 320, xl: 380 }}
+    >
+      <Box component="form" onSubmit={run} px="lg" py="sm" style={{ flexShrink: 0 }}>
+        <Stack gap="xs">
+          <TextInput
+            size="xs"
+            aria-label="Question"
+            placeholder="Ask what you’d ask the tutor, e.g. split vote"
+            leftSection={<Search size={14} />}
+            value={query}
+            onChange={(e) => setQuery(e.currentTarget.value)}
+          />
+          <Group gap="xs" wrap="nowrap">
+            <Select
+              size="xs"
+              aria-label="Course to search"
+              placeholder="All courses"
+              data={(courses.data ?? []).map((c) => ({ value: c.id, label: c.title }))}
+              value={course}
+              onChange={setCourse}
+              clearable
+              style={{ flex: 1 }}
             />
-            <Group gap="xs" align="flex-end" wrap="nowrap">
-              <Select
-                label="Course"
-                placeholder="All courses"
-                data={(courses.data ?? []).map((c) => ({ value: c.id, label: c.title }))}
-                value={course}
-                onChange={setCourse}
-                clearable
-                style={{ flex: 1 }}
-              />
-              <Button type="submit" loading={search.isPending} disabled={!query.trim()}>
-                Search
-              </Button>
-            </Group>
-          </Stack>
-        </Box>
+            <Button size="xs" variant="default" type="submit" loading={search.isPending} disabled={!query.trim()}>
+              Search
+            </Button>
+          </Group>
+        </Stack>
+      </Box>
+      {!search.isIdle && (
+      <ScrollArea styles={FLEX_SCROLL}>
+      <Stack gap="sm" px="lg" pb="md">
 
         {search.isError && (
           <Alert color="red" variant="light" icon={<CircleAlert size={16} />}>
@@ -329,17 +350,12 @@ function TestRetrieval() {
           </Text>
         )}
 
-        {search.isIdle && (
-          <Text size="sm" c="dimmed">
-            Ask something you’d ask the tutor to see which chunks it would read.
-          </Text>
-        )}
 
         {search.isSuccess && hits.length > 0 && (
-          <Stack gap="xs" component="ol" p={0} m={0} style={{ listStyle: 'none' }} aria-label="Ranked results">
+          <Stack gap={0} component="ol" p={0} m={0} style={{ listStyle: 'none' }} aria-label="Ranked results">
             {hits.map((h, i) => (
-              <Paper key={h.chunkId} component="li" withBorder radius="md" p="sm">
-                <Stack gap={4}>
+              <Box key={h.chunkId} component="li" py="xs" style={i ? { borderTop: '1px solid var(--app-line, var(--mantine-color-default-border))' } : undefined}>
+                <Stack gap={2}>
                   <Group justify="space-between" wrap="nowrap" gap="xs">
                     <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
                       <Text size="xs" c="dimmed" ff="monospace">
@@ -365,18 +381,20 @@ function TestRetrieval() {
                       {h.score.toFixed(2)}
                     </Badge>
                   </Group>
-                  <Text size="xs" c="dimmed">
+                  <Text size="xs" c="dimmed" lineClamp={2}>
                     {h.context}
                   </Text>
-                  <Text size="sm" lineClamp={4}>
+                  <Text size="sm" lineClamp={3}>
                     {plain(h.text)}
                   </Text>
                 </Stack>
-              </Paper>
+              </Box>
             ))}
           </Stack>
         )}
       </Stack>
+      </ScrollArea>
+      )}
     </Panel>
   );
 }
@@ -394,11 +412,25 @@ export function SourcesPage() {
     return courses.data?.find((c) => c.id === id)?.title ?? 'Unknown course';
   };
 
+  const facts = stats.data
+    ? [
+        plural(stats.data.sources, 'source'),
+        plural(stats.data.chunks, 'chunk'),
+        plural(stats.data.courses, 'course'),
+        `${stats.data.embedModel}, ${stats.data.dims} dims`,
+      ].join(' · ')
+    : stats.isLoading
+      ? 'Reading the index…'
+      : 'Material the tutor searches, split into chunks and embedded per course.';
+
   return (
     <PageShell
       title="Sources"
-      description="Material the tutor searches. Each source is split into chunks, embedded and stored per course."
-      archetype="dashboard-grid"
+      description={facts}
+      // A collection with a filter and a side tool: `list`, not a dashboard —
+      // there is no KPI row on this page any more, the counts are one line.
+      archetype="list"
+      scroll={false}
       actions={
         <Button
           variant="default"
@@ -410,51 +442,54 @@ export function SourcesPage() {
         </Button>
       }
     >
-      <Reveal>
-      <Stack gap="md">
-        {stats.isError ? (
-          <Alert color="red" variant="light" icon={<CircleAlert size={16} />} title="Index stats didn’t load">
-            <Button size="xs" variant="default" mt={6} onClick={() => stats.refetch()}>
-              Retry
-            </Button>
+      <Stack gap="sm" h="100%" style={{ minHeight: 0 }}>
+        {stats.isError && (
+          <Alert color="red" variant="light" icon={<CircleAlert size={16} />} py="xs" style={{ flexShrink: 0 }}>
+            <Group gap="sm">
+              <Text size="sm">The index stats didn’t load.</Text>
+              <Button size="xs" variant="default" onClick={() => stats.refetch()}>
+                Retry
+              </Button>
+            </Group>
           </Alert>
-        ) : (
-          <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
-            <StatCard label="Sources" value={stats.data?.sources.toLocaleString() ?? '—'} loading={stats.isLoading} />
-            <StatCard label="Chunks indexed" value={stats.data?.chunks.toLocaleString() ?? '—'} loading={stats.isLoading} />
-            <StatCard label="Courses" value={stats.data?.courses.toLocaleString() ?? '—'} loading={stats.isLoading} />
-            <StatCard
-              label="Embed model"
-              value={
-                <Text component="span" fz="md" fw={600} ff="monospace">
-                  {stats.data?.embedModel ?? '—'}
-                </Text>
-              }
-              sub={stats.data ? `${stats.data.dims} dimensions · ${stats.data.embedder}` : undefined}
-              loading={stats.isLoading}
-            />
-          </SimpleGrid>
         )}
 
         {stats.data?.embedder === 'local' && (
-          <Alert color="yellow" variant="light" icon={<Info size={16} />} title="Using the local fallback embedder">
-            <Text size="sm">
-              Without a Voyage key, chunks are embedded with a hashed bag-of-words model, so retrieval matches words, not
-              meaning. Set <Code>VOYAGE_API_KEY</Code> in the backend’s environment, restart it, then press Re-index.
-            </Text>
+          <Alert color="yellow" variant="light" icon={<Info size={16} />} py="xs" style={{ flexShrink: 0 }}>
+            <Group gap={6} wrap="nowrap">
+              <Text size="sm">
+                Local fallback embedder: retrieval matches words, not meaning. Set <Code>VOYAGE_API_KEY</Code>, restart
+                the backend, then re-index.
+              </Text>
+              <Tooltip
+                multiline
+                w={300}
+                label="Without a Voyage key, chunks are embedded with a hashed bag-of-words model. A question has to share words with a chunk to find it."
+              >
+                <Text size="sm" c="dimmed" td="underline" style={{ flexShrink: 0, cursor: 'help' }} tabIndex={0}>
+                  Why
+                </Text>
+              </Tooltip>
+            </Group>
           </Alert>
         )}
 
-        <Grid gap="md" align="flex-start">
-          <Grid.Col span={{ base: 12, lg: 8 }}>
+        <Reveal style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex' }}>
+          <Flex
+            direction={{ base: 'column', lg: 'row' }}
+            gap="md"
+            align={{ base: 'stretch', lg: 'flex-start' }}
+            style={{ flex: 1, minHeight: 0, minWidth: 0 }}
+          >
             <SourcesTable courseTitle={courseTitle} />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, lg: 4 }}>
             <TestRetrieval />
-          </Grid.Col>
-        </Grid>
+          </Flex>
+        </Reveal>
       </Stack>
-      </Reveal>
     </PageShell>
   );
+}
+
+function plural(n: number, noun: string): string {
+  return `${n.toLocaleString()} ${noun}${n === 1 ? '' : 's'}`;
 }

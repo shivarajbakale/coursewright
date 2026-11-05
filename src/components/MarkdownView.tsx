@@ -1,3 +1,4 @@
+import type React from 'react';
 import { Box } from '@mantine/core';
 import { BlockEditorView, useBlockEditor } from '@shivarajbakale/blocks';
 import { readOnlyEditorOptions } from '@/features/blocks';
@@ -10,7 +11,7 @@ import { readOnlyEditorOptions } from '@/features/blocks';
 export function MarkdownView({ markdown, label }: { markdown: string; label?: string }) {
   const editor = useBlockEditor({ initial: markdown, label, ...readOnlyEditorOptions() });
   return (
-    <Box data-markdown-view>
+    <Box data-markdown-view style={{ '--blocks-gutter': '0px' } as React.CSSProperties}>
       <BlockEditorView editor={editor} menus={false} />
     </Box>
   );

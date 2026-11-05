@@ -1,24 +1,20 @@
 import { useEffect, useMemo } from 'react';
 import {
-  Accordion,
   Alert,
   Badge,
   Button,
-  Card,
   Grid,
   Group,
   Menu,
   ActionIcon,
   Progress,
-  RingProgress,
   Skeleton,
   Stack,
   Text,
-  ThemeIcon,
   Title,
 } from '@mantine/core';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowRight, Circle, CircleCheck, Hammer, MessagesSquare, MoreHorizontal, Target, Trash2 } from 'lucide-react';
+import { ArrowRight, Circle, CircleCheck, Hammer, Maximize2, MessagesSquare, MoreHorizontal, Target, Trash2 } from 'lucide-react';
 import { modals } from '@mantine/modals';
 import { PageShell } from '@/components/page-shell';
 import { Reveal } from '@/components/reveal';
@@ -91,7 +87,6 @@ export function CoursePage() {
   const pct = Math.round((c.chaptersDone / Math.max(1, c.chapterCount)) * 100);
   const allChapters = c.modules.flatMap((m) => m.chapters);
   const nextChapter = allChapters.find((ch) => !ch.done) ?? allChapters[0];
-  const openModule = c.modules.find((m) => m.chapters.some((ch) => !ch.done))?.id ?? c.modules[0]?.id;
 
   const confirmDelete = () =>
     modals.openConfirmModal({
@@ -107,10 +102,12 @@ export function CoursePage() {
       },
     });
 
+  const firstSentence = (c.summary.match(/^.+?[.!?](\s|$)/)?.[0] ?? c.summary).trim();
+
   return (
     <PageShell
       title={c.title}
-      description={c.summary}
+      description={firstSentence}
       archetype="detail"
       actions={
         <Group gap="xs">
@@ -137,164 +134,171 @@ export function CoursePage() {
           </Menu>
         </Group>
       }
+      toolbar={
+        <Group gap="md" wrap="wrap">
+          <Group gap="xs" wrap="nowrap">
+            <Progress value={pct} w={140} size="sm" aria-label="Course progress" />
+            <Text size="sm">
+              {c.chaptersDone} of {c.chapterCount} chapters read
+            </Text>
+          </Group>
+          <Text size="sm" c="dimmed">
+            {c.moduleCount} modules · {c.projectCount} projects
+          </Text>
+          {[c.brief.level, c.brief.goal, c.brief.pace].filter(Boolean).map((b) => (
+            <Badge key={b} variant="default" size="sm" tt="none" fw={500}>
+              {b}
+            </Badge>
+          ))}
+        </Group>
+      }
     >
       <Reveal>
-      <Grid gap="lg">
-        <Grid.Col span={{ base: 12, lg: 8 }}>
-          <Stack gap="lg">
-            <Card withBorder radius="lg" p="lg" data-section="progress">
-              <Group gap="xl" wrap="nowrap">
-                <RingProgress
-                  size={96}
-                  thickness={8}
-                  roundCaps
-                  sections={[{ value: pct, color: 'brand' }]}
-                  label={
-                    <Text ta="center" fw={700} size="lg">
-                      {pct}%
-                    </Text>
-                  }
-                />
-                <Stack gap={6} style={{ flex: 1 }}>
-                  <Text fw={600}>
-                    {c.chaptersDone} of {c.chapterCount} chapters read
-                  </Text>
-                  <Group gap="xs">
-                    {c.brief.level && <Badge variant="default">{c.brief.level}</Badge>}
-                    {c.brief.goal && <Badge variant="default">{c.brief.goal}</Badge>}
-                    {c.brief.pace && <Badge variant="default">{c.brief.pace}</Badge>}
-                  </Group>
-                  <Text size="sm" c="dimmed">
-                    {c.moduleCount} modules · {c.projectCount} projects · {c.concepts.length} concepts
-                  </Text>
-                </Stack>
-              </Group>
-            </Card>
-
-            <Stack gap="sm" data-section="modules">
-            <Title order={2} size="h4">
-              Modules
-            </Title>
-            <Accordion variant="separated" radius="lg" defaultValue={openModule} chevronPosition="right">
+        <Grid gap="xl">
+          <Grid.Col span={{ base: 12, lg: 8 }}>
+            <Stack gap="lg" component="section" data-section="modules" aria-label="Outline">
+              <Title order={2} size="h4">
+                Outline
+              </Title>
               {c.modules.map((m) => {
                 const done = m.chapters.filter((ch) => ch.done).length;
                 return (
-                  <Accordion.Item key={m.id} value={m.id}>
-                    <Accordion.Control>
-                      <Group justify="space-between" wrap="nowrap" pr="sm">
-                        <Stack gap={2} style={{ minWidth: 0 }}>
-                          <Text fw={600} truncate>
-                            {m.position}. {m.title}
-                          </Text>
-                          <Text size="xs" c="dimmed" lineClamp={1}>
-                            {m.summary}
-                          </Text>
-                        </Stack>
-                        <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
-                          <Text size="xs" c="dimmed">
-                            {done}/{m.chapters.length}
-                          </Text>
-                          <Progress value={(done / Math.max(1, m.chapters.length)) * 100} w={64} size="sm" aria-label={`${m.title} progress`} />
-                        </Group>
-                      </Group>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap={2}>
-                        {m.chapters.map((ch) => (
-                          <NavLinkLink
-                            key={ch.id}
-                            to="/courses/$courseId/chapters/$chapterId"
-                            params={{ courseId, chapterId: ch.id }}
-                            label={`${m.position}.${ch.position} ${ch.title}`}
-                            description={`${ch.readingMinutes} min`}
-                            leftSection={
-                              ch.done ? (
-                                <CircleCheck size={16} color="var(--mantine-color-green-6)" />
-                              ) : (
-                                <Circle size={16} color="var(--mantine-color-dimmed)" />
-                              )
-                            }
-                            style={{ borderRadius: 'var(--mantine-radius-md)' }}
-                          />
-                        ))}
-                        {m.project && (
-                          <NavLinkLink
-                            to="/courses/$courseId/projects/$projectId"
-                            params={{ courseId, projectId: m.project.id }}
-                            label={m.project.title}
-                            description={`Project · ${m.project.milestonesDone} of ${m.project.milestonesTotal} milestones`}
-                            leftSection={
-                              <ThemeIcon size={20} variant="light" radius="sm">
-                                <Hammer size={12} />
-                              </ThemeIcon>
-                            }
-                            style={{ borderRadius: 'var(--mantine-radius-md)' }}
-                          />
-                        )}
+                  <Stack key={m.id} gap={4}>
+                    <Group justify="space-between" wrap="nowrap" gap="md" px="xs">
+                      <Stack gap={0} style={{ minWidth: 0 }}>
+                        <Text fw={600}>
+                          {m.position}. {m.title}
+                        </Text>
+                        <Text size="sm" c="dimmed" lineClamp={1}>
+                          {m.summary}
+                        </Text>
                       </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
+                      <Text size="sm" c="dimmed" style={{ flexShrink: 0 }}>
+                        {done}/{m.chapters.length}
+                      </Text>
+                    </Group>
+                    <Stack gap={0}>
+                      {m.chapters.map((ch) => (
+                        <NavLinkLink
+                          key={ch.id}
+                          to="/courses/$courseId/chapters/$chapterId"
+                          params={{ courseId, chapterId: ch.id }}
+                          label={`${m.position}.${ch.position}  ${ch.title}`}
+                          py={6}
+                          leftSection={
+                            ch.done ? (
+                              <CircleCheck size={16} color="var(--mantine-color-green-6)" />
+                            ) : (
+                              <Circle size={16} color="var(--mantine-color-dimmed)" />
+                            )
+                          }
+                          rightSection={
+                            <Text size="xs" c="dimmed">
+                              {ch.readingMinutes} min
+                            </Text>
+                          }
+                          style={{ borderRadius: 'var(--mantine-radius-md)' }}
+                        />
+                      ))}
+                      {m.project && (
+                        <NavLinkLink
+                          to="/courses/$courseId/projects/$projectId"
+                          params={{ courseId, projectId: m.project.id }}
+                          label={m.project.title}
+                          py={6}
+                          leftSection={<Hammer size={16} />}
+                          rightSection={
+                            <Text size="xs" c="dimmed">
+                              Project · {m.project.milestonesDone}/{m.project.milestonesTotal}
+                            </Text>
+                          }
+                          style={{ borderRadius: 'var(--mantine-radius-md)' }}
+                        />
+                      )}
+                    </Stack>
+                  </Stack>
                 );
               })}
-            </Accordion>
             </Stack>
-          </Stack>
-        </Grid.Col>
+          </Grid.Col>
 
-        <Grid.Col span={{ base: 12, lg: 4 }}>
-          <Stack gap="lg">
-            <Card withBorder radius="lg" p="lg" data-section="weak-spots">
-              <Group gap="xs" mb="sm">
-                <Target size={16} />
-                <Text fw={600}>Weak spots</Text>
-              </Group>
-              {c.weakSpots.length === 0 ? (
-                <Text size="sm" c="dimmed">
-                  None yet. Answer the check-yourself questions and this fills in.
-                </Text>
-              ) : (
-                <Stack gap="xs">
-                  {c.weakSpots.map((w) => (
-                    <Group key={w.conceptId} justify="space-between" wrap="nowrap">
-                      <Text size="sm">{w.name}</Text>
-                      <Badge color="red" variant="light">
-                        {w.wrong} wrong
-                      </Badge>
-                    </Group>
-                  ))}
-                  <Button
-                    mt="xs"
-                    variant="light"
-                    leftSection={<MessagesSquare size={16} />}
-                    onClick={() =>
-                      useTutor
-                        .getState()
-                        .ask(
-                          `Drill me on my weak spots in this course: ${c.weakSpots.map((w) => w.name).join(', ')}. One question at a time, and explain my mistakes.`,
-                          { courseId }
-                        )
-                    }
-                  >
-                    Drill with the tutor
-                  </Button>
+          <Grid.Col span={{ base: 12, lg: 4 }}>
+            <Stack gap="xl">
+              <Stack gap="xs" component="section" data-section="weak-spots" aria-label="Weak spots">
+                <Group gap="xs">
+                  <Target size={16} />
+                  <Title order={2} size="h5">
+                    Weak spots
+                  </Title>
+                </Group>
+                {c.weakSpots.length === 0 ? (
+                  <Text size="sm" c="dimmed">
+                    None yet. Your wrong answers to check-yourself questions show up here.
+                  </Text>
+                ) : (
+                  <>
+                    {c.weakSpots.map((w) => (
+                      <Group key={w.conceptId} justify="space-between" wrap="nowrap">
+                        <Text size="sm">{w.name}</Text>
+                        <Text size="sm" c="red">
+                          {w.wrong} wrong
+                        </Text>
+                      </Group>
+                    ))}
+                    <Button
+                      mt={4}
+                      variant="default"
+                      leftSection={<MessagesSquare size={16} />}
+                      onClick={() =>
+                        useTutor
+                          .getState()
+                          .ask(
+                            `Drill me on my weak spots in this course: ${c.weakSpots.map((w) => w.name).join(', ')}. One question at a time, and explain my mistakes.`,
+                            { courseId }
+                          )
+                      }
+                    >
+                      Drill with the tutor
+                    </Button>
+                  </>
+                )}
+              </Stack>
+
+              {graph && (
+                <Stack gap="xs" component="section" data-section="concept-map" aria-label="Concept map">
+                  <Group justify="space-between">
+                    <Title order={2} size="h5">
+                      Concept map
+                    </Title>
+                    <Button
+                      size="compact-sm"
+                      variant="subtle"
+                      leftSection={<Maximize2 size={14} />}
+                      onClick={() =>
+                        modals.open({
+                          title: 'Concept map',
+                          size: '90%',
+                          children: (
+                            <Stack gap="xs">
+                              <Text size="sm" c="dimmed">
+                                Arrows point from what you need first to what it unlocks. Dashed outline: a weak
+                                spot.
+                              </Text>
+                              <MermaidDiagram source={graph} />
+                            </Stack>
+                          ),
+                        })
+                      }
+                    >
+                      Expand
+                    </Button>
+                  </Group>
+                  <MermaidDiagram source={graph} />
                 </Stack>
               )}
-            </Card>
-
-            {graph && (
-              <Card withBorder radius="lg" p="lg" data-section="concept-map">
-                <Text fw={600} mb="xs">
-                  Concept map
-                </Text>
-                <Text size="xs" c="dimmed" mb="sm">
-                  Arrows point from what you need first to what it unlocks. Dashed: a weak spot.
-                </Text>
-                <MermaidDiagram source={graph} />
-              </Card>
-            )}
-          </Stack>
-        </Grid.Col>
-      </Grid>
+            </Stack>
+          </Grid.Col>
+        </Grid>
       </Reveal>
     </PageShell>
   );

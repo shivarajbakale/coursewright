@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import { AppShell, Box } from '@mantine/core';
 import { useHotkey } from '@tanstack/react-hotkeys';
+import { useMediaQuery } from '@mantine/hooks';
 import './App.css';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Topbar } from '@/components/topbar';
@@ -38,6 +39,7 @@ function App() {
   const pathname = useRouterState({ select: s => s.location.pathname });
   const isPublic = PUBLIC_ROUTES.includes(pathname);
   const { railed, mobileOpen, toggleRail, closeMobile } = useShellNav();
+  const isMobile = useMediaQuery('(max-width: 47.99em)') ?? false;
   const tutorOpen = useTutor((s) => s.panelOpen) && !pathname.startsWith('/tutor');
   const toggleTutor = useTutor((s) => s.togglePanel);
 
@@ -67,7 +69,9 @@ function App() {
   return (
     <TutorProvider>
       <AppShell
-        header={{ height: 56 }}
+        // No desktop top bar: the sidebar holds search, tutor and theme, and
+        // each page's own h1 is its title. Below `sm` a slim bar keeps the burger.
+        header={{ height: 48, collapsed: !isMobile }}
         navbar={{
           width: railed ? NAVBAR_RAIL_WIDTH : NAVBAR_WIDTH,
           breakpoint: 'sm',
@@ -78,9 +82,11 @@ function App() {
         h="100svh"
         style={{ overflow: 'hidden' }}
       >
-        <AppShell.Header withBorder={false}>
-          <Topbar />
-        </AppShell.Header>
+        {isMobile && (
+          <AppShell.Header withBorder={false}>
+            <Topbar />
+          </AppShell.Header>
+        )}
         <AppShell.Navbar>
           <AppSidebar />
         </AppShell.Navbar>
