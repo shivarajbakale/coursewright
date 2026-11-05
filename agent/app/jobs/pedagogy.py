@@ -208,8 +208,10 @@ def map_so_far(lessons: list[tuple[str, str]], edges: list[tuple[str, str]], upt
         if a in ids and b in ids:
             lines.append(f"  {ids[a]} --> {ids[b]}")
             drawn = True
-    if not drawn and len(keep) > 1:  # no edges among them: show the reading order instead
-        for a, b in zip(keep, keep[1:]):
+    if not drawn and len(keep) > 1:  # no edges among them: the last few lessons in reading order
+        keep_tail = keep[-5:]
+        lines = lines[:2] + [ln for ln in lines[2:] if any(f"{ids[k]}[" in ln for k in keep_tail)]
+        for a, b in zip(keep_tail, keep_tail[1:]):
             lines.append(f"  {ids[a]} -.-> {ids[b]}")
     lines.append(f"  classDef new stroke-width:3px")
     lines.append(f"  class {ids[here]} new")

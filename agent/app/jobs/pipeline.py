@@ -211,11 +211,11 @@ class Ledger:
 
 
 def estimate_tokens(outline: CourseOutline) -> int:
-    """A rough cost to write this outline: per lesson a draft, a beginner read, half of them revised and a
-    check of numbers and code; a movie for at most a quarter; one call per project."""
+    """A rough cost to write this outline, from measured builds (MiniMax-M3, 65 lessons: 4.0M): per lesson a
+    draft, beginner reads, up to two revisions and a check of numbers and code; a few movies; projects."""
     chapters = sum(len(m.chapters) for m in outline.modules)
     projects = sum(1 for m in outline.modules if m.projectKey)
-    return chapters * 24_000 + math.ceil(chapters / 4) * 14_000 + projects * 8_000 + 30_000
+    return chapters * 52_000 + math.ceil(chapters / 4) * 12_000 + projects * 8_000 + 40_000
 
 
 # ---- checks in code ---------------------------------------------------------------------------------
@@ -332,6 +332,12 @@ def curriculum_problems(cur: CurriculumOut, pace: str = "") -> list[str]:
                     f'"{title}" uses "{t}", which a later lesson teaches: teach "{t}" first, or use words the '
                     "learner knows."
                 )
+    orphans = [ls.name for ls in lessons[1:] if not ls.prerequisites]
+    if orphans:
+        problems.append(
+            f"{len(orphans)} lessons list no prerequisites ({', '.join(orphans[:6])}{'...' if len(orphans) > 6 else ''}): "
+            "every lesson after the first builds on at least one earlier lesson; list the keys of the ones it uses."
+        )
     if lessons and lessons[0].prerequisites:
         problems.append(f'The first lesson, "{lessons[0].name}", has prerequisites: the course must start from zero.')
     for m in cur.modules:
@@ -404,6 +410,9 @@ def depth_waves(outline: CourseOutline) -> list[list[ChapterSpec]]:
     for e in outline.edges:
         if e.from_ in taught and e.to in taught and taught[e.from_] < taught[e.to]:
             prereqs[taught[e.to]].add(taught[e.from_])
+    for i in range(1, len(chapters)):
+        if not prereqs[i]:  # nothing recorded: assume it builds on the lesson before it (reading order)
+            prereqs[i].add(i - 1)
     depth: dict[int, int] = {}
     for i in range(len(chapters)):  # chapters are in teaching order, so prerequisites have a depth already
         depth[i] = 1 + max((depth[j] for j in prereqs[i]), default=-1)
@@ -611,7 +620,13 @@ class Run:
                 "\n\nYour previous answer"
             )
             retry = user + shown + " to fix these problems, keeping everything else:\n" + "\n".join(f"- {p}" for p in found)
-            out = await self.call(stage, system=system, user=retry, schema=schema, max_tokens=max_tokens)
+            try:
+                out = await self.call(stage, system=system, user=retry, schema=schema, max_tokens=max_tokens)
+            except store.Cancelled:
+                raise
+            except Exception as e:  # noqa: BLE001 - a retry that fails keeps the best answer so far
+                log.warning("%s retry failed, keeping the best answer so far: %s", stage, e)
+                break
             found = problems(out)
             if len(found) <= len(best_found):  # a retry can come back worse (cut short, half an answer)
                 best, best_found = out, found
@@ -827,7 +842,13 @@ class Run:
             found = self.reader_problems(out, read)
             if not found and not left:
                 break
-            revised = await self.revise(outline, ch, out, found + left, notes, soft_ok=True)
+            try:
+                revised = await self.revise(outline, ch, out, found + left, notes, soft_ok=True)
+            except store.Cancelled:
+                raise
+            except Exception as e:  # noqa: BLE001 - a revision that fails leaves the checked draft
+                log.warning("revision of %s failed, keeping the draft: %s", ch.key, e)
+                break
             if revised is None:
                 break
             again = await self.read_lesson(outline, ch, revised)
@@ -1051,7 +1072,9 @@ class Run:
 
     async def write(self, outline: CourseOutline) -> None:
         notes = self.research_notes()
-        budget = config.build_token_budget()
+        # Polishing stops at the configured budget or a third over this course's own estimate, whichever is
+        # more: a long course is not cut short of its accuracy check for being long.
+        budget = max(config.build_token_budget(), int(estimate_tokens(outline) * 1.35))
         await self.chapters(outline, notes)
         await self.check_cancel()
         if self.ledger.total < budget:

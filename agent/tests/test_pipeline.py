@@ -266,6 +266,11 @@ def test_curriculum_checks_catch_what_a_model_gets_wrong():
     for bit in ("which comes after it", "has prerequisites: the course must start from zero", "reads as a slogan",
                 "assumes experience", "Module title", "this pace needs"):
         assert bit in problems, bit
+    # A lesson that builds on nothing (after the first) leaves the map and the writing order blind.
+    cur = curriculum().model_dump()
+    cur["modules"][1]["lessons"][0]["prerequisites"] = []
+    assert "1 lessons list no prerequisites (Filter size)" in " ".join(
+        pipeline.curriculum_problems(pipeline.CurriculumOut.model_validate(cur)))
     # A title naming a concept a later lesson teaches is caught too.
     cur = curriculum().model_dump()
     cur["modules"][0]["lessons"][0]["plain"] = "the first step of a filter size estimate"
@@ -304,9 +309,12 @@ def test_outline_checks_catch_what_a_model_gets_wrong():
 
 def test_depth_waves_write_independent_lessons_together():
     data = outline_data()
-    data["edges"] = [{"from": "hashing", "to": "bits"}]  # tuning no longer needs bits
+    data["edges"] = [{"from": "hashing", "to": "bits"}, {"from": "hashing", "to": "tuning"}]  # tuning no longer needs bits
     waves = pipeline.depth_waves(CourseOutline.model_validate(data))
-    assert [[ch.key for ch in w] for w in waves] == [["c01-hashing", "c03-tuning"], ["c02-bits"]]
+    assert [[ch.key for ch in w] for w in waves] == [["c01-hashing"], ["c02-bits", "c03-tuning"]]
+    data["edges"] = []  # nothing recorded: reading order, never all at once
+    waves = pipeline.depth_waves(CourseOutline.model_validate(data))
+    assert [[ch.key for ch in w] for w in waves] == [["c01-hashing"], ["c02-bits"], ["c03-tuning"]]
 
 
 def _ctx(**kw):
@@ -348,7 +356,7 @@ def test_lesson_checks():
 
 def test_estimate_scales_with_the_lessons():
     est = pipeline.estimate_tokens(CourseOutline.model_validate(outline_data()))
-    assert 50_000 < est < 200_000  # a 3-lesson course; a 60-lesson one is about 1.6M
+    assert 100_000 < est < 300_000  # a 3-lesson course; a 65-lesson one measured 4.0M
 
 
 def test_tidy_fixes_what_code_can():
@@ -425,3 +433,18 @@ def test_the_map_so_far_highlights_the_new_concept():
     src = pedagogy.map_so_far([("a", "Hashing"), ("b", "Bit arrays"), ("c", "Filter size")], [("a", "b"), ("b", "c")], 1)
     assert 'n0["Hashing"]' in src and 'n1["Bit arrays"]' in src and "Filter size" not in src  # nothing from the future
     assert "n0 --> n1" in src and "class n1 new" in src
+
+
+def test_a_revision_that_fails_keeps_the_draft(fake, monkeypatch):
+    fake.stuck = {T2}
+    real = fake.parse
+
+    async def flaky(*, schema, user, **kw):
+        if schema.__name__ == "ChapterOut" and "fix these problems" in user:
+            raise RuntimeError("model's structured output did not validate after a retry")
+        return await real(schema=schema, user=user, **kw)
+
+    monkeypatch.setattr(llm, "parse", flaky)
+    cid, job = _build({"topic": "Bloom filters"}, "Failed revision")
+    asyncio.run(build_course.run(job))
+    assert _status(cid) == "ready"

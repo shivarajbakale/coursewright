@@ -44,7 +44,8 @@ For each lesson:
   `name` and `plain` use only words a learner at this point knows: no term a later lesson teaches. If a
   name needs another concept ("Next token prediction" needs "Tokens"), that concept's lesson comes first.
 - `summary`: one plain sentence saying what the lesson teaches.
-- `prerequisites`: keys of earlier lessons it builds on directly.
+- `prerequisites`: keys of the earlier lessons it builds on directly. Every lesson after the first has at
+  least one; these draw the learner's map of how the ideas connect.
 
 Module `title`: plain words for what it covers, at most 8 words, no colon. Module `summary`: one plain
 sentence. Set `project` true on modules that end in a hands-on project (most modules, unless the
