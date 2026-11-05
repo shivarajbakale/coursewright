@@ -34,7 +34,7 @@ import re
 from pathlib import Path
 from typing import Awaitable, Callable, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app import config
 from app.agents import llm
@@ -59,6 +59,7 @@ MAX_FIXES = 8
 CHAPTER_CONCURRENCY = 4
 BANNED = re.compile(r"\b(simply|obviously|trivially)\b|\bit is easy to see\b", re.I)
 KEY_IDEA = "> **Key idea:**"
+NOT_AN_ISSUE = re.compile(r"\bno (error|issue|mistake)s?\b|\b(is|are|looks) (correct|fine)\.?$|— correct\b", re.I)
 
 
 # ---- model output shapes ----------------------------------------------------------------------------
@@ -92,6 +93,18 @@ class ReviewOut(BaseModel):
 
 class VerifyOut(BaseModel):
     issues: list[str] = []
+
+    @field_validator("issues", mode="before")
+    @classmethod
+    def _flatten(cls, v):
+        """Some models return each issue as an object ({"quote": ..., "fix": ...}); keep its words."""
+        if isinstance(v, str):
+            return [v] if v.strip() else []
+        out = []
+        for item in v or []:
+            out.append(" ".join(str(x) for x in item.values()) if isinstance(item, dict) else str(item))
+        # A model that shows its work lists checks that passed too; those are not mistakes.
+        return [i for i in out if i.strip() and not NOT_AN_ISSUE.search(i)]
 
 
 class OutlineChatOut(BaseModel):
@@ -608,10 +621,16 @@ class Run:
             + f"\n  answer: {q.answer}\n  explanation: {q.explanation}"
             for i, q in enumerate(ex.questions)
         )
-        out = await self.call(
-            "verify", system=config.prompt("verifier"), user=f"{md}\n\nQuestions:\n{qs}", schema=VerifyOut,
-            max_tokens=3000,
-        )
+        try:
+            out = await self.call(
+                "verify", system=config.prompt("verifier"), user=f"{md}\n\nQuestions:\n{qs}", schema=VerifyOut,
+                max_tokens=8000,
+            )
+        except store.Cancelled:
+            raise
+        except Exception as e:  # noqa: BLE001 - this chapter goes unchecked; the others carry on
+            log.warning("verify %s failed: %s", ch.key, e)
+            return
         code = chapter_problems(tidy(ChapterOut(markdown=md, questions=ex.questions), ch.title), ch.title)
         problems = [i for i in out.issues if i.strip()] + code
         if problems:
@@ -630,21 +649,32 @@ class Run:
                              CHAPTER_CONCURRENCY, self.check_cancel)
         await self.emit("chapters", f"Checked {tally['checked']} chapters, corrected {tally['fixed']}", {})
 
+    async def optional(self, what: str, coro) -> None:
+        """A polishing stage that fails (a provider error, an answer that won't validate) is logged and
+        skipped: the course is complete without it. Cancelling still cancels."""
+        try:
+            await coro
+        except store.Cancelled:
+            raise
+        except Exception as e:  # noqa: BLE001
+            log.warning("%s skipped for job %s: %s", what, self.job_id, e, exc_info=True)
+            await self.emit("chapters", f"Skipped {what} after an error; the course is complete without it", {})
+
     async def write(self, outline: CourseOutline) -> None:
         notes = self.research_notes()
         budget = config.build_token_budget()
         await self.chapters(outline, notes)
         await self.check_cancel()
         if self.ledger.total < budget:
-            await self.verify(outline, notes)
+            await self.optional("the accuracy check", self.verify(outline, notes))
         await self.check_cancel()
         if self.ledger.total < budget:
-            await self.diagrams(outline)
+            await self.optional("the diagrams", self.diagrams(outline))
         await self.check_cancel()
         await self.projects(outline)
         await self.check_cancel()
         if self.ledger.total < budget:
-            await self.review(outline, notes)
+            await self.optional("the review", self.review(outline, notes))
         else:
             await self.emit("projects", "Past the token budget: saving the course without a review pass", {})
 

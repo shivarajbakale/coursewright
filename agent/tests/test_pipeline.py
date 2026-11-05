@@ -254,3 +254,23 @@ def test_the_verifier_sends_a_wrong_chapter_back_with_its_mistake(fake):
     out = asyncio.run(build_course.run(job))
     assert any("'2 + 2 = 5' should be 4" in u and "Current chapter:\n# A row of bits" in u for u in seen)
     assert out["usage"]["stages"]["verify"]["calls"] == 3 and _status(cid) == "ready"
+
+
+def test_verifier_issues_as_objects_are_kept_as_words():
+    out = pipeline.VerifyOut.model_validate({"issues": [
+        {"quote": "2 + 2 = 5", "fix": "it is 4"}, "plain", "1/64 ≈ 0.01563 — correct. No error.", "The sum is correct."]})
+    assert out.issues == ["2 + 2 = 5 it is 4", "plain"]
+
+
+def test_a_failing_polish_stage_does_not_fail_the_build(fake, monkeypatch):
+    real = fake.parse
+
+    async def flaky(*, schema, **kw):
+        if schema.__name__ in ("VerifyOut", "ReviewOut"):
+            raise RuntimeError("model's structured output did not validate after a retry")
+        return await real(schema=schema, **kw)
+
+    monkeypatch.setattr(llm, "parse", flaky)
+    cid, job = _build({"topic": "Bloom filters"}, "Flaky polish")
+    asyncio.run(build_course.run(job))
+    assert _status(cid) == "ready"

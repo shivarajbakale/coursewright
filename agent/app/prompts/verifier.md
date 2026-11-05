@@ -11,4 +11,5 @@ not judging style. Work through the chapter yourself:
 - Check every factual claim you are sure about; flag only what you are confident is wrong.
 
 Return `issues`: one entry per mistake, each quoting the sentence or line and saying what is right
-instead. An empty list when the chapter has no mistakes. Don't report anything you aren't sure of.
+instead. An empty list when the chapter has no mistakes. List mistakes only: never a check that passed, and
+nothing you aren't sure of.
