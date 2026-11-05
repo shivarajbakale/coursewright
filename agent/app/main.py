@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
         log.exception("seeding failed")
 
     conn = await aiosqlite.connect(str(config.db_path()))
-    await conn.execute("PRAGMA busy_timeout=5000")
+    await conn.execute("PRAGMA busy_timeout=30000")
     checkpointer = AsyncSqliteSaver(conn)
     await checkpointer.setup()
     set_saver(checkpointer)  # shared by the tutor and course builds (thread_id = job id, so builds resume)

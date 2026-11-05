@@ -352,7 +352,7 @@ One `jobs` table plus `job_events`, and a small async worker inside the agent se
 `BEGIN IMMEDIATE` and `UPDATE jobs SET status='running' … RETURNING`. That is enough for one user, needs no
 Redis, and keeps all state in one file.
 
-SQLite settings: WAL mode, `busy_timeout` 5 s, `foreign_keys` on, one write connection shared through an
+SQLite settings: WAL mode, `busy_timeout` 30 s, `foreign_keys` on, one write connection shared through an
 async lock, many readers. Long agent runs never hold a write transaction open: they write events and
 checkpoints in short transactions. Job kinds: `build_course`, `ingest`, `review_project`, `reindex`. SSE streams `job_events` by id,
 so a refreshed page replays from the last event id it saw.

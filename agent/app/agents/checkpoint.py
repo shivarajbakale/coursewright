@@ -29,7 +29,7 @@ async def saver() -> AsyncIterator:
         yield _saver
         return
     async with AsyncSqliteSaver.from_conn_string(str(config.db_path())) as s:
-        await s.conn.execute("PRAGMA busy_timeout=5000")
+        await s.conn.execute("PRAGMA busy_timeout=30000")
         await s.setup()
         yield s
 

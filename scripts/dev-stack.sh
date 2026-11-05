@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 pids=()
 cleanup() { kill "${pids[@]}" 2>/dev/null || true; }
 trap cleanup EXIT INT TERM
-(cd agent && uv run uvicorn app.main:app --port 8123 --reload) & pids+=($!)
+(cd agent && uv run uvicorn app.main:app --port 8123 --reload --timeout-graceful-shutdown 3) & pids+=($!)
 npx tsx runtime-dev/server.ts & pids+=($!)
 VITE_ENABLE_MOCKING=false npx vite --port 5173 & pids+=($!)
 wait

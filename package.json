@@ -111,7 +111,7 @@
     "doc-lint": "node scripts/doc-lint.mjs --strict",
     "loop-lint": "node scripts/loop-lint.mjs --strict",
     "runtime": "tsx runtime-dev/server.ts",
-    "agent": "cd agent && uv run uvicorn app.main:app --port 8123 --reload",
+    "agent": "cd agent && uv run uvicorn app.main:app --port 8123 --reload --timeout-graceful-shutdown 3",
     "dev:stack": "bash scripts/dev-stack.sh"
   }
 }

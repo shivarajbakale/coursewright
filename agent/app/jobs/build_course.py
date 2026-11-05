@@ -217,14 +217,16 @@ async def run(job: dict) -> dict:
             stream_mode="updates",
             subgraphs=True,
         ):
-            store.check_cancel(job_id)
-            progress.on_update(chunk)
+            # Every DB write goes through a thread: a blocking write on the event loop can't finish while
+            # the async checkpointer (same file, same loop) holds the write lock, and times out.
+            await asyncio.to_thread(store.check_cancel, job_id)
+            await asyncio.to_thread(progress.on_update, chunk)
             await asyncio.to_thread(progress.scan)
-            store.set_usage(job_id, progress.input_tokens, progress.output_tokens)
+            await asyncio.to_thread(store.set_usage, job_id, progress.input_tokens, progress.output_tokens)
             if progress.input_tokens + progress.output_tokens > budget:
                 raise RuntimeError(f"Token budget exceeded ({budget} tokens); raise CW_BUILD_TOKEN_BUDGET to allow more")
     await asyncio.to_thread(progress.scan)
-    store.check_cancel(job_id)
+    await asyncio.to_thread(store.check_cancel, job_id)
 
     rejected = await asyncio.to_thread(validate_course_diagrams, job_dir / "course")
     if rejected:

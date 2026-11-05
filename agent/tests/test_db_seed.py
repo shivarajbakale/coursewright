@@ -11,7 +11,7 @@ def test_migrations_and_extensions(client):
         assert migrate(conn) >= 1
         assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
         assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
-        assert conn.execute("PRAGMA busy_timeout").fetchone()[0] == 5000
+        assert conn.execute("PRAGMA busy_timeout").fetchone()[0] == 30000
         assert conn.execute("SELECT vec_version()").fetchone()[0].startswith("v0.1")
         names = {r[0] for r in rows(conn, "SELECT name FROM sqlite_master")}
         assert {"chunks_fts", "chunk_vectors", "jobs", "job_events", "schema_version"} <= names

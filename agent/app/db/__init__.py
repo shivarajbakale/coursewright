@@ -1,4 +1,4 @@
-"""SQLite access: one file, WAL, busy_timeout 5s, foreign keys, sqlite-vec loaded.
+"""SQLite access: one file, WAL, busy_timeout 30s, foreign keys, sqlite-vec loaded.
 
 Plain `sqlite3` connections, one per unit of work. REST handlers are sync (FastAPI runs them in its
 threadpool); async code calls the same helpers through `asyncio.to_thread`.
@@ -32,13 +32,13 @@ def new_id() -> str:
 def connect(path: Path | None = None) -> sqlite3.Connection:
     path = path or config.db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path, timeout=5.0, isolation_level=None, check_same_thread=False)
+    conn = sqlite3.connect(path, timeout=30.0, isolation_level=None, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.enable_load_extension(True)
     sqlite_vec.load(conn)
     conn.enable_load_extension(False)
     conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute("PRAGMA busy_timeout=30000")
     conn.execute("PRAGMA foreign_keys=ON")
     conn.execute("PRAGMA synchronous=NORMAL")
     return conn
