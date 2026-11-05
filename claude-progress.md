@@ -10,6 +10,19 @@
 
 ## Session Log
 
+### Session 004 — Empty and error states (2026-11-05)
+
+- One family of states: `StatePanel` / `ErrorState` (`src/components/state-panel.tsx`) with line-art spot
+  drawings (`src/illustrations/spots.tsx`). Errors are sorted into service not answering (status 0,
+  502-504), missing (404) and service error; stock server messages are hidden.
+- Applied to Library, Course, Chapter, Project, Building, Notes, Sources, 404, notifications, the tutor's
+  empty conversation (page and ⌘J panel), and crashes: a route that throws now keeps the shell and shows
+  the crash state instead of TanStack Router's default.
+- Tutor page: one wide conversation, scope as a strip on top, starters inside the empty state.
+- Dev mock scenarios: `?mock=empty|fail|offline|crash|default` (`src/mocks/scenarios.ts`, kept per tab).
+- Verified: make check green (330 web tests, 153 probe); all 19 states screenshotted in dark and light.
+- Not reachable: the notifications dropdown is not mounted anywhere in the app.
+
 ### Session 003 — Interview hardening (2026-11-05)
 
 - New course is keyboard-first: number keys pick, Enter continues, one progress bar, a quiet brief beside

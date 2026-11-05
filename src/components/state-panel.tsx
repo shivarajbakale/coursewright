@@ -19,6 +19,8 @@ export interface StatePanelProps {
   size?: Size;
   /** `alert` for an error the person should hear about; omitted for an empty state. */
   role?: 'alert' | 'status';
+  /** Leave the drawing out: for a side column whose page already shows one for the same cause. */
+  plain?: boolean;
 }
 
 /**
@@ -26,7 +28,7 @@ export interface StatePanelProps {
  * one sentence on what to do, and the action that does it. Every list, page
  * and panel in the app uses this, so the states read as one family.
  */
-export function StatePanel({ art, title, children, actions, size = 'section', role }: StatePanelProps) {
+export function StatePanel({ art, title, children, actions, size = 'section', role, plain }: StatePanelProps) {
   const compact = size === 'compact';
   return (
     <Stack
@@ -40,7 +42,7 @@ export function StatePanel({ art, title, children, actions, size = 'section', ro
       role={role}
       data-state-panel={art}
     >
-      <Spot kind={art} width={ART[size]} />
+      {!plain && <Spot kind={art} width={ART[size]} />}
       <Title order={size === 'page' ? 2 : 3} size={size === 'page' ? 'h3' : compact ? 'h6' : 'h4'} mt={compact ? 0 : 4}>
         {title}
       </Title>
@@ -71,6 +73,7 @@ export interface ErrorStateProps {
   /** Extra ways out, after Retry. */
   actions?: ReactNode;
   size?: Size;
+  plain?: boolean;
 }
 
 /**
@@ -78,7 +81,7 @@ export interface ErrorStateProps {
  * gone, or the service broke, and the one action that helps. The server's own
  * message is kept, small, when it says more than a stock phrase.
  */
-export function ErrorState({ error, title, missingTitle, onRetry, retrying, actions, size = 'section' }: ErrorStateProps) {
+export function ErrorState({ error, title, missingTitle, onRetry, retrying, actions, size = 'section', plain }: ErrorStateProps) {
   const kind = errorKind(error);
   const detail = errorDetail(error);
   const advice = {
@@ -93,6 +96,7 @@ export function ErrorState({ error, title, missingTitle, onRetry, retrying, acti
       art={ERROR_ART[kind]}
       title={missing && missingTitle ? missingTitle : title}
       size={size}
+      plain={plain}
       role="alert"
       actions={
         (onRetry && !missing) || actions ? (
@@ -113,8 +117,9 @@ export function ErrorState({ error, title, missingTitle, onRetry, retrying, acti
         ) : undefined
       }
     >
-      {advice}
-      {detail && kind !== 'missing' && (
+      {/* A plain state sits beside a full one for the same cause: title and action are enough. */}
+      {!plain && advice}
+      {!plain && detail && kind !== 'missing' && (
         <Code block mt="sm" ta="left" fz="xs" c="dimmed">
           {detail}
         </Code>

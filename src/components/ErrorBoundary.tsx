@@ -36,34 +36,43 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         return this.props.fallback;
       }
 
-      return (
-        <Stack align="center" justify="center" gap={0} mih={400} p="xl" role="alert">
-          <Spot kind="broken" width={200} />
-          <Title order={2} size="h4" mt="sm" mb="xs">
-            This screen stopped working
-          </Title>
-          <Text c="dimmed" ta="center" maw={448} mb="md">
-            Something in the page broke while drawing it. Your courses and notes are safe. Try again, or go back to
-            the library.
-          </Text>
-          {import.meta.env.DEV && this.state.error && (
-            // Dev only: the message is for whoever is building the app, and it
-            // is scrolled rather than clipped because a stack-ish message that
-            // ends mid-word is worse than no message.
-            <ScrollArea.Autosize mah={192} maw={512} mb="md">
-              <Code block>{this.state.error.message}</Code>
-            </ScrollArea.Autosize>
-          )}
-          <Group gap="sm">
-            <Button onClick={this.handleReset}>Try again</Button>
-            <Button variant="default" onClick={() => (window.location.href = '/')}>
-              Back to the library
-            </Button>
-          </Group>
-        </Stack>
-      );
+      return <CrashState error={this.state.error} onReset={this.handleReset} />;
     }
 
     return this.props.children;
   }
+}
+
+/**
+ * The screen for a page that threw while drawing. Used by `ErrorBoundary` and
+ * by the router for any route that crashes, so the app's shell stays up and
+ * the person gets a way back instead of a stack trace.
+ */
+export function CrashState({ error, onReset }: { error: Error | null; onReset: () => void }) {
+  return (
+    <Stack align="center" justify="center" gap={0} mih={400} p="xl" role="alert" data-state-panel="crash">
+      <Spot kind="broken" width={200} />
+      <Title order={2} size="h4" mt="sm" mb="xs">
+        This screen stopped working
+      </Title>
+      <Text c="dimmed" ta="center" maw={448} mb="md">
+        Something in the page broke while drawing it. Your courses and notes are safe. Try again, or go back to the
+        library.
+      </Text>
+      {import.meta.env.DEV && error && (
+        // Dev only: the message is for whoever is building the app, and it
+        // is scrolled rather than clipped because a stack-ish message that
+        // ends mid-word is worse than no message.
+        <ScrollArea.Autosize mah={192} maw={512} mb="md">
+          <Code block>{error.message}</Code>
+        </ScrollArea.Autosize>
+      )}
+      <Group gap="sm">
+        <Button onClick={onReset}>Try again</Button>
+        <Button variant="default" onClick={() => (window.location.href = '/')}>
+          Back to the library
+        </Button>
+      </Group>
+    </Stack>
+  );
 }

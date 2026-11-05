@@ -112,6 +112,7 @@ export function LibraryPage() {
                 ) : recent.isError ? (
                   <ErrorState
                     size="compact"
+                    plain
                     error={recent.error}
                     title="Recent notes didn’t load"
                     onRetry={() => recent.refetch()}

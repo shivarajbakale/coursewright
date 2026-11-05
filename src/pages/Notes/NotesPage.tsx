@@ -171,7 +171,7 @@ function NotesSidebar({
             ))}
           </Stack>
         ) : error ? (
-          <ErrorState size="compact" error={treeError} title="Pages didn’t load" onRetry={onRetry} />
+          <ErrorState size="compact" plain error={treeError} title="Pages didn’t load" onRetry={onRetry} />
         ) : (
           <PageTree
             key={selectedId ?? 'none'}

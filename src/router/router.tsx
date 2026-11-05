@@ -1,4 +1,5 @@
 import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
+import { RouteError } from './RouteError';
 import App from '@/App';
 import { Settings } from '@/pages/Settings';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -46,7 +47,7 @@ const routeTree = rootRoute.addChildren([
   settingsRoute,
 ]);
 
-const router = createRouter({ routeTree });
+const router = createRouter({ routeTree, defaultErrorComponent: RouteError });
 
 declare module '@tanstack/react-router' {
   interface Register {

@@ -17,7 +17,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
-import { BookOpen, CircleAlert, FileText, Globe, Info, Link2, MessageCircle, RefreshCw, Search } from 'lucide-react';
+import { BookOpen, FileText, Globe, Info, Link2, MessageCircle, RefreshCw, Search } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
 import { timeAgo } from '@/lib/time';
 import { Reveal } from '@/components/reveal';
@@ -409,7 +409,9 @@ export function SourcesPage() {
       ].join(' · ')
     : stats.isLoading
       ? 'Reading the index…'
-      : 'Material the tutor searches, split into chunks and embedded per course.';
+      : stats.isError
+        ? 'Index counts are unavailable right now.'
+        : 'Material the tutor searches, split into chunks and embedded per course.';
 
   return (
     <PageShell
@@ -431,17 +433,6 @@ export function SourcesPage() {
       }
     >
       <Stack gap="sm" h="100%" style={{ minHeight: 0 }}>
-        {stats.isError && (
-          <Alert color="red" variant="light" icon={<CircleAlert size={16} />} py="xs" style={{ flexShrink: 0 }}>
-            <Group gap="sm">
-              <Text size="sm">The index stats didn’t load.</Text>
-              <Button size="xs" variant="default" onClick={() => stats.refetch()}>
-                Retry
-              </Button>
-            </Group>
-          </Alert>
-        )}
-
         {stats.data?.embedder === 'local' && (
           <Alert color="yellow" variant="light" icon={<Info size={16} />} py="xs" style={{ flexShrink: 0 }}>
             <Group gap={6} wrap="nowrap">
