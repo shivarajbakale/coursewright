@@ -15,6 +15,7 @@ import { useResizableWidth } from '@/hooks/use-resizable-width';
 import { SaveIndicator } from '@/pages/Notes/SaveIndicator';
 import { useDebouncedSave } from '@/pages/Notes/useDebouncedSave';
 import notesClasses from '@/pages/Notes/notes.module.css';
+import classes from './chapter-notes.module.css';
 
 /** What the chapter page can ask of the panel. */
 export interface ChapterNotesHandle {
@@ -211,9 +212,9 @@ function NotesEditor({
         )}
       </PanelHeader>
       <ScrollArea style={{ flex: 1, minHeight: 0 }}>
-        <Box px="xs" py="sm" className={notesClasses.body}>
+        <Box px="md" pt="sm" pb="md" className={`${notesClasses.body} ${classes.body}`}>
           {!page && (
-            <Text size="sm" c="dimmed" px="md" pb="xs">
+            <Text size="sm" c="dimmed" pb="xs">
               Write about this chapter in your own words. Select text in the chapter and choose Add to notes to quote
               it here. Notes live under this course in{' '}
               <AnchorLink to="/notes" size="sm">

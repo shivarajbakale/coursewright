@@ -1,0 +1,20 @@
+/*
+ * The block editor in the narrow notes panel. The editor reserves a 52px
+ * gutter for its hover + and grip, sized for a full-width page; in a side
+ * panel that is a band of dead space. Here the text starts at the panel's
+ * 16px inset, in line with its title, and the hover handles are left to the
+ * full Notes page (insert blocks with "/" or markdown; reorder in Notes).
+ */
+.body {
+  --blocks-gutter: 0px;
+}
+
+.body :global([class*='blocks_handle']) {
+  display: none;
+}
+
+/* The first block (often a heading) sits right under the toolbar, not a heading margin below it. */
+.body :global(.ProseMirror) > :first-child,
+.body :global(.ProseMirror) > :first-child > :first-child {
+  margin-top: 0;
+}
