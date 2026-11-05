@@ -64,7 +64,7 @@ class CourseOutline(Strict):
     topic: str = ""
     summary: str = ""
     colour: str = "lime"
-    icon: str = "📘"
+    icon: str = ""
     concepts: list[ConceptSpec] = []
     edges: list[EdgeSpec] = []
     modules: list[ModuleSpec] = Field(min_length=1)

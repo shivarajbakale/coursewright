@@ -113,7 +113,7 @@ def create(body: NoteCreate):
             """INSERT INTO note_pages(id, parent_id, position, title, icon, properties, markdown, course_id, chapter_id,
                                       created_at, updated_at) VALUES (?,?,?,?,?, '{}', ?,?,?,?,?)""",
             (
-                nid, body.parentId, pos, (body.title or "Untitled").strip() or "Untitled", body.icon or "📄",
+                nid, body.parentId, pos, (body.title or "Untitled").strip() or "Untitled", body.icon or "",
                 body.markdown or "", course_id, body.chapterId, t, t,
             ),
         )
@@ -155,7 +155,7 @@ def patch_note(note_id: str, body: NotePatch):
             sets["title"] = (body.title or "").strip() or "Untitled"
             reindex = True
         if "icon" in fields:
-            sets["icon"] = body.icon or "📄"
+            sets["icon"] = body.icon or ""
         if "cover" in fields:
             sets["cover"] = body.cover
         if "markdown" in fields:

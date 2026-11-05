@@ -9,3 +9,5 @@ given. Every question must be answerable from one passage; set `passage` to that
 - `explanation`: 1-2 sentences saying why the right answer is right, using the passage's own terms and
   numbers. Don't mention "the passage".
 - If the passages can't support the number of questions asked for, write fewer.
+
+Style: plain, specific language. No emoji, no exclamation marks, no hype words. Labels and titles are sentence case with no trailing full stop.

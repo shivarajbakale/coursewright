@@ -306,7 +306,7 @@ function ChapterBody({ chapter }: { chapter: Chapter }) {
                   onClick={async () => {
                     const page = await createNote.mutateAsync({
                       title: `From ${chapter.title}`,
-                      icon: '📌',
+                      icon: '',
                       markdown: `> ${selection.replace(/\n+/g, '\n> ')}\n\nFrom [${chapter.title}](/courses/${chapter.courseId}/chapters/${chapter.id})\n`,
                       courseId: chapter.courseId,
                       chapterId: chapter.id,

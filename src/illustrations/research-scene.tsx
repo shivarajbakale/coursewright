@@ -1,156 +1,63 @@
-import { SceneFrame, Sparkle } from './scene-kit';
-import { cx, paint as s, pick, textWidth, trunc } from './scene-utils';
+import { Caption, Rule, SceneFrame, Sheet } from './scene-kit';
+import { cx, paint as s, pick, trunc } from './scene-utils';
 import type { SceneProps } from './scene-types';
-import r from './research-scene.module.css';
 
-const FALLBACK = ['key ideas', 'core terms', 'examples', 'pitfalls', 'prerequisites'];
+const FALLBACK = ['Key ideas', 'Core terms', 'Examples', 'Pitfalls', 'Prerequisites'];
 
-function Chip({
-  label,
-  x,
-  y,
-  anchor,
-  accent,
-  delay,
-}: {
-  label: string;
-  x: number;
-  y: number;
-  anchor: 'start' | 'end';
-  accent?: boolean;
-  delay?: string;
-}) {
-  const w = textWidth(label, 14) + 40;
-  const left = anchor === 'start' ? x : x - w;
-  return (
-    <g data-slot="scene-progress" className={cx(s.float, delay)}>
-      <rect
-        x={left}
-        y={y}
-        width={w}
-        height="36"
-        rx="18"
-        className={cx(s.fSurface, accent ? s.sAccentEdge : s.sLine)}
-      />
-      <text x={left + 20} y={y + 23} fontSize="14" className={accent ? s.fAccentInk : s.fSoft}>
-        {label}
-      </text>
-    </g>
-  );
-}
+/** The source card's ruled lines; the reading band steps 24 units per line. */
+const LINES = [232, 200, 216, 184, 208];
 
-const SPOTS = [
-  { x: 60, y: 62, anchor: 'start' as const },
-  { x: 740, y: 58, anchor: 'end' as const, accent: true, delay: s.d1 },
-  { x: 760, y: 320, anchor: 'end' as const, delay: s.d2 },
-  { x: 40, y: 330, anchor: 'start' as const, delay: s.d3 },
-];
-
-/** Stage 1: a magnifier scanning source documents while topic words float out. */
+/** Stage 1: a source card being read, line by line, and the terms taken from it. */
 export function ResearchScene({ data, height }: SceneProps) {
-  const words = pick(data.terms, FALLBACK);
-  const lens = trunc(words[0] ?? 'topic', 10);
-  // Placeholder words only pad an empty scene; real terms never mix with them.
-  const pool = data.terms?.length ? words.slice(1) : FALLBACK.slice(1);
-  const chips = pool.slice(0, 4).map(w => trunc(w, 18));
-  const lensSize = Math.min(22, Math.floor(100 / (lens.length * 0.62)));
-  const found = data.terms?.length ? `${data.terms.length} terms found` : 'scanning sources';
-  const topic = data.topic?.trim() || 'your topic';
+  const terms = pick(data.terms, FALLBACK)
+    .slice(0, 5)
+    .map(t => trunc(t, 22));
+  const topic = data.topic?.trim() || 'Your topic';
+  const count = data.terms?.length ?? 0;
 
   return (
     <SceneFrame
       height={height}
-      label={`Researching ${trunc(topic, 60)}: a magnifier scanning source documents while topic words such as ${[lens, ...chips].join(', ')} float out of them`}
+      label={`Researching ${trunc(topic, 60)}: a source card being read line by line, with the terms taken from it: ${terms.join(', ')}`}
     >
-      <circle cx="400" cy="220" r="170" className={s.fAccent} opacity="0.06" />
-      <g transform="rotate(-10 240 240)">
-        <rect
-          x="150"
-          y="130"
-          width="180"
-          height="230"
-          rx="16"
-          strokeWidth="2"
-          className={cx(s.fSurface, s.sLine)}
-        />
-        <rect x="172" y="156" width="80" height="10" rx="5" className={s.fBlue} />
-        <rect x="172" y="186" width="130" height="7" rx="3.5" className={s.fLine} />
-        <rect x="172" y="204" width="110" height="7" rx="3.5" className={s.fLine} />
-        <rect x="172" y="222" width="124" height="7" rx="3.5" className={s.fLine} />
-        <rect x="172" y="260" width="136" height="60" rx="8" className={s.fRaised} />
-      </g>
-      <g transform="rotate(9 540 240)">
-        <rect
-          x="450"
-          y="130"
-          width="180"
-          height="230"
-          rx="16"
-          strokeWidth="2"
-          className={cx(s.fSurface, s.sLine)}
-        />
-        <rect x="472" y="156" width="70" height="10" rx="5" className={s.fAmber} />
-        <rect x="472" y="186" width="130" height="7" rx="3.5" className={s.fLine} />
-        <rect x="472" y="204" width="100" height="7" rx="3.5" className={s.fLine} />
-        <rect x="472" y="222" width="120" height="7" rx="3.5" className={s.fLine} />
-        <rect x="472" y="240" width="90" height="7" rx="3.5" className={s.fLine} />
-      </g>
-      <g>
-        <rect
-          x="300"
-          y="92"
-          width="200"
-          height="262"
-          rx="18"
-          strokeWidth="2"
-          className={cx(s.fRaised, s.sLine)}
-        />
-        <rect x="324" y="120" width="96" height="12" rx="6" className={s.fAccent} />
-        <rect x="324" y="152" width="150" height="8" rx="4" className={s.fLine} />
-        <rect x="324" y="172" width="128" height="8" rx="4" className={s.fLine} />
-        <rect x="320" y="188" width="160" height="22" rx="6" className={s.fAccent} opacity="0.22" />
-        <rect x="324" y="195" width="140" height="8" rx="4" className={s.fAccent} opacity="0.8" />
-        <rect x="324" y="222" width="146" height="8" rx="4" className={s.fLine} />
-        <rect x="324" y="242" width="110" height="8" rx="4" className={s.fLine} />
-        <rect x="324" y="274" width="152" height="54" rx="8" className={s.fSurface} />
-        <text
-          x="336"
-          y="306"
-          fontSize="13"
-          className={cx(s.mono, s.fSoft)}
-        >{`? ${trunc(topic, 14)}`}</text>
-      </g>
-      <g data-slot="scene-progress" className={r.scan}>
-        <circle cx="470" cy="196" r="60" strokeWidth="10" className={cx(s.fLens, s.sAccent)} />
-        <text
-          x="470"
-          y="190"
-          fontSize={lensSize}
-          fontWeight="700"
-          textAnchor="middle"
-          className={s.fText}
-        >
-          {lens}
-        </text>
-        <text x="470" y="214" fontSize="12" textAnchor="middle" className={s.fDim}>
-          {found}
-        </text>
-        <line
-          x1="514"
-          y1="240"
-          x2="572"
-          y2="298"
-          strokeWidth="16"
-          strokeLinecap="round"
-          className={s.sAccent}
-        />
-      </g>
-      {SPOTS.slice(0, chips.length).map((spot, i) => (
-        <Chip key={spot.x} label={chips[i]} {...spot} />
+      {/* Source cards: two behind, the one being read in front. */}
+      <Sheet x={144} y={64} w={272} h={240} tone="back" />
+      <Sheet x={132} y={76} w={272} h={240} tone="back" />
+      <Sheet x={120} y={88} w={272} h={240} />
+      <text x="144" y="124" fontSize="14" fontWeight="500" className={s.text}>
+        {trunc(topic, 30)}
+      </text>
+      <line x1="144" y1="144" x2="368" y2="144" className={s.line} />
+      <rect
+        data-slot="scene-progress"
+        x="136"
+        y="164"
+        width="240"
+        height="20"
+        rx="4"
+        className={cx(s.wash, s.read)}
+      />
+      {LINES.map((w, i) => (
+        <Rule key={i} x={144} y={172 + i * 24} w={w} />
       ))}
-      <Sparkle x={250} y={70} className={cx(s.fAccent, s.pulse)} />
-      <Sparkle x={588} y={140} scale={0.7} className={cx(s.fBlue, s.pulse, s.d1)} />
-      <Sparkle x={120} y={250} scale={0.6} className={cx(s.fAmber, s.pulse, s.d2)} />
+      <Rule x={144} y={292} w={120} />
+
+      {/* What has been taken from it. */}
+      <Sheet x={456} y={88} w={224} h={240} />
+      <text x="480" y="124" fontSize="14" className={s.dim}>
+        Terms
+      </text>
+      <line x1="480" y1="144" x2="656" y2="144" className={s.line} />
+      {terms.map((term, i) => (
+        <text key={i} x="480" y={180 + i * 28} fontSize="14" className={s.text}>
+          {term}
+        </text>
+      ))}
+
+      <Caption
+        label="Reading sources"
+        figure={count ? `${count} term${count === 1 ? '' : 's'}` : undefined}
+      />
     </SceneFrame>
   );
 }

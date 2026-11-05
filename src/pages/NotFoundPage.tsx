@@ -19,50 +19,26 @@ export function NotFoundPage() {
       mih="100svh"
     >
       <Box data-panel="not-found" pos="relative" w="100%" maw={448} ta="center">
-        {/* Decorative halo. A blurred disc of the accent, not a token surface —
-            it has no content and no edge, so it is drawn rather than composed. */}
-        <Box
-          aria-hidden
-          pos="absolute"
-          top="50%"
-          left="50%"
-          w={288}
-          h={288}
-          style={{
-            zIndex: 0,
-            pointerEvents: 'none',
-            transform: 'translate(-50%, -50%)',
-            borderRadius: '50%',
-            background: 'var(--mantine-primary-color-light)',
-            filter: 'blur(64px)',
-          }}
-        />
         <Box pos="relative">
           <ThemeIcon variant="light" size={56} radius="xl" mx="auto">
             <Compass size={28} />
           </ThemeIcon>
-          <Text fz="4.5rem" fw={600} lh={1.1} mt="lg" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <Text fz="3rem" fw={500} lh={1.1} mt="lg" ff="monospace" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
             404
           </Text>
           <Title order={1} size="h4" mt="xs">
             Page not found
           </Title>
           <Text size="sm" c="dimmed" mt="xs">
-            We couldn’t find what you were looking for. The link may be broken, or the page
-            may have been moved.
+            Nothing lives at this address. The course, chapter or note may have been deleted.
           </Text>
           <Stack gap="xs" mt="lg">
             <Group gap="xs" justify="center" wrap="wrap">
               <Button component={Link} to="/" leftSection={<Home size={16} />}>
-                Back to Dashboard
+                Back to the library
               </Button>
-              <Button
-                component={Link}
-                to="/projects"
-                variant="default"
-                leftSection={<Search size={16} />}
-              >
-                Browse Projects
+              <Button component={Link} to="/notes" variant="default" leftSection={<Search size={16} />}>
+                Open notes
               </Button>
             </Group>
             <Button

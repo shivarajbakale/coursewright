@@ -227,7 +227,7 @@ function DiagramCard({ diagram }: { diagram: Diagram | null }) {
           onClick={async () => {
             await createNote.mutateAsync({
               title: diagram.title,
-              icon: '🎬',
+              icon: '',
               markdown: `\`\`\`${diagram.kind}\n${diagram.source.trim()}\n\`\`\`\n`,
               courseId,
               chapterId,

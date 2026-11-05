@@ -89,4 +89,5 @@ export interface InterviewQuestion { id: string; header: string; question: strin
 export interface InterviewStep { question: InterviewQuestion | null; done: boolean; summary: string | null;
   level?: string; goal?: string; pace?: string }
 
-export interface Health { ok: boolean; anthropic: boolean; voyage: boolean; version: string }
+export interface Health { ok: boolean; anthropic: boolean; voyage: boolean; version: string;
+  model?: string; provider?: string }   // provider: 'anthropic' or the compatible base URL

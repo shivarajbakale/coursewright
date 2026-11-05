@@ -17,6 +17,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowRight, Circle, CircleCheck, Hammer, Maximize2, MessagesSquare, MoreHorizontal, Target, Trash2 } from 'lucide-react';
 import { modals } from '@mantine/modals';
 import { PageShell } from '@/components/page-shell';
+import { ChapterNumber } from '@/components/chapter-number';
 import { Reveal } from '@/components/reveal';
 import { ButtonLink, NavLinkLink } from '@/components/links';
 import { MermaidDiagram } from '@/components/diagrams/MermaidDiagram';
@@ -183,11 +184,18 @@ export function CoursePage() {
                           key={ch.id}
                           to="/courses/$courseId/chapters/$chapterId"
                           params={{ courseId, chapterId: ch.id }}
-                          label={`${m.position}.${ch.position}  ${ch.title}`}
+                          label={
+                            <Group gap={10} wrap="nowrap">
+                              <ChapterNumber value={`${m.position}.${ch.position}`} />
+                              <Text size="sm" truncate>
+                                {ch.title}
+                              </Text>
+                            </Group>
+                          }
                           py={6}
                           leftSection={
                             ch.done ? (
-                              <CircleCheck size={16} color="var(--mantine-color-green-6)" />
+                              <CircleCheck size={16} color="var(--mantine-color-dimmed)" />
                             ) : (
                               <Circle size={16} color="var(--mantine-color-dimmed)" />
                             )

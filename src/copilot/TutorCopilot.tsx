@@ -88,7 +88,7 @@ function TutorBridge() {
       handler: async ({ markdown, title }) => {
         const page = await createNote.mutateAsync({
           title: title ?? 'From the tutor',
-          icon: '💬',
+          icon: '',
           markdown,
           courseId,
           chapterId,

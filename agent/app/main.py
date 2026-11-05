@@ -131,6 +131,8 @@ def health():
             "anthropic": bool(config.anthropic_key()),
             "voyage": bool(config.voyage_key()),
             "version": config.VERSION,
+            "model": config.model(),
+            "provider": "anthropic" if config.is_anthropic() else (config.anthropic_base_url() or ""),
         }
     )
 

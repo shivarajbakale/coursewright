@@ -90,7 +90,7 @@ export function GeneratingPage() {
     return (
       <PageShell title="Building course">
         <Alert color="red" title="Course not found">
-          It may have been deleted.
+          It may have been deleted
         </Alert>
       </PageShell>
     );
@@ -101,7 +101,7 @@ export function GeneratingPage() {
   return (
     <PageShell
       title={course.data.title}
-      description={done || ready ? 'Your course is ready.' : `Building: ${current.blurb.toLowerCase()}.`}
+      description={done || ready ? 'Your course is ready' : `Building: ${current.blurb.toLowerCase()}`}
       archetype="sequence"
       breadcrumb={
         // Leaving costs nothing: the build keeps running and the page replays
@@ -137,7 +137,7 @@ export function GeneratingPage() {
 
         {failed && (
           <Alert color="red" variant="light" icon={<TriangleAlert size={16} />} title="The build stopped">
-            {job.data?.error ?? (job.data?.status === 'cancelled' ? 'You stopped it.' : 'Something went wrong.')}
+            {job.data?.error ?? (job.data?.status === 'cancelled' ? 'You stopped the build' : 'The build failed without a message')}
           </Alert>
         )}
 

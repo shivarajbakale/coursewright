@@ -13,7 +13,7 @@ All paths are in the agent filesystem. Keys are lowercase kebab-case (`^[a-z0-9]
 ```json
 {"title": "Course title", "topic": "short topic", "summary": "2-3 sentences",
  "colour": "one of: red pink grape violet indigo blue cyan teal green lime yellow orange",
- "icon": "one emoji",
+ "icon": "",
  "concepts": [...same as graph.json...], "edges": [...same as graph.json...],
  "modules": [{"key": "m1", "title": "...", "summary": "1-2 sentences",
    "chapters": [{"key": "c01-some-slug", "title": "...", "readingMinutes": 8, "conceptKeys": ["leader-election"]}],
@@ -49,3 +49,10 @@ script that passed the Flowmovie checker; a `.mmd` is Mermaid whose first line i
  "hints": ["gentle first", "more specific"], "rubric": [{"criterion": "...", "chapterKey": "c01-some-slug"}],
  "milestones": [{"title": "...", "body": "markdown: what to do and how to know it works", "checkCmd": "pytest -k first"}]}
 ```
+
+## House style for everything the learner reads
+
+- Plain, specific language. No emoji anywhere: not in titles, headings, options, hints or feedback.
+- No exclamation marks, no hype words (supercharge, seamless, unlock, magic, game-changing), no greetings.
+- Titles, headings, option labels and button-like text are sentence case and end without a full stop.
+- Never invent statistics, quotes or sources. If a number matters, say where it comes from.

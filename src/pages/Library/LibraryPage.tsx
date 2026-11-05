@@ -51,7 +51,7 @@ export function LibraryPage() {
     >
       <Stack gap="lg">
         {health.data && !health.data.anthropic && (
-          <Alert variant="light" color="yellow" icon={<TriangleAlert size={16} />} title="Running without Claude">
+          <Alert variant="light" color="yellow" icon={<TriangleAlert size={16} />} title="No model connected">
             Set <code>ANTHROPIC_API_KEY</code> for the agent service to build new courses and talk to the tutor. Reading,
             notes and search work without it.
           </Alert>
@@ -149,9 +149,7 @@ function ContinueCard({ course }: { course: CourseSummary }) {
     <Paper withBorder radius="lg" px="md" py="sm">
       <Group justify="space-between" wrap="nowrap" gap="md">
         <Group wrap="nowrap" gap="sm" style={{ minWidth: 0 }}>
-          <Text size="xl" aria-hidden style={{ flexShrink: 0 }}>
-            {course.icon}
-          </Text>
+          <BookOpen size={16} color="var(--mantine-color-dimmed)" style={{ flexShrink: 0 }} aria-hidden />
           <Stack gap={2} style={{ minWidth: 0 }}>
             <Text size="sm" truncate>
               <Text span c="dimmed">
@@ -182,14 +180,12 @@ function ContinueCard({ course }: { course: CourseSummary }) {
   );
 }
 
-/** The title line every course card shares: the course's emoji inline, the title, a status badge. */
+/** The title line every course card shares: a book mark, the title, a status badge. */
 function CourseTitle({ course, badge }: { course: CourseSummary; badge?: React.ReactNode }) {
   return (
     <Group justify="space-between" wrap="nowrap" gap="xs">
       <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
-        <Text aria-hidden style={{ flexShrink: 0 }}>
-          {course.icon}
-        </Text>
+        <BookOpen size={16} color="var(--mantine-color-dimmed)" style={{ flexShrink: 0 }} aria-hidden />
         <Text fw={600} truncate title={course.title}>
           {course.title}
         </Text>
@@ -216,7 +212,7 @@ function CourseCard({ course }: { course: CourseSummary }) {
                 Building
               </Badge>
             ) : pct === 100 ? (
-              <Badge variant="light" color="green" style={{ flexShrink: 0 }}>
+              <Badge style={{ flexShrink: 0 }}>
                 Finished
               </Badge>
             ) : null

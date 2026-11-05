@@ -181,7 +181,7 @@ const toSummary = (n: NotePage): NoteSummary => ({
 
 // ── handlers ─────────────────────────────────────────────────────────────
 export const coursewrightHandlers = [
-  http.get('/api/health', () => ok({ ok: true, anthropic: false, voyage: false, version: 'mock' })),
+  http.get('/api/health', () => ok({ ok: true, anthropic: false, voyage: false, version: 'mock', model: 'claude-opus-5-5', provider: 'anthropic' })),
 
   http.post('/api/interview/next', async ({ request }) => {
     const { answers } = (await request.json()) as { topic: string; answers: unknown[] };

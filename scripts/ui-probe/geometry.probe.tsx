@@ -42,7 +42,8 @@ describe('browser geometry', () => {
     // that re-scales its headings should not have to edit the probe.
     const h2 = parseFloat(String(theme.headings?.sizes?.h2?.fontSize)) * 16;
     expect(el?.style.fontSize).toBeCloseTo(h2, 0);
-    expect(el?.style.fontWeight).toBeGreaterThanOrEqual(600);
+    // Likewise the weight: the theme's heading weight (500 since the unslop pass), not a fixed 600.
+    expect(el?.style.fontWeight).toBe(Number(theme.headings?.fontWeight));
   });
 
   it('detects horizontal overflow', async () => {

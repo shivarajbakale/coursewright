@@ -97,7 +97,8 @@ interface InterviewQuestion { id: string; header: string; question: string; mult
 interface InterviewStep { question: InterviewQuestion | null; done: boolean; summary: string | null;
   level?: string; goal?: string; pace?: string }   // filled when done, to complete CourseBrief
 
-interface Health { ok: boolean; anthropic: boolean; voyage: boolean; version: string }
+interface Health { ok: boolean; anthropic: boolean; voyage: boolean; version: string;
+  model?: string; provider?: string }   // provider: 'anthropic' or the compatible base URL
 ```
 
 ## Routes (all under `/api`)

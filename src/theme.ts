@@ -190,7 +190,8 @@ export const theme = createTheme({
     xl: '1.25rem',
   },
   headings: {
-    fontWeight: '600',
+    /* 500: hierarchy comes from size and colour, not weight. */
+    fontWeight: '500',
     sizes: {
       h1: { fontSize: '1.5625rem', lineHeight: '1.15' },
       h2: { fontSize: '1.25rem', lineHeight: '1.2' },
@@ -247,10 +248,16 @@ export const theme = createTheme({
 
     /* Status as a wash, an edge and an ink: a pill with a tinted hairline. */
     Badge: {
-      defaultProps: { variant: 'light', radius: 'xl' },
+      /* Quiet by default: neutral, small radius (not a pill), sentence case.
+         A colour is chosen only when it means something (failed, building). */
+      defaultProps: { variant: 'light', color: 'gray', radius: 'sm', tt: 'none' },
       classNames: { root: classes.badge },
     },
-    ThemeIcon: { defaultProps: { variant: 'light' } },
+    ThemeIcon: { defaultProps: { variant: 'light', color: 'gray' } },
+
+    /* Links are text, not accent: secondary ink, underline on hover. The lime
+       is kept for the primary action and the selection. */
+    Anchor: { defaultProps: { c: 'dimmed', underline: 'hover' } },
 
     /* A spinner is state, not decoration: it says "still working". The slot
        names it as a loading indicator, which is what the ui-probe's motion
@@ -302,7 +309,11 @@ export const theme = createTheme({
     Autocomplete: { classNames: { input: classes.input } },
 
     /* A bar is always paired with its value; the track is the faint wash. */
-    Progress: { defaultProps: { size: 'sm', radius: 'xl' }, classNames: { root: classes.track } },
+    Progress: {
+      /* Neutral by default; the one figure that matters on a screen opts into the accent. */
+      defaultProps: { size: 'sm', radius: 'xl', color: 'gray' },
+      classNames: { root: classes.track },
+    },
 
     /* Column headers are labels, lettered as a gauge is. */
     Table: { classNames: { th: classes.th, td: classes.td } },

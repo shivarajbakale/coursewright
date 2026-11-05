@@ -84,6 +84,12 @@
 
 /* ── Navigation: the selected place is the faint wash and the ink ────────── */
 
+/* Navigation is the densest part of the app: 36px rows on the 4px grid. */
+.navLink {
+  min-height: 36px;
+  padding-block: 6px;
+}
+
 .navLink[data-active] {
   background-color: var(--app-wash);
   color: var(--mantine-color-text);

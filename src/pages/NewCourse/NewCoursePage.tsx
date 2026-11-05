@@ -116,7 +116,7 @@ export function NewCoursePage() {
   return (
     <PageShell
       title="New course"
-      description="A few questions first, so the course fits you."
+      description="A few questions first, so the course fits you"
       archetype="sequence"
       breadcrumb={
         <AnchorLink to="/" size="sm" c="dimmed" data-back>
@@ -311,7 +311,7 @@ function QuestionCard({
         </Title>
         {question.multiSelect && (
           <Text size="sm" c="dimmed">
-            Choose any that apply.
+            Choose any that apply
           </Text>
         )}
 
@@ -338,7 +338,7 @@ function QuestionCard({
         )}
 
         <TextInput
-          placeholder="Something else? Type it here"
+          placeholder="Something else"
           value={other}
           onChange={(e) => setOther(e.currentTarget.value)}
           aria-label="Other answer"

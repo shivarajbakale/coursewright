@@ -9,7 +9,6 @@
  */
 
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { signOut } from '@/lib/auth';
 import type { ApiError, ApiResponse } from './types';
 
 // Create axios instance with base configuration
@@ -91,10 +90,9 @@ apiClient.interceptors.response.use(
           break;
 
         case 401:
-          // Unauthorized — clear stale session and redirect to login
+          // Unauthorized: the agent service's shared secret is missing or wrong.
+          // Single-user app, no sign-in page; the caller shows the message.
           console.error('Unauthorized:', data.message);
-          try { await signOut(); } catch { /* ignore signout errors */ }
-          window.location.href = '/login';
           break;
 
         case 403:

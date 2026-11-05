@@ -36,7 +36,9 @@ describe('Course overview', () => {
     renderCourseRoutes(CoursePage, '/courses/c-raft');
     expect(await screen.findByRole('heading', { level: 1, name: 'Distributed Systems: consensus with Raft' })).toBeInTheDocument();
     expect(screen.getByText('2. Leader election')).toBeInTheDocument();
-    const chapter = await screen.findByText('1.1 Replicated state machines');
+    // The chapter number is its own mono label beside the title.
+    const chapter = await screen.findByText('Replicated state machines');
+    expect(chapter.closest('a')?.textContent).toContain('1.1');
     expect(chapter.closest('a')?.getAttribute('href')).toBe('/courses/c-raft/chapters/ch-1-1');
   });
 

@@ -334,7 +334,7 @@ function SubmissionItem({ submission, courseId }: { submission: Submission; cour
             {s.repoUrl.replace('https://github.com/', '')}
           </Text>
           {s.status === 'done' ? (
-            <Badge size="sm" variant="light" color="green">
+            <Badge size="sm">
               Reviewed
             </Badge>
           ) : s.status === 'failed' ? (

@@ -25,3 +25,5 @@ whichever comes first. When done, `question` is null and `summary` is 2-3 senten
 learner ("You'll ...") describing the course you will build: level, goal, pace, project style. Also fill
 `level`, `goal` and `pace` with short phrases when known. When not done, `summary`, `level`, `goal` and
 `pace` are null.
+
+Style: plain, specific language. No emoji, no exclamation marks, no hype words. Labels and titles are sentence case with no trailing full stop.

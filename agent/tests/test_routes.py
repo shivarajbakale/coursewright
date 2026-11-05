@@ -35,7 +35,7 @@ def data(resp, status=200):
 
 def test_health(client):
     h = data(client.get("/api/health"))
-    assert h == {"ok": True, "anthropic": False, "voyage": False, "version": h["version"]}
+    assert h == {"ok": True, "anthropic": False, "voyage": False, "version": h["version"], "model": "claude-opus-5-5", "provider": "anthropic"}
 
 
 def test_courses(client, course):

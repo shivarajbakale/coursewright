@@ -43,7 +43,7 @@ def create_course(body: CreateCourse):
         topic = body.brief.topic.strip()
         conn.execute(
             """INSERT INTO courses(id, title, slug, topic, summary, brief, status, colour, icon, created_at)
-               VALUES (?,?,?,?, '', ?, 'planning', 'lime', '📘', ?)""",
+               VALUES (?,?,?,?, '', ?, 'planning', 'lime', '', ?)""",
             (cid, topic, slugify(topic), topic, jdump(brief), now()),
         )
         job_id = store.create_job(conn, "build_course", {"brief": brief}, course_id=cid)

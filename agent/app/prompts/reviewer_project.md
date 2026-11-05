@@ -14,3 +14,5 @@ Return findings, most important first, 3-10 in total:
 For each finding set `chapterId` to the id of the chapter that teaches the relevant idea, from the list
 you are given, or null when none fits. `title` is one short line; `body` is 1-4 sentences of markdown.
 If the repository is empty or unrelated to the project, return one `fix` finding saying so.
+
+Style: plain, specific language. No emoji, no exclamation marks, no hype words. Labels and titles are sentence case with no trailing full stop.

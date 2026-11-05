@@ -93,7 +93,7 @@ function AddUrl() {
         <TextInput
           size="xs"
           aria-label="Link to add"
-          placeholder="Add a link to index, e.g. https://raft.github.io/raft.pdf"
+          placeholder="https://raft.github.io/raft.pdf"
           leftSection={<Link2 size={14} />}
           value={uri}
           onChange={(e) => {
@@ -294,7 +294,7 @@ function TestRetrieval() {
   return (
     <Panel
       title="Test retrieval"
-      description="What the tutor would read, best match first."
+      description="What the tutor would read, best match first"
       style={FLEX_PANEL}
       contentProps={{ p: 0, style: FLEX_CONTENT }}
       w={{ base: '100%', lg: 320, xl: 380 }}
@@ -304,7 +304,7 @@ function TestRetrieval() {
           <TextInput
             size="xs"
             aria-label="Question"
-            placeholder="Ask what you’d ask the tutor, e.g. split vote"
+            placeholder="A question, like “why split votes?”"
             leftSection={<Search size={14} />}
             value={query}
             onChange={(e) => setQuery(e.currentTarget.value)}

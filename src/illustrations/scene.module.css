@@ -1,54 +1,36 @@
 /*
- * Shared tokens, paint classes and the two ambient motions (float, pulse) for
- * every stage scene. Colours are Mantine variables only; the light scheme
- * swaps the grounds to white/gray and the inks to the darker step of each ramp
- * so strokes and text keep their contrast.
+ * Shared tokens, paint classes and motion for every stage scene.
+ *
+ * The scenes are line art on the graphite ramp: paper, hairline edges, ruled
+ * lines. One accent, the brand lime (the olive step in light), marks the one
+ * thing that is happening now in each scene. Colours are Mantine and app
+ * variables only.
  */
 
 .root {
   --sc-accent: var(--mantine-color-brand-5);
-  --sc-accent-ink: var(--mantine-color-brand-5);
-  --sc-accent-edge: var(--mantine-color-brand-7);
-  --sc-blue: var(--mantine-color-blue-5);
-  --sc-blue-ink: var(--mantine-color-blue-5);
-  --sc-amber: var(--mantine-color-yellow-5);
-  --sc-amber-ink: var(--mantine-color-yellow-5);
-  --sc-red: var(--mantine-color-red-3);
-  --sc-red-ink: var(--mantine-color-red-3);
-  --sc-on-accent: var(--mantine-color-dark-9);
-  --sc-deep: var(--mantine-color-dark-8);
-  --sc-surface: var(--mantine-color-dark-7);
-  --sc-raised: var(--mantine-color-dark-6);
-  --sc-faint: var(--mantine-color-dark-5);
-  --sc-line: var(--mantine-color-dark-4);
-  --sc-dot: var(--mantine-color-dark-6);
+  --sc-accent-wash: var(--mantine-color-brand-light);
+  /* A sheet of paper, one step above the card the scene sits on. */
+  --sc-paper: var(--mantine-color-dark-6);
+  /* A sheet further back in a stack: the same neutral, one step down. */
+  --sc-paper-back: var(--mantine-color-dark-7);
+  --sc-edge: var(--mantine-color-default-border);
+  --sc-rule: color-mix(in oklab, var(--mantine-color-text) 20%, transparent);
   --sc-text: var(--mantine-color-text);
-  --sc-soft: var(--mantine-color-dark-1);
   --sc-dim: var(--mantine-color-dimmed);
-  --sc-shade: var(--mantine-color-black);
-  --sc-lens: color-mix(in srgb, var(--mantine-color-dark-9) 60%, transparent);
+
+  --sc-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   display: block;
   width: 100%;
   height: auto;
   font-family: var(--mantine-font-family);
+  font-variant-numeric: tabular-nums;
 
   @mixin light {
-    --sc-accent-ink: var(--mantine-color-brand-7);
-    --sc-accent-edge: var(--mantine-color-brand-6);
-    --sc-blue-ink: var(--mantine-color-blue-7);
-    --sc-amber-ink: var(--mantine-color-yellow-7);
-    --sc-red: var(--mantine-color-red-4);
-    --sc-red-ink: var(--mantine-color-red-7);
-    --sc-deep: var(--mantine-color-gray-1);
-    --sc-surface: var(--mantine-color-gray-0);
-    --sc-raised: var(--mantine-color-white);
-    --sc-faint: var(--mantine-color-gray-3);
-    --sc-line: var(--mantine-color-gray-4);
-    --sc-dot: var(--mantine-color-gray-3);
-    --sc-soft: var(--mantine-color-gray-7);
-    --sc-shade: var(--mantine-color-gray-6);
-    --sc-lens: color-mix(in srgb, var(--mantine-color-white) 70%, transparent);
+    --sc-accent: var(--mantine-color-brand-7);
+    --sc-paper: var(--mantine-color-white);
+    --sc-paper-back: var(--mantine-color-gray-0);
   }
 }
 
@@ -60,136 +42,184 @@
   font-family: var(--mantine-font-family-monospace);
 }
 
-/* fills */
-.fAccent {
-  fill: var(--sc-accent);
+/* paint */
+.paper {
+  fill: var(--sc-paper);
+  stroke: var(--sc-edge);
 }
-.fAccentInk {
-  fill: var(--sc-accent-ink);
+.paperBack {
+  fill: var(--sc-paper-back);
+  stroke: var(--sc-edge);
 }
-.fBlue {
-  fill: var(--sc-blue);
-}
-.fBlueInk {
-  fill: var(--sc-blue-ink);
-}
-.fAmber {
-  fill: var(--sc-amber);
-}
-.fAmberInk {
-  fill: var(--sc-amber-ink);
-}
-.fRed {
-  fill: var(--sc-red);
-}
-.fOnAccent {
-  fill: var(--sc-on-accent);
-}
-.fDeep {
-  fill: var(--sc-deep);
-}
-.fSurface {
-  fill: var(--sc-surface);
-}
-.fRaised {
-  fill: var(--sc-raised);
-}
-.fFaint {
-  fill: var(--sc-faint);
-}
-.fLine {
-  fill: var(--sc-line);
-}
-.fDot {
-  fill: var(--sc-dot);
-}
-.fText {
-  fill: var(--sc-text);
-}
-.fSoft {
-  fill: var(--sc-soft);
-}
-.fDim {
-  fill: var(--sc-dim);
-}
-.fLens {
-  fill: var(--sc-lens);
-}
-.fNone {
-  fill: none;
-}
-.fShadow {
-  fill: var(--sc-shade);
-  opacity: 0.35;
-}
-
-/* strokes */
-.sAccent {
+.paperNow {
+  fill: var(--sc-paper);
   stroke: var(--sc-accent);
 }
-.sAccentInk {
-  stroke: var(--sc-accent-ink);
+.rule {
+  fill: var(--sc-rule);
 }
-.sAccentEdge {
-  stroke: var(--sc-accent-edge);
+.line {
+  fill: none;
+  stroke: var(--sc-edge);
 }
-.sBlue {
-  stroke: var(--sc-blue);
+.ink {
+  fill: none;
+  stroke: var(--sc-dim);
 }
-.sAmber {
-  stroke: var(--sc-amber);
+.inkNow {
+  fill: none;
+  stroke: var(--sc-accent);
 }
-.sLine {
-  stroke: var(--sc-line);
+.fillNow {
+  fill: var(--sc-accent);
 }
-.sFaint {
-  stroke: var(--sc-faint);
+.wash {
+  fill: var(--sc-accent-wash);
 }
-.sRaised {
-  stroke: var(--sc-raised);
+.text {
+  fill: var(--sc-text);
 }
-.sSurface {
-  stroke: var(--sc-surface);
+.dim {
+  fill: var(--sc-dim);
+}
+.accentText {
+  fill: var(--sc-accent);
 }
 
-/* ambient motion */
-@keyframes float {
-  0%,
-  100% {
+/*
+ * Motion. Every loop here is the build's progress indicator and carries
+ * `data-slot="scene-progress"`: slow, a few pixels, one easing, and it stops
+ * when the build stops (`.still`) or the reader asked for less motion.
+ */
+
+/* Research: the reading band steps down the card one line at a time. */
+@keyframes read {
+  0% {
     transform: translateY(0);
+    opacity: 0;
   }
-  50% {
-    transform: translateY(-9px);
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
+  4%,
+  16% {
+    transform: translateY(0);
     opacity: 1;
   }
+  24%,
+  36% {
+    transform: translateY(24px);
+  }
+  44%,
+  56% {
+    transform: translateY(48px);
+  }
+  64%,
+  76% {
+    transform: translateY(72px);
+  }
+  84%,
+  94% {
+    transform: translateY(96px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(96px);
+    opacity: 0;
+  }
 }
 
-.float {
-  animation: float 4.2s ease-in-out infinite;
+.read {
+  animation: read 12s var(--sc-ease) infinite;
 }
-.pulse {
-  animation: pulse 2.4s ease-in-out infinite;
+
+/* Concepts: the newest link is drawn, held, and drawn again. */
+@keyframes draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  45%,
+  90% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
 }
-.d1 {
-  animation-delay: -0.8s;
+
+.draw {
+  stroke-dasharray: 1;
+  animation: draw 5s var(--sc-ease) infinite;
 }
-.d2 {
-  animation-delay: -1.6s;
+
+/* Outline: the newest card settles onto the stack. */
+@keyframes settle {
+  0% {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+  24%,
+  88% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
 }
-.d3 {
-  animation-delay: -2.6s;
+
+.settle {
+  animation: settle 6s var(--sc-ease) infinite;
 }
-.d4 {
-  animation-delay: -3.3s;
+
+/* Chapters, projects: the line being written runs out from the left. */
+@keyframes write {
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  60%,
+  90% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+.write {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: write 5s var(--sc-ease) infinite;
+}
+
+/* Index: a card drops into the drawer. */
+@keyframes file {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  12%,
+  20% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  72% {
+    transform: translateY(80px);
+    opacity: 1;
+  }
+  84%,
+  100% {
+    transform: translateY(80px);
+    opacity: 0;
+  }
+}
+
+.file {
+  animation: file 6s var(--sc-ease) infinite;
 }
 
 /* A scene whose job has stopped (failed or cancelled) stops moving: the motion
@@ -199,8 +229,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .float,
-  .pulse {
+  .read,
+  .draw,
+  .settle,
+  .write,
+  .file {
     animation: none;
   }
 }
