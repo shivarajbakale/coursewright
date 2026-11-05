@@ -39,5 +39,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
+    // The kit packages (vendor/kit) import their CSS from JavaScript. Node can't load .css, so Vitest
+    // processes them itself instead of handing them to Node like other installed packages.
+    server: { deps: { inline: [/@shivarajbakale\//] } },
   },
 });

@@ -42,3 +42,6 @@ agent/.venv/
 agent/**/__pycache__/
 agent/.pytest_cache/
 agent/.env
+
+# Local tooling data
+.memsearch/

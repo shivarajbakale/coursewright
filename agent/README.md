@@ -30,7 +30,7 @@ and quiz attempts (so weak spots show), and indexes it all. Seeding is idempoten
 | `GITHUB_TOKEN` | unset | Optional, raises GitHub API rate limits for project reviews. |
 | `CW_DB_PATH` | `agent/data/coursewright.db` | The SQLite file. Job working folders go in `<dir>/jobs/<job_id>/`. |
 | `CW_DISABLE_WORKER` | unset | `1` disables the background job worker (tests). |
-| `CW_BUILD_TOKEN_BUDGET` | `4000000` | Token budget per course build; the job fails when exceeded. |
+| `CW_BUILD_TOKEN_BUDGET` | `4000000` | Tokens after which a build stops polishing: a course whose files are all written is saved as it stands; an unfinished one keeps going, and only one still unfinished at 3x the budget stops. |
 | `CW_CONTEXTUALISE` | `1` | `0` skips Claude chunk contextualisation during ingest (a template context is always added). |
 | `CW_SHARED_SECRET` | unset | When set, every `/api/*` and `/agents/*` request must carry header `x-cw-secret` with this value (401 otherwise). `/api/health` and CORS preflights stay open. Unset = no auth (local). |
 | `CW_CORS_ORIGINS` | unset | Extra allowed CORS origins, comma separated. |

@@ -1,7 +1,8 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { ActionIcon, Box, Group, Kbd, ScrollArea, Stack, Text, ThemeIcon, Tooltip, UnstyledButton } from '@mantine/core';
-import { GraduationCap, MessagesSquare, PanelLeft, Search } from 'lucide-react';
+import { ActionIcon, Box, Group, Kbd, ScrollArea, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core';
+import { MessagesSquare, PanelLeft, Search } from 'lucide-react';
 
+import { BrandMark } from '@/components/brand-mark';
 import { NavMain, type NavMainItem } from '@/components/nav-main';
 import { NotificationsDropdown } from '@/components/notifications-dropdown';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -87,9 +88,7 @@ export function AppSidebar() {
             style={{ borderRadius: 'var(--mantine-radius-md)' }}
           >
             <Group gap="sm" wrap="nowrap">
-              <ThemeIcon size={28} radius="md" variant="filled">
-                <GraduationCap size={16} />
-              </ThemeIcon>
+              <BrandMark size={26} />
               <Text size="sm" fw={600}>
                 Coursewright
               </Text>

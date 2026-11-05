@@ -1,0 +1,9 @@
+/* The accent bar: lime on dark, olive on light (lime on white is too faint to read). */
+.mark {
+  --cw-mark-accent: var(--mantine-color-brand-5);
+  flex-shrink: 0;
+
+  @mixin light {
+    --cw-mark-accent: var(--mantine-color-brand-7);
+  }
+}

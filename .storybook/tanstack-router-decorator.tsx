@@ -19,7 +19,7 @@ import { Box, Code, Text } from '@mantine/core';
  * The fake session is served by MSW at better-auth's `/api/auth/get-session`.
  */
 const sessionFixture = {
-  user: { id: 'u1', name: 'Shiv Bakale', email: 'shiv@rocketship.dev' },
+  user: { id: 'u1', name: 'Demo User', email: 'demo@rocketship.dev' },
   session: { id: 's1', userId: 'u1', activeOrganizationId: null },
 };
 

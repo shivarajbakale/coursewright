@@ -35,7 +35,7 @@ type Project = {
 };
 
 const SAMPLE: Project[] = [
-  { id: '1', name: 'Acme Web', status: 'active', owner: 'Shiv B.', updated: '2 hours ago' },
+  { id: '1', name: 'Acme Web', status: 'active', owner: 'Avery K.', updated: '2 hours ago' },
   { id: '2', name: 'Beta Mobile', status: 'paused', owner: 'Ada L.', updated: 'yesterday' },
   { id: '3', name: 'Gamma API', status: 'active', owner: 'Marcus K.', updated: '3 days ago' },
   { id: '4', name: 'Delta ETL', status: 'archived', owner: 'Yui N.', updated: 'last week' },
