@@ -11,71 +11,68 @@ import {
 import { withSidebar } from '../../.storybook/shell-decorators';
 import { NotificationsDropdown } from './notifications-dropdown';
 
-/** Five notifications — two unread, three read. The bell badge should show
- *  `2`, the dropdown preview should list all five in latest-first order. */
-const FIVE_NOTIFICATIONS = [
+/** Four notifications, two unread. The row badge should show `2` and the
+ *  menu should list all four, newest first. */
+const FOUR_NOTIFICATIONS = [
   {
     id: 'n1',
-    kind: 'mention',
-    title: 'Priya mentioned you',
-    body: '@you can you take a look at the Q3 plan?',
-    actor: { name: 'Priya Raman' },
+    kind: 'course_ready',
+    title: 'Rust ownership and borrowing is ready',
+    body: 'Chapters, diagrams and projects are written. Start with chapter 1.',
+    href: '/courses/c-rust',
+    courseId: 'c-rust',
     read: false,
     createdAt: '2025-01-15T10:00:00Z',
   },
   {
     id: 'n2',
-    kind: 'comment',
-    title: 'New comment on "Billing v2"',
-    body: '"Looks great — let’s ship it Friday."',
-    actor: { name: 'Alex Lee' },
+    kind: 'course_failed',
+    title: 'Build failed: How Postgres executes a query',
+    body: 'The model returned no structured output for the outline.',
+    href: '/courses/c-pg/building',
+    courseId: 'c-pg',
     read: false,
     createdAt: '2025-01-15T09:00:00Z',
   },
   {
     id: 'n3',
-    kind: 'deploy',
-    title: 'Deploy succeeded',
-    body: 'Production build "v2.18.3" went live.',
-    actor: { name: 'CI' },
+    kind: 'review_ready',
+    title: 'Review ready: A replicated key-value store',
+    body: 'Feedback on your submission is in.',
+    href: '/courses/c-raft/projects/p-1',
+    courseId: 'c-raft',
     read: true,
     createdAt: '2025-01-15T08:00:00Z',
   },
   {
     id: 'n4',
-    kind: 'invite',
-    title: 'Jordan accepted your invite',
-    body: 'They joined the workspace as a Member.',
-    actor: { name: 'Jordan Kim' },
+    kind: 'source_failed',
+    title: 'Couldn’t index raft.github.io/raft.pdf',
+    body: 'HTTP 404 when fetching the page.',
+    href: '/sources',
+    courseId: null,
     read: true,
     createdAt: '2025-01-15T07:00:00Z',
   },
-  {
-    id: 'n5',
-    kind: 'payment',
-    title: 'Invoice INV-2026-0042 paid',
-    body: 'Pro plan — monthly ($29.00).',
-    read: true,
-    createdAt: '2025-01-15T06:00:00Z',
-  },
 ];
 
-/** Twelve unread notifications — past the `9+` threshold in the bell badge.
- *  The component renders `9+` for any unread count above nine. */
+/** Twelve unread notifications, past the `9+` ceiling of the row badge. */
 const MANY_UNREAD = Array.from({ length: 12 }, (_, i) => ({
   id: `u${i + 1}`,
-  kind: 'mention' as const,
-  title: `Mention ${i + 1}`,
-  body: `Body for unread ${i + 1}`,
+  kind: 'course_ready' as const,
+  title: `Course ${i + 1} is ready`,
+  body: 'Chapters, diagrams and projects are written.',
+  href: '/',
+  courseId: null,
   read: false,
   createdAt: new Date(Date.now() - i * 60_000).toISOString(),
 }));
 
 /**
- * Topbar bell + dropdown. Shows the unread badge, the latest five
- * notifications, and a "Mark all read" action. Driven entirely by the
- * `/api/notifications` endpoint — stories here override that handler so
- * each variant proves a different state of the same surface.
+ * The sidebar's Notifications row and menu. Shows the unread count, the
+ * latest notices and "Mark all read". Driven entirely by the
+ * `/api/notifications` endpoint: stories override that handler so each
+ * variant proves a different state of the same surface.
  */
 const meta = {
   title: 'Shell/Layout/Notifications Dropdown',
@@ -84,25 +81,24 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   ...mswSession,
   decorators: [withMemoryRouter('/'), withSidebar],
-  // NotificationsDropdown takes no props — variation is driven entirely by
-  // the `/api/notifications` MSW handler (overridden per story via
-  // `beforeEach`). The argTypes block is declared so this story participates
-  // in the Controls panel standard alongside the other shell stories.
-  argTypes: {},
+  // Variation is driven by the `/api/notifications` MSW handler (overridden
+  // per story via `beforeEach`); `railed` draws the collapsed-sidebar icon.
+  argTypes: { railed: { control: 'boolean' } },
+  args: { railed: false },
 } satisfies Meta<typeof NotificationsDropdown>;
 
 export default meta;
 type Story = StoryObj<typeof NotificationsDropdown>;
 
 /**
- * Default state — five notifications, two unread. The badge reads `2`.
- * Dropdown is closed. Asserts both the badge and the underlying query.
+ * Default state: four notifications, two unread. The badge reads `2`.
+ * The menu is closed. Asserts both the badge and the underlying query.
  */
 export const Default: Story = {
-  name: 'Default (5 notifications, 2 unread)',
+  name: 'Default (4 notifications, 2 unread)',
   beforeEach: ({ msw }) => {
     msw.use(
-      http.get('/api/notifications', () => HttpResponse.json(FIVE_NOTIFICATIONS)),
+      http.get('/api/notifications', () => HttpResponse.json(FOUR_NOTIFICATIONS)),
     );
   },
   play: async () => {
@@ -117,8 +113,8 @@ export const Default: Story = {
 };
 
 /**
- * No notifications — the badge is absent (no unread), and opening the
- * dropdown would show the "You're all caught up" empty state.
+ * No notifications: no badge, and the menu shows the "You're all caught
+ * up" empty state.
  */
 export const Empty: Story = {
   name: 'Empty',
@@ -140,9 +136,8 @@ export const Empty: Story = {
 };
 
 /**
- * Loading — the handler never resolves. The component renders the skeleton
- * list (three rows with `Skeleton` placeholders) until the query resolves.
- * Asserts the dropdown is open AND the skeletons are visible.
+ * Loading: the handler never resolves, so the open menu shows three
+ * skeleton rows.
  */
 export const Loading: Story = {
   name: 'Loading (handler never resolves)',
@@ -166,28 +161,27 @@ export const Loading: Story = {
 };
 
 /**
- * Menu open — clicks the bell button. The dropdown content is rendered
- * with the latest notifications and the "Mark all read" affordance.
+ * Menu open: the latest notices and "Mark all read".
  */
 export const MenuOpen: Story = {
   name: 'Menu open',
   beforeEach: ({ msw }) => {
     msw.use(
-      http.get('/api/notifications', () => HttpResponse.json(FIVE_NOTIFICATIONS)),
+      http.get('/api/notifications', () => HttpResponse.json(FOUR_NOTIFICATIONS)),
     );
   },
   play: async () => {
     await userEvent.click(await trigger('button[aria-label^="Notifications"]'));
     await waitFor(() => {
       expect(document.body.textContent).toContain('Mark all read');
-      expect(document.body.textContent).toContain('Priya mentioned you');
-      expect(document.body.textContent).toContain('View all notifications');
+      expect(document.body.textContent).toContain('Rust ownership and borrowing is ready');
+      expect(document.body.textContent).not.toContain('View all notifications');
     });
   },
 };
 
 /**
- * Twelve unread — past the `9+` ceiling. The badge clips to `9+`.
+ * Twelve unread, past the `9+` ceiling. The badge clips to `9+`.
  */
 export const ManyUnread: Story = {
   name: 'Many unread (12, badge shows 9+)',

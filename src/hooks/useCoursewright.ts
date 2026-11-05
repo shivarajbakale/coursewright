@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { notificationKeys } from '@/hooks/useNotifications';
 import { toast } from '@/lib/notify';
 import {
   chapterService,
@@ -248,12 +249,20 @@ export function useSearchTest() {
 
 // ── Jobs ──────────────────────────────────────────────────────────────────
 export function useJob(id: string | null | undefined) {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: cwKeys.job(id ?? ''),
     queryFn: () => jobService.get(id!),
     enabled: !!id,
     refetchInterval: (q) => (q.state.data?.status === 'running' || q.state.data?.status === 'queued' ? 3000 : false),
   });
+  // A watched job that ends has just written its notification: show it now, not on the next 30 s poll.
+  const status = query.data?.status;
+  const ended = status === 'done' || status === 'failed';
+  useEffect(() => {
+    if (ended) void qc.invalidateQueries({ queryKey: notificationKeys.all });
+  }, [ended, qc]);
+  return query;
 }
 
 export function useCancelJob() {

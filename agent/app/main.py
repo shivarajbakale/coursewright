@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import config
-from app.api import chapters, courses, interview, jobs, notes, projects, sources
+from app.api import chapters, courses, interview, jobs, notes, notifications, projects, sources
 from app.api.common import ok
 from app.db import db, init_db, row
 
@@ -137,7 +137,16 @@ def health():
     )
 
 
-for r in (interview.router, courses.router, chapters.router, projects.router, notes.router, sources.router, jobs.router):
+for r in (
+    interview.router,
+    courses.router,
+    chapters.router,
+    projects.router,
+    notes.router,
+    sources.router,
+    jobs.router,
+    notifications.router,
+):
     app.include_router(r, prefix="/api")
 
 

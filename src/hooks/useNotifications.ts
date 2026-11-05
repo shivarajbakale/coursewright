@@ -1,10 +1,10 @@
 /**
  * Notification query & mutation hooks.
  *
- * Components use these — not the service — so caching, refetching, and
- * invalidation live in one place. `notificationKeys` keeps query keys
- * consistent across the bell dropdown (which only needs the top 5) and the
- * inbox (which needs everything).
+ * Components use these, not the service, so caching, refetching and
+ * invalidation live in one place. The list refetches every 30 s so the
+ * sidebar's unread count stays current without a socket, and `useJob`
+ * invalidates it the moment a watched build or review ends.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -15,11 +15,14 @@ export const notificationKeys = {
   list: () => [...notificationKeys.all, 'list'] as const,
 };
 
-/** Fetch the full notification list (latest first). */
+/** The latest notifications, newest first. */
 export function useNotifications() {
   return useQuery({
     queryKey: notificationKeys.list(),
     queryFn: () => notificationService.list(),
+    refetchInterval: 30_000,
+    // A failed list is shown inside the menu; no need to hammer the service.
+    retry: 1,
   });
 }
 

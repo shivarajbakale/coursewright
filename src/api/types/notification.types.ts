@@ -1,43 +1,27 @@
 /**
- * Notification domain — every inbox row, topbar-bell preview, and
- * Dashboard "recent activity" item is a Notification.
- *
- * `kind` is a closed enum so we can pick an icon + colour in one place:
- * `mention | comment | invite | deploy | payment | system`. `actor` is the
- * person who caused it; `projectId` links project-scoped notifications to the
- * Projects detail pane; `read` powers the bell badge + inbox filter.
+ * Notification domain. The agent service writes one when work you started
+ * and are waiting on finishes or fails: a course build, a project review, or
+ * the indexing of a link you added. The sidebar's Notifications menu lists
+ * them; `read` powers its unread count.
  */
 
 export type NotificationKind =
-  | 'mention'
-  | 'comment'
-  | 'invite'
-  | 'deploy'
-  | 'payment'
-  | 'system';
-
-export interface NotificationActor {
-  name: string;
-  email?: string;
-  avatarUrl?: string;
-}
+  | 'course_ready'
+  | 'course_failed'
+  | 'review_ready'
+  | 'review_failed'
+  | 'source_failed';
 
 export interface Notification {
   id: string;
   kind: NotificationKind;
+  /** One line that names the course, project or link. */
   title: string;
-  /** Short, single-line body. The inbox shows it; the dropdown hides it. */
+  /** The failure reason, or what to do next. */
   body: string;
-  actor?: NotificationActor;
-  /** Optional project reference — inbox renders a "View project" link. */
-  projectId?: string;
-  /** Optional deep-link target; the inbox routes here on click. */
-  href?: string;
+  /** Where a click goes: the course, its build page, the project, or Sources. */
+  href: string;
+  courseId: string | null;
   read: boolean;
   createdAt: string;
-}
-
-export interface NotificationCounts {
-  unread: number;
-  total: number;
 }

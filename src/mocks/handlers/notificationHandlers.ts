@@ -1,9 +1,7 @@
 /**
- * MSW handlers for the Notifications resource.
- *
- * In-memory store seeded on first import. Mutations (mark-read, mark-all-read)
- * are persisted for the lifetime of the page. When a real API exists, delete
- * this file from the handler list — services/hooks/pages are unchanged.
+ * MSW handlers for notifications, shaped like the agent service's
+ * `/api/notifications` (agent/app/api/notifications.py). In-memory, seeded on
+ * first import; mark-read and mark-all-read last for the life of the page.
  */
 import { http, HttpResponse } from 'msw';
 import type { Notification } from '@/api/types';
@@ -26,66 +24,40 @@ type Seed = Omit<Notification, 'id' | 'createdAt'> & { minutesAgo: number };
 
 const SEED: Seed[] = [
   {
-    kind: 'mention',
-    title: 'Priya mentioned you',
-    body: '@you can you take a look at the Q3 plan?',
-    actor: { name: 'Priya Raman' },
+    kind: 'course_ready',
+    title: 'Distributed Systems: consensus with Raft is ready',
+    body: 'Chapters, diagrams and projects are written. Start with chapter 1.',
+    href: '/courses/c-raft',
+    courseId: 'c-raft',
     read: false,
-    minutesAgo: 8,
+    minutesAgo: 6,
   },
   {
-    kind: 'comment',
-    title: 'New comment on "Billing v2"',
-    body: '"Looks great — let’s ship it Friday."',
-    actor: { name: 'Alex Lee' },
+    kind: 'review_ready',
+    title: 'Review ready: A replicated key-value store, no failures yet',
+    body: 'Feedback on your submission is in.',
+    href: '/courses/c-raft/projects/p-1',
+    courseId: 'c-raft',
     read: false,
-    minutesAgo: 42,
+    minutesAgo: 50,
   },
   {
-    kind: 'deploy',
-    title: 'Deploy succeeded',
-    body: 'Production build "v2.18.3" went live.',
-    actor: { name: 'CI' },
-    read: false,
-    minutesAgo: 90,
-  },
-  {
-    kind: 'invite',
-    title: 'Jordan accepted your invite',
-    body: 'They joined the workspace as a Member.',
-    actor: { name: 'Jordan Kim' },
+    kind: 'course_failed',
+    title: 'Build failed: How Postgres executes a query',
+    body: 'The model returned no structured output for the outline. Start the build again from the Library.',
+    href: '/',
+    courseId: null,
     read: true,
-    minutesAgo: 6 * hr / min,
+    minutesAgo: 5 * hr / min,
   },
   {
-    kind: 'payment',
-    title: 'Invoice INV-2026-0042 paid',
-    body: 'Pro plan — monthly ($29.00).',
-    read: true,
-    minutesAgo: 1 * day / min,
-  },
-  {
-    kind: 'system',
-    title: 'New feature: bulk-archive projects',
-    body: 'Select rows in Projects, hit Archive, done.',
+    kind: 'source_failed',
+    title: 'Couldn’t index raft.github.io/raft.pdf',
+    body: 'HTTP 404 when fetching the page.',
+    href: '/sources',
+    courseId: null,
     read: true,
     minutesAgo: 2 * day / min,
-  },
-  {
-    kind: 'comment',
-    title: 'New comment on "Design System"',
-    body: '"Pushed the new tokens to /docs."',
-    actor: { name: 'Mira Chen' },
-    read: true,
-    minutesAgo: 3 * day / min,
-  },
-  {
-    kind: 'mention',
-    title: 'Samira mentioned you',
-    body: '@you the Figma file is ready for review.',
-    actor: { name: 'Samira Patel' },
-    read: true,
-    minutesAgo: 4 * day / min,
   },
 ];
 
@@ -103,7 +75,7 @@ const ok = <T>(data: T, status = 200) =>
 
 export const notificationHandlers = [
   http.get('/api/notifications', () =>
-    ok([...notifications].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+    ok([...notifications].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 30))
   ),
 
   http.patch('/api/notifications/:id', async ({ params, request }) => {

@@ -1,0 +1,197 @@
+{
+  "feature": {
+    "id": "notifications",
+    "title": "Notifications",
+    "problem": "Course builds take minutes and project reviews run in the background, and both are built for leaving and coming back. Nothing tells you when one finished or failed: you find out only by reopening the Library or the project. A notifications menu exists from the template but nothing opens it, and the agent service has no notifications at all.",
+    "nonGoals": [
+      "A separate inbox page. The menu holds the history; the template's 'View all' link to /inbox goes.",
+      "Browser or OS push notifications, email, or sound.",
+      "Notifying every background re-index of a note. Only work you started and are waiting on is worth a notice."
+    ]
+  },
+  "surfaces": [
+    {
+      "id": "menu",
+      "name": "Notifications",
+      "route": "sidebar row above Search, opens a menu on any screen",
+      "archetype": "list",
+      "moments": {
+        "peak": "the row badge shows 1 and the top line reads 'Rust ownership and borrowing is ready', one click from the course",
+        "end": "the course open, the notice marked read, the badge gone"
+      },
+      "purpose": "See what finished or failed while you were away, and jump to it.",
+      "primaryAction": "Mark all read",
+      "panels": [
+        {
+          "id": "list",
+          "kind": "table",
+          "toolbar": "Notifications                 [Mark all read]",
+          "rows": [
+            [
+              "● ✓ Rust ownership and borrowing is ready",
+              "2m"
+            ],
+            [
+              "● ✕ Build failed: Postgres query engine",
+              "1h"
+            ],
+            [
+              "  ✓ Review ready: Build a Raft log",
+              "1d"
+            ],
+            [
+              "  ✕ Couldn't index raft.github.io/raft.pdf",
+              "3d"
+            ]
+          ],
+          "footer": "latest 30, scrolls"
+        }
+      ],
+      "states": {
+        "loading": "Three row skeletons in the menu; the sidebar row shows no badge until the count is known.",
+        "empty": "Inbox spot drawing: 'You're all caught up. Builds and reviews tell you here when they finish.'",
+        "error": "Compact ErrorState in the menu: 'Notifications didn't load' with Try again; the sidebar row shows no badge.",
+        "success": "Rows newest first, unread on a faint wash with a dot; clicking marks read and opens the course, project or Sources."
+      }
+    }
+  ],
+  "overlays": [],
+  "components": [
+    {
+      "surface": "menu",
+      "control": "Menu",
+      "why": "a short list of links opened from one control and dismissed on choice; the existing NotificationsDropdown is already a Menu with rows, unread wash and Mark all read",
+      "rejected": "Popover"
+    },
+    {
+      "surface": "menu",
+      "control": "Sidebar row with Badge count",
+      "why": "the app has no topbar; the sidebar footer already holds Search and Tutor as rows, so Notifications sits with them and collapses to an icon like they do",
+      "rejected": "Indicator on a floating ActionIcon"
+    },
+    {
+      "surface": "menu",
+      "control": "StatePanel / ErrorState",
+      "why": "the empty and error states use the same family as every other screen",
+      "rejected": "plain Text"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Notification",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "kind",
+          "type": "'course_ready' | 'course_failed' | 'review_ready' | 'review_failed' | 'source_failed'"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "note": "one line, names the course or project"
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "note": "the failure reason, or what to do next"
+        },
+        {
+          "name": "href",
+          "type": "string",
+          "note": "where a click goes"
+        },
+        {
+          "name": "courseId",
+          "type": "string | null"
+        },
+        {
+          "name": "read",
+          "type": "boolean"
+        },
+        {
+          "name": "createdAt",
+          "type": "ISO date"
+        }
+      ],
+      "relations": [
+        "optionally references one Course (deleted with it)"
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/notifications",
+      "purpose": "latest 30, newest first",
+      "auth": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/notifications/:id",
+      "purpose": "{ read: true }",
+      "auth": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/mark-all-read",
+      "purpose": "returns { updated }",
+      "auth": false
+    }
+  ],
+  "integration": [
+    {
+      "from": "agent/app/jobs/worker.py",
+      "to": "notify.on_job_finished",
+      "note": "one row per build or review that finishes or fails; cancelled writes nothing"
+    },
+    {
+      "from": "agent ingest of a URL",
+      "to": "source_failed notice",
+      "note": "note re-indexes stay silent"
+    },
+    {
+      "from": "notificationKeys",
+      "to": "refetch every 30 s, and when a watched job ends",
+      "note": "badge stays current without a socket"
+    },
+    {
+      "from": "app-sidebar footer",
+      "to": "Notifications row above Search",
+      "note": "collapses to an icon like Search and Tutor"
+    },
+    {
+      "from": "mocks",
+      "to": "Coursewright-shaped notices + ?mock=empty|fail",
+      "note": "both states reachable in dev"
+    }
+  ],
+  "blastRadius": {
+    "new": [
+      "agent/app/db/migrations/003_notifications.sql",
+      "agent/app/api/notifications.py",
+      "agent/app/notify.py",
+      "agent/tests/test_notifications.py"
+    ],
+    "changed": [
+      "agent/app/jobs/worker.py",
+      "agent/app/main.py",
+      "src/api/types/notification.types.ts",
+      "src/components/notifications-dropdown.tsx",
+      "src/components/app-sidebar.tsx",
+      "src/hooks/useNotifications.ts",
+      "src/mocks/handlers/notificationHandlers.ts",
+      "src/mocks/scenarios.ts"
+    ]
+  },
+  "nav": [
+    "Library",
+    "New course",
+    "Tutor",
+    "Notes",
+    "Sources",
+    "Settings"
+  ]
+}

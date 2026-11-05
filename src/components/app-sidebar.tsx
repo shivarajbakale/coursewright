@@ -3,6 +3,7 @@ import { ActionIcon, Box, Group, Kbd, ScrollArea, Stack, Text, ThemeIcon, Toolti
 import { GraduationCap, MessagesSquare, PanelLeft, Search } from 'lucide-react';
 
 import { NavMain, type NavMainItem } from '@/components/nav-main';
+import { NotificationsDropdown } from '@/components/notifications-dropdown';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { openCommandPalette } from '@/components/command-palette';
 import { useShellNav } from '@/hooks/use-shell-nav';
@@ -11,8 +12,8 @@ import { navItems } from '@/config/nav';
 
 /**
  * Everything the shell needs, in one column: the product mark and the rail
- * toggle, primary navigation, and the three global controls (search ⌘K, tutor
- * ⌘J, theme). There is no desktop top bar: it only repeated the page title the
+ * toggle, primary navigation, and the global controls (notifications, search
+ * ⌘K, tutor ⌘J, theme). There is no desktop top bar: it only repeated the page title the
  * page already shows, and cost a row of height on every screen.
  *
  * Items come from `src/config/nav.ts`, the single source of truth shared with
@@ -116,6 +117,7 @@ export function AppSidebar() {
         align={railed ? 'center' : 'stretch'}
         style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
       >
+        <NotificationsDropdown railed={railed} />
         {control('Search', '⌘K', <Search size={16} />, openCommandPalette)}
         {control('Tutor', '⌘J', <MessagesSquare size={16} />, toggleTutor, tutorOpen)}
         <Box px={railed ? 0 : 4}>

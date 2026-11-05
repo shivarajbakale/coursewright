@@ -10,6 +10,17 @@
 
 ## Session Log
 
+### Session 005 — Notifications (2026-11-05)
+
+- Agent: `notifications` table (migration 003), `app/notify.py` writes one notice per build or review that
+  finishes or fails and per added link that fails to index (cancelled builds and note re-indexes stay
+  silent; one per job). `GET/PATCH /api/notifications`, `POST /api/notifications/mark-all-read`.
+- Web: Notifications row in the sidebar footer with the unread count; the menu lists the latest 30,
+  refetches every 30 s and when a watched job ends. Template inbox link and kinds removed.
+- Verified: make check, make a11y, agent pytest 50; menu states in both themes; a real failed-link notice
+  end to end. Not verified live: build and review notices (need a model call); covered by agent tests.
+- Known: the sidebar footer rows are 32 px tall (same as Search and Tutor), under the 44 px target.
+
 ### Session 004 — Empty and error states (2026-11-05)
 
 - One family of states: `StatePanel` / `ErrorState` (`src/components/state-panel.tsx`) with line-art spot

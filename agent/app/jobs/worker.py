@@ -12,6 +12,7 @@ import time
 import traceback
 from typing import Awaitable, Callable
 
+from app import notify
 from app.jobs import store
 
 log = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ async def run_job(job: dict) -> None:
             raise RuntimeError(f"no handler for job kind {job['kind']}")
         output = await handler(job)
         store.finish(job_id, "done", output=output or {})
+        await asyncio.to_thread(notify.on_job_finished, job, "done")
     except store.Cancelled:
         store.finish(job_id, "cancelled", error="Cancelled")
         await _on_failure(job, "Cancelled", cancelled=True)
@@ -59,6 +61,9 @@ async def _on_failure(job: dict, msg: str, cancelled: bool) -> None:
             await asyncio.to_thread(review_project.mark_failed, job, msg)
     except Exception:  # noqa: BLE001
         log.exception("failure hook crashed")
+    if not cancelled:
+        # After the hook, so a failed build's course row already reads 'failed'.
+        await asyncio.to_thread(notify.on_job_finished, job, "failed", msg)
 
 
 async def reclaim() -> None:
