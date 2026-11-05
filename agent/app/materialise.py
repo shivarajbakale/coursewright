@@ -4,7 +4,8 @@ course tables in one transaction.
 Folder layout:
     outline.json                 CourseOutline
     chapters/<key>.md            chapter markdown
-    chapters/<key>.json          ChapterExtras (questions, diagrams)   optional
+    chapters/<key>.json          ChapterExtras (questions, inline diagrams, diagramRequest)   optional
+    diagrams/<key>.flow | .mmd   the diagrammer's diagram for that chapter (kind flow | mermaid)   optional
     projects/<key>.json          ProjectSpec
 """
 
@@ -112,9 +113,18 @@ class DiagramSpec(Strict):
     source: str = Field(min_length=1)
 
 
+class DiagramRequest(Strict):
+    """What the writer wants drawn; the diagrammer turns it into diagrams/<key>.flow or .mmd."""
+
+    title: str = ""
+    show: str = Field(min_length=1)
+    shape: Literal["process", "structure"] = "process"
+
+
 class ChapterExtras(Strict):
     questions: list[QuestionSpec] = []
     diagrams: list[DiagramSpec] = []
+    diagramRequest: DiagramRequest | None = None
 
 
 class StarterFile(Strict):
@@ -179,6 +189,9 @@ def parse_course_folder(folder: Path) -> ParsedCourse:
             chapters[ch.key] = text
             side = folder / "chapters" / f"{ch.key}.json"
             extras[ch.key] = _load_json(side, ChapterExtras) if side.exists() else ChapterExtras()
+            drawn = _diagram_file(folder, ch.key, extras[ch.key], ch.title)
+            if drawn:
+                extras[ch.key].diagrams.append(drawn)
         if m.projectKey:
             pj = folder / "projects" / f"{m.projectKey}.json"
             if not pj.exists():
@@ -189,6 +202,22 @@ def parse_course_folder(folder: Path) -> ParsedCourse:
                     item.chapterKey = None
             projects[m.projectKey] = spec
     return ParsedCourse(outline=outline, chapters=chapters, extras=extras, projects=projects)
+
+
+def _diagram_file(folder: Path, key: str, ex: ChapterExtras, chapter_title: str) -> DiagramSpec | None:
+    """diagrams/<key>.flow (preferred) or diagrams/<key>.mmd -> a DiagramSpec. The title comes from the
+    chapter's diagramRequest, else the movie's `title` line / Mermaid `%% title:` comment, else the chapter."""
+    from app.flowmovie import flow_title, mermaid_title
+
+    req_title = ex.diagramRequest.title if ex.diagramRequest else ""
+    for ext, kind, titler in ((".flow", "flow", flow_title), (".mmd", "mermaid", mermaid_title)):
+        f = folder / "diagrams" / f"{key}{ext}"
+        if f.exists():
+            source = f.read_text().strip()
+            if not source:
+                continue
+            return DiagramSpec(kind=kind, title=req_title or titler(source) or chapter_title, source=source + "\n")
+    return None
 
 
 def _reading_minutes(md: str, declared: int) -> int:

@@ -19,8 +19,10 @@ import json
 import re
 from typing import Any, Literal
 
+from langchain.agents.middleware import AgentMiddleware, ModelRequest
 from langchain.tools import ToolRuntime
 from langchain_core.tools import tool
+from pydantic import BaseModel
 
 from app import config
 from app.agents.llm import chat_model
@@ -28,7 +30,8 @@ from app.db import db, row, rows
 from app.rag.search import hybrid_search
 
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-CONTEXT_KEYS = ("courseId", "chapterId", "selection", "noteId")
+CONTEXT_KEYS = ("courseId", "chapterId", "selection", "noteId", "webSearch")
+WEB_SEARCH_TOOL = {"type": "web_search_20260209", "name": "web_search", "max_uses": 3}
 
 
 def frontend_context(runtime: ToolRuntime | None) -> dict[str, Any]:
@@ -74,6 +77,27 @@ def frontend_context(runtime: ToolRuntime | None) -> dict[str, Any]:
     return out
 
 
+def search_hits_json(query: str, hits: list[dict]) -> str:
+    """The search_course result: numbered hits the model cites as [n] and the UI renders as citations."""
+    out: dict[str, Any] = {
+        "query": query,
+        "hits": [
+            {
+                "n": i,
+                "chunkId": h["chunkId"],
+                "title": h["title"],
+                "chapterId": h.get("chapterId"),
+                "courseId": h.get("courseId"),
+                "text": h["text"],
+            }
+            for i, h in enumerate(hits, 1)
+        ],
+    }
+    if not hits:
+        out["note"] = "No passages found. The course may not cover this."
+    return json.dumps(out, ensure_ascii=False)
+
+
 @tool
 async def search_course(
     query: str,
@@ -85,7 +109,8 @@ async def search_course(
     Args:
         query: what to look for, in natural language.
         scope: "chapter" = the open chapter, "course" = the open course, "all" = every course and note.
-    Returns numbered passages; cite them in your answer as [n].
+    Returns JSON {"query", "hits": [{"n", "chunkId", "title", "chapterId", "courseId", "text"}]}. Cite a hit
+    in your answer as [n] using its "n".
     """
     ctx = frontend_context(runtime)
     course_id = ctx.get("courseId") if scope in ("chapter", "course") else None
@@ -93,16 +118,7 @@ async def search_course(
     hits = await hybrid_search(query, k=6, course_id=course_id, chapter_id=chapter_id)
     if not hits and (course_id or chapter_id):
         hits = await hybrid_search(query, k=6)
-    if not hits:
-        return "No passages found. The course may not cover this."
-    parts = []
-    for i, h in enumerate(hits, 1):
-        parts.append(
-            f"[{i}] {h['title']}" + (f" §{h['anchor']}" if h["anchor"] else "")
-            + f" (chunkId={h['chunkId']}, chapterId={h['chapterId']}, score={h['score']})\n"
-            f"Context: {h['context']}\n{h['text']}"
-        )
-    return "\n\n---\n\n".join(parts)
+    return search_hits_json(query, hits)
 
 
 @tool
@@ -179,7 +195,139 @@ async def get_progress(course_id: str) -> str:
     return await asyncio.to_thread(load)
 
 
-TOOLS = [search_course, read_chapter, read_notes, get_progress]
+@tool
+async def make_flow(
+    spec: str,
+    runtime: ToolRuntime = None,  # type: ignore[assignment]
+) -> str:
+    """Make an animated, step-by-step movie (Flowmovie) of a process or protocol for the chat to play.
+
+    Args:
+        spec: what the movie should show: the actors, the steps in order, the numbers, and the one point it
+            makes. Use the course's names and examples.
+    Returns JSON {"kind": "flow"|"mermaid", "title", "source"}: a Flowmovie that passed the checker, or a
+    Mermaid diagram when three movie attempts failed. The app renders it; don't paste the source in your reply.
+    """
+    from app.agents import diagrammer
+
+    ctx = frontend_context(runtime)
+    hits = await hybrid_search(spec, k=4, course_id=ctx.get("courseId"))
+    context = "\n\n".join(f"{h['title']}: {h['text'][:1200]}" for h in hits)
+    return diagrammer.public(await diagrammer.make_movie(spec, context=context))
+
+
+class QuizDraftQuestion(BaseModel):
+    prompt: str
+    options: list[str]
+    answer: int
+    explanation: str
+    passage: int
+
+
+class QuizDraft(BaseModel):
+    questions: list[QuizDraftQuestion]
+
+
+def _chapter_passages(chapter_id: str) -> list[dict]:
+    with db() as conn:
+        rs = rows(
+            conn,
+            "SELECT id, title, text, course_id, chapter_id FROM chunks WHERE chapter_id=? ORDER BY position LIMIT 12",
+            (chapter_id,),
+        )
+    return [
+        {"chunkId": r["id"], "title": r["title"], "text": r["text"], "courseId": r["course_id"], "chapterId": r["chapter_id"]}
+        for r in rs
+    ]
+
+
+def clean_quiz(draft: QuizDraft, passages: list[dict], n: int) -> dict:
+    """Keep well-formed questions only: 2-6 distinct options, answer in range; chapterId from the passage."""
+    out = []
+    for q in draft.questions:
+        opts = [o.strip() for o in q.options if o.strip()]
+        if not q.prompt.strip() or not 2 <= len(opts) <= 6 or len({o.lower() for o in opts}) != len(opts):
+            continue
+        if not 0 <= q.answer < len(opts):
+            continue
+        src = passages[q.passage - 1] if 1 <= q.passage <= len(passages) else passages[0]
+        out.append(
+            {
+                "prompt": q.prompt.strip(),
+                "options": opts,
+                "answer": q.answer,
+                "explanation": q.explanation.strip(),
+                "chapterId": src.get("chapterId"),
+            }
+        )
+        if len(out) >= n:
+            break
+    return {"questions": out}
+
+
+@tool
+async def make_quiz(
+    concept_or_chapter: str,
+    n: int = 4,
+    runtime: ToolRuntime = None,  # type: ignore[assignment]
+) -> str:
+    """Write n multiple-choice questions grounded in the learner's course.
+
+    Args:
+        concept_or_chapter: a chapter id (quiz on that chapter) or a concept / topic in words.
+        n: how many questions, 1-8.
+    Returns JSON {"questions": [{"prompt", "options": [...], "answer": <0-based index>, "explanation",
+    "chapterId"}]}. Pass it to the frontend tool `start_quiz(questionsJson)` to show it.
+    """
+    from app.agents import llm
+
+    n = max(1, min(int(n or 4), 8))
+    arg = concept_or_chapter.strip()
+    passages = await asyncio.to_thread(_chapter_passages, arg) if UUID.match(arg) else []
+    if not passages:
+        ctx = frontend_context(runtime)
+        passages = await hybrid_search(arg, k=8, course_id=ctx.get("courseId"))
+        if not passages and ctx.get("courseId"):
+            passages = await hybrid_search(arg, k=8)
+    if not passages:
+        return json.dumps({"questions": [], "note": "The course has nothing on this to quiz from."})
+    numbered = "\n\n".join(f"[{i}] {p['title']}\n{p['text'][:2000]}" for i, p in enumerate(passages, 1))
+    draft, _usage = await llm.parse(
+        system=config.prompt("quiz"),
+        user=f"Write {n} questions on: {arg}\n\nPassages:\n\n{numbered}",
+        schema=QuizDraft,
+        effort="medium",
+        max_tokens=6000,
+    )
+    return json.dumps(clean_quiz(draft, passages, n), ensure_ascii=False)
+
+
+def web_search_enabled(state: Any, context: Any) -> bool:
+    from types import SimpleNamespace
+
+    v = frontend_context(SimpleNamespace(state=state or {}, context=context)).get("webSearch")
+    return v is True or (isinstance(v, str) and v.strip().lower() in ("true", "1", "yes", "on"))
+
+
+class WebSearchToggle(AgentMiddleware):
+    """Adds Claude's web_search server tool to a model call only when the frontend context says
+    `webSearch: true` (bound per run, per model call; off by default)."""
+
+    def _with_tool(self, request: ModelRequest) -> ModelRequest:
+        if not web_search_enabled(request.state, getattr(request.runtime, "context", None)):
+            return request
+        if any(isinstance(t, dict) and t.get("name") == "web_search" for t in request.tools or []):
+            return request
+        return request.override(tools=[*(request.tools or []), WEB_SEARCH_TOOL])
+
+    def wrap_model_call(self, request, handler):
+        return handler(self._with_tool(request))
+
+    async def awrap_model_call(self, request, handler):
+        return await handler(self._with_tool(request))
+
+
+TOOLS = [search_course, read_chapter, read_notes, get_progress, make_flow, make_quiz]
 
 
 def build_tutor_graph(checkpointer=None):
@@ -190,7 +338,7 @@ def build_tutor_graph(checkpointer=None):
         model=chat_model("medium", max_tokens=8000),
         tools=TOOLS,
         system_prompt=config.prompt("tutor"),
-        middleware=[CopilotKitMiddleware()],
+        middleware=[CopilotKitMiddleware(), WebSearchToggle()],
         checkpointer=checkpointer,
         name="tutor",
     )

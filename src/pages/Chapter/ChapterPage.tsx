@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Affix,
   Alert,
@@ -18,7 +18,8 @@ import {
   Title,
   Transition,
 } from '@mantine/core';
-import { useParams } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
+import { readOnlyEditorOptions } from '@/features/blocks';
 import { BlockEditorView, useBlockEditor } from '@shivarajbakale/blocks';
 import { ArrowLeft, ArrowRight, Check, CircleCheck, CircleX, Clock, MessagesSquare, NotebookPen } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
@@ -189,15 +190,53 @@ export function ChapterPage() {
   );
 }
 
+/** A Range over the first case-insensitive match of `needle` inside one text node of `root`. */
+function findText(root: HTMLElement, needle: string): Range | null {
+  const want = needle.trim().toLowerCase();
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const at = (node.textContent ?? '').toLowerCase().indexOf(want);
+    if (at >= 0) {
+      const range = document.createRange();
+      range.setStart(node, at);
+      range.setEnd(node, at + want.length);
+      return range;
+    }
+  }
+  return null;
+}
+
 function ChapterBody({ chapter }: { chapter: Chapter }) {
+  const navigate = useNavigate();
   // The markdown's first heading repeats the page title, which PageShell already shows.
   const editor = useBlockEditor({
     initial: chapter.markdown.replace(/^#\s+[^\n]*\n+/, ''),
-    editable: false,
     label: chapter.title,
+    ...readOnlyEditorOptions({
+      onOpenChapter: ({ courseId, chapterId }) =>
+        void navigate({ to: '/courses/$courseId/chapters/$chapterId', params: { courseId, chapterId } }),
+    }),
   });
   const [selection, setSelection] = useState('');
   const createNote = useCreateNote();
+  const highlight = useTutor((st) => st.highlight);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // The tutor's highlight_passage: select the passage and bring it into view.
+  useEffect(() => {
+    if (!highlight || !bodyRef.current) return;
+    const t = setTimeout(() => {
+      const range = findText(bodyRef.current!, highlight);
+      if (range) {
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+        range.startContainer.parentElement?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+      useTutor.getState().setHighlight(null);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [highlight]);
 
   useEffect(() => {
     const onUp = () => {
@@ -213,7 +252,7 @@ function ChapterBody({ chapter }: { chapter: Chapter }) {
   }, []);
 
   return (
-    <Box data-chapter-body>
+    <Box data-chapter-body ref={bodyRef}>
       <BlockEditorView editor={editor} menus={false} />
       <Affix position={{ bottom: 24, left: '50%' }} style={{ transform: 'translateX(-50%)' }}>
         <Transition mounted={!!selection} transition="slide-up">

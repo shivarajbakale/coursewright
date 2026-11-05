@@ -8,6 +8,7 @@ import type { CourseSummary, NotePage } from '@/api/types';
 import type { NotePatch } from '@/api/services/coursewrightService';
 import { useUpdateNote } from '@/hooks/useCoursewright';
 import { useTutor } from '@/copilot/tutorStore';
+import { coursewrightEditorOptions, useChapterOptions } from '@/features/blocks';
 import { AnchorLink } from '@/components/links';
 import { parseCover, parseIcon, serializeCover, serializeIcon, timeAgo } from './noteModel';
 
@@ -130,8 +131,20 @@ export function NoteEditor({
   const [icon, setIcon] = useState(() => parseIcon(page.icon));
   const [cover, setCover] = useState(() => parseCover(page.cover));
 
+  // The editor is built once per page; "@" and a mention's click read these refs, so they see later data.
+  const chapters = useChapterOptions();
+  const chaptersRef = useRef(chapters);
+  chaptersRef.current = chapters;
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
   const editor = useBlockEditor(
     {
+      ...coursewrightEditorOptions({
+        chapters: () => chaptersRef.current,
+        onOpenChapter: ({ courseId, chapterId }) =>
+          navigateRef.current({ to: '/courses/$courseId/chapters/$chapterId', params: { courseId, chapterId } }),
+      }),
       initial: page.markdown,
       label: page.title || 'Untitled',
       onChange: (e) => schedule({ markdown: e.toMarkdown() }),

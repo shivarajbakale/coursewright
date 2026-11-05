@@ -70,3 +70,13 @@ def embedder_kind() -> str:
 
 def prompt(name: str) -> str:
     return (PROMPTS_DIR / f"{name}.md").read_text()
+
+
+def shared_secret() -> str | None:
+    """CW_SHARED_SECRET: when set, /api and /agents require header x-cw-secret equal to it."""
+    return os.environ.get("CW_SHARED_SECRET") or None
+
+
+def cors_origins() -> list[str]:
+    """CW_CORS_ORIGINS: extra allowed origins, comma separated (e.g. the deployed web app)."""
+    return [o.strip() for o in os.environ.get("CW_CORS_ORIGINS", "").split(",") if o.strip()]

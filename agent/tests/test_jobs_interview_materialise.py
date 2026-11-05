@@ -168,5 +168,11 @@ def test_tutor_search_tool(client, course):
     from app.agents.tutor import search_course
 
     rt = SimpleNamespace(state={"copilotkit": {"context": [{"description": "courseId", "value": course["id"]}]}}, context=None)
-    out = asyncio.run(search_course.coroutine("randomized election timeout", "course", rt))
-    assert out.startswith("[1]") and "chunkId=" in out
+    out = json.loads(asyncio.run(search_course.coroutine("randomized election timeout", "course", rt)))
+    assert out["query"] == "randomized election timeout"
+    hits = out["hits"]
+    assert hits and [h["n"] for h in hits] == list(range(1, len(hits) + 1))
+    for h in hits:
+        assert set(h) == {"n", "chunkId", "title", "chapterId", "courseId", "text"}
+        assert h["courseId"] == course["id"] and h["chapterId"] and h["text"]
+    assert any("timeout" in h["text"].lower() for h in hits)

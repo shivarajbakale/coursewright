@@ -1,9 +1,14 @@
-"""A small asyncio worker: claims queued jobs (BEGIN IMMEDIATE + UPDATE ... RETURNING) and runs them."""
+"""A small asyncio worker: claims queued jobs (BEGIN IMMEDIATE + UPDATE ... RETURNING) and runs them.
+
+Each claimed job is leased to this process (`jobs.worker_id`) and heartbeated every HEARTBEAT_SECONDS. At
+start and then periodically, jobs left 'running' by a dead process (stale heartbeat) are re-claimed: put back
+in the queue, so the next claim runs them again (build_course resumes its checkpointed thread)."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import time
 import traceback
 from typing import Awaitable, Callable
 
@@ -56,14 +61,27 @@ async def _on_failure(job: dict, msg: str, cancelled: bool) -> None:
         log.exception("failure hook crashed")
 
 
+async def reclaim() -> None:
+    """Requeue orphans of a dead process; run failure hooks for the ones that ran out of attempts."""
+    res = await asyncio.to_thread(store.reclaim_stale)
+    for j in res["requeued"]:
+        log.info("re-claimed job %s (%s) left running by %s", j["id"], j["kind"], j["worker_id"])
+    for j in res["failed"]:
+        log.warning("job %s (%s): %s", j["id"], j["kind"], j["error"])
+        await _on_failure(j, j["error"], cancelled=False)
+    for j in res["cancelled"]:
+        await _on_failure(j, "Cancelled", cancelled=True)
+
+
 class Worker:
     def __init__(self) -> None:
         self._task: asyncio.Task | None = None
-        self._running: set[asyncio.Task] = set()
+        self._running: dict[asyncio.Task, str] = {}
         self._stop = asyncio.Event()
+        self._last_beat = 0.0
+        self._last_reclaim = 0.0
 
     def start(self) -> None:
-        store.requeue_orphans()
         self._task = asyncio.create_task(self._loop(), name="job-worker")
 
     async def stop(self) -> None:
@@ -74,15 +92,25 @@ class Worker:
             t.cancel()
         await asyncio.gather(*(t for t in [self._task, *self._running] if t), return_exceptions=True)
 
+    async def _housekeeping(self) -> None:
+        t = time.monotonic()
+        if t - self._last_beat >= store.HEARTBEAT_SECONDS:
+            self._last_beat = t
+            await asyncio.to_thread(store.heartbeat, list(self._running.values()))
+        if t - self._last_reclaim >= store.HEARTBEAT_SECONDS:
+            self._last_reclaim = t
+            await reclaim()
+
     async def _loop(self) -> None:
         while not self._stop.is_set():
             try:
+                await self._housekeeping()
                 if len(self._running) < MAX_CONCURRENT:
                     job = await asyncio.to_thread(store.claim_next)
                     if job is not None:
                         t = asyncio.create_task(run_job(dict(job)), name=f"job-{job['id']}")
-                        self._running.add(t)
-                        t.add_done_callback(self._running.discard)
+                        self._running[t] = job["id"]
+                        t.add_done_callback(lambda done: self._running.pop(done, None))
                         continue
                 await asyncio.sleep(POLL_SECONDS)
             except asyncio.CancelledError:

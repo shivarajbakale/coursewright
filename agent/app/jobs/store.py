@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+import os
+import socket
 import sqlite3
+import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.db import db, jdump, jload, new_id, now, row, tx
 
 TERMINAL = ("done", "failed", "cancelled")
+# This process's identity on job leases.
+WORKER_ID = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:8]}"
+HEARTBEAT_SECONDS = 10
+STALE_SECONDS = 45  # a running job whose heartbeat is older than this belongs to a dead process
+MAX_ATTEMPTS = 3
 
 
 class Cancelled(Exception):
@@ -66,15 +75,63 @@ def event_out(r: sqlite3.Row) -> dict:
     }
 
 
-def claim_next() -> sqlite3.Row | None:
-    """Atomically move the oldest queued job to running."""
+def claim_next(worker_id: str | None = None) -> sqlite3.Row | None:
+    """Atomically move the oldest queued job to running, leased to this worker."""
+    at = now()
     with db() as conn, tx(conn):
         return conn.execute(
-            """UPDATE jobs SET status='running', started_at=?, attempts=attempts+1
+            """UPDATE jobs SET status='running', started_at=COALESCE(started_at, ?), attempts=attempts+1,
+                      worker_id=?, heartbeat_at=?
                WHERE id = (SELECT id FROM jobs WHERE status='queued' ORDER BY created_at LIMIT 1)
                RETURNING *""",
-            (now(),),
+            (at, worker_id or WORKER_ID, at),
         ).fetchone()
+
+
+def heartbeat(job_ids: list[str], worker_id: str | None = None) -> None:
+    if not job_ids:
+        return
+    with db() as conn:
+        conn.executemany(
+            "UPDATE jobs SET heartbeat_at=? WHERE id=? AND status='running' AND worker_id=?",
+            [(now(), jid, worker_id or WORKER_ID) for jid in job_ids],
+        )
+
+
+def _iso(dt: datetime) -> str:
+    return dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def reclaim_stale(
+    stale_seconds: float = STALE_SECONDS, worker_id: str | None = None, max_attempts: int = MAX_ATTEMPTS
+) -> dict[str, list[dict]]:
+    """Jobs left 'running' by a dead process (another worker id, or none, with a heartbeat older than
+    `stale_seconds`) go back to the queue so they run again; build_course resumes its checkpointed thread.
+    A job that has already used `max_attempts` claims fails instead (no crash loops), and one whose cancel
+    was requested is cancelled. Returns {"requeued": [...], "failed": [...], "cancelled": [...]} job rows."""
+    me = worker_id or WORKER_ID
+    cutoff = _iso(datetime.now(timezone.utc) - timedelta(seconds=stale_seconds))
+    out: dict[str, list[dict]] = {"requeued": [], "failed": [], "cancelled": []}
+    with db() as conn, tx(conn):
+        stale = conn.execute(
+            """SELECT * FROM jobs WHERE status='running' AND (worker_id IS NULL OR worker_id != ?)
+               AND (heartbeat_at IS NULL OR heartbeat_at < ?)""",
+            (me, cutoff),
+        ).fetchall()
+        for r in stale:
+            if r["cancel_requested"]:
+                conn.execute(
+                    "UPDATE jobs SET status='cancelled', error='Cancelled', finished_at=? WHERE id=?", (now(), r["id"])
+                )
+                out["cancelled"].append(dict(r))
+            elif r["attempts"] >= max_attempts:
+                msg = f"Gave up after {r['attempts']} attempts: the worker stopped while running this job"
+                conn.execute("UPDATE jobs SET status='failed', error=?, finished_at=? WHERE id=?", (msg, now(), r["id"]))
+                out["failed"].append({**dict(r), "error": msg})
+            else:
+                conn.execute("UPDATE jobs SET status='queued', worker_id=NULL, heartbeat_at=NULL WHERE id=?", (r["id"],))
+                out["requeued"].append(dict(r))
+    return out
 
 
 def finish(job_id: str, status: str, *, error: str | None = None, output: dict | None = None) -> None:
@@ -108,7 +165,7 @@ def check_cancel(job_id: str) -> None:
         raise Cancelled()
 
 
-def requeue_orphans() -> None:
-    """Jobs left 'running' by a crashed process go back to the queue."""
-    with db() as conn:
-        conn.execute("UPDATE jobs SET status='queued' WHERE status='running'")
+def requeue_orphans() -> dict[str, list[dict]]:
+    """At startup, a job still 'running' under another worker id with no heartbeat for STALE_SECONDS is an
+    orphan of a dead process."""
+    return reclaim_stale()

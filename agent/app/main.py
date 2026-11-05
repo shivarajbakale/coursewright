@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hmac
 import logging
 from contextlib import asynccontextmanager
 
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI):
     import aiosqlite
     from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
+    from app.agents.checkpoint import set_saver
     from app.agents.tutor import init_tutor
     from app.jobs.worker import Worker
     from app.seed import seed_and_index
@@ -53,6 +55,7 @@ async def lifespan(app: FastAPI):
     await conn.execute("PRAGMA busy_timeout=5000")
     checkpointer = AsyncSqliteSaver(conn)
     await checkpointer.setup()
+    set_saver(checkpointer)  # shared by the tutor and course builds (thread_id = job id, so builds resume)
     await init_tutor(checkpointer)
 
     worker = Worker()
@@ -65,14 +68,36 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await worker.stop()
+        set_saver(None)
         await conn.close()
 
 
 app = FastAPI(title="Coursewright agent", version=config.VERSION, lifespan=lifespan)
 
+OPEN_PATHS = {"/api/health"}
+
+
+@app.middleware("http")
+async def shared_secret(request: Request, call_next):
+    """With CW_SHARED_SECRET set, /api/* and /agents/* need header `x-cw-secret` equal to it (health and CORS
+    preflights stay open). Unset = no auth, for local development."""
+    secret = config.shared_secret()
+    path = request.url.path
+    if (
+        secret
+        and request.method != "OPTIONS"
+        and (path.startswith("/api") or path.startswith("/agents"))
+        and path.rstrip("/") not in OPEN_PATHS
+    ):
+        given = request.headers.get("x-cw-secret", "")
+        if not hmac.compare_digest(given.encode(), secret.encode()):
+            return JSONResponse({"message": "Missing or wrong x-cw-secret header"}, status_code=401)
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", *config.cors_origins()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

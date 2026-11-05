@@ -17,6 +17,9 @@ export interface TutorContextValue {
 
 interface TutorState extends TutorContextValue {
   panelOpen: boolean;
+  /** A passage the tutor asked the chapter reader to highlight (highlight_passage). */
+  highlight: string | null;
+  setHighlight: (text: string | null) => void;
   /** A prompt waiting to be sent when the chat mounts. */
   pending: string | null;
   setContext: (ctx: Partial<TutorContextValue>) => void;
@@ -33,6 +36,8 @@ export const useTutor = create<TutorState>((set, get) => ({
   noteId: null,
   selection: null,
   panelOpen: false,
+  highlight: null,
+  setHighlight: (highlight) => set({ highlight }),
   pending: null,
   setContext: (ctx) => set(ctx),
   openPanel: () => set({ panelOpen: true }),

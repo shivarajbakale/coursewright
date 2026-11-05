@@ -17,7 +17,7 @@
  *   R5  meta declares an explicit `parameters.layout`
  *   R6  meta declares `argTypes` when the component takes props
  *   R7  no raw hex / rgb() / oklch() colour literals (tokens only)
- *   R8  every shell composite in src/components/ has a sibling story
+ *   R8  retired 2026-11-05: stories are optional in this app (DECISIONS.md)
  *   R9  no handlers() spy parked in argTypes (Storybook ignores it)
  *   R10 the generated section docs match docs/storybook-taxonomy.json
  *
@@ -211,7 +211,10 @@ for (const full of files) {
   if (rawColour) fail(rel, 'R7', `raw colour literal(s): ${[...new Set(rawColour)].join(', ')}`);
 }
 
-/* ---- R8: every shell composite has a sibling story ---- */
+/* ---- R8 (retired): composites no longer owe a sibling story ----
+   The owner decided stories are not worth writing for this app (DECISIONS.md,
+   2026-11-05). Stories that exist are still checked by R1–R7 and R9; a
+   composite without one is fine. `graded` is kept for the summary line. */
 // It used to be the kit: `src/components/ui/` was where the graded components
 // lived, and every atom in it owed a story. `mantine-005` deleted that
 // directory — the atoms are Mantine's now, documented by Mantine — so the rule
@@ -228,12 +231,7 @@ for (const dir of COMPOSITE_DIRS) {
     .filter((e) => e.isFile() && e.name.endsWith('.tsx') && !e.name.endsWith('.stories.tsx'))
     .map((e) => e.name.replace(/\.tsx$/, ''));
   graded.push(...composites);
-  for (const composite of composites) {
-    if (!fs.existsSync(path.join(dir, `${composite}.stories.tsx`)))
-      fail(`${rel}/${composite}.tsx`, 'R8', 'composite has no sibling .stories.tsx');
-    if (!MEMBER_INDEX.has(composite))
-      fail(`${rel}/${composite}.tsx`, 'R8', 'composite is missing from docs/storybook-taxonomy.json');
-  }
+  void rel;
 }
 
 /* ---- R10: generated section docs are in sync with the taxonomy ---- */

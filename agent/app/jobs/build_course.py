@@ -9,6 +9,8 @@ import re
 from pathlib import Path
 
 from app import config
+from app.agents import checkpoint
+from app.agents.diagrammer import validate_course_diagrams
 from app.db import db, jload, row
 from app.jobs import store
 from app.materialise import MaterialiseError, parse_course_folder, write_course
@@ -20,9 +22,16 @@ SUBAGENT_STAGE = {
     "researcher": ("research", "Researching the topic"),
     "curriculum": ("concepts", "Mapping the concepts"),
     "writer": ("chapters", "Writing chapters"),
+    "diagrammer": ("chapters", "Drawing diagrams"),
     "project_designer": ("projects", "Designing projects"),
     "reviewer": ("projects", "Reviewing the course"),
 }
+
+
+def last_stage(job_id: str) -> str:
+    with db() as conn:
+        r = row(conn, "SELECT stage FROM job_events WHERE job_id=? ORDER BY seq DESC LIMIT 1", (job_id,))
+    return r["stage"] if r and r["stage"] != "done" else "research"
 
 
 def mark_failed(job: dict, msg: str) -> None:
@@ -87,6 +96,15 @@ class Progress:
                         self.emit(stage, f"{msg}: {desc}" if desc else msg, {"subagent": sub})
 
     # -- files on disk ------------------------------------------------------------------------
+    def prime(self) -> None:
+        """Resuming: files already on disk were reported before the restart, so mark them seen silently."""
+        real_emit = self.emit
+        self.emit = lambda *a, **k: None  # type: ignore[method-assign]
+        try:
+            self.scan()
+        finally:
+            self.emit = real_emit  # type: ignore[method-assign]
+
     def _read_json(self, p: Path) -> dict:
         try:
             return json.loads(p.read_text())
@@ -135,6 +153,14 @@ class Progress:
                     f"Wrote {title}",
                     {"chapter": title, "done": done, "total": max(self.total_chapters, done)},
                 )
+        diagrams = course / "diagrams"
+        for f in sorted(list(diagrams.glob("*.flow")) + list(diagrams.glob("*.mmd"))) if diagrams.exists() else []:
+            key = f"dg:{f.name}"
+            if key not in self.seen_files:
+                self.seen_files.add(key)
+                title = getattr(self, "titles", {}).get(f.stem, f.stem)
+                what = "a movie" if f.suffix == ".flow" else "a diagram"
+                self.emit("chapters", f"Drew {what} for {title}", {"diagram": title, "kind": f.suffix[1:]})
         projects = []
         for pj in sorted((course / "projects").glob("*.json")):
             key = f"pj:{pj.stem}"
@@ -164,26 +190,45 @@ async def run(job: dict) -> dict:
     from app.agents.builder import build_agent
 
     job_dir = config.jobs_dir() / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+    if not (job_dir / "brief.json").exists():
+        (job_dir / "brief.json").write_text(json.dumps(brief, indent=2))  # for evals and debugging
     progress = Progress(job_id, job_dir)
-    topic_terms = [w for w in re.findall(r"[A-Za-z][\w-]+", brief.get("topic", "")) if len(w) > 2][:6]
-    progress.emit("research", "Planning the course", {"terms": topic_terms})
-
-    agent = build_agent(job_dir)
     budget = config.build_token_budget()
-    async for chunk in agent.astream(
-        {"messages": [HumanMessage(content=_brief_text(brief))]},
-        config={"recursion_limit": 1000, "configurable": {"thread_id": job_id}},
-        stream_mode="updates",
-        subgraphs=True,
-    ):
-        store.check_cancel(job_id)
-        progress.on_update(chunk)
-        await asyncio.to_thread(progress.scan)
-        store.set_usage(job_id, progress.input_tokens, progress.output_tokens)
-        if progress.input_tokens + progress.output_tokens > budget:
-            raise RuntimeError(f"Token budget exceeded ({budget} tokens); raise CW_BUILD_TOKEN_BUDGET to allow more")
+
+    async with checkpoint.saver() as cp:
+        resuming = await checkpoint.has_checkpoint(cp, job_id)
+        if resuming:
+            usage = jload(job.get("usage"), None) or {}
+            progress.input_tokens = int(usage.get("inputTokens") or 0)
+            progress.output_tokens = int(usage.get("outputTokens") or 0)
+            await asyncio.to_thread(progress.prime)
+            progress.emit(last_stage(job_id), "Resuming the build where it stopped", {"resumed": True})
+            stream_input = None  # continue the same thread from its last checkpoint
+        else:
+            topic_terms = [w for w in re.findall(r"[A-Za-z][\w-]+", brief.get("topic", "")) if len(w) > 2][:6]
+            progress.emit("research", "Planning the course", {"terms": topic_terms})
+            stream_input = {"messages": [HumanMessage(content=_brief_text(brief))]}
+
+        agent = build_agent(job_dir, checkpointer=cp)
+        async for chunk in agent.astream(
+            stream_input,
+            config={"recursion_limit": 1000, "configurable": {"thread_id": job_id}},
+            stream_mode="updates",
+            subgraphs=True,
+        ):
+            store.check_cancel(job_id)
+            progress.on_update(chunk)
+            await asyncio.to_thread(progress.scan)
+            store.set_usage(job_id, progress.input_tokens, progress.output_tokens)
+            if progress.input_tokens + progress.output_tokens > budget:
+                raise RuntimeError(f"Token budget exceeded ({budget} tokens); raise CW_BUILD_TOKEN_BUDGET to allow more")
     await asyncio.to_thread(progress.scan)
     store.check_cancel(job_id)
+
+    rejected = await asyncio.to_thread(validate_course_diagrams, job_dir / "course")
+    if rejected:
+        progress.emit("chapters", f"Dropped {len(rejected)} movie(s) that don't compile", {"rejected": rejected})
 
     try:
         parsed = await asyncio.to_thread(parse_course_folder, job_dir / "course")

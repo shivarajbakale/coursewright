@@ -503,11 +503,20 @@ Differences from the plan above:
 - Phase 1 kept the template's Mantine shell; kit supplies the notes UI (PageTree, PageHeader, IconPicker,
   blocks editor) and renders chapters, project briefs and markdown read-only.
 
-Not built yet: the diagrammer subagent and Flowmovie check tool in the builder (writers produce Mermaid;
-the seeded course has a checked Flowmovie), builder checkpointing (a crashed build restarts), tutor tools
-`make_flow`, `make_quiz`, web search, frontend tools `highlight_passage` and `start_quiz`, custom blocks
-extensions (`chapterMention`, `quizCard`, `flow`), evals, auth secret, deployment. Nothing has been run
-against the live Claude API yet in this environment (no key), so prompts and effort settings are untested.
+Agent service, second pass (2026-11-05): the `diagrammer` subagent with `flow_check` / `flow_story` /
+`save_diagram` (vendored Flowmovie engine in `agent/vendor/flowmovie/`, 3 movie attempts then Mermaid,
+enforced in code), writers emit a `diagramRequest`, materialise loads `diagrams/<chapter>.flow|.mmd`;
+builder checkpointing (`AsyncSqliteSaver`, thread_id = job id) with job leases and heartbeats so a build left
+`running` by a dead process is re-claimed and resumes its thread; tutor tools `make_flow`, `make_quiz`,
+`search_course` returning JSON hits for citations, per-run web search (`webSearch: true` in context), and a
+prompt that knows the frontend tools `highlight_passage` and `start_quiz`; `CW_SHARED_SECRET` auth
+(`x-cw-secret`); evals for tutor, interviewer and builder (`agent/evals/`, not yet run); deploy config
+(`agent/Dockerfile`, `fly.toml`, `litestream.yml`, root `vercel.json` rewrite excluding `/api/`), not deployed.
+
+Not built yet: the frontend side of `highlight_passage` / `start_quiz` and of rendering `make_flow` /
+`make_quiz` results (check `src/`), custom blocks extensions (`chapterMention`, `quizCard`, `flow`), SVG and
+graph diagram kinds, a deployment. Nothing has been run against the live Claude API yet in this environment
+(no key), so prompts, effort settings and the evals are untested.
 
 ## References
 

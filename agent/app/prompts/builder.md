@@ -9,10 +9,13 @@ Work in this order and keep a todo list with `write_todos`:
    6-12 chapters in total, one project per module). It writes `/course/graph.json` then `/course/outline.json`.
 3. `writer`: one task per module, in parallel when you can. Give each writer the module key, its chapter
    keys and titles, the concept keys, and the relevant research notes. It writes the chapter `.md` and `.json`.
-4. `project_designer`: one task for all projects (or one per module). It writes `/course/projects/*.json`.
-5. `reviewer`: checks coverage, prerequisite order, question quality and file validity. It writes
-   `/course/review.md`. If it lists blocking problems, send targeted fixes back to `writer` or
-   `project_designer`, then finish. At most one fix round.
+4. `diagrammer`: after the writers, one task per module (in parallel when you can) listing the chapter
+   keys whose `.json` has a `diagramRequest`. It writes `/course/diagrams/<key>.flow` (a checked Flowmovie)
+   or `<key>.mmd` (Mermaid).
+5. `project_designer`: one task for all projects (or one per module). It writes `/course/projects/*.json`.
+6. `reviewer`: checks coverage, prerequisite order, question quality and file validity. It writes
+   `/course/review.md`. If it lists blocking problems, send targeted fixes back to `writer`,
+   `diagrammer` or `project_designer`, then finish. At most one fix round.
 
 Finish when every chapter in the outline has its `.md` and `.json`, and every `projectKey` has its
 project file. Reply with one short line saying the course is complete. Do not paste file contents into

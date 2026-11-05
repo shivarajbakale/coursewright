@@ -1,5 +1,6 @@
 import { Box } from '@mantine/core';
 import { BlockEditorView, useBlockEditor } from '@shivarajbakale/blocks';
+import { readOnlyEditorOptions } from '@/features/blocks';
 
 /**
  * Read-only markdown through kit's block editor, so generated text renders
@@ -7,7 +8,7 @@ import { BlockEditorView, useBlockEditor } from '@shivarajbakale/blocks';
  * markdown can change: the editor reads `markdown` once.
  */
 export function MarkdownView({ markdown, label }: { markdown: string; label?: string }) {
-  const editor = useBlockEditor({ initial: markdown, editable: false, label });
+  const editor = useBlockEditor({ initial: markdown, label, ...readOnlyEditorOptions() });
   return (
     <Box data-markdown-view>
       <BlockEditorView editor={editor} menus={false} />

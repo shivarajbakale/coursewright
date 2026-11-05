@@ -51,6 +51,11 @@ export function NewCoursePage() {
   const [answers, setAnswers] = useState<(InterviewAnswer & { header: string })[]>([]);
   const [question, setQuestion] = useState<InterviewQuestion | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
+  /** Every question asked so far, aligned with `answers`, so Back can return to one without losing it. */
+  const [asked, setAsked] = useState<InterviewQuestion[]>([]);
+  /** The answer to prefill when Back returns to a question. */
+  const [prefill, setPrefill] = useState<string[] | null>(null);
+  const [briefExtras, setBriefExtras] = useState<{ level?: string; goal?: string; pace?: string }>({});
 
   async function ask(nextAnswers: (InterviewAnswer & { header: string })[]) {
     const step = await next.mutateAsync({
@@ -60,9 +65,12 @@ export function NewCoursePage() {
     if (step.done || !step.question || nextAnswers.length >= MAX_QUESTIONS) {
       setQuestion(null);
       setSummary(step.summary);
+      setBriefExtras({ level: step.level, goal: step.goal, pace: step.pace });
       setPhase('summary');
     } else {
       setQuestion(step.question);
+      setAsked((prev) => [...prev.slice(0, nextAnswers.length), step.question!]);
+      setPrefill(null);
       setPhase('asking');
     }
   }
@@ -70,6 +78,7 @@ export function NewCoursePage() {
   async function start() {
     if (!topic.trim()) return;
     setAnswers([]);
+    setAsked([]);
     await ask([]);
   }
 
@@ -80,21 +89,25 @@ export function NewCoursePage() {
     await ask(nextAnswers);
   }
 
+  /** Back returns to the previous question with its answer still chosen; nothing is re-asked or lost. */
   function back() {
     if (answers.length === 0) {
       setPhase('topic');
       setQuestion(null);
       return;
     }
-    const trimmed = answers.slice(0, -1);
-    setAnswers(trimmed);
-    void ask(trimmed);
+    const last = answers[answers.length - 1];
+    setAnswers(answers.slice(0, -1));
+    setQuestion(asked[answers.length - 1] ?? null);
+    setPrefill(last.answer);
+    setPhase('asking');
   }
 
   async function generate() {
     const res = await create.mutateAsync({
       topic: topic.trim(),
       answers: answers.map(({ question: q, answer: a }) => ({ question: q, answer: a })),
+      ...briefExtras,
     });
     await navigate({ to: '/courses/$courseId/building', params: { courseId: res.course.id } });
   }
@@ -128,6 +141,7 @@ export function NewCoursePage() {
             <QuestionCard
               key={question.id + answers.length}
               question={question}
+              initial={prefill}
               index={answers.length + 1}
               loading={next.isPending}
               onAnswer={answer}
@@ -241,17 +255,22 @@ function QuestionCard({
   loading,
   onAnswer,
   onBack,
+  initial,
 }: {
   question: InterviewQuestion;
+  initial?: string[] | null;
   index: number;
   loading: boolean;
   onAnswer: (values: string[]) => void;
   onBack: () => void;
 }) {
   const recommended = question.options.filter((o) => o.recommended).map((o) => o.label);
-  const [single, setSingle] = useState<string>(recommended[0] ?? '');
-  const [multi, setMulti] = useState<string[]>(recommended);
-  const [other, setOther] = useState('');
+  const labels = new Set(question.options.map((o) => o.label));
+  // Returning via Back: restore what was chosen, including a typed "other".
+  const start = initial ?? recommended;
+  const [single, setSingle] = useState<string>(start.find((v) => labels.has(v)) ?? '');
+  const [multi, setMulti] = useState<string[]>(start.filter((v) => labels.has(v)));
+  const [other, setOther] = useState(initial?.find((v) => !labels.has(v)) ?? '');
 
   const chosen = question.multiSelect ? multi : single ? [single] : [];
   const values = other.trim() ? [...chosen.filter((v) => v !== '__other'), other.trim()] : chosen.filter((v) => v !== '__other');

@@ -1,0 +1,20 @@
+# Litestream: continuously replicate the SQLite file (WAL mode) to S3-compatible storage (AWS S3 or
+# Cloudflare R2). Values come from the environment (Litestream expands ${VAR}):
+#   CW_DB_PATH                     /data/coursewright.db
+#   LITESTREAM_BUCKET              bucket name
+#   LITESTREAM_PATH                key prefix inside the bucket, e.g. coursewright
+#   LITESTREAM_ENDPOINT            R2: https://<account-id>.r2.cloudflarestorage.com ; S3: https://s3.<region>.amazonaws.com
+#   LITESTREAM_REGION              S3 region; R2 uses "auto"
+#   LITESTREAM_ACCESS_KEY_ID       credentials (read by Litestream directly)
+#   LITESTREAM_SECRET_ACCESS_KEY
+dbs:
+  - path: ${CW_DB_PATH}
+    replicas:
+      - type: s3
+        bucket: ${LITESTREAM_BUCKET}
+        path: ${LITESTREAM_PATH}
+        endpoint: ${LITESTREAM_ENDPOINT}
+        region: ${LITESTREAM_REGION}
+        sync-interval: 10s
+        snapshot-interval: 24h
+        retention: 168h

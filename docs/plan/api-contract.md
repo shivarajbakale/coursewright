@@ -142,7 +142,15 @@ The CopilotKit runtime (Node, `runtime-dev/server.ts`, port 4000, path `/api/cop
 agent `tutor` through `HttpAgent({ url: 'http://localhost:8123/agents/tutor' })`.
 
 Frontend context the tutor receives through CopilotKit: `courseId`, `chapterId`, `selection`, `noteId`.
-Frontend tools: `save_to_notes(markdown, title?)`, `open_chapter(chapterId)`.
+Frontend tools: `save_to_notes(markdown, title?)`, `open_chapter(courseId, chapterId)`,
+`highlight_passage(chapterId, text, courseId?)`, `start_quiz(questions)`.
+
+Tutor backend tool results the chat renders (JSON strings):
+- `search_course` → `{query, hits: [{n, chunkId, title, chapterId, courseId, text}], note?}` (cite as `[n]`)
+- `make_flow` → `{kind: 'flow' | 'mermaid', title, source}` (flow sources pass the Flowmovie checker)
+- `make_quiz` → `{questions: [{prompt, options, answer, explanation, chapterId}], note?}`
+
+Context may also carry `webSearch: true` to let the tutor use web search for that turn.
 
 ## Notes from the implementation
 

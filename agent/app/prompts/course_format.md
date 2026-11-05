@@ -29,10 +29,19 @@ example, and at least one fenced code block when the topic has code or pseudocod
 ```json
 {"questions": [{"prompt": "...", "options": ["...", "...", "..."], "answer": 0,
                 "explanation": "why", "conceptKeys": ["leader-election"]}],
- "diagrams": [{"kind": "mermaid", "title": "...", "source": "flowchart LR\n  A --> B"}]}
+ "diagramRequest": {"title": "A leader election in five servers",
+                    "show": "who the actors are, what happens step by step, and the one point the picture makes",
+                    "shape": "process"}}
 ```
 2-4 questions per chapter, 3-4 options, `answer` is the 0-based index of the right option (vary it).
-Diagrams are optional: `kind` is `mermaid` (valid Mermaid source) or `flow`. Prefer Mermaid.
+`diagramRequest` is optional (include it when a picture helps, in most chapters): `shape` is `process` for
+anything that happens over time (a protocol, messages, a pipeline, a state machine; it becomes an animated
+Flowmovie) or `structure` for a static picture (it becomes Mermaid). `show` is 1-4 sentences naming the
+actors, the steps and the numbers the chapter uses. Writers never draw diagrams themselves.
+
+`/course/diagrams/<chapterKey>.flow` or `/course/diagrams/<chapterKey>.mmd` (diagrammer only, written through
+its `save_diagram` tool): one diagram per chapter that has a `diagramRequest`. A `.flow` is a Flowmovie
+script that passed the Flowmovie checker; a `.mmd` is Mermaid whose first line is `%% title: ...`.
 
 `/course/projects/<projectKey>.json`:
 ```json
