@@ -264,7 +264,8 @@
         "Headless Chromium on mock mode, dark 1440px and light 390px: interview checkbox, build pauses at the outline, chat adds a chapter marked Changed, remove, Library 'Outline ready', Write this course continues to the course; no page errors",
         "Mac mini, MiniMax-M3, brief of the old 'Agentic RAG' course: plan 21k tokens; one real chat turn 22k tokens rebuilt module 1 from zero; writing failed once on an empty provider reply (fixed: retried), Continue resumed the same job skipping 14 written chapters; course ready",
         "Fresh unattended build, same brief: 0.66M tokens in 9 minutes, 13 chapters (old engine: 11.9M tokens for the same brief; its rerun failed on 'database is locked')",
-        "Builder eval (MiniMax judge, noisy: the old course scored 3/5 and 4/5 on reruns): old engine 4/5, 4/5 (accuracy 4); new pipeline 3/5, 3/5 (accuracy 2-3, foundations 4, coverage 4-5). The new pipeline is ~18x cheaper but its chapters still carry arithmetic/code inconsistencies, and 9 of 13 run past 1300 words"
+        "Builder eval (MiniMax judge, noisy: the old course scored 3/5 and 4/5 on reruns): old engine 4/5, 4/5 (accuracy 4); pipeline without a per-chapter check 3/5, 3/5 (accuracy 2-3)",
+        "With the verify stage (per-chapter check of numbers, code, answer keys): fresh unattended build, same brief, 0.76M tokens (verify 41k, fixes 358k), 12 chapters; eval 4/5, 4/5 with accuracy 4/5 both runs: parity with the old engine at ~1/16 of its tokens. A verify answer that failed validation stopped the first attempt; fixed (optional stages never fail a build) and Continue finished it"
       ],
       "notes": "Spec: FEATURE-PLAN.md (outline-review.feature-plan.json)"
     }

@@ -17,9 +17,10 @@
   outline_ready notice, /courses/:id/plan endpoints, OutlineReview on the building page, Library badge.
 - The deepagents orchestrator is replaced by agent/app/jobs/pipeline.py: one structured call per piece,
   checks in code with retries that revise the draft, tokens per stage on the job, resume by files on disk.
-- Measured on the Mac mini (MiniMax-M3): 0.66M tokens per course vs 11.9M. Builder eval: new 3/5 twice,
-  old 4/5 twice; the gap is accuracy (numbers and code in worked examples) and length (MiniMax overruns).
-- Open: a per-chapter accuracy check; chapter length on MiniMax. Unpushed commits since 653c251.
+- Measured on the Mac mini (MiniMax-M3): without a per-chapter check, 0.66M tokens and eval 3/5 twice
+  (accuracy 2-3) vs the old engine's 4/5 twice at 11.9M. A verify stage (numbers, code, answer keys per
+  chapter, then a revision) brought it to 4/5 twice, accuracy 4, at 0.76M tokens.
+- Open: chapter length on MiniMax (3 of 12 still over 1300 words). Unpushed commits since 653c251.
 
 ### Session 008 — Public release (2026-11-05)
 
