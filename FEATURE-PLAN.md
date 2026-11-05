@@ -1,29 +1,29 @@
 <!-- feature-plan:v1 — generated, do not hand-edit.
-     Regenerate with: node scripts/feature-plan.mjs chapter-notes.feature-plan.json -->
+     Regenerate with: node scripts/feature-plan.mjs outline-review.feature-plan.json -->
 
-# Notes beside a chapter
+# Shape the outline in a chat, then build it lean
 
-`chapter-notes` · 1 surface
+`outline-review` · 2 surfaces
 
 ## Problem
 
-While reading a chapter there is no place to write. The only route is selecting text and pressing Add to notes, which creates a new page every time and takes you nowhere: you can't type your own words next to the text, and a chapter's notes end up scattered across many pages.
+A course is researched, outlined, written, illustrated and reviewed in one go, so the first time you see its shape it is finished: if it starts in the middle or has chapters you don't want, the only fix is to rebuild, after spending 10M+ tokens. The builder is one AI orchestrator that re-reads its growing conversation at every step (76 input tokens per output token in the last build) and can decide to rewrite whole modules.
 
 ## Not in this feature
 
-- Inline margin annotations anchored to paragraphs.
-- Notes beside project briefs (same panel later, not now).
-- A new editor: the panel uses the Notes page's block editor.
+- Editing a finished course (adding or removing chapters after writing) — a later feature.
+- Reordering by drag and drop; the chat and per-chapter remove cover the first version.
+- Changing the course file format beyond an optional one-line chapter summary.
 
 ## Surfaces
 
-### Chapter with notes · `/courses/$courseId/chapters/$chapterId`
+### Review the outline · `/courses/$courseId/building (outline step)`
 
-Archetype: `detail` — Read the chapter and write about it side by side.
+Archetype: `sequence` — See the planned course before anything is written, and change it by asking.
 
-**Peak** — you type a thought next to the paragraph that prompted it, without leaving the chapter
+**Peak** — you type 'add a chapter on embeddings before 1.2', and the outline updates with the new chapter highlighted
 
-**End** — the chapter finished, and its notes page holds your words and the passages you quoted, one click from Notes
+**End** — you press Write this course and the build continues on the outline you agreed
 
 **Desktop @1440**
 
@@ -31,27 +31,24 @@ Archetype: `detail` — Read the chapter and write about it side by side.
 ┌────────────────────────────────────────────────────────────────────────────┐
 │ ▨ Acme      ⌕ Search…                                       ⌘K   ◐   ⬤     │
 ├───────────────┬────────────────────────────────────────────────────────────┤
-│ Library       │ Chapter with notes                               [ Notes ] │
+│ Library       │ Review the outline                   [ Write this course ] │
 │ New course    │                                                            │
-│ Tutor         │ ┌────────────────────────────────────────────────────────┐ │
-│ Notes         │ │ 2.1 Queries, keys, values                              │ │
-│ Sources       │ │ chapter text, 820px column                             │ │
-│ Settings      │ │ ────────────────────────────────────────────────────── │ │
-│ Chapter with …│ │ Selection                   [Add to notes] [Ask tutor] │ │
-│               │ └────────────────────────────────────────────────────────┘ │
+│ Tutor         │                     Step 1 of 2 — Step                     │
+│ Notes         │        ######################......................        │
+│ Sources       │                                                            │
+│ Settings      │        ┌──────────────────────────────────────────┐        │
+│ Review the ou…│        │ Outline · 4 modules · 12 chapters · abou…│        │
+│               │        ├──────────────────────────────────────────┤        │
+│               │        │ 1  Foundations: what RAG is and why    … │        │
+│               │        │   1.1 What a language model can and can… │        │
+│               │        │   1.2 Embeddings: turning text into num… │        │
+│               │        │ 2  From pipeline to agent              … │        │
+│               │        │   2.1 When a straight line is not enoug… │        │
+│               │        ├──────────────────────────────────────────┤        │
+│               │        │           [Write this course]            │        │
+│               │        └──────────────────────────────────────────┘        │
 │               │                                                            │
-│               │ ┌────────────────────────────────────────────────────────┐ │
-│               │ │ Your notes                                       Saved │ │
-│               │ │ Notes: Queries, keys, values                           │ │
-│               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ > quoted passage                                       │ │
-│               │ │ your own words…                                        │ │
-│               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ [Open in Notes]  [Close]                               │ │
-│               │ └────────────────────────────────────────────────────────┘ │
-│               │                                                            │
-│               │ ────────────────────────────────────────────────────────── │
-│               │                                                  [ Notes ] │
+│               │        [ Back ]                            [ Next ]        │
 └───────────────┴────────────────────────────────────────────────────────────┘
 ```
 
@@ -59,12 +56,20 @@ Archetype: `detail` — Read the chapter and write about it side by side.
 
 ```
 ┌──────────────────────────┐
-│ ☰  Chapter with notes⌕   │
+│ ☰  Review the outline⌕   │
 ├──────────────────────────┤
 │ ┌──────────────────────┐ │
-│ │ Selection  [Add to … │ │
+│ │ Outline · 4 modules …│ │
+│ ├──────────────────────┤ │
+│ │ 1  Foundations: wha… │ │
+│ │   1.1 What a langua… │ │
+│ │   1.2 Embeddings: t… │ │
+│ │ 2  From pipeline to… │ │
+│ │   2.1 When a straig… │ │
+│ ├──────────────────────┤ │
+│ │ [Write this course]  │ │
 │ └──────────────────────┘ │
-│        [ Notes ]         │
+│  [ Write this course ]   │
 └──────────────────────────┘
 ```
 
@@ -73,28 +78,96 @@ Archetype: `detail` — Read the chapter and write about it side by side.
 ```
         loading                     empty                      error
 ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ No note yet: the     │   │ ⚠                    │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ editor is open and   │   │ Compact ErrorState   │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ empty with the       │   │ in the panel: 'Your  │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ placeholder 'Write   │   │ notes didn't load'   │
-│                      │   │ about this chapter'; │   │ with Try again; the  │
-│                      │   │ the page is created  │   │ chapter stays        │
-│                      │   │ on the first         │   │ readable.            │
-│                      │   │ keystroke, not on    │   │                      │
-│                      │   │ open.                │   │ [ Try again ]        │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ Never empty: the     │   │ ⚠                    │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ review step only     │   │ A chat turn that     │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ shows once an        │   │ fails shows inline   │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ outline exists. A    │   │ under the message    │
+│                      │   │ chapter can't be     │   │ with Try again; the  │
+│                      │   │ removed below one    │   │ outline is           │
+│                      │   │ per module.          │   │ unchanged. Approve   │
+│                      │   │                      │   │ failing shows an     │
+│                      │   │ [ Write this course ]│   │ ErrorState with Try  │
+│                      │   │                      │   │ again.               │
 │                      │   │                      │   │                      │
-│                      │   │ [ Notes ]            │   │                      │
+│                      │   │                      │   │ [ Try again ]        │
 └──────────────────────┘   └──────────────────────┘   └──────────────────────┘
  Skeleton mirrors rows       one CTA, 3 lines max      retry, never raw text
 ```
 
-Success: The block editor with the chapter's note; it saves after a pause in typing and shows Saving / Saved.
+Success: The outline updates in place after each change, the changed chapters marked; Write this course continues the build.
 
 Held to:
 
-- B5 — exactly one <h1>, and it names the subject
-- B5 — content in at least two declared sections (data-section)
-- B5 — the primary action is pinned outside the scroll region
+- B7 — exactly one step on screen at a time
+- B7 — progress is declared and sits in the top half
+- B7 — a back affordance exists (data-back) and never destroys an answer
+
+### Interview summary · `/new (Confirm step)`
+
+Archetype: `sequence` — Choose whether to review the outline before writing.
+
+**Peak** — Generate course, knowing you'll see the outline before it's written
+
+**End** — the build starts and pauses at the outline
+
+**Desktop @1440**
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│ ▨ Acme      ⌕ Search…                                       ⌘K   ◐   ⬤     │
+├───────────────┬────────────────────────────────────────────────────────────┤
+│ Library       │ Interview summary                      [ Generate course ] │
+│ New course    │                                                            │
+│ Tutor         │                Step 1 of 2 — Ready to build                │
+│ Notes         │        ######################......................        │
+│ Sources       │                                                            │
+│ Settings      │        ┌──────────────────────────────────────────┐        │
+│ Interview sum…│        │ ☑  Let me review the outline before it'… │        │
+│               │        │ ──────────────────────────────────────── │        │
+│               │        │ [Generate course]                        │        │
+│               │        └──────────────────────────────────────────┘        │
+│               │                                                            │
+│               │        [ Back ]                            [ Next ]        │
+└───────────────┴────────────────────────────────────────────────────────────┘
+```
+
+**Mobile @390** — design intent; the probe measures 1280 / 1440 / 1920 only.
+
+```
+┌──────────────────────────┐
+│ ☰  Interview summary ⌕   │
+├──────────────────────────┤
+│ ┌──────────────────────┐ │
+│ │ ☑  Let me review th… │ │
+│ │ ──────────────────── │ │
+│ │ [Generate course]    │ │
+│ └──────────────────────┘ │
+│   [ Generate course ]    │
+└──────────────────────────┘
+```
+
+**States**
+
+```
+        loading                     empty                      error
+┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ n/a: always has a    │   │ ⚠                    │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ summary.             │   │ Could not start the  │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │                      │   │ build alert, as      │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ [ Generate course ]  │   │ today.               │
+│                      │   │                      │   │                      │
+│                      │   │                      │   │ [ Try again ]        │
+└──────────────────────┘   └──────────────────────┘   └──────────────────────┘
+ Skeleton mirrors rows       one CTA, 3 lines max      retry, never raw text
+```
+
+Success: The build starts; with the box ticked it pauses at the outline.
+
+Held to:
+
+- B7 — exactly one step on screen at a time
+- B7 — progress is declared and sits in the top half
+- B7 — a back affordance exists (data-back) and never destroys an answer
 
 ## Components
 
@@ -105,47 +178,66 @@ the choices between families live in
 
 | Surface | Control | Why this one | Not |
 | --- | --- | --- | --- |
-| chapter | `In-page side pane with ResizeHandle` | notes sit beside the text you're reading and stay put while you scroll; the same drag handle as the tutor panel, so widths behave the same | `Drawer (covers the text)` |
-| chapter | `Notes page's block editor (BlockEditorView)` | one editor across the app: chapter mentions, diagram and quiz blocks all work, and the page opens unchanged in Notes | `Textarea` |
-| chapter | `Header Button 'Notes' (toggle, open state remembered)` | one obvious way in, next to Ask the tutor; remembered so a note-taker doesn't reopen it every chapter | `Floating action button` |
+| review | `Stack of module and chapter rows with an ActionIcon remove` | the outline is a short ordered list to read and prune, not a sortable data set | `DataTable` |
+| review | `Own chat panel (ScrollArea + Textarea + Send)` | outline edits are one structured request and reply each, against the build's own endpoint; the CopilotKit tutor chat is built for the tutor agent and its tools | `CopilotChat` |
+| review | `Button 'Write this course' (primary) and the Stepper paused on Outline` | one clear next step; the stepper already tells you where the build is | `Modal confirm` |
+| summary | `Checkbox, checked by default` | a single on/off preference, defaulting to review | `Switch` |
 
 ## Data model
 
-- **NotePage (existing)**
-  - `chapterId`: string | null — already in the schema; marks the one notes page for a chapter
-  - `parentId`: string | null — chapter notes nest under one page per course
-  - _relations:_ at most one live page per chapter; nested under the course's notes page
+- **CoursePlan**
+  - `courseId`: string
+  - `outline`: CourseOutline — the course file format's outline, chapters gain an optional one-line summary
+  - `messages`: {role: 'user' | 'agent', text, at}[]
+  - `estimate`: {tokens: number} — rough cost to write this outline
+  - `approvedAt`: ISO date | null
+  - _relations:_ one per course, deleted with it
 
 ## API endpoints
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| GET | `/api/chapters/:id/note` | no | the chapter's notes page, or null |
-| POST | `/api/chapters/:id/note` | no | get-or-create it (nested under the course page); optional { append } adds a quoted passage |
+| GET | `/api/courses/:id/plan` | no | outline, chat, estimate, approved |
+| POST | `/api/courses/:id/plan/chat` | no | {message} → updated outline + one-line reply + changed keys |
+| POST | `/api/courses/:id/plan/remove` | no | {chapterKey} → updated outline (no model call) |
+| POST | `/api/courses/:id/plan/approve` | no | continue the build: writing phase |
 
 ## Integration points
 
 ```
-  Add to notes (selection)  ──▶  POST /chapters/:id/note { append }   (quotes go into the chapter's page and the panel opens, instead of a new page per quote)
-  ChapterPage header        ──▶  Notes toggle   (On this page outline hides while the panel is open)
-  tutor context             ──▶  noteId of the open chapter note   (the tutor can read what you wrote)
-  Notes page tree           ──▶  course page > chapter pages   (the same pages, editable either place)
+  jobs/pipeline.py (new)  ──▶  replaces the deepagents orchestrator   (code runs research → outline → [pause] → chapters (parallel) → diagrams → projects → review → fixes → save; one structured model call per artifact, each given only what it needs)
+  code checks             ──▶  before the AI reviewer   (word count, key idea, banned words, valid questions, every concept taught, module 1 foundations: one retry with the failure)
+  usage by stage          ──▶  job output   (tokens per stage recorded, so cost is measured, not guessed)
+  notify.py               ──▶  outline_ready notice   (you can leave while it plans)
+  evals/builder.py        ──▶  before vs after   (rubric score + tokens on the old Agentic RAG course and the new build)
 ```
 
 ## Blast radius
 
 ```
-new (3)
-  ├── src/pages/Chapter/ChapterNotes.tsx
-  ├── agent/tests/test_chapter_notes.py
-  └── src/test/chapter-notes.test.tsx
+new (8)
+  ├── agent/app/jobs/pipeline.py
+  ├── agent/app/api/plans.py
+  ├── agent/app/prompts/outline_chat.md
+  ├── agent/app/db/migrations/004_course_plans.sql
+  ├── agent/tests/test_pipeline.py
+  ├── agent/tests/test_plans.py
+  ├── src/pages/Generating/OutlineReview.tsx
+  └── src/test/outline-review.test.tsx
 
-changed (6)
-  ├── agent/app/api/chapters.py
+changed (13)
+  ├── agent/app/jobs/build_course.py
+  ├── agent/app/materialise.py
+  ├── agent/app/notify.py
+  ├── agent/app/api/courses.py
+  ├── agent/app/prompts/curriculum.md
+  ├── agent/app/prompts/writer.md
+  ├── agent/app/prompts/reviewer.md
+  ├── src/pages/Generating/GeneratingPage.tsx
+  ├── src/pages/NewCourse/NewCoursePage.tsx
+  ├── src/pages/Library/LibraryPage.tsx
   ├── src/api/services/coursewrightService.ts
   ├── src/hooks/useCoursewright.ts
-  ├── src/pages/Chapter/ChapterPage.tsx
-  ├── src/pages/Notes/NoteEditor.tsx
   └── src/mocks/handlers/coursewrightHandlers.ts
 ```
 

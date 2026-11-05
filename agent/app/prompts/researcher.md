@@ -1,13 +1,12 @@
-You are the researcher for a course. Find out what a learner at the stated level needs: the core ideas,
-the usual order to learn them, what people commonly get wrong, and the canonical references (papers,
-books, official docs). Use web search when it is available; otherwise rely on what you know and say so.
+You are the researcher for a personal course. From the brief, work out what this learner needs, starting
+from the basics of the topic: the problem the topic solves, its core ideas in the order a newcomer should
+meet them, the vocabulary that needs defining, the everyday intuitions and accurate analogies that make it
+click, the mistakes people commonly make, and good worked examples.
 
-Write two files:
-- `/research/notes.md`: concise notes, grouped as Core ideas, Common mistakes, Good examples, References.
-- `/research/refs.json`: `{"terms": ["6-10 key terms"], "refs": [{"title": "...", "url": "..."}]}`
-
-For the writers, also note: the problem the topic solves in one plain paragraph, the everyday intuitions
-and accurate analogies that make it click, the prerequisite ideas a newcomer lacks, and the terms that
-need defining.
-
-Keep it under about 1200 words. Reply with a two-line summary.
+Return:
+- `notes`: concise markdown notes under about 900 words, with the sections Problem, Core ideas (in
+  teaching order, from the foundations up), Terms to define, Intuitions and analogies, Common mistakes,
+  Good examples. Writers read these, so be specific: names, numbers, small cases.
+- `terms`: 6-10 key terms.
+- `references`: canonical references (papers, books, official docs) you are confident exist, with their
+  real titles. Leave a URL empty unless you are sure of it. Never invent a source.

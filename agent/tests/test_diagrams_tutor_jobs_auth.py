@@ -180,26 +180,6 @@ def test_materialise_loads_diagram_files(client, tmp_path):
     client.delete(f"/api/courses/{cid}")
 
 
-def test_progress_reports_diagrams_and_prime_is_silent(client, tmp_path):
-    from app.jobs import store
-    from app.jobs.build_course import Progress
-
-    jid = store.enqueue("build_course", {})
-    shutil.copytree(FIXTURES / "course_min", tmp_path / "course")
-    p = Progress(jid, tmp_path)
-    p.prime()  # resuming: existing files are not re-announced
-    (tmp_path / "course" / "diagrams").mkdir()
-    (tmp_path / "course" / "diagrams" / "c01-hashing.flow").write_text(GOOD_FLOW)
-    p.scan()
-    conn = connect()
-    try:
-        evs = rows(conn, "SELECT stage, message, payload FROM job_events WHERE job_id=? ORDER BY seq", (jid,))
-    finally:
-        conn.close()
-    assert [(e["stage"], e["message"]) for e in evs] == [("chapters", "Drew a movie for Hash functions")]
-    store.request_cancel(jid)
-
-
 # ---- job re-claim + resume ------------------------------------------------------------------------
 
 
@@ -383,20 +363,6 @@ def test_web_search_only_when_context_says_so():
     assert mw._with_tool(Req(state=off, runtime=SimpleNamespace(context=None), tools=["t"])).tools == ["t"]
 
 
-def test_builder_graph_has_diagrammer(tmp_path):
-    """The builder graph (with the diagrammer subagent and a checkpointer) builds without a key."""
-    from langgraph.checkpoint.memory import InMemorySaver
-
-    from app.agents.builder import build_agent
-
-    graph = build_agent(tmp_path, checkpointer=InMemorySaver())
-    assert graph.checkpointer is not None
-    assert (tmp_path / "course" / "diagrams").is_dir()
-    spec = diagrammer.subagent_spec(tmp_path / "course", None)
-    assert [t.name for t in spec["tools"]] == ["flow_check", "flow_story", "save_diagram"]
-    assert "Flowmovie" in spec["system_prompt"] and "save_diagram" in spec["system_prompt"]
-
-
 # ---- evals (no key: dataset sanity, structural grading, the runner refuses) ------------------------
 
 
@@ -437,23 +403,6 @@ def test_provider_switch(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_BASE_URL")
     monkeypatch.delenv("CW_MODEL")
     assert config.is_anthropic() and config.model() == "claude-opus-5-5"
-
-
-def test_progress_scan_tolerates_list_refs(tmp_path):
-    """Some models write research/refs.json as a bare list; progress must not crash the build."""
-    import json as _json
-
-    from app.jobs.build_course import Progress
-
-    (tmp_path / "research").mkdir()
-    (tmp_path / "course").mkdir()
-    (tmp_path / "research" / "refs.json").write_text(_json.dumps([{"title": "The Rust Book"}, "Rustonomicon"]))
-    events = []
-    p = Progress.__new__(Progress)
-    p.job_id, p.job_dir, p.seen_files, p.total_chapters = "j", tmp_path, set(), 0
-    p.emit = lambda stage, msg, payload=None: events.append((stage, payload))
-    p.scan()
-    assert events and events[0][1]["terms"] == ["The Rust Book", "Rustonomicon"]
 
 
 def test_interview_ends_on_repeat_and_at_cap(monkeypatch):

@@ -23,6 +23,8 @@ class CourseBrief(BaseModel):
     level: str | None = None
     goal: str | None = None
     pace: str | None = None
+    # Stop after the outline so the learner can reshape it before any chapter is written.
+    reviewOutline: bool = True
 
 
 class CreateCourse(BaseModel):

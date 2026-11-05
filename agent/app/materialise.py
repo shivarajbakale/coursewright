@@ -49,6 +49,7 @@ class ChapterSpec(Strict):
     title: str = Field(min_length=1)
     readingMinutes: int = Field(default=8, ge=1, le=120)
     conceptKeys: list[str] = []
+    summary: str = ""  # one line: what the chapter teaches (shown when you review the outline)
 
 
 class ModuleSpec(Strict):

@@ -244,6 +244,22 @@
         "Chrome on the real stack: Notes opens the panel; typing created 'Notes: Elections and timeouts' under the course page and saved the full sentence; Add to notes appended the quote to the same page; close/reopen kept the text; Open in Notes opened it; the next chapter opened its own empty notes (test pages removed afterwards)"
       ],
       "notes": "Spec: FEATURE-PLAN.md (chapter-notes.feature-plan.json)"
+    },
+    {
+      "id": "outline-review",
+      "priority": 13,
+      "area": "Course builder",
+      "title": "Outline review and a code-driven build pipeline",
+      "user_visible_behavior": "A build pauses after the outline; you reshape it in a chat or remove chapters, then Write this course continues. The build runs as a code-driven pipeline (one model call per artifact, checks in code, tokens recorded per stage).",
+      "status": "in_progress",
+      "verification": [
+        "make check",
+        "agent pytest",
+        "a real build on the Mac mini",
+        "builder eval before vs after"
+      ],
+      "evidence": [],
+      "notes": "Spec: FEATURE-PLAN.md (outline-review.feature-plan.json)"
     }
   ]
 }

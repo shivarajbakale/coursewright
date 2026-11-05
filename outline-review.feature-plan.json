@@ -1,0 +1,272 @@
+{
+  "feature": {
+    "id": "outline-review",
+    "title": "Shape the outline in a chat, then build it lean",
+    "problem": "A course is researched, outlined, written, illustrated and reviewed in one go, so the first time you see its shape it is finished: if it starts in the middle or has chapters you don't want, the only fix is to rebuild, after spending 10M+ tokens. The builder is one AI orchestrator that re-reads its growing conversation at every step (76 input tokens per output token in the last build) and can decide to rewrite whole modules.",
+    "nonGoals": [
+      "Editing a finished course (adding or removing chapters after writing) — a later feature.",
+      "Reordering by drag and drop; the chat and per-chapter remove cover the first version.",
+      "Changing the course file format beyond an optional one-line chapter summary."
+    ]
+  },
+  "surfaces": [
+    {
+      "id": "review",
+      "name": "Review the outline",
+      "route": "/courses/$courseId/building (outline step)",
+      "archetype": "sequence",
+      "moments": {
+        "peak": "you type 'add a chapter on embeddings before 1.2', and the outline updates with the new chapter highlighted",
+        "end": "you press Write this course and the build continues on the outline you agreed"
+      },
+      "purpose": "See the planned course before anything is written, and change it by asking.",
+      "primaryAction": "Write this course",
+      "panels": [
+        {
+          "id": "outline",
+          "kind": "table",
+          "toolbar": "Outline · 4 modules · 12 chapters · about 0.5M tokens to write",
+          "rows": [
+            [
+              "1  Foundations: what RAG is and why",
+              ""
+            ],
+            [
+              "  1.1 What a language model can and can't know",
+              "✕"
+            ],
+            [
+              "  1.2 Embeddings: turning text into numbers",
+              "✕"
+            ],
+            [
+              "2  From pipeline to agent",
+              ""
+            ],
+            [
+              "  2.1 When a straight line is not enough",
+              "✕"
+            ]
+          ],
+          "footer": "[Write this course]"
+        },
+        {
+          "id": "chat",
+          "kind": "detail",
+          "title": "Ask for changes",
+          "fields": [
+            {
+              "label": "You",
+              "value": "add a chapter on chunking before 1.3"
+            },
+            {
+              "label": "Agent",
+              "value": "Added 1.3 Chunking: splitting documents well. 13 chapters."
+            }
+          ],
+          "actions": [
+            "Send"
+          ]
+        }
+      ],
+      "states": {
+        "loading": "The build page shows Research and Outline as before; the outline panel appears when the outline is ready.",
+        "empty": "Never empty: the review step only shows once an outline exists. A chapter can't be removed below one per module.",
+        "error": "A chat turn that fails shows inline under the message with Try again; the outline is unchanged. Approve failing shows an ErrorState with Try again.",
+        "success": "The outline updates in place after each change, the changed chapters marked; Write this course continues the build."
+      }
+    },
+    {
+      "id": "summary",
+      "name": "Interview summary",
+      "route": "/new (Confirm step)",
+      "archetype": "sequence",
+      "moments": {
+        "peak": "Generate course, knowing you'll see the outline before it's written",
+        "end": "the build starts and pauses at the outline"
+      },
+      "purpose": "Choose whether to review the outline before writing.",
+      "primaryAction": "Generate course",
+      "panels": [
+        {
+          "id": "confirm",
+          "kind": "detail",
+          "title": "Ready to build",
+          "fields": [
+            {
+              "label": "☑",
+              "value": "Let me review the outline before it's written"
+            }
+          ],
+          "actions": [
+            "Generate course"
+          ]
+        },
+        {
+          "id": "brief",
+          "kind": "detail",
+          "title": "Your brief",
+          "fields": [
+            {
+              "label": "Level",
+              "value": "Built a basic RAG"
+            }
+          ]
+        }
+      ],
+      "states": {
+        "loading": "Generate shows its loading state as today.",
+        "empty": "n/a: always has a summary.",
+        "error": "Could not start the build alert, as today.",
+        "success": "The build starts; with the box ticked it pauses at the outline."
+      }
+    }
+  ],
+  "overlays": [],
+  "components": [
+    {
+      "surface": "review",
+      "control": "Stack of module and chapter rows with an ActionIcon remove",
+      "why": "the outline is a short ordered list to read and prune, not a sortable data set",
+      "rejected": "DataTable"
+    },
+    {
+      "surface": "review",
+      "control": "Own chat panel (ScrollArea + Textarea + Send)",
+      "why": "outline edits are one structured request and reply each, against the build's own endpoint; the CopilotKit tutor chat is built for the tutor agent and its tools",
+      "rejected": "CopilotChat"
+    },
+    {
+      "surface": "review",
+      "control": "Button 'Write this course' (primary) and the Stepper paused on Outline",
+      "why": "one clear next step; the stepper already tells you where the build is",
+      "rejected": "Modal confirm"
+    },
+    {
+      "surface": "summary",
+      "control": "Checkbox, checked by default",
+      "why": "a single on/off preference, defaulting to review",
+      "rejected": "Switch"
+    }
+  ],
+  "entities": [
+    {
+      "name": "CoursePlan",
+      "fields": [
+        {
+          "name": "courseId",
+          "type": "string"
+        },
+        {
+          "name": "outline",
+          "type": "CourseOutline",
+          "note": "the course file format's outline, chapters gain an optional one-line summary"
+        },
+        {
+          "name": "messages",
+          "type": "{role: 'user' | 'agent', text, at}[]"
+        },
+        {
+          "name": "estimate",
+          "type": "{tokens: number}",
+          "note": "rough cost to write this outline"
+        },
+        {
+          "name": "approvedAt",
+          "type": "ISO date | null"
+        }
+      ],
+      "relations": [
+        "one per course, deleted with it"
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/courses/:id/plan",
+      "auth": false,
+      "purpose": "outline, chat, estimate, approved"
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/:id/plan/chat",
+      "auth": false,
+      "purpose": "{message} → updated outline + one-line reply + changed keys"
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/:id/plan/remove",
+      "auth": false,
+      "purpose": "{chapterKey} → updated outline (no model call)"
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/:id/plan/approve",
+      "auth": false,
+      "purpose": "continue the build: writing phase"
+    }
+  ],
+  "integration": [
+    {
+      "from": "jobs/pipeline.py (new)",
+      "to": "replaces the deepagents orchestrator",
+      "note": "code runs research → outline → [pause] → chapters (parallel) → diagrams → projects → review → fixes → save; one structured model call per artifact, each given only what it needs"
+    },
+    {
+      "from": "code checks",
+      "to": "before the AI reviewer",
+      "note": "word count, key idea, banned words, valid questions, every concept taught, module 1 foundations: one retry with the failure"
+    },
+    {
+      "from": "usage by stage",
+      "to": "job output",
+      "note": "tokens per stage recorded, so cost is measured, not guessed"
+    },
+    {
+      "from": "notify.py",
+      "to": "outline_ready notice",
+      "note": "you can leave while it plans"
+    },
+    {
+      "from": "evals/builder.py",
+      "to": "before vs after",
+      "note": "rubric score + tokens on the old Agentic RAG course and the new build"
+    }
+  ],
+  "blastRadius": {
+    "new": [
+      "agent/app/jobs/pipeline.py",
+      "agent/app/api/plans.py",
+      "agent/app/prompts/outline_chat.md",
+      "agent/app/db/migrations/004_course_plans.sql",
+      "agent/tests/test_pipeline.py",
+      "agent/tests/test_plans.py",
+      "src/pages/Generating/OutlineReview.tsx",
+      "src/test/outline-review.test.tsx"
+    ],
+    "changed": [
+      "agent/app/jobs/build_course.py",
+      "agent/app/materialise.py",
+      "agent/app/notify.py",
+      "agent/app/api/courses.py",
+      "agent/app/prompts/curriculum.md",
+      "agent/app/prompts/writer.md",
+      "agent/app/prompts/reviewer.md",
+      "src/pages/Generating/GeneratingPage.tsx",
+      "src/pages/NewCourse/NewCoursePage.tsx",
+      "src/pages/Library/LibraryPage.tsx",
+      "src/api/services/coursewrightService.ts",
+      "src/hooks/useCoursewright.ts",
+      "src/mocks/handlers/coursewrightHandlers.ts"
+    ]
+  },
+  "nav": [
+    "Library",
+    "New course",
+    "Tutor",
+    "Notes",
+    "Sources",
+    "Settings"
+  ]
+}

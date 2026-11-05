@@ -32,6 +32,7 @@ SELECT c.*,
   (SELECT COUNT(*) FROM modules m WHERE m.course_id=c.id) AS module_count,
   (SELECT COUNT(*) FROM chapters ch WHERE ch.course_id=c.id) AS chapter_count,
   (SELECT COUNT(*) FROM projects p WHERE p.course_id=c.id) AS project_count,
+  (SELECT cp.approved_at IS NULL FROM course_plans cp WHERE cp.course_id=c.id) AS plan_pending,
   (SELECT COUNT(*) FROM chapters ch JOIN progress pr ON pr.chapter_id=ch.id
      WHERE ch.course_id=c.id AND pr.finished_at IS NOT NULL) AS chapters_done
 FROM courses c
@@ -53,6 +54,8 @@ def course_summary(r: sqlite3.Row) -> dict:
         "chaptersDone": r["chapters_done"],
         "jobId": r["job_id"] if r["status"] in ("planning", "building", "failed") else None,
         "lastOpenedChapterId": r["last_opened_chapter_id"],
+        # The build stopped at the outline and waits for you to review it.
+        "outlineReady": r["status"] == "planning" and bool(r["plan_pending"]),
     }
 
 

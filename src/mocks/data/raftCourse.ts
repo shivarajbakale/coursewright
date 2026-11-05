@@ -389,6 +389,7 @@ export function raftSummary(): CourseSummary {
     chaptersDone: doneChapters.size,
     jobId: null,
     lastOpenedChapterId: 'ch-2-2',
+    outlineReady: false,
   };
 }
 
@@ -454,6 +455,7 @@ export function buildingSummary(): CourseSummary {
     chaptersDone: 0,
     jobId: BUILDING_JOB_ID,
     lastOpenedChapterId: null,
+    outlineReady: false,
   };
 }
 

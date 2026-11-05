@@ -14,6 +14,7 @@ import {
   interviewService,
   jobService,
   noteService,
+  planService,
   projectService,
   sourceService,
   type InterviewAnswer,
@@ -26,6 +27,7 @@ export const cwKeys = {
   health: ['health'] as const,
   courses: ['courses'] as const,
   course: (id: string) => ['courses', id] as const,
+  plan: (courseId: string) => ['courses', courseId, 'plan'] as const,
   chapter: (id: string) => ['chapters', id] as const,
   project: (id: string) => ['projects', id] as const,
   submission: (id: string) => ['submissions', id] as const,
@@ -96,6 +98,43 @@ export function useResumeCourse() {
       qc.invalidateQueries({ queryKey: notificationKeys.all });
     },
     onError: (e: { message?: string }) => toast.error(e.message ?? 'Could not continue the build'),
+  });
+}
+
+// ── Outline review ────────────────────────────────────────────────────────
+export function usePlan(courseId: string, enabled = true) {
+  return useQuery({ queryKey: cwKeys.plan(courseId), queryFn: () => planService.get(courseId), enabled: !!courseId && enabled });
+}
+
+/** Ask for a change to the outline. The outline is replaced only when the change worked. */
+export function usePlanChat(courseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (message: string) => planService.chat(courseId, message),
+    onSuccess: (plan) => qc.setQueryData(cwKeys.plan(courseId), plan),
+  });
+}
+
+export function useRemovePlanChapter(courseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (chapterKey: string) => planService.remove(courseId, chapterKey),
+    onSuccess: (plan) => qc.setQueryData(cwKeys.plan(courseId), plan),
+    onError: (e: { message?: string }) => toast.error(e.message ?? 'Could not remove the chapter'),
+  });
+}
+
+/** Agree to the outline: the build continues and writes the course from it. */
+export function useApprovePlan(courseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => planService.approve(courseId),
+    onSuccess: ({ course }) => {
+      qc.setQueryData(cwKeys.course(courseId), (old: object | undefined) => (old ? { ...old, ...course } : old));
+      qc.invalidateQueries({ queryKey: cwKeys.courses });
+      qc.invalidateQueries({ queryKey: cwKeys.course(courseId) });
+      qc.invalidateQueries({ queryKey: notificationKeys.all });
+    },
   });
 }
 

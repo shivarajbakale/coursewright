@@ -5,20 +5,32 @@ from __future__ import annotations
 from app import config
 
 
-def test_every_course_writer_gets_the_explain_rules(monkeypatch, tmp_path):
-    import deepagents
+def test_every_stage_that_writes_for_the_learner_gets_the_explain_rules(monkeypatch, tmp_path):
+    """Each pipeline call that produces learner-facing text carries the shared rules."""
+    import asyncio
 
-    captured: dict = {}
-    monkeypatch.setattr(deepagents, "create_deep_agent", lambda **kw: captured.update(kw))
-    from app.agents.builder import build_agent
+    from app.agents import llm
+    from app.jobs import pipeline
 
-    build_agent(tmp_path, web_search=False)
-    prompts = {s["name"]: s["system_prompt"] for s in captured["subagents"] if "system_prompt" in s}
-    for name in ("curriculum", "writer", "project_designer", "reviewer"):
-        assert "How to explain: always from first principles" in prompts[name], name
-    assert "How to explain: always from first principles" in captured["system_prompt"]
+    seen: dict[str, str] = {}
+
+    async def fake_parse(*, system, schema, **_):
+        seen[schema.__name__] = system
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(llm, "parse", fake_parse)
+    run = pipeline.Run(None, tmp_path, {"topic": "Bloom filters"}, pipeline.Ledger(None), emit=lambda *a: None)
+    for coro in (run.research(), run.curriculum("notes")):
+        try:
+            asyncio.run(coro)
+        except RuntimeError:
+            pass
+    for name in ("ResearchOut", "CourseOutline"):
+        assert "How to explain: always from first principles" in seen[name], name
+    for name in ("writer", "project_designer", "reviewer", "curriculum", "outline_chat"):
+        assert config.prompt(name).strip(), name
     # The reviewer treats unclear writing as blocking, not as a suggestion.
-    assert "a term or acronym used before it is defined" in prompts["reviewer"]
+    assert "a term or acronym used before it is defined" in config.prompt("reviewer")
 
 
 def test_tutor_and_quizzes_explain_from_first_principles():
@@ -29,12 +41,13 @@ def test_tutor_and_quizzes_explain_from_first_principles():
 def test_every_course_starts_from_the_basics_and_stays_lean():
     fmt = config.prompt("course_format")
     assert "Every course starts from the basics, whatever the learner's level" in fmt
-    assert "At most about half the chapters get one" in fmt  # diagrams cost a draw-and-check loop each
     assert "Module 1 is always the foundations" in config.prompt("curriculum")
     assert "never more than 14" in config.prompt("curriculum")
     reviewer = config.prompt("reviewer")
-    assert "the course starts from the basics" in reviewer and "Blocking above 1400 words" in reviewer
-    assert "never more than 1200" in config.prompt("writer")
+    assert "the course starts from the basics" in reviewer
+    writer = config.prompt("writer")
+    assert "never more than 1200" in writer
+    assert "At most about half the chapters get one" in writer  # diagrams cost a draw-and-check loop each
     assert "never offer an option that skips them" in config.prompt("interviewer")
 
 
