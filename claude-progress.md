@@ -10,6 +10,16 @@
 
 ## Session Log
 
+### Session 008 — Public release (2026-11-05)
+
+- Published at https://github.com/shivarajbakale/coursewright (public, MIT).
+- Logo (public/brand/), web icons, BrandMark in the sidebar; README with a demo GIF and screenshots
+  (docs/media/, regenerated from mock mode with ?mock=demo).
+- kit packages vendored as tarballs in vendor/kit; a fresh clone with no sibling kit installs, type-checks,
+  passes 334 tests, builds and serves.
+- Commit emails rewritten to the owner's chosen public address before the first push; gitleaks clean
+  (seed-key false positives only). Local branch backup/pre-email-rewrite keeps the old history; not pushed.
+
 ### Session 007 — Resizable panes; notes beside a chapter (2026-11-05)
 
 - Tutor panel and Notes page list are resizable (`ResizeHandle` + `useResizableWidth`, widths remembered).
