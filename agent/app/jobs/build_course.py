@@ -199,16 +199,34 @@ async def run(job: dict) -> dict:
         store.emit(job_id, "research", f"Can't build the course: {msg}", {"error": msg})
         raise RuntimeError(msg)
 
-    from langchain_core.messages import HumanMessage
-
-    from app.agents.builder import build_agent
-
     job_dir = config.jobs_dir() / job_id
     job_dir.mkdir(parents=True, exist_ok=True)
     if not (job_dir / "brief.json").exists():
         (job_dir / "brief.json").write_text(json.dumps(brief, indent=2))  # for evals and debugging
     progress = Progress(job_id, job_dir)
     budget = config.build_token_budget()
+
+    # Resume shortcut: when every file the outline asks for is already on disk and parses, the agents
+    # have nothing left to write, so go straight to saving and indexing. A reviewer pass over a big
+    # course costs millions of input tokens for little gain, and a restarted build shouldn't redo it.
+    try:
+        await asyncio.to_thread(parse_course_folder, job_dir / "course")
+        files_complete = True
+    except Exception:  # noqa: BLE001 - missing or partial files: the agents still have work
+        files_complete = False
+    if files_complete:
+        await asyncio.to_thread(progress.prime)
+        progress.emit("projects", "All course files are written; saving the course", {})
+    else:
+        await _run_agents(job_id, job_dir, brief, progress, budget)
+    await _finish(job_id, course_id, job_dir, progress)
+    return {"courseId": course_id, "usage": {"inputTokens": progress.input_tokens, "outputTokens": progress.output_tokens}}
+
+
+async def _run_agents(job_id: str, job_dir, brief: dict, progress: "Progress", budget: int) -> None:
+    from langchain_core.messages import HumanMessage
+
+    from app.agents.builder import build_agent
 
     async with checkpoint.saver() as cp:
         resuming = await checkpoint.has_checkpoint(cp, job_id)
@@ -240,6 +258,9 @@ async def run(job: dict) -> dict:
             if progress.input_tokens + progress.output_tokens > budget:
                 raise RuntimeError(f"Token budget exceeded ({budget} tokens); raise CW_BUILD_TOKEN_BUDGET to allow more")
     await asyncio.to_thread(progress.scan)
+
+
+async def _finish(job_id: str, course_id: str, job_dir, progress: "Progress") -> None:
     await asyncio.to_thread(store.check_cancel, job_id)
 
     rejected = await asyncio.to_thread(validate_course_diagrams, job_dir / "course")
@@ -263,4 +284,3 @@ async def run(job: dict) -> dict:
     chunks = await ingest.ingest_course(course_id)
     progress.emit("index", f"Indexed {chunks} passages", {"chunks": chunks})
     progress.emit("done", "Your course is ready", {"courseId": course_id})
-    return {"courseId": course_id, "usage": {"inputTokens": progress.input_tokens, "outputTokens": progress.output_tokens}}
