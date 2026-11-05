@@ -69,14 +69,15 @@ def _save(course_id: str, outline: CourseOutline, messages: list[dict], workdir:
 
 
 def changed_keys(before: CourseOutline, after: CourseOutline) -> list[str]:
-    """Chapters that are new, or whose title, summary or concepts changed."""
-    old = {ch.key: ch for m in before.modules for ch in m.chapters}
-    out = []
-    for ch in (c for m in after.modules for c in m.chapters):
-        o = old.get(ch.key)
-        if o is None or (o.title, o.summary, o.conceptKeys) != (ch.title, ch.summary, ch.conceptKeys):
-            out.append(ch.key)
-    return out
+    """Chapters a learner would see as new or different: a new title, or a title they haven't seen."""
+    old_keys = {ch.key: ch.title for m in before.modules for ch in m.chapters}
+    old_titles = set(old_keys.values())
+    return [
+        ch.key
+        for m in after.modules
+        for ch in m.chapters
+        if ch.title not in old_titles or (ch.key in old_keys and old_keys[ch.key] != ch.title)
+    ]
 
 
 @router.get("/courses/{course_id}/plan")
@@ -109,7 +110,9 @@ async def chat(course_id: str, body: ChatIn):
     try:
         out, usage = await llm.parse(system=system, user=user, schema=pipeline.OutlineChatOut, max_tokens=8000)
         tokens += usage.get("inputTokens", 0) + usage.get("outputTokens", 0)
-        problems = pipeline.outline_problems(out.outline)
+        # Only problems this change introduced send it back: a question leaves the outline as it was.
+        known = set(pipeline.outline_problems(before))
+        problems = [x for x in pipeline.outline_problems(out.outline) if x not in known]
         if problems:
             retry = user + "\n\nYour previous outline had these problems. Fix every one:\n" + "\n".join(f"- {x}" for x in problems)
             out, usage = await llm.parse(system=system, user=retry, schema=pipeline.OutlineChatOut, max_tokens=8000)
@@ -121,14 +124,19 @@ async def chat(course_id: str, body: ChatIn):
         raise HTTPException(status_code=502, detail="The change couldn't be made, so the outline is unchanged. Try again.") from e
     after = pipeline.repair_outline(out.outline)
     changed = changed_keys(before, after)
+    reply = out.reply.strip()
+    count = sum(len(m.chapters) for m in after.modules)
+    if count > pipeline.MAX_CHAPTERS:
+        # The model's own count can be wrong; the reply says what is true.
+        reply += f" The outline has {count} chapters, over the limit of {pipeline.MAX_CHAPTERS}: ask me to merge or drop some."
     at = now()
     messages += [
         {"role": "user", "text": body.message.strip(), "at": at},
-        {"role": "agent", "text": out.reply.strip(), "at": at, "changed": changed, "tokens": tokens},
+        {"role": "agent", "text": reply, "at": at, "changed": changed, "tokens": tokens},
     ]
     await asyncio.to_thread(_save, course_id, after, messages, p["workdir"])
     c, p = await asyncio.to_thread(_load, course_id)
-    return ok({**plan_out(c, p), "reply": out.reply.strip(), "changed": changed})
+    return ok({**plan_out(c, p), "reply": reply, "changed": changed})
 
 
 class RemoveIn(BaseModel):

@@ -3,8 +3,8 @@ whole outline (so you know what comes before and after), the concepts earlier ch
 and this chapter's title, summary and concepts.
 
 Return:
-- `markdown`: the chapter, 700-1200 words of real teaching, never more than 1200 (cut a second example
-  before you go over). Start with `# <the chapter title>`, use `##` sections, and include exactly one
+- `markdown`: the chapter, about 900 words of real teaching, never more than 1200 (cut a second example
+  before you go over; code blocks don't count). Start with `# <the chapter title>`, use `##` sections, and include exactly one
   key-idea callout as a line `> **Key idea:** ...`. Include a fenced code block when the topic has code or
   pseudocode. No quiz in the markdown.
 - `questions`: 2-4 check-yourself questions, 3-4 options each, `answer` the 0-based index of the right

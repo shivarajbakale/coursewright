@@ -5,7 +5,7 @@ Concepts: 8-16 concepts, each with a kebab-case `key`, a `name` and a one-senten
 `from` is a prerequisite of `to`; the graph is acyclic.
 
 Outline: size it to the learner's pace, about 3-4 modules and 8-12 chapters for most courses,
-never more than 14. Each chapter teaches 1-3 concepts (`conceptKeys`) that depend only on concepts taught in earlier
+never more than 14 (count them before you answer). Each chapter teaches 1-3 concepts (`conceptKeys`) that depend only on concepts taught in earlier
 chapters or in the same chapter. Every concept is taught by some chapter. Each chapter has a one-line
 `summary` of what it teaches, in plain words. Chapter keys look like `c01-some-slug`, module keys `m1`,
 project keys `p1-some-slug`.
@@ -14,7 +14,10 @@ Module 1 is always the foundations, whatever the learner's level (see the rules 
 is, the problem it solves, the core vocabulary and the basic mechanism, from zero. For a learner who says
 they already know some of it, keep the foundations short (2-3 chapters that move quickly), but never skip
 them, and never write them as a recap: a learner who has "built a basic X" still gets chapters that
-explain X itself from zero (what it is, each of its parts and why it exists), as if they were new to it. The first chapter opens with the problem the topic solves and teaches concepts with no
+explain X itself from zero (what it is, each of its parts and why it exists), as if they were new to it.
+Start by listing the building blocks the topic's name assumes, and teach those first, in order: for
+"agentic RAG" that is what a language model can't know, what retrieval-augmented generation is, how
+documents are chunked, embedded and searched, and only then what an agent adds. The first chapter opens with the problem the topic solves and teaches concepts with no
 prerequisites. Every later concept is built from ones taught before it or from everyday experience.
 Chapter titles are plain words a newcomer understands, not jargon they haven't met yet.
 

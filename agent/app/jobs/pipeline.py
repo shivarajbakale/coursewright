@@ -152,7 +152,11 @@ def outline_problems(outline: CourseOutline) -> list[str]:
     problems = []
     chapters = [ch for m in outline.modules for ch in m.chapters]
     if len(chapters) > MAX_CHAPTERS:
-        problems.append(f"The outline has {len(chapters)} chapters; the most is {MAX_CHAPTERS}.")
+        over = len(chapters) - MAX_CHAPTERS
+        problems.append(
+            f"The outline has {len(chapters)} chapters; the most is {MAX_CHAPTERS}. Merge or drop {over} "
+            f"chapter{'s' if over > 1 else ''}, and count them again before you answer."
+        )
     taught = _taught_at(outline)
     names = {c.key: c.name for c in outline.concepts}
     for c in outline.concepts:
@@ -196,6 +200,19 @@ def word_count(markdown: str) -> int:
     return len(re.findall(r"[A-Za-z0-9][\w'-]*", prose))
 
 
+def tidy(out: ChapterOut, title: str) -> ChapterOut:
+    """What code fixes without asking: a missing `# title`, and a second key-idea callout (the first stays,
+    later ones become plain quotes)."""
+    md = out.markdown.strip()
+    if not md.startswith("# "):
+        md = f"# {title}\n\n{md}"
+    first = md.find(KEY_IDEA)
+    if first >= 0:
+        head, tail = md[: first + len(KEY_IDEA)], md[first + len(KEY_IDEA):]
+        md = head + tail.replace(KEY_IDEA, ">")
+    return out.model_copy(update={"markdown": md})
+
+
 def chapter_problems(out: ChapterOut, title: str) -> list[str]:
     md = out.markdown.strip()
     problems = []
@@ -234,7 +251,8 @@ def brief_text(brief: dict) -> str:
 def outline_text(outline: CourseOutline) -> str:
     """The outline as numbered lines, the cheapest form every stage can read."""
     names = {c.key: c.name for c in outline.concepts}
-    lines = [f"Course: {outline.title}"]
+    count = sum(len(m.chapters) for m in outline.modules)
+    lines = [f"Course: {outline.title} ({len(outline.modules)} modules, {count} chapters)"]
     for mi, m in enumerate(outline.modules, start=1):
         lines.append(f"{mi}. {m.title}" + (f" (project {m.projectKey})" if m.projectKey else ""))
         for ci, ch in enumerate(m.chapters, start=1):
@@ -280,15 +298,23 @@ class Run:
         return parsed
 
     async def checked(self, stage: str, *, system: str, user: str, schema: type[T], max_tokens: int,
-                      problems: Callable[[T], list[str]]) -> tuple[T, list[str]]:
-        """One call, checked in code; one retry that names the problems. Returns what's left."""
+                      problems: Callable[[T], list[str]], retries: int = 1,
+                      previous: Callable[[T], str] | None = None) -> tuple[T, list[str]]:
+        """One call, checked in code; up to `retries` more that name the problems. With `previous`, a retry
+        shows the model its last draft to revise (a fresh rewrite tends to repeat the problem). Returns what's
+        left."""
         out = await self.call(stage, system=system, user=user, schema=schema, max_tokens=max_tokens)
         found = problems(out)
-        if not found:
-            return out, []
-        retry = user + "\n\nYour previous answer had these problems. Fix every one:\n" + "\n".join(f"- {p}" for p in found)
-        out = await self.call(stage, system=system, user=retry, schema=schema, max_tokens=max_tokens)
-        return out, problems(out)
+        for _ in range(retries):
+            if not found:
+                break
+            shown = f"\n\nYour previous draft:\n{previous(out)}\n\nRevise that draft" if previous else (
+                "\n\nYour previous answer"
+            )
+            retry = user + shown + " to fix these problems, keeping everything else:\n" + "\n".join(f"- {p}" for p in found)
+            out = await self.call(stage, system=system, user=retry, schema=schema, max_tokens=max_tokens)
+            found = problems(out)
+        return out, found
 
     # -- plan ------------------------------------------------------------------------------------------
 
@@ -334,7 +360,7 @@ class Run:
             "curriculum",
             system=config.prompt("curriculum") + "\n\n" + rules(),
             user=f"{brief_text(self.brief)}\n\nResearch notes:\n{notes}",
-            schema=CourseOutline, max_tokens=8000, problems=outline_problems,
+            schema=CourseOutline, max_tokens=8000, problems=outline_problems, retries=2,
         )
         if left:
             log.info("outline problems left after a retry, repaired in code: %s", left)
@@ -387,8 +413,9 @@ class Run:
         out, left = await self.checked(
             "chapters", system=config.prompt("writer") + "\n\n" + rules(),
             user=self.chapter_prompt(outline, ch, notes), schema=ChapterOut, max_tokens=8000,
-            problems=lambda o: chapter_problems(o, ch.title),
+            problems=lambda o: chapter_problems(tidy(o, ch.title), ch.title), previous=lambda o: o.markdown,
         )
+        out = tidy(out, ch.title)
         if left:
             log.info("chapter %s kept with problems after a retry: %s", ch.key, left)
         self.write_chapter_files(ch.key, out)
@@ -502,7 +529,18 @@ class Run:
             schema=ReviewOut, max_tokens=4000,
         )
         by_key = {ch.key: ch for m in outline.modules for ch in m.chapters}
-        fixes = [b for b in out.blocking if b.chapterKey in by_key][:MAX_FIXES]
+        # Chapters still failing the code checks (kept after their retry) go first, then the review's.
+        flagged: dict[str, str] = {}
+        for key, ch in by_key.items():
+            md = (self.course / "chapters" / f"{key}.md").read_text()
+            ex = _load_json(self.course / "chapters" / f"{key}.json", ChapterExtras)
+            found = chapter_problems(tidy(ChapterOut(markdown=md, questions=ex.questions), ch.title), ch.title)
+            if found:
+                flagged[key] = " ".join(found)
+        for b in out.blocking:
+            if b.chapterKey in by_key:
+                flagged[b.chapterKey] = (flagged.get(b.chapterKey, "") + " " + b.problem).strip()
+        fixes = [Blocking(chapterKey=k, problem=v) for k, v in flagged.items()][:MAX_FIXES]
         if fixes:
             await self.emit("projects", f"Fixing {len(fixes)} chapter(s) the review flagged", {})
             await gather_limited([lambda b=b: self.fix(outline, by_key[b.chapterKey], b.problem, notes) for b in fixes],
@@ -520,8 +558,10 @@ class Run:
                 "Current questions:\n" + json.dumps([q.model_dump() for q in ex.questions])
                 + "\n\nReturn the whole chapter with the problem fixed, changing nothing else."
             ),
-            schema=ChapterOut, max_tokens=8000, problems=lambda o: chapter_problems(o, ch.title),
+            schema=ChapterOut, max_tokens=8000, problems=lambda o: chapter_problems(tidy(o, ch.title), ch.title),
+            previous=lambda o: o.markdown,
         )
+        out = tidy(out, ch.title)
         if not left:  # never replace a chapter with a worse one
             out.diagramRequest = ex.diagramRequest
             self.write_chapter_files(ch.key, out)

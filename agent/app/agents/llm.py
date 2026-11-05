@@ -125,7 +125,9 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
     }
     messages: list[dict] = [{"role": "user", "content": user}]
     usage = {"inputTokens": 0, "outputTokens": 0}
-    for _ in range(2):
+    empty = 0
+    invalid = 0
+    while True:
         msg = await client.messages.create(
             model=config.model(),
             max_tokens=max_tokens,
@@ -134,14 +136,22 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
             tools=[tool],
             tool_choice={"type": "tool", "name": "respond"},
         )
-        usage["inputTokens"] += msg.usage.input_tokens
-        usage["outputTokens"] += msg.usage.output_tokens
-        call = next((b for b in msg.content if getattr(b, "type", "") == "tool_use"), None)
+        if msg.usage:
+            usage["inputTokens"] += msg.usage.input_tokens or 0
+            usage["outputTokens"] += msg.usage.output_tokens or 0
+        # Some providers now and then return a reply with no content at all: ask again, twice at most.
+        call = next((b for b in (msg.content or []) if getattr(b, "type", "") == "tool_use"), None)
         if call is None:
-            raise RuntimeError(f"model returned no structured output (stop_reason={msg.stop_reason})")
+            empty += 1
+            if empty > 2:
+                raise RuntimeError(f"model returned no structured output (stop_reason={msg.stop_reason})")
+            continue
         try:
             return schema.model_validate(_repair(call.input, tool["input_schema"])), usage
         except ValidationError as e:
+            invalid += 1
+            if invalid > 1:
+                raise RuntimeError("model's structured output did not validate after a retry") from e
             # One retry, telling the model what was wrong.
             messages += [
                 {"role": "assistant", "content": [call.model_dump()]},
@@ -152,7 +162,6 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
                     ],
                 },
             ]
-    raise RuntimeError("model's structured output did not validate after a retry")
 
 
 async def parse(

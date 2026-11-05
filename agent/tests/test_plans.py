@@ -107,3 +107,24 @@ def test_plan_404s(client):
     assert client.get("/api/courses/nope/plan").status_code == 404
     cid = _job("build_course", {})["id"]  # a job, not a course
     assert client.get(f"/api/courses/{cid}/plan").status_code == 404
+
+
+def test_chat_reply_states_the_real_chapter_count(client, fake, monkeypatch):  # noqa: F811
+    """A model that says "14 chapters" over a longer outline is corrected by code, not believed."""
+    from app.agents import llm
+    from app.jobs import pipeline
+    from app.materialise import CourseOutline
+    from tests.test_pipeline import outline_data
+
+    cid, _ = _paused(client, "Long course")
+    data = outline_data()
+    data["modules"][1]["chapters"] = [
+        {"key": f"x{i:02d}", "title": f"Extra {i}", "summary": "", "conceptKeys": ["c"]} for i in range(13)
+    ]
+
+    async def long(**_):
+        return pipeline.OutlineChatOut(outline=CourseOutline.model_validate(data), reply="Done, 14 chapters."), {}
+
+    monkeypatch.setattr(llm, "parse", long)
+    reply = client.post(f"/api/courses/{cid}/plan/chat", json={"message": "add more"}).json()["data"]["reply"]
+    assert "15 chapters, over the limit of 14" in reply

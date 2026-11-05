@@ -189,3 +189,33 @@ def test_chapter_checks():
 def test_estimate_is_far_below_the_old_engine():
     est = pipeline.estimate_tokens(CourseOutline.model_validate(outline_data()))
     assert 50_000 < est < 200_000  # a 3-chapter course; the agent orchestrator spent millions
+
+
+def test_tidy_fixes_what_code_can():
+    out = pipeline.ChapterOut(markdown="Intro\n\n> **Key idea:** one\n\nMore\n\n> **Key idea:** two", questions=[])
+    md = pipeline.tidy(out, "Hashing").markdown
+    assert md.startswith("# Hashing\n") and md.count("> **Key idea:**") == 1 and "> two" in md
+
+
+def test_a_reply_with_no_content_is_asked_again(monkeypatch):
+    """A provider that returns an empty reply once doesn't sink the build."""
+    from types import SimpleNamespace
+
+    from app import config
+
+    replies = [
+        SimpleNamespace(content=None, stop_reason="end_turn", usage=None),
+        SimpleNamespace(
+            content=[SimpleNamespace(type="tool_use", id="t1", input={"notes": "n", "terms": ["a"]})],
+            stop_reason="tool_use", usage=SimpleNamespace(input_tokens=10, output_tokens=5),
+        ),
+    ]
+
+    class Messages:
+        async def create(self, **_):
+            return replies.pop(0)
+
+    monkeypatch.setattr(config, "is_anthropic", lambda: False)
+    monkeypatch.setattr(llm, "_client", lambda: SimpleNamespace(messages=Messages()))
+    out, usage = asyncio.run(llm.parse(system="s", user="u", schema=pipeline.ResearchOut))
+    assert out.notes == "n" and usage == {"inputTokens": 10, "outputTokens": 5} and not replies

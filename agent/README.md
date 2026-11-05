@@ -30,7 +30,7 @@ and quiz attempts (so weak spots show), and indexes it all. Seeding is idempoten
 | `GITHUB_TOKEN` | unset | Optional, raises GitHub API rate limits for project reviews. |
 | `CW_DB_PATH` | `agent/data/coursewright.db` | The SQLite file. Job working folders go in `<dir>/jobs/<job_id>/`. |
 | `CW_DISABLE_WORKER` | unset | `1` disables the background job worker (tests). |
-| `CW_BUILD_TOKEN_BUDGET` | `4000000` | Tokens after which a build stops polishing: a course whose files are all written is saved as it stands; an unfinished one keeps going, and only one still unfinished at 3x the budget stops. |
+| `CW_BUILD_TOKEN_BUDGET` | `2000000` | Tokens after which a build skips its optional stages (diagrams, the review pass) and saves the course as written. |
 | `CW_CONTEXTUALISE` | `1` | `0` skips Claude chunk contextualisation during ingest (a template context is always added). |
 | `CW_SHARED_SECRET` | unset | When set, every `/api/*` and `/agents/*` request must carry header `x-cw-secret` with this value (401 otherwise). `/api/health` and CORS preflights stay open. Unset = no auth (local). |
 | `CW_CORS_ORIGINS` | unset | Extra allowed CORS origins, comma separated. |
@@ -46,9 +46,11 @@ app/main.py            FastAPI app, lifespan (migrate, seed, checkpointer, tutor
 app/api/               routers (one per resource) + common.py serializers
 app/db/                sqlite helpers; migrations/*.sql applied at startup, tracked in schema_version
 app/rag/               chunk.py (structure-first), embed.py (voyage | local), ingest.py, search.py (hybrid)
-app/jobs/              store (jobs, job_events), worker, build_course, ingest_jobs, review_project
-app/agents/            llm.py (model factories), builder.py (deep agent), diagrammer.py (subagent, tools, make_movie),
-                       tutor.py (deep agent + tools), checkpoint.py (shared AsyncSqliteSaver)
+app/jobs/              store (jobs, job_events), worker, build_course, pipeline (the build stages), ingest_jobs,
+                       review_project
+app/api/plans.py       the outline review: GET plan, chat, remove a chapter, approve
+app/agents/            llm.py (model factories, structured output), diagrammer.py (make_movie, make_mermaid,
+                       DiagramSaver), tutor.py (deep agent + tools), checkpoint.py (the tutor's AsyncSqliteSaver)
 app/flowmovie.py       runs vendor/flowmovie/check.mjs and story.mjs under Node (temp file, 20 s timeout)
 app/materialise.py     strict Pydantic parsing of a course folder -> course tables in one transaction
 app/prompts/*.md       all system prompts
@@ -62,7 +64,7 @@ Dockerfile, start.sh, litestream.yml, fly.toml   deployment (see Deploy)
 
 - **SQLite**: one file, WAL, `busy_timeout=5000`, foreign keys on, sqlite-vec loaded on every connection.
   `chunk_vectors` is a `vec0` table (cosine, 1024 floats), `chunks_fts` an FTS5 table; both keyed by
-  `chunks.rowid`. LangGraph checkpoints live in the same file (`AsyncSqliteSaver`).
+  `chunks.rowid`. The tutor's LangGraph checkpoints live in the same file (`AsyncSqliteSaver`).
 - **Search**: vector top-50 + FTS5 (bm25) top-50, merged by reciprocal rank fusion (k=60), filtered by
   course/chapter/kind, reranked with Voyage when available.
 - **Jobs**: `jobs` + `job_events`; the worker claims with `BEGIN IMMEDIATE` + `UPDATE ... RETURNING`, runs up
@@ -72,23 +74,28 @@ Dockerfile, start.sh, litestream.yml, fly.toml   deployment (see Deploy)
   Cancel sets `cancel_requested`, which handlers check between steps. SSE (`/api/jobs/:id/events?after=`, or
   `Last-Event-ID`) replays from the DB then polls every 0.5 s; it closes after a `done` event or when the job
   is failed/cancelled.
-- **build_course**: `create_deep_agent` orchestrator (effort high) with subagents researcher (Claude
-  `web_search` server tool), curriculum, writer, diagrammer, project_designer (effort medium) and reviewer
-  (effort high). A `CompositeBackend` routes `/course/` and `/research/` to `FilesystemBackend`s under
-  `data/jobs/<job_id>/` (the brief is saved as `brief.json` there). Progress events come from `task` tool
-  calls and from files appearing on disk: `research/refs.json` -> research, `course/graph.json` -> concepts,
-  `outline.json` -> outline, each `chapters/*.md` and `diagrams/*` -> chapters, `projects/*.json` ->
-  projects. Then every `.flow` is checked once more (failures are moved aside as `.flow.rejected`),
-  materialise, ingest (`index`), `done`. The folder format is in `app/prompts/course_format.md`.
-- **Resume**: the builder graph uses the shared `AsyncSqliteSaver` with `thread_id = job id`. When a
-  re-claimed build already has a checkpoint, it streams with input `None`, which continues the same thread
-  from its last checkpoint (a subagent that was mid-flight reruns; files already on disk are kept and not
-  re-announced), and token usage carries on from the stored total.
+- **build_course**: plain code (`app/jobs/pipeline.py`) runs the stages in order, one structured
+  `llm.parse` call per artifact, all files under `data/jobs/<folder>/` (`brief.json`, `research/`,
+  `course/`). Plan: research (notes, terms, references), then the curriculum (concepts, edges, modules,
+  chapters with a one-line summary), checked in code (at most 14 chapters, every concept taught, every
+  prerequisite taught first, chapter 1 has none) with up to two retries naming the problems, then repaired
+  in code (untaught concepts and backwards edges dropped). With the brief's `reviewOutline` (the default for
+  new courses) the job ends there: the course stays `planning`, a `course_plans` row holds the outline and an
+  `outline_ready` notice is written. `POST /courses/:id/plan/approve` queues a second build_course job with
+  `{"workdir": <the first job's id>}`. Write: chapters four at a time, each given the brief, the notes, the
+  numbered outline, the concepts earlier chapters taught and its own spec, checked in code (`# title`,
+  450-1300 words of prose, one `> **Key idea:**`, no "simply/obviously/trivially", 2-4 questions) with one
+  retry; diagrams for at most half the chapters; a project per module in order; one review call over the
+  whole course and a targeted rewrite of at most four flagged chapters (kept only if it passes the checks).
+  Then every `.flow` is checked once more, materialise, ingest (`index`), `done`. Tokens are counted per
+  stage (`jobs.usage.stages`).
+- **Resume**: Continue re-queues the same job. Every stage skips what is already on disk and valid, so a
+  stopped build picks up where it was without asking the model for anything it already has.
 - **Diagrams**: writers put a `diagramRequest` (`title`, `show`, `shape: process|structure`) in each
-  chapter's `.json`. The `diagrammer` subagent (prompt = condensed Flowmovie syntax + storytelling,
-  `app/prompts/diagrammer.md`) picks Flowmovie for processes/protocols and Mermaid for structure, iterates
-  with `flow_check` / `flow_story`, and saves through `save_diagram`, which re-checks the movie, counts
-  failures per chapter and after 3 only accepts Mermaid. Materialise loads `diagrams/<key>.flow` (kind
+  chapter's `.json`. A `process` becomes a Flowmovie through `make_movie` (prompt = condensed Flowmovie
+  syntax + storytelling, `app/prompts/diagrammer.md`): draft, check, feed the errors back, at most four
+  tries, then Mermaid. A `structure` becomes Mermaid through `make_mermaid`. `DiagramSaver` checks a movie
+  again before it lands. Materialise loads `diagrams/<key>.flow` (kind
   `flow`, preferred) or `.mmd` (kind `mermaid`) into the `diagrams` table, titled from the request.
 - **Tutor**: `create_deep_agent` with `search_course`, `read_chapter`, `read_notes`, `get_progress`,
   `make_flow`, `make_quiz`, `CopilotKitMiddleware` and `WebSearchToggle`, wrapped in
