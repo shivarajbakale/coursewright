@@ -106,12 +106,23 @@ class Progress:
             self.emit = real_emit  # type: ignore[method-assign]
 
     def _read_json(self, p: Path) -> dict:
+        """The file as an object; a list (some models write refs as a bare list) becomes {"items": [...]}."""
         try:
-            return json.loads(p.read_text())
+            data = json.loads(p.read_text())
         except Exception:  # noqa: BLE001 - partially written file
             return {}
+        if isinstance(data, list):
+            return {"items": data}
+        return data if isinstance(data, dict) else {}
 
     def scan(self) -> None:
+        """Progress events from files on disk. Display only: a surprise in a file never stops the build."""
+        try:
+            self._scan()
+        except Exception:  # noqa: BLE001
+            log.warning("progress scan failed for job %s", self.job_id, exc_info=True)
+
+    def _scan(self) -> None:
         course = self.job_dir / "course"
         research = self.job_dir / "research"
         refs = research / "refs.json"
@@ -119,7 +130,10 @@ class Progress:
             data = self._read_json(refs)
             if data:
                 self.seen_files.add("refs")
-                self.emit("research", "Research notes ready", {"terms": [str(t) for t in data.get("terms", [])][:10]})
+                terms = data.get("terms") or [
+                    (i.get("title") or i.get("name") or "") if isinstance(i, dict) else str(i) for i in data.get("items", [])
+                ]
+                self.emit("research", "Research notes ready", {"terms": [str(t)[:40] for t in terms if t][:10]})
         graph = course / "graph.json"
         if graph.exists() and "graph" not in self.seen_files:
             data = self._read_json(graph)

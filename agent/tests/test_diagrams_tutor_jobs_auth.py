@@ -437,3 +437,20 @@ def test_provider_switch(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_BASE_URL")
     monkeypatch.delenv("CW_MODEL")
     assert config.is_anthropic() and config.model() == "claude-opus-5-5"
+
+
+def test_progress_scan_tolerates_list_refs(tmp_path):
+    """Some models write research/refs.json as a bare list; progress must not crash the build."""
+    import json as _json
+
+    from app.jobs.build_course import Progress
+
+    (tmp_path / "research").mkdir()
+    (tmp_path / "course").mkdir()
+    (tmp_path / "research" / "refs.json").write_text(_json.dumps([{"title": "The Rust Book"}, "Rustonomicon"]))
+    events = []
+    p = Progress.__new__(Progress)
+    p.job_id, p.job_dir, p.seen_files, p.total_chapters = "j", tmp_path, set(), 0
+    p.emit = lambda stage, msg, payload=None: events.append((stage, payload))
+    p.scan()
+    assert events and events[0][1]["terms"] == ["The Rust Book", "Rustonomicon"]
