@@ -13,6 +13,8 @@ schema is the Pydantic model's JSON schema, validated here.
 
 from __future__ import annotations
 
+import logging
+
 from typing import Literal, TypeVar
 
 from pydantic import BaseModel
@@ -21,6 +23,8 @@ from app import config
 
 Effort = Literal["low", "medium", "high", "xhigh", "max"]
 T = TypeVar("T", bound=BaseModel)
+
+log = logging.getLogger(__name__)
 
 
 class MissingKey(RuntimeError):
@@ -150,6 +154,7 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
             return schema.model_validate(_repair(call.input, tool["input_schema"])), usage
         except ValidationError as e:
             invalid += 1
+            log.info("%s did not validate (%d): %s", schema.__name__, invalid, str(e)[:600])
             if invalid > 1:
                 raise RuntimeError("model's structured output did not validate after a retry") from e
             # One retry, telling the model what was wrong.

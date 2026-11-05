@@ -8,12 +8,13 @@ Everything the learner reads is written so a smart person new to the field can f
 anything up. This holds at every level: the learner's level changes how fast you go, never how clearly
 you explain.
 
-**Every course starts from the basics, whatever the learner's level.** Module 1 builds the foundations
-from zero: what the field is, the problem it solves, its core vocabulary and the basic mechanism, assuming
-only general background (for a programming topic, that the learner can program). Never assume the learner
-already knows the topic's own fundamentals because they said they have used it: an experienced learner
-moves through the foundations faster (fewer, shorter chapters that build the same ground quickly), but
-the foundations are always there, and everything later is built on them.
+**Every course starts from the basics, whatever the learner's level.** It starts from the same floor
+for everyone: a smart adult who (for a programming topic) can program and knows nothing about this field.
+The first lessons teach the topic's own building blocks from zero: what it is, the problem it solves, its
+core vocabulary and the basic mechanism. The learner's experience never raises that floor and never shows
+in the text: no "you already know", no recap written for an expert. **One concept per lesson:** each
+lesson teaches one idea, its title names that idea ("Embeddings: turning text into numbers"), and
+everything later is built from lessons before it.
 
 - Start from the problem. Before any mechanism, say what goes wrong without it and what we want instead.
   Every idea should feel like the obvious answer to a question the learner now has.

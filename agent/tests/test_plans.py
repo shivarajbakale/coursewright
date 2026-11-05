@@ -77,7 +77,7 @@ def test_remove_drops_a_chapter_without_a_model_call(client, fake):  # noqa: F81
     res = client.post(f"/api/courses/{cid}/plan/remove", json={"chapterKey": "c02-bits"})
     outline = res.json()["data"]["outline"]
     assert [ch["key"] for ch in outline["modules"][0]["chapters"]] == ["c01-hashing"]
-    assert "b" not in {c["key"] for c in outline["concepts"]}  # nothing teaches it any more
+    assert "bits" not in {c["key"] for c in outline["concepts"]}  # nothing teaches it any more
     assert len(fake.calls) == calls
     # The last chapter of a module stays; a missing one is a 404.
     assert client.post(f"/api/courses/{cid}/plan/remove", json={"chapterKey": "c01-hashing"}).status_code == 409
@@ -99,7 +99,7 @@ def test_approve_writes_the_course_from_the_agreed_outline(client, fake):  # noq
     assert _status(cid) == "ready"
     course = client.get(f"/api/courses/{cid}").json()["data"]
     titles = [ch["title"] for m in course["modules"] for ch in m["chapters"]]
-    assert titles == ["Hashing from scratch", "Choosing the size"]  # c02 stayed removed
+    assert titles == ["Hashing: turning items into numbers", "Filter size: choosing how big to make it"]  # c02 stayed removed
     assert fake.calls.count("ResearchOut") == 1  # the writing job reused the plan's research
 
 
@@ -110,7 +110,7 @@ def test_plan_404s(client):
 
 
 def test_chat_reply_states_the_real_chapter_count(client, fake, monkeypatch):  # noqa: F811
-    """A model that says "14 chapters" over a longer outline is corrected by code, not believed."""
+    """A model that says "90 chapters" over a longer outline is corrected by code, not believed."""
     from app.agents import llm
     from app.jobs import pipeline
     from app.materialise import CourseOutline
@@ -119,12 +119,12 @@ def test_chat_reply_states_the_real_chapter_count(client, fake, monkeypatch):  #
     cid, _ = _paused(client, "Long course")
     data = outline_data()
     data["modules"][1]["chapters"] = [
-        {"key": f"x{i:02d}", "title": f"Extra {i}", "summary": "", "conceptKeys": ["c"]} for i in range(13)
+        {"key": f"x{i:02d}", "title": f"Extra {i}: one more", "summary": "", "conceptKeys": ["tuning"]} for i in range(89)
     ]
 
     async def long(**_):
-        return pipeline.OutlineChatOut(outline=CourseOutline.model_validate(data), reply="Done, 14 chapters."), {}
+        return pipeline.OutlineChatOut(outline=CourseOutline.model_validate(data), reply="Done, 90 chapters."), {}
 
     monkeypatch.setattr(llm, "parse", long)
     reply = client.post(f"/api/courses/{cid}/plan/chat", json={"message": "add more"}).json()["data"]["reply"]
-    assert "15 chapters, over the limit of 14" in reply
+    assert "91 chapters, over the limit of 90" in reply

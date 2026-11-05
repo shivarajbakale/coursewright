@@ -99,7 +99,7 @@ async def chat(course_id: str, body: ChatIn):
     messages = jload(p["messages"], [])
     history = "\n".join(f"{m['role']}: {m['text']}" for m in messages[-HISTORY:])
     user = (
-        f"{pipeline.brief_text(jload(c['brief'], {}))}\n\nCurrent outline (JSON):\n"
+        f"{pipeline.brief_text(jload(c['brief'], {}), level=False)}\n\nCurrent outline (JSON):\n"
         f"{before.model_dump_json(by_alias=True)}\n\nThe same outline, numbered as the learner sees it:\n"
         f"{pipeline.outline_text(before)}\n\n"
         + (f"Earlier in this conversation:\n{history}\n\n" if history else "")

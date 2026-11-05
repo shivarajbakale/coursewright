@@ -72,7 +72,7 @@ def worker_enabled() -> bool:
 
 
 def build_token_budget() -> int:
-    return int(os.environ.get("CW_BUILD_TOKEN_BUDGET", "2000000"))
+    return int(os.environ.get("CW_BUILD_TOKEN_BUDGET", "4000000"))
 
 
 def embed_model() -> str:

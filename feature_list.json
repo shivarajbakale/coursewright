@@ -47,7 +47,7 @@
         "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
         "npx vitest run: 327 passed",
         "ui-probe: 153 passed (all nine routes measured)",
-        "Playwright drove topic \u2192 4 questions \u2192 Generate against the real agent service; landed on /courses/<id>/building"
+        "Playwright drove topic → 4 questions → Generate against the real agent service; landed on /courses/<id>/building"
       ],
       "notes": "BLUEPRINT.md screen #2"
     },
@@ -142,7 +142,7 @@
         "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
         "npx vitest run: 327 passed",
         "ui-probe: 153 passed (all nine routes measured)",
-        "Browser \u2192 CopilotKit runtime (:4000) \u2192 POST /agents/tutor reached the agent; without a key the agent answered 503 and the UI showed a toast. Not yet run with a real Claude key."
+        "Browser → CopilotKit runtime (:4000) → POST /agents/tutor reached the agent; without a key the agent answered 503 and the UI showed a toast. Not yet run with a real Claude key."
       ],
       "notes": "BLUEPRINT.md screen #7"
     },
@@ -268,6 +268,23 @@
         "With the verify stage (per-chapter check of numbers, code, answer keys): fresh unattended build, same brief, 0.76M tokens (verify 41k, fixes 358k), 12 chapters; eval 4/5, 4/5 with accuracy 4/5 both runs: parity with the old engine at ~1/16 of its tokens. A verify answer that failed validation stopped the first attempt; fixed (optional stages never fail a build) and Continue finished it"
       ],
       "notes": "Spec: FEATURE-PLAN.md (outline-review.feature-plan.json)"
+    },
+    {
+      "id": "teach-from-zero",
+      "priority": 14,
+      "area": "Course builder",
+      "title": "Courses start from zero and teach one concept per lesson",
+      "user_visible_behavior": "Every course starts from the same floor whatever the learner's level, and teaches one concept per short lesson titled '<concept>: <plain words>', in an order where each lesson rests only on earlier ones. Each lesson ends with 'What you have now' and a 'Your map so far' diagram.",
+      "status": "in_progress",
+      "plan": "none: agent pipeline and prompts only, no screen changes (lessons render through the existing chapter page and its diagram cards)",
+      "verification": [
+        "agent pytest",
+        "teaching eval baseline vs new build",
+        "a real build on the Mac mini",
+        "make check"
+      ],
+      "evidence": [],
+      "notes": "Rules in agent/app/jobs/pedagogy.py; measured by agent/evals/teaching.py"
     }
   ]
 }

@@ -25,12 +25,12 @@ def test_every_stage_that_writes_for_the_learner_gets_the_explain_rules(monkeypa
             asyncio.run(coro)
         except RuntimeError:
             pass
-    for name in ("ResearchOut", "CourseOutline"):
+    for name in ("ResearchOut", "CurriculumOut"):
         assert "How to explain: always from first principles" in seen[name], name
-    for name in ("writer", "project_designer", "reviewer", "curriculum", "outline_chat"):
+    for name in ("writer", "project_designer", "beginner", "curriculum", "outline_chat"):
         assert config.prompt(name).strip(), name
-    # The reviewer treats unclear writing as blocking, not as a suggestion.
-    assert "a term or acronym used before it is defined" in config.prompt("reviewer")
+    # The beginner reader treats an unexplained term as a sticking point, not a style note.
+    assert "used without being explained" in config.prompt("beginner")
 
 
 def test_tutor_and_quizzes_explain_from_first_principles():
@@ -38,16 +38,17 @@ def test_tutor_and_quizzes_explain_from_first_principles():
     assert "Plain words" in config.prompt("quiz")
 
 
-def test_every_course_starts_from_the_basics_and_stays_lean():
+def test_every_course_starts_from_the_basics_one_concept_at_a_time():
     fmt = config.prompt("course_format")
     assert "Every course starts from the basics, whatever the learner's level" in fmt
-    assert "Module 1 is always the foundations" in config.prompt("curriculum")
-    assert "never more than 14" in config.prompt("curriculum")
-    reviewer = config.prompt("reviewer")
-    assert "the course starts from the basics" in reviewer
+    assert "One concept per lesson" in fmt
+    cur = config.prompt("curriculum")
+    assert "The learner's experience never raises the floor" in cur
+    assert "Each concept becomes exactly one lesson" in cur and "never more than 90" in cur
+    assert "Never a\n  slogan or teaser" in cur
     writer = config.prompt("writer")
-    assert "never more than 1200" in writer
-    assert "At most about half the chapters get one" in writer  # diagrams cost a draw-and-check loop each
+    assert "never more than 800" in writer and "Never write as if they have used or built" in writer
+    assert "Most lessons don't need one" in writer  # every lesson gets its map; movies cost a draw-and-check loop
     assert "never offer an option that skips them" in config.prompt("interviewer")
 
 
