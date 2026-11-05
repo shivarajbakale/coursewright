@@ -10,6 +10,17 @@
 
 ## Session Log
 
+### Session 009 — Outline review and the build pipeline (2026-11-05)
+
+- A build pauses after its outline (default; a checkbox in the interview turns it off). The learner
+  reshapes it by chat or removes chapters, then Write this course continues. New: course_plans table,
+  outline_ready notice, /courses/:id/plan endpoints, OutlineReview on the building page, Library badge.
+- The deepagents orchestrator is replaced by agent/app/jobs/pipeline.py: one structured call per piece,
+  checks in code with retries that revise the draft, tokens per stage on the job, resume by files on disk.
+- Measured on the Mac mini (MiniMax-M3): 0.66M tokens per course vs 11.9M. Builder eval: new 3/5 twice,
+  old 4/5 twice; the gap is accuracy (numbers and code in worked examples) and length (MiniMax overruns).
+- Open: a per-chapter accuracy check; chapter length on MiniMax. Unpushed commits since 653c251.
+
 ### Session 008 — Public release (2026-11-05)
 
 - Published at https://github.com/shivarajbakale/coursewright (public, MIT).

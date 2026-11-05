@@ -47,7 +47,7 @@
         "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
         "npx vitest run: 327 passed",
         "ui-probe: 153 passed (all nine routes measured)",
-        "Playwright drove topic → 4 questions → Generate against the real agent service; landed on /courses/<id>/building"
+        "Playwright drove topic \u2192 4 questions \u2192 Generate against the real agent service; landed on /courses/<id>/building"
       ],
       "notes": "BLUEPRINT.md screen #2"
     },
@@ -142,7 +142,7 @@
         "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
         "npx vitest run: 327 passed",
         "ui-probe: 153 passed (all nine routes measured)",
-        "Browser → CopilotKit runtime (:4000) → POST /agents/tutor reached the agent; without a key the agent answered 503 and the UI showed a toast. Not yet run with a real Claude key."
+        "Browser \u2192 CopilotKit runtime (:4000) \u2192 POST /agents/tutor reached the agent; without a key the agent answered 503 and the UI showed a toast. Not yet run with a real Claude key."
       ],
       "notes": "BLUEPRINT.md screen #7"
     },
@@ -251,14 +251,21 @@
       "area": "Course builder",
       "title": "Outline review and a code-driven build pipeline",
       "user_visible_behavior": "A build pauses after the outline; you reshape it in a chat or remove chapters, then Write this course continues. The build runs as a code-driven pipeline (one model call per artifact, checks in code, tokens recorded per stage).",
-      "status": "in_progress",
+      "status": "passing",
       "verification": [
         "make check",
         "agent pytest",
         "a real build on the Mac mini",
         "builder eval before vs after"
       ],
-      "evidence": [],
+      "evidence": [
+        "make check: green (outline-review.test.tsx new: remove, chat with a failed turn, approve)",
+        "cd agent && uv run pytest: 72 passed (test_pipeline.py, test_plans.py new; old orchestrator tests removed)",
+        "Headless Chromium on mock mode, dark 1440px and light 390px: interview checkbox, build pauses at the outline, chat adds a chapter marked Changed, remove, Library 'Outline ready', Write this course continues to the course; no page errors",
+        "Mac mini, MiniMax-M3, brief of the old 'Agentic RAG' course: plan 21k tokens; one real chat turn 22k tokens rebuilt module 1 from zero; writing failed once on an empty provider reply (fixed: retried), Continue resumed the same job skipping 14 written chapters; course ready",
+        "Fresh unattended build, same brief: 0.66M tokens in 9 minutes, 13 chapters (old engine: 11.9M tokens for the same brief; its rerun failed on 'database is locked')",
+        "Builder eval (MiniMax judge, noisy: the old course scored 3/5 and 4/5 on reruns): old engine 4/5, 4/5 (accuracy 4); new pipeline 3/5, 3/5 (accuracy 2-3, foundations 4, coverage 4-5). The new pipeline is ~18x cheaper but its chapters still carry arithmetic/code inconsistencies, and 9 of 13 run past 1300 words"
+      ],
       "notes": "Spec: FEATURE-PLAN.md (outline-review.feature-plan.json)"
     }
   ]
