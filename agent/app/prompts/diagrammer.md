@@ -76,6 +76,8 @@ Telling it well (the checker warns about these):
   matters ("The worker is busy, so job2 waits"), never a bare `#`.
 - Notes give the reason, rule or number behind one step (under ~140 characters); never restate the move,
   the player already narrates "X moves from A to B".
+- Captions, notes and labels are plain words a newcomer can read mid-animation: no unexplained acronym or
+  term the chapter hasn't defined, and the setup scene says what problem the movie is about.
 - One idea per scene; more than 8 events is crowded. Use `together` for things that really happen at once.
 - 3-10 places, every place used, every token does something. Short labels (under ~25 characters).
 - Use states for status (`running`, `queued`, `blocked`, `waiting`, `done`, `failed` have colors), counters

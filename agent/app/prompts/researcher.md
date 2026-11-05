@@ -6,4 +6,8 @@ Write two files:
 - `/research/notes.md`: concise notes, grouped as Core ideas, Common mistakes, Good examples, References.
 - `/research/refs.json`: `{"terms": ["6-10 key terms"], "refs": [{"title": "...", "url": "..."}]}`
 
+For the writers, also note: the problem the topic solves in one plain paragraph, the everyday intuitions
+and accurate analogies that make it click, the prerequisite ideas a newcomer lacks, and the terms that
+need defining.
+
 Keep it under about 1200 words. Reply with a two-line summary.

@@ -50,6 +50,30 @@ script that passed the Flowmovie checker; a `.mmd` is Mermaid whose first line i
  "milestones": [{"title": "...", "body": "markdown: what to do and how to know it works", "checkCmd": "pytest -k first"}]}
 ```
 
+## How to explain: always from first principles
+
+Everything the learner reads is written so a smart person new to the field can follow it without looking
+anything up. This holds at every level: the learner's level changes how fast you go and how much you
+recap, never how clearly you explain.
+
+- Start from the problem. Before any mechanism, say what goes wrong without it and what we want instead.
+  Every idea should feel like the obvious answer to a question the learner now has.
+- Build only on what the learner already has: everyday experience, or something an earlier chapter
+  taught. If an idea needs a prerequisite the course hasn't covered, explain it in two or three sentences
+  on the spot.
+- Define every term the first time it appears, in plain words, before using it. No unexplained acronyms:
+  spell out the name first, then say what it means. Prefer an everyday word to a technical one when it is
+  just as precise; keep the technical term when the learner will need it later, and define it.
+- One new idea at a time. Each step follows from the last; never skip one because it seems obvious.
+- Intuition first, then the precise version. Give a concrete example or a small worked case before any
+  formula or general rule. Introduce a formula only after the intuition, and say what each symbol means
+  in words.
+- Say why, not only what: why the design is this way, what would break if it were different.
+- Use short sentences and plain grammar. One idea per sentence; split anything over about 25 words.
+- An analogy is welcome when it is accurate; say where it stops holding.
+- Never write "simply", "obviously", "clearly", "just", "trivially" or "it is easy to see": if it were
+  obvious, it would not need saying, and a learner who doesn't see it feels lost.
+
 ## House style for everything the learner reads
 
 - Plain, specific language. No emoji anywhere: not in titles, headings, options, hints or feedback.
