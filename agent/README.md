@@ -24,6 +24,8 @@ and quiz attempts (so weak spots show), and indexes it all. Seeding is idempoten
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | unset | Claude (`claude-opus-5-5`). Without it the app still runs: the interview uses four fixed questions, course builds fail with a clear job event, reviews and the tutor return 503. |
+| `ANTHROPIC_BASE_URL` | unset | An Anthropic-compatible provider instead of Claude, e.g. `https://api.minimax.io/anthropic` for MiniMax. Then `effort`, structured outputs and server web search are off; structured calls use one forced tool call instead. |
+| `CW_MODEL` | `claude-opus-5-5` | The model for every agent, e.g. `MiniMax-M3`. |
 | `VOYAGE_API_KEY` | unset | Voyage `voyage-3.5` embeddings (1024 dims) and `rerank-2.5`. Without it a deterministic local hashed bag-of-words embedder (`local-hash-1024`, same dims) is used and rerank is skipped. Switching embedders schedules a reindex at startup. |
 | `GITHUB_TOKEN` | unset | Optional, raises GitHub API rate limits for project reviews. |
 | `CW_DB_PATH` | `agent/data/coursewright.db` | The SQLite file. Job working folders go in `<dir>/jobs/<job_id>/`. |

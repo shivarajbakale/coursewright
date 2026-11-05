@@ -9,7 +9,7 @@ from pathlib import Path
 _TMP = Path(tempfile.mkdtemp(prefix="cw-test-"))
 os.environ["CW_DB_PATH"] = str(_TMP / "test.db")
 os.environ["CW_DISABLE_WORKER"] = "1"
-for _k in ("ANTHROPIC_API_KEY", "VOYAGE_API_KEY", "GITHUB_TOKEN", "CW_SHARED_SECRET"):
+for _k in ("ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "CW_MODEL", "VOYAGE_API_KEY", "GITHUB_TOKEN", "CW_SHARED_SECRET"):
     os.environ.pop(_k, None)
     os.environ[_k] = ""  # also shadows agent/.env
 

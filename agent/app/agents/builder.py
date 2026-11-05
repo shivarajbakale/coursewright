@@ -43,7 +43,8 @@ def build_agent(job_dir: Path, *, web_search: bool = True, checkpointer=None):
             "Writes /research/notes.md and /research/refs.json.",
             "system_prompt": config.prompt("researcher"),
             "model": worker,
-            "tools": [WEB_SEARCH_TOOL] if web_search else [],
+            # Claude's server-side web search exists only on Anthropic's API.
+            "tools": [WEB_SEARCH_TOOL] if web_search and config.is_anthropic() else [],
         },
         {
             "name": "curriculum",

@@ -21,7 +21,7 @@ from langchain_core.tools import tool
 
 from app import config, flowmovie
 
-MAX_FLOW_ATTEMPTS = 3
+MAX_FLOW_ATTEMPTS = 4
 KEY = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _FENCE = re.compile(r"```[ \t]*(?:flow|flowmovie|mermaid|mmd)?[ \t]*\n(.*?)```", re.S)
 
@@ -163,6 +163,9 @@ async def make_movie(spec: str, *, model=None, max_tries: int = MAX_FLOW_ATTEMPT
         from app.agents.llm import chat_model
 
         model = chat_model("medium", max_tokens=16000)
+    # Drafts are internal: inside the tutor's make_flow tool, keep them out of the AG-UI chat stream
+    # (ag_ui_langgraph skips model events whose metadata says emit-messages False).
+    model = model.with_config(metadata={"emit-messages": False, "emit-tool-calls": False})
     ask = (
         f"Draw this as a Flowmovie:\n\n{spec.strip()}\n"
         + (f"\nWhat the course says about it (use its names and numbers):\n{context.strip()}\n" if context.strip() else "")

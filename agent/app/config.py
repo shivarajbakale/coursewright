@@ -11,7 +11,6 @@ AGENT_DIR = Path(__file__).resolve().parent.parent
 APP_DIR = AGENT_DIR / "app"
 PROMPTS_DIR = APP_DIR / "prompts"
 
-MODEL = "claude-opus-5-5"
 EMBED_DIMS = 1024
 VOYAGE_EMBED_MODEL = "voyage-3.5"
 VOYAGE_RERANK_MODEL = "rerank-2.5"
@@ -38,6 +37,22 @@ def data_dir() -> Path:
 
 def jobs_dir() -> Path:
     return data_dir() / "jobs"
+
+
+def model() -> str:
+    """The chat model. Claude by default; any Anthropic-compatible provider via CW_MODEL + ANTHROPIC_BASE_URL."""
+    return os.environ.get("CW_MODEL") or "claude-opus-5-5"
+
+
+def anthropic_base_url() -> str | None:
+    """Set to use an Anthropic-compatible provider, e.g. https://api.minimax.io/anthropic for MiniMax."""
+    return os.environ.get("ANTHROPIC_BASE_URL") or None
+
+
+def is_anthropic() -> bool:
+    """True for Anthropic's own API. Other providers lack effort, structured outputs and server tools."""
+    url = anthropic_base_url()
+    return url is None or "anthropic.com" in url
 
 
 def anthropic_key() -> str | None:

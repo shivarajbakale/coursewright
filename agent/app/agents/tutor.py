@@ -314,7 +314,7 @@ class WebSearchToggle(AgentMiddleware):
     `webSearch: true` (bound per run, per model call; off by default)."""
 
     def _with_tool(self, request: ModelRequest) -> ModelRequest:
-        if not web_search_enabled(request.state, getattr(request.runtime, "context", None)):
+        if not config.is_anthropic() or not web_search_enabled(request.state, getattr(request.runtime, "context", None)):
             return request
         if any(isinstance(t, dict) and t.get("name") == "web_search" for t in request.tools or []):
             return request

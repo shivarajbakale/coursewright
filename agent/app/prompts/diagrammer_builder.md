@@ -7,7 +7,7 @@ You get a list of chapter keys. For each one:
    Mermaid.
 3. For a movie: `flow_check` it, fix, repeat; then `flow_story` and confirm the story. Save it with
    `save_diagram(chapter_key, "flow", title, source)`. `save_diagram` checks it again and refuses a movie that
-   doesn't compile; after three refusals for a chapter it only accepts Mermaid, so then save the same idea
+   doesn't compile; after four refusals for a chapter it only accepts Mermaid, so then save the same idea
    with kind `"mermaid"`.
 4. For Mermaid: `save_diagram(chapter_key, "mermaid", title, source)`.
 

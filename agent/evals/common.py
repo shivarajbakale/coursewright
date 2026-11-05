@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from app import config
 
-JUDGE_MODEL = "claude-opus-5-5"
+JUDGE_MODEL = None  # the configured model (config.model()); set CW_JUDGE_MODEL to grade with another
 # Claude Opus 5.5 list prices, USD per million tokens (first-party API). Estimates only.
 PRICE_IN = 4.00
 PRICE_OUT = 20.00
@@ -55,12 +55,19 @@ def require_key_or_exit() -> None:
 
 
 async def judge(*, system: str, user: str, schema: type[T], effort: str = "high", max_tokens: int = 8000) -> tuple[T, dict]:
-    """Claude as the grader, structured output (messages.parse) so every verdict has the same shape."""
+    """The grader, with structured output so every verdict has the same shape."""
+    import os
+
     import anthropic
 
+    from app.agents import llm
+
+    judge_model = os.environ.get("CW_JUDGE_MODEL") or config.model()
+    if not config.is_anthropic():
+        return await llm._parse_with_tool(system=system, user=user, schema=schema, max_tokens=max_tokens)
     client = anthropic.AsyncAnthropic(api_key=config.anthropic_key())
     msg = await client.messages.parse(
-        model=JUDGE_MODEL,
+        model=judge_model,
         max_tokens=max_tokens,
         system=system,
         messages=[{"role": "user", "content": user}],

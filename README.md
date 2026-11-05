@@ -24,7 +24,15 @@ echo "ANTHROPIC_API_KEY=sk-ant-..." >> agent/.env     # optional: VOYAGE_API_KEY
 npm run dev:stack    # agent :8123, runtime :4000, web :5173
 ```
 
-Without `ANTHROPIC_API_KEY` everything except Claude works: the seeded Raft course, reading, quizzes,
+To use MiniMax instead of Claude (its Anthropic-compatible API), put these in `agent/.env`:
+
+```
+ANTHROPIC_API_KEY=<your MiniMax key>
+ANTHROPIC_BASE_URL=https://api.minimax.io/anthropic
+CW_MODEL=MiniMax-M3
+```
+
+Without `ANTHROPIC_API_KEY` everything except the model works: the seeded Raft course, reading, quizzes,
 progress, notes, sources and retrieval. The interview falls back to four fixed questions, course builds
 fail with a clear message, and the tutor says it has no key. Without `VOYAGE_API_KEY` retrieval uses a
 local hashed embedder.

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Alert, Box, Skeleton, useComputedColorScheme } from '@mantine/core';
+import { Alert, Box, Code, Skeleton, useComputedColorScheme } from '@mantine/core';
 
 /**
  * Renders Mermaid source to SVG on the client (mermaid is loaded lazily, it is
@@ -31,10 +31,13 @@ export function MermaidDiagram({ source }: { source: string }) {
     };
   }, [id, source, scheme]);
 
+  // A generated diagram can have a syntax slip; show its text instead of a parser dump.
   if (error)
     return (
-      <Alert color="red" variant="light" title="Diagram failed to render">
-        {error}
+      <Alert color="yellow" variant="light" title="This diagram has a syntax error, so here is its text">
+        <Code block mah={240} style={{ overflow: 'auto' }}>
+          {source}
+        </Code>
       </Alert>
     );
   return (

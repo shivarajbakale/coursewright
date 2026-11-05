@@ -116,10 +116,11 @@ def test_save_diagram_enforces_check_and_mermaid_fallback(tmp_path):
 
 @needs_node
 def test_make_movie_retries_then_falls_back_to_mermaid():
-    model = FakeListChatModel(responses=[fenced(BAD_FLOW)] * 3 + [fenced(GOOD_MERMAID, "mermaid")])
+    n = diagrammer.MAX_FLOW_ATTEMPTS
+    model = FakeListChatModel(responses=[fenced(BAD_FLOW)] * n + [fenced(GOOD_MERMAID, "mermaid")])
     out = asyncio.run(diagrammer.make_movie("the TCP handshake", model=model))
     assert out["kind"] == "mermaid" and out["title"] == "Lookup"
-    assert out["source"].startswith("%% title: Lookup") and out["attempts"] == 3 and len(out["errors"]) == 3
+    assert out["source"].startswith("%% title: Lookup") and out["attempts"] == n and len(out["errors"]) == n
 
 
 @needs_node
@@ -419,3 +420,20 @@ def test_eval_dataset_and_runner_without_key(capsys):
     out = capsys.readouterr()
     assert "Cost estimate" in out.out and "ANTHROPIC_API_KEY is not set" in out.err
     assert main(["interviewer", "--estimate"]) == 0
+
+
+def test_provider_switch(monkeypatch):
+    """An Anthropic-compatible provider (MiniMax) drops Claude-only features."""
+    from app import config
+    from app.agents import llm
+
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://api.minimax.io/anthropic")
+    monkeypatch.setenv("CW_MODEL", "MiniMax-M3")
+    assert not config.is_anthropic()
+    assert config.model() == "MiniMax-M3"
+    m = llm.chat_model("high")
+    assert m.model == "MiniMax-M3"
+    assert getattr(m, "effort", None) in (None, "")
+    monkeypatch.delenv("ANTHROPIC_BASE_URL")
+    monkeypatch.delenv("CW_MODEL")
+    assert config.is_anthropic() and config.model() == "claude-opus-5-5"
