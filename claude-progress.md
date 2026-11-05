@@ -10,6 +10,16 @@
 
 ## Session Log
 
+### Session 003 — Interview hardening (2026-11-05)
+
+- New course is keyboard-first: number keys pick, Enter continues, one progress bar, a quiet brief beside
+  the step. Enter on a focused button no longer submits twice.
+- Agent interview: answers carry their header; a repeated question or the cap ends the interview with a
+  model-worded summary (falls back to a plain one). Structured output inlines `$ref`s and repairs
+  near-miss shapes (string booleans, `{"item": [...]}` arrays, hoisted fields).
+- Verified: make check green (153 probe), agent pytest 45; interview driven to Generate in Chrome on MSW.
+- Still unverified: the live model path for the interview.
+
 ### Session 002 — Finishing pass (2026-11-05)
 
 - Retired storybook-lint R8 (owner: stories are a waste; DECISIONS.md).

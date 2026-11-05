@@ -23,6 +23,7 @@ MAX_QUESTIONS = 6
 class Answer(BaseModel):
     question: str
     answer: list[str] = []
+    header: str | None = None  # the question's short header ("Level"), sent back so repeats can be caught
 
 
 class InterviewIn(BaseModel):
@@ -45,12 +46,25 @@ class InterviewQuestion(BaseModel):
 
 
 class ClaudeStep(BaseModel):
-    done: bool
-    question: InterviewQuestion | None
-    summary: str | None
-    level: str | None
-    goal: str | None
-    pace: str | None
+    # Every field but `done` is optional: a model that leaves out `level` on a question step, or
+    # `question` on a final step, must not fail validation.
+    done: bool = False
+    question: InterviewQuestion | None = None
+    summary: str | None = None
+    level: str | None = None
+    goal: str | None = None
+    pace: str | None = None
+
+
+class ClaudeSummary(BaseModel):
+    summary: str
+    level: str | None = None
+    goal: str | None = None
+    pace: str | None = None
+
+
+def _norm(s: str | None) -> str:
+    return " ".join((s or "").lower().split())
 
 
 def _fallback_questions(topic: str) -> list[dict]:
@@ -126,29 +140,64 @@ def _fallback(body: InterviewIn) -> dict:
     return {"question": None, "done": True, "summary": summary, "level": level, "goal": goal, "pace": pace}
 
 
+def _transcript(body: InterviewIn) -> list[str]:
+    lines = [f"Topic: {body.topic.strip()}", f"Questions answered so far: {len(body.answers)} (max {MAX_QUESTIONS})"]
+    for i, a in enumerate(body.answers, 1):
+        head = f" [{a.header}]" if a.header else ""
+        lines.append(f"{i}.{head} Q: {a.question}\n   A: {', '.join(a.answer) or '(skipped)'}")
+    return lines
+
+
+async def _finish(body: InterviewIn) -> dict:
+    """The closing summary. Code decides that the interview is over; the model only words it."""
+    from app.agents.llm import parse
+
+    try:
+        s, _ = await parse(
+            system=config.prompt("interviewer"),
+            user="\n".join(_transcript(body))
+            + "\n\nThe interview is over. Write the 2-3 sentence summary of the course you will build, and fill "
+            "level, goal and pace from the answers.",
+            schema=ClaudeSummary,
+            effort="low",
+            max_tokens=2000,
+        )
+        out = {"question": None, "done": True, "summary": s.summary}
+        out.update({k: v for k, v in (("level", s.level), ("goal", s.goal), ("pace", s.pace)) if v})
+        return out
+    except Exception:  # noqa: BLE001 - a summary is a nicety; never strand the learner before Generate
+        log.warning("interview summary failed; using the plain one", exc_info=True)
+        return _fallback(InterviewIn(topic=body.topic, answers=body.answers)) if len(body.answers) >= 4 else {
+            "question": None, "done": True, "summary": f"A course on {body.topic.strip()} shaped by your answers."
+        }
+
+
 async def _claude(body: InterviewIn) -> dict:
     from app.agents.llm import parse
 
-    lines = [f"Topic: {body.topic.strip()}", f"Questions answered so far: {len(body.answers)} (max {MAX_QUESTIONS})"]
-    for i, a in enumerate(body.answers, 1):
-        lines.append(f"{i}. Q: {a.question}\n   A: {', '.join(a.answer) or '(skipped)'}")
     if len(body.answers) >= MAX_QUESTIONS:
-        lines.append("You have asked the maximum number of questions: set done = true now.")
+        return await _finish(body)
     step, _usage = await parse(
         system=config.prompt("interviewer"),
-        user="\n".join(lines),
+        user="\n".join(_transcript(body))
+        + "\n\nAsk about something not covered above, or set done = true if you know enough.",
         schema=ClaudeStep,
         effort="low",
         max_tokens=4000,
     )
-    if len(body.answers) >= MAX_QUESTIONS:
-        step.done = True
     if step.done or step.question is None:
-        out = {"question": None, "done": True, "summary": step.summary or "Your course is ready to build."}
-        for k in ("level", "goal", "pace"):
-            if getattr(step, k):
-                out[k] = getattr(step, k)
-        return out
+        return await _finish(body) if not step.summary else {
+            "question": None,
+            "done": True,
+            "summary": step.summary,
+            **{k: v for k, v in (("level", step.level), ("goal", step.goal), ("pace", step.pace)) if v},
+        }
+    # A model can loop on a topic it already asked about. A repeated header or question means it has
+    # nothing new to ask: end the interview instead of asking twice.
+    asked = {_norm(a.header) for a in body.answers if a.header} | {_norm(a.question) for a in body.answers}
+    if _norm(step.question.header) in asked or _norm(step.question.question) in asked:
+        log.info("interviewer repeated %r; finishing", step.question.header)
+        return await _finish(body)
     q = step.question.model_dump()
     # Guarantee exactly one recommended option.
     recs = [i for i, o in enumerate(q["options"]) if o.get("recommended")]

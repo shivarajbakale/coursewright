@@ -54,6 +54,59 @@ def chat_model(effort: Effort = "medium", max_tokens: int = 16000):
     )
 
 
+def _inline_refs(schema: dict) -> dict:
+    """The Pydantic JSON schema with every `$ref` replaced by its definition. Some providers handle a
+    flat schema far better than `$defs` + `$ref`."""
+    defs = schema.get("$defs", {})
+
+    def walk(node):
+        if isinstance(node, dict):
+            if "$ref" in node:
+                return walk(defs[node["$ref"].split("/")[-1]])
+            return {k: walk(v) for k, v in node.items() if k != "$defs"}
+        if isinstance(node, list):
+            return [walk(v) for v in node]
+        return node
+
+    return walk(schema)
+
+
+def _repair(value, schema: dict):
+    """Coerce near-misses some models produce into the schema's shape before validation:
+    "true"/"false"/"3" strings for booleans and integers, arrays wrapped as {"item": [...]}, and a
+    nested object's fields hoisted to its parent. Anything else is left for Pydantic to judge."""
+    if "anyOf" in schema:
+        non_null = [s for s in schema["anyOf"] if s.get("type") != "null"]
+        if value is None or not non_null:
+            return value
+        schema = non_null[0]
+    kind = schema.get("type")
+    if kind == "boolean" and isinstance(value, str) and value.lower() in ("true", "false"):
+        return value.lower() == "true"
+    if kind == "integer" and isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        return int(value)
+    if kind == "array":
+        if isinstance(value, dict) and len(value) == 1 and isinstance(next(iter(value.values())), list):
+            value = next(iter(value.values()))
+        if isinstance(value, list):
+            return [_repair(v, schema.get("items", {})) for v in value]
+        return value
+    if kind == "object" and isinstance(value, dict):
+        props = schema.get("properties", {})
+        value = dict(value)
+        for name, sub in props.items():
+            sub_obj = sub
+            if "anyOf" in sub:
+                sub_obj = next((s for s in sub["anyOf"] if s.get("type") == "object"), sub)
+            if sub_obj.get("type") == "object" and isinstance(value.get(name), dict):
+                child_props = sub_obj.get("properties", {})
+                for key in list(value):
+                    if key in child_props and key not in props and key not in value[name]:
+                        value[name][key] = value.pop(key)  # hoisted field: put it back in its object
+        return {k: (_repair(v, props[k]) if k in props else v) for k, v in value.items()}
+    return value
+
+
 def _client():
     import anthropic
 
@@ -68,7 +121,7 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
     tool = {
         "name": "respond",
         "description": "Return the answer in exactly this structure.",
-        "input_schema": schema.model_json_schema(),
+        "input_schema": _inline_refs(schema.model_json_schema()),
     }
     messages: list[dict] = [{"role": "user", "content": user}]
     usage = {"inputTokens": 0, "outputTokens": 0}
@@ -87,7 +140,7 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
         if call is None:
             raise RuntimeError(f"model returned no structured output (stop_reason={msg.stop_reason})")
         try:
-            return schema.model_validate(call.input), usage
+            return schema.model_validate(_repair(call.input, tool["input_schema"])), usage
         except ValidationError as e:
             # One retry, telling the model what was wrong.
             messages += [

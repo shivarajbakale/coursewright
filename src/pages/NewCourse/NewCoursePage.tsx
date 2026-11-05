@@ -1,26 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Badge,
+  Box,
   Button,
-  Card,
   Checkbox,
-  Grid,
+  Divider,
   Group,
   Kbd,
   Loader,
   Progress,
   Radio,
   Stack,
-  Stepper,
   Text,
-  Textarea,
   TextInput,
-  Timeline,
   Title,
+  UnstyledButton,
 } from '@mantine/core';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight, Check, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { PageShell } from '@/components/page-shell';
 import { AnchorLink } from '@/components/links';
 import { Reveal } from '@/components/reveal';
@@ -32,13 +29,14 @@ const MAX_QUESTIONS = 6;
 const SUGGESTIONS = ['Raft consensus', 'Rust ownership and borrowing', 'How Postgres executes a query', 'Transformers from scratch'];
 
 type Phase = 'topic' | 'asking' | 'summary';
-const PHASES: Phase[] = ['topic', 'asking', 'summary'];
+type Answered = InterviewAnswer & { header: string };
 
 /**
- * New course: an interview, not a form. You name a topic; the interviewer asks
- * a few questions one at a time (like Claude Code's AskUserQuestion), each
- * with described options and one recommended; then you confirm and the build
- * starts. No uploads here, by design.
+ * New course: an interview, not a form, and keyboard-first like Claude Code's
+ * questions. Name a topic, answer a few questions one at a time (number keys
+ * pick, Enter continues), confirm, and the build starts. One column for the
+ * step, a compact record of the brief beside it, one progress bar. No uploads
+ * here, by design.
  */
 export function NewCoursePage() {
   const navigate = useNavigate();
@@ -49,7 +47,7 @@ export function NewCoursePage() {
   // "Start again" on a failed course links here with ?topic=…
   const search = useSearch({ strict: false }) as { topic?: unknown };
   const [topic, setTopic] = useState(typeof search.topic === 'string' ? search.topic : '');
-  const [answers, setAnswers] = useState<(InterviewAnswer & { header: string })[]>([]);
+  const [answers, setAnswers] = useState<Answered[]>([]);
   const [question, setQuestion] = useState<InterviewQuestion | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   /** Every question asked so far, aligned with `answers`, so Back can return to one without losing it. */
@@ -58,10 +56,11 @@ export function NewCoursePage() {
   const [prefill, setPrefill] = useState<string[] | null>(null);
   const [briefExtras, setBriefExtras] = useState<{ level?: string; goal?: string; pace?: string }>({});
 
-  async function ask(nextAnswers: (InterviewAnswer & { header: string })[]) {
+  async function ask(nextAnswers: Answered[]) {
+    // The cap is enforced here too, so a misbehaving model can never run the interview long.
     const step = await next.mutateAsync({
       topic,
-      answers: nextAnswers.map(({ question: q, answer }) => ({ question: q, answer })),
+      answers: nextAnswers.map(({ question: q, answer, header }) => ({ question: q, answer, header })),
     });
     if (step.done || !step.question || nextAnswers.length >= MAX_QUESTIONS) {
       setQuestion(null);
@@ -77,14 +76,14 @@ export function NewCoursePage() {
   }
 
   async function start() {
-    if (!topic.trim()) return;
+    if (!topic.trim() || next.isPending) return;
     setAnswers([]);
     setAsked([]);
     await ask([]);
   }
 
   async function answer(values: string[]) {
-    if (!question) return;
+    if (!question || next.isPending) return;
     const nextAnswers = [...answers, { question: question.question, header: question.header, answer: values }];
     setAnswers(nextAnswers);
     await ask(nextAnswers);
@@ -113,85 +112,98 @@ export function NewCoursePage() {
     await navigate({ to: '/courses/$courseId/building', params: { courseId: res.course.id } });
   }
 
+  const progress =
+    phase === 'topic' ? 4 : phase === 'summary' ? 100 : Math.min(92, ((answers.length + 1) / (MAX_QUESTIONS + 1)) * 100);
+  const stepLabel =
+    phase === 'topic' ? 'Topic' : phase === 'summary' ? 'Confirm' : `Question ${answers.length + 1} of up to ${MAX_QUESTIONS}`;
+
   return (
     <PageShell
       title="New course"
-      description="A few questions first, so the course fits you"
       archetype="sequence"
       breadcrumb={
-        <AnchorLink to="/" size="sm" c="dimmed" data-back>
+        <AnchorLink to="/" size="sm" data-back>
           ← Library
         </AnchorLink>
       }
     >
-      <Stack gap="lg" maw={1100}>
-      {/* Three phases, always: the interview's own length is shown inside the
-          question step ("Question 2 of up to 6"). */}
-      <Stepper active={PHASES.indexOf(phase)} size="sm" allowNextStepsSelect={false} data-progress>
-        <Stepper.Step label="Topic" />
-        <Stepper.Step label="Questions" />
-        <Stepper.Step label="Confirm" />
-      </Stepper>
-      <Grid gap="xl">
-        <Grid.Col span={{ base: 12, md: 8 }}>
-          <Reveal key={phase} data-step={phase}>
-          {phase === 'topic' && (
-            <TopicStep topic={topic} setTopic={setTopic} onStart={start} loading={next.isPending} />
-          )}
-          {phase === 'asking' && question && (
-            <QuestionCard
-              key={question.id + answers.length}
-              question={question}
-              initial={prefill}
-              index={answers.length + 1}
-              loading={next.isPending}
-              onAnswer={answer}
-              onBack={back}
-            />
-          )}
-          {phase === 'asking' && !question && <Loader />}
-          {phase === 'summary' && (
-            <SummaryCard
-              topic={topic}
-              summary={summary}
-              answers={answers}
-              onBack={back}
-              onGenerate={generate}
-              generating={create.isPending}
-              error={(create.error as { message?: string } | null)?.message ?? null}
-            />
-          )}
+      <Group align="flex-start" gap={48} wrap="nowrap">
+        <Stack gap="lg" style={{ flex: 1, minWidth: 0, maxWidth: 760 }}>
+          <Stack gap={6} data-progress>
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">
+                {stepLabel}
+              </Text>
+              {next.isPending && <Loader size="xs" />}
+            </Group>
+            <Progress value={progress} size="xs" aria-label="Interview progress" color="brand" />
+          </Stack>
+
+          <Reveal key={`${phase}-${question?.id ?? ''}-${answers.length}`} data-step={phase}>
+            {phase === 'topic' && (
+              <TopicStep topic={topic} setTopic={setTopic} onStart={start} loading={next.isPending} />
+            )}
+            {phase === 'asking' && question && (
+              <QuestionStep
+                question={question}
+                initial={prefill}
+                loading={next.isPending}
+                onAnswer={answer}
+                onBack={back}
+              />
+            )}
+            {phase === 'summary' && (
+              <SummaryStep
+                topic={topic}
+                summary={summary}
+                onBack={back}
+                onGenerate={generate}
+                generating={create.isPending}
+                error={(create.error as { message?: string } | null)?.message ?? null}
+              />
+            )}
           </Reveal>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 4 }}>
-          <Card withBorder radius="lg" p="lg">
-            <Text size="sm" fw={600} mb="sm">
-              Your brief
-            </Text>
-            <Timeline active={answers.length + (topic && phase !== 'topic' ? 0 : -1)} bulletSize={20} lineWidth={2}>
-              <Timeline.Item title="Topic" bullet={<Check size={12} />}>
-                <Text size="sm" c={topic ? undefined : 'dimmed'}>
-                  {topic || 'Not chosen yet'}
-                </Text>
-              </Timeline.Item>
-              {answers.map((a) => (
-                <Timeline.Item key={a.question} title={a.header} bullet={<Check size={12} />}>
-                  <Text size="sm">{a.answer.length ? a.answer.join(', ') : 'Skipped'}</Text>
-                </Timeline.Item>
-              ))}
-              {phase === 'asking' && question && (
-                <Timeline.Item title={question.header} lineVariant="dashed">
-                  <Text size="sm" c="dimmed">
-                    Answering…
-                  </Text>
-                </Timeline.Item>
-              )}
-            </Timeline>
-          </Card>
-        </Grid.Col>
-      </Grid>
-      </Stack>
+        </Stack>
+
+        <Brief topic={topic} answers={answers} current={phase === 'asking' ? question?.header : undefined} />
+      </Group>
     </PageShell>
+  );
+}
+
+/** The brief so far: a quiet record beside the step, one line per answer. */
+function Brief({ topic, answers, current }: { topic: string; answers: Answered[]; current?: string }) {
+  const rows = [{ header: 'Topic', value: topic.trim() || 'Not chosen yet', muted: !topic.trim() }].concat(
+    answers.map((a) => ({ header: a.header, value: a.answer.length ? a.answer.join(', ') : 'Skipped', muted: !a.answer.length }))
+  );
+  return (
+    <Box w={300} visibleFrom="md" style={{ flexShrink: 0 }} component="aside" aria-label="Your brief">
+      <Text size="sm" fw={500} mb="xs">
+        Your brief
+      </Text>
+      <Stack gap={0}>
+        {rows.map((r, i) => (
+          <Box key={i} py={8} style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
+            <Text size="xs" c="dimmed">
+              {r.header}
+            </Text>
+            <Text size="sm" c={r.muted ? 'dimmed' : undefined} lineClamp={2}>
+              {r.value}
+            </Text>
+          </Box>
+        ))}
+        {current && (
+          <Box py={8} style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
+            <Text size="xs" c="dimmed">
+              {current}
+            </Text>
+            <Text size="sm" c="dimmed">
+              Answering
+            </Text>
+          </Box>
+        )}
+      </Stack>
+    </Box>
   );
 }
 
@@ -207,55 +219,53 @@ function TopicStep({
   loading: boolean;
 }) {
   return (
-    <Card withBorder radius="lg" p="xl">
-      <Stack gap="lg">
-        <Title order={2} size="h3">
-          What do you want to learn?
-        </Title>
-        <Textarea
-          autosize
-          minRows={2}
-          size="md"
-          placeholder="A concept, a paper, a tool, a whole field…"
-          value={topic}
-          onChange={(e) => setTopic(e.currentTarget.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onStart();
-          }}
-          aria-label="Topic"
-          data-autofocus
-        />
-        <Group gap="xs">
-          {SUGGESTIONS.map((s) => (
-            <Button key={s} variant="default" size="xs" radius="xl" fw={500} onClick={() => setTopic(s)}>
-              {s}
-            </Button>
-          ))}
-        </Group>
-        <Group justify="space-between">
-          <Text size="xs" c="dimmed">
-            <Kbd size="xs">⌘</Kbd> <Kbd size="xs">Enter</Kbd> to continue
-          </Text>
-          <Button onClick={onStart} loading={loading} disabled={!topic.trim()} rightSection={<ArrowRight size={16} />}>
-            Continue
+    <Stack gap="md">
+      <Title order={2} size="h2">
+        What do you want to learn?
+      </Title>
+      <TextInput
+        size="lg"
+        placeholder="A concept, a paper, a tool, a whole field"
+        value={topic}
+        onChange={(e) => setTopic(e.currentTarget.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onStart();
+        }}
+        aria-label="Topic"
+        data-autofocus
+        autoFocus
+      />
+      <Group gap={6}>
+        <Text size="sm" c="dimmed">
+          Try
+        </Text>
+        {SUGGESTIONS.map((s) => (
+          <Button key={s} variant="default" size="compact-sm" fw={400} onClick={() => setTopic(s)}>
+            {s}
           </Button>
-        </Group>
-      </Stack>
-    </Card>
+        ))}
+      </Group>
+      <Group justify="space-between" mt="xs">
+        <Text size="xs" c="dimmed">
+          <Kbd size="xs">Enter</Kbd> to continue
+        </Text>
+        <Button onClick={onStart} loading={loading} disabled={!topic.trim()} rightSection={<ArrowRight size={16} />}>
+          Continue
+        </Button>
+      </Group>
+    </Stack>
   );
 }
 
-function QuestionCard({
+function QuestionStep({
   question,
-  index,
+  initial,
   loading,
   onAnswer,
   onBack,
-  initial,
 }: {
   question: InterviewQuestion;
   initial?: string[] | null;
-  index: number;
   loading: boolean;
   onAnswer: (values: string[]) => void;
   onBack: () => void;
@@ -268,109 +278,120 @@ function QuestionCard({
   const [multi, setMulti] = useState<string[]>(start.filter((v) => labels.has(v)));
   const [other, setOther] = useState(initial?.find((v) => !labels.has(v)) ?? '');
 
-  const chosen = question.multiSelect ? multi : single ? [single] : [];
-  const values = other.trim() ? [...chosen.filter((v) => v !== '__other'), other.trim()] : chosen.filter((v) => v !== '__other');
+  const values = useMemo(() => {
+    const chosen = question.multiSelect ? multi : single ? [single] : [];
+    return other.trim() ? [...chosen, other.trim()] : chosen;
+  }, [question.multiSelect, multi, single, other]);
 
-  const option = (o: InterviewQuestion['options'][number]) => (
+  // Number keys pick an option, Enter continues — unless typing in "Something else".
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+      if (typing || e.metaKey || e.ctrlKey || e.altKey || loading) return;
+      const n = Number(e.key);
+      if (n >= 1 && n <= question.options.length) {
+        const label = question.options[n - 1].label;
+        if (question.multiSelect) setMulti((m) => (m.includes(label) ? m.filter((x) => x !== label) : [...m, label]));
+        else setSingle(label);
+        e.preventDefault();
+      } else if (e.key === 'Enter' && values.length && !(e.target instanceof HTMLButtonElement)) {
+        // A focused button (Next, Skip, an option card) handles Enter itself; answering here too would submit twice.
+        onAnswer(values);
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [question, values, loading, onAnswer]);
+
+  const option = (o: InterviewQuestion['options'][number], i: number) => (
     <Group wrap="nowrap" align="flex-start" gap="sm">
-      {question.multiSelect ? <Checkbox.Indicator mt={2} /> : <Radio.Indicator mt={2} />}
-      <Stack gap={2} style={{ flex: 1 }}>
+      <Kbd size="xs" mt={2} style={{ flexShrink: 0 }}>
+        {i + 1}
+      </Kbd>
+      <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
         <Group gap="xs">
-          <Text fw={600} size="sm">
+          <Text fw={500} size="sm">
             {o.label}
           </Text>
           {o.recommended && (
-            <Badge size="xs" variant="light">
+            <Text size="xs" c="dimmed">
               Recommended
-            </Badge>
+            </Text>
           )}
         </Group>
         <Text size="sm" c="dimmed">
           {o.description}
         </Text>
       </Stack>
+      {question.multiSelect ? <Checkbox.Indicator mt={2} /> : <Radio.Indicator mt={2} />}
     </Group>
   );
 
   return (
-    <Card withBorder radius="lg" p="xl">
-      <Stack gap="lg">
-        <Stack gap={6}>
-          <Group justify="space-between">
-            <Badge variant="light" radius="sm">
-              {question.header}
-            </Badge>
-            <Text size="xs" c="dimmed">
-              Question {index} of up to {MAX_QUESTIONS}
-            </Text>
-          </Group>
-          <Progress value={(index / MAX_QUESTIONS) * 100} size="xs" aria-label="Interview progress" />
-        </Stack>
-        <Title order={2} size="h3">
+    <Stack gap="md">
+      <Stack gap={4}>
+        <Text size="sm" c="dimmed">
+          {question.header}
+          {question.multiSelect ? ' · choose any that apply' : ''}
+        </Text>
+        <Title order={2} size="h2">
           {question.question}
         </Title>
-        {question.multiSelect && (
-          <Text size="sm" c="dimmed">
-            Choose any that apply
-          </Text>
-        )}
-
-        {question.multiSelect ? (
-          <Checkbox.Group value={multi} onChange={setMulti}>
-            <Stack gap="xs">
-              {question.options.map((o) => (
-                <Checkbox.Card key={o.label} value={o.label} radius="md" p="md">
-                  {option(o)}
-                </Checkbox.Card>
-              ))}
-            </Stack>
-          </Checkbox.Group>
-        ) : (
-          <Radio.Group value={single} onChange={setSingle}>
-            <Stack gap="xs">
-              {question.options.map((o) => (
-                <Radio.Card key={o.label} value={o.label} radius="md" p="md">
-                  {option(o)}
-                </Radio.Card>
-              ))}
-            </Stack>
-          </Radio.Group>
-        )}
-
-        <TextInput
-          placeholder="Something else"
-          value={other}
-          onChange={(e) => setOther(e.currentTarget.value)}
-          aria-label="Other answer"
-        />
-
-        <Group justify="space-between">
-          <Button variant="subtle" color="gray" leftSection={<ArrowLeft size={16} />} onClick={onBack} disabled={loading} data-back>
-            Back
-          </Button>
-          <Group gap="xs">
-            <Button variant="default" onClick={() => onAnswer([])} disabled={loading}>
-              Skip
-            </Button>
-            <Button
-              onClick={() => onAnswer(values)}
-              loading={loading}
-              disabled={values.length === 0}
-              rightSection={<ArrowRight size={16} />}
-            >
-              Next
-            </Button>
-          </Group>
-        </Group>
       </Stack>
-    </Card>
+
+      {question.multiSelect ? (
+        <Checkbox.Group value={multi} onChange={setMulti}>
+          <Stack gap={8}>
+            {question.options.map((o, i) => (
+              <Checkbox.Card key={o.label} value={o.label} radius="md" px="md" py={12}>
+                {option(o, i)}
+              </Checkbox.Card>
+            ))}
+          </Stack>
+        </Checkbox.Group>
+      ) : (
+        <Radio.Group value={single} onChange={setSingle}>
+          <Stack gap={8}>
+            {question.options.map((o, i) => (
+              <Radio.Card key={o.label} value={o.label} radius="md" px="md" py={12}>
+                {option(o, i)}
+              </Radio.Card>
+            ))}
+          </Stack>
+        </Radio.Group>
+      )}
+
+      <TextInput
+        placeholder="Something else"
+        value={other}
+        onChange={(e) => setOther(e.currentTarget.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && values.length) onAnswer(values);
+        }}
+        aria-label="Other answer"
+      />
+
+      <Group justify="space-between">
+        <Button variant="subtle" color="gray" leftSection={<ArrowLeft size={16} />} onClick={onBack} disabled={loading} data-back>
+          Back
+        </Button>
+        <Group gap="xs">
+          <Button variant="default" onClick={() => onAnswer([])} disabled={loading}>
+            Skip
+          </Button>
+          <Button onClick={() => onAnswer(values)} loading={loading} disabled={values.length === 0} rightSection={<ArrowRight size={16} />}>
+            Next
+          </Button>
+        </Group>
+      </Group>
+    </Stack>
   );
 }
 
-function SummaryCard({
+function SummaryStep({
   topic,
   summary,
-  answers,
   onBack,
   onGenerate,
   generating,
@@ -378,47 +399,38 @@ function SummaryCard({
 }: {
   topic: string;
   summary: string | null;
-  answers: (InterviewAnswer & { header: string })[];
   onBack: () => void;
   onGenerate: () => void;
   generating: boolean;
   error: string | null;
 }) {
   return (
-    <Card withBorder radius="lg" p="xl">
-      <Stack gap="lg">
-        <Title order={2} size="h3">
-          Ready to build “{topic}”
-        </Title>
-        {summary && <Text>{summary}</Text>}
-        <Stack gap="xs">
-          {answers.map((a) => (
-            <Group key={a.question} gap="sm" wrap="nowrap" align="flex-start">
-              <Badge variant="default" radius="sm" w={84} style={{ flexShrink: 0 }}>
-                {a.header}
-              </Badge>
-              <Text size="sm">{a.answer.length ? a.answer.join(', ') : 'Skipped: the agents will choose'}</Text>
-            </Group>
-          ))}
-        </Stack>
-        <Text size="sm" c="dimmed">
-          Agents will research the topic, map its concepts, write the chapters with diagrams, design a project per
-          module and index everything for the tutor. It takes a few minutes; you can leave and come back.
-        </Text>
-        {error && (
-          <Alert color="red" variant="light" title="Could not start the build">
-            {error}
-          </Alert>
-        )}
-        <Group justify="space-between">
-          <Button variant="subtle" color="gray" leftSection={<ArrowLeft size={16} />} onClick={onBack} data-back>
-            Change an answer
-          </Button>
-          <Button onClick={onGenerate} loading={generating} leftSection={<Sparkles size={16} />}>
-            Generate course
-          </Button>
-        </Group>
-      </Stack>
-    </Card>
+    <Stack gap="md">
+      <Title order={2} size="h2">
+        Ready to build “{topic}”
+      </Title>
+      {summary && <Text>{summary}</Text>}
+      <Divider />
+      <Text size="sm" c="dimmed">
+        Agents research the topic, map its concepts, write the chapters with diagrams, design a project per
+        module and index everything for the tutor. It takes a few minutes, and you can leave and come back.
+      </Text>
+      {error && (
+        <Alert color="red" variant="light" title="Could not start the build">
+          {error}
+        </Alert>
+      )}
+      <Group justify="space-between">
+        <UnstyledButton onClick={onBack} data-back>
+          <Group gap={6}>
+            <ArrowLeft size={16} />
+            <Text size="sm">Change an answer</Text>
+          </Group>
+        </UnstyledButton>
+        <Button onClick={onGenerate} loading={generating} rightSection={<ArrowRight size={16} />}>
+          Generate course
+        </Button>
+      </Group>
+    </Stack>
   );
 }

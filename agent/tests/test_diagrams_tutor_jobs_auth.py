@@ -454,3 +454,39 @@ def test_progress_scan_tolerates_list_refs(tmp_path):
     p.emit = lambda stage, msg, payload=None: events.append((stage, payload))
     p.scan()
     assert events and events[0][1]["terms"] == ["The Rust Book", "Rustonomicon"]
+
+
+def test_interview_ends_on_repeat_and_at_cap(monkeypatch):
+    """A model that re-asks a header, or an interview at the cap, finishes with a summary."""
+    from app.agents import llm
+    from app.api import interview as iv
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    q = {"id": "level", "header": "Level", "question": "How much do you know?", "multiSelect": False,
+         "options": [{"label": "A", "description": "a"}, {"label": "B", "description": "b"}]}
+
+    async def fake_parse(*, schema, **_):
+        if schema is iv.ClaudeSummary:
+            return iv.ClaudeSummary(summary="A short course."), {}
+        return iv.ClaudeStep(question=iv.InterviewQuestion(**q)), {}  # no level/goal/pace: must still validate
+
+    monkeypatch.setattr(llm, "parse", fake_parse)
+    first = asyncio.run(iv._claude(iv.InterviewIn(topic="Raft", answers=[])))
+    assert first["question"]["header"] == "Level"
+    again = asyncio.run(iv._claude(iv.InterviewIn(topic="Raft", answers=[iv.Answer(question="x", answer=["A"], header="level")])))
+    assert again["done"] and again["summary"] == "A short course."
+    capped = asyncio.run(iv._claude(iv.InterviewIn(topic="Raft", answers=[iv.Answer(question=f"q{i}", answer=["A"]) for i in range(6)])))
+    assert capped["done"]
+
+
+def test_repair_minimax_shapes():
+    """Hoisted nested fields, "false" strings and {"item": [...]} arrays validate after repair."""
+    from app.agents.llm import _inline_refs, _repair
+    from app.api import interview as iv
+
+    raw = {"done": False, "multiSelect": "false",
+           "options": {"item": [{"label": "A", "description": "a", "recommended": "true"},
+                                {"label": "B", "description": "b", "recommended": "false"}]},
+           "question": {"header": "Level", "id": "level", "question": "How much?"}}
+    step = iv.ClaudeStep.model_validate(_repair(raw, _inline_refs(iv.ClaudeStep.model_json_schema())))
+    assert step.question.multiSelect is False and step.question.options[0].recommended is True

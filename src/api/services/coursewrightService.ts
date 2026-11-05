@@ -45,6 +45,8 @@ export const healthService = {
 export interface InterviewAnswer {
   question: string;
   answer: string[];
+  /** The question's short header ("Level"), so the server can catch a repeated question. */
+  header?: string;
 }
 
 export const interviewService = {
