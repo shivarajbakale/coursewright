@@ -2,23 +2,26 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Text } from 'react-native';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { installRandomUUID, uid } from './uid';
+import { fallbackUid, installRandomUUID, uid } from './uid';
 import { loadThread } from './tutor/threads';
 
 afterEach(() => vi.restoreAllMocks());
 
 describe('ids on plain-http pages (no crypto.randomUUID)', () => {
-  it('still makes v4 ids, so opening the tutor cannot crash', () => {
+  it('still makes v4 ids, and the installed stand-in never calls itself', () => {
     const original = crypto.randomUUID;
     try {
-      Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
-      expect(uid()).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-      expect(uid()).not.toBe(uid());
-      expect(loadThread('ch1').threadId).toMatch(/^reader-ch1-[0-9a-f]{8}$/);
+      Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true, writable: true });
+      const v4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+      expect(fallbackUid()).toMatch(v4);
+      expect(fallbackUid()).not.toBe(fallbackUid());
       installRandomUUID();
-      expect(typeof crypto.randomUUID).toBe('function');
+      // The page-freezing bug: the stand-in looked randomUUID up again and recursed forever.
+      expect(crypto.randomUUID()).toMatch(v4);
+      expect(uid()).toMatch(v4);
+      expect(loadThread('ch1').threadId).toMatch(/^reader-ch1-[0-9a-f]{8}$/);
     } finally {
-      Object.defineProperty(crypto, 'randomUUID', { value: original, configurable: true });
+      Object.defineProperty(crypto, 'randomUUID', { value: original, configurable: true, writable: true });
     }
   });
 });
