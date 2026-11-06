@@ -106,6 +106,24 @@ export function snapshot(root: Element, label: string): Snapshot {
   visit(root, null);
 
   const scroller = doc.scrollingElement ?? doc.documentElement;
+  // When the document scrolls, name the outermost elements that reach below the viewport, so a report says
+  // what pushed it rather than only by how much (the overflow can depend on the machine's fonts).
+  const overflowing: string[] = [];
+  if (scroller.scrollHeight - scroller.clientHeight > 1) {
+    const limit = win.innerHeight + 1;
+    for (const el of Array.from(doc.body.querySelectorAll<HTMLElement>('*'))) {
+      const r = el.getBoundingClientRect();
+      const parent = el.parentElement?.getBoundingClientRect();
+      if (r.bottom > limit && r.height > 0 && (!parent || parent.bottom <= limit || el.parentElement === doc.body)) {
+        const attrs = Array.from(el.attributes)
+          .filter((a) => a.name.startsWith('data-') || a.name === 'class' || a.name === 'id' || a.name === 'aria-label')
+          .map((a) => `${a.name}="${a.value.slice(0, 40)}"`)
+          .join(' ');
+        overflowing.push(`<${el.tagName.toLowerCase()} ${attrs}> bottom ${Math.round(r.bottom)}px`);
+        if (overflowing.length >= 5) break;
+      }
+    }
+  }
   return {
     label,
     viewport: { width: win.innerWidth, height: win.innerHeight },
@@ -116,6 +134,7 @@ export function snapshot(root: Element, label: string): Snapshot {
       clientWidth: scroller.clientWidth,
       scrollHeight: scroller.scrollHeight,
       clientHeight: scroller.clientHeight,
+      overflowing,
     },
   };
 }

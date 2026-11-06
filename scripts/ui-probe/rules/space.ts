@@ -147,7 +147,9 @@ export const A4: Rule = {
         rule: 'A4',
         message: `the document scrolls by ${Math.round(
           overflow
-        )}px — the shell is a fixed viewport, pages scroll inside PageShell`,
+        )}px — the shell is a fixed viewport, pages scroll inside PageShell${
+          s.scroll.overflowing?.length ? `; reaching below it: ${s.scroll.overflowing.join(', ')}` : ''
+        }`,
         nodeId: null,
         selectorHint: 'document',
         detail: { overflowPx: overflow },

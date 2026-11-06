@@ -92,6 +92,8 @@ export interface Snapshot {
     clientWidth: number;
     scrollHeight: number;
     clientHeight: number;
+    /** When the document scrolls: the outermost elements reaching below the viewport. */
+    overflowing?: string[];
   };
 }
 

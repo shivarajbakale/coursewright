@@ -72,6 +72,15 @@ async function waitForContent(timeoutMs = 5000): Promise<void> {
   }
 }
 
+/** Poll every frame until the page has a [data-motion] element, without waiting out its motion. */
+async function waitForMotion(root: Element, timeoutMs = 5000): Promise<void> {
+  const start = performance.now();
+  while (!root.querySelector('[data-motion]')) {
+    if (performance.now() - start > timeoutMs) return; // M4 reports a page that declares no motion
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  }
+}
+
 /** The session every protected route needs before it renders anything. */
 function authorize(): void {
   localStorage.setItem(
@@ -128,6 +137,10 @@ describe('motion', () => {
       audits.push(await collectMotion(host, `${name} at mount`));
 
       await waitForContent();
+      // The content that animates can mount after the page reads as ready (a header first, the body when
+      // its own query lands). On a slow machine (CI) its whole entrance can fall between two samples, so
+      // the sample waits for the motion element itself and is taken the moment it appears.
+      await waitForMotion(host);
       audits.push(await collectMotion(host, `${name} with data`));
 
       await settleMotion();
