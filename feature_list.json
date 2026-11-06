@@ -341,6 +341,28 @@
         "Finding for later phases: tutor replies carry citation markers like [6]; the reader must render them as chapter links",
         "make check: exit 0 (type-check, lint, ui-lint, plan-lint, tests 153 passed in ui-probe, doc-lint)"
       ]
+    },
+    {
+      "id": "reader-pwa-read",
+      "priority": 17,
+      "area": "Phone and iPad reader",
+      "title": "Read a course on an iPhone or iPad: library, outline, chapter reader, reading settings",
+      "user_visible_behavior": "At /m/ the library shows a Continue card that resumes the last chapter at the saved scroll position, and every ready course with its progress. A course opens to its outline; a chapter reads as large serif text (size, theme, typeface and spacing set in Reading settings and remembered on the device), with code that scrolls sideways and Key idea callouts. Opening a chapter marks it started, reaching the end marks it read. Layout follows window width: one column under 700 px, outline drawer from 700 px, outline beside the chapter from 1024 px.",
+      "status": "passing",
+      "plan": "reader-pwa-read.feature-plan.json",
+      "verification": [
+        "tsc, eslint, vitest for mobile/",
+        "Playwright WebKit against the Mac mini at 390x844, 320x1000, 590x820, 820x1180, 1180x820, 1366x1024",
+        "Every chapter of the 65-lesson harness course rendered in WebKit",
+        "make check"
+      ],
+      "evidence": [
+        "npx vitest run mobile: 11 passed (parser: title dropped, inline runs, fenced code, Key idea detection, safe links only, ordered start, tables, HTML as text; reader: routes, layout by width, Continue card resumes ch-2-2 and renders its headings and Next chapter, outline opens a chapter, settings apply on change and persist)",
+        "WebKit 26.6 against http://coursewright:8080 at 390x844, 320x1000, 590x820, 820x1180, 1180x820, 1366x1024: library, Resume, outline (own screen <700, drawer 700-1023, sidebar >=1024), settings; horizontal overflow 0 px on all 24 views; no page or console errors",
+        "All 65 chapters of 'Build an agent harness like DeepSeek Harness' rendered at 390x844: 0 failures, 0 page errors, 65 Key idea callouts, 136 code blocks, max horizontal overflow 0 px; scrolling the last chapter to its end sent finished=true once (progress writes intercepted; last-opened chapter restored afterwards)",
+        "npm run build:mobile: 544.47 kB, 185.66 kB gzipped (the tutor client is not loaded until Phase 3)",
+        "make check: exit 0 on the third run (349 + 153 tests). Two earlier full runs failed ui-probe M3 on the desktop 'Sources' page (reveal box grows 55 px while data arrives); it passed in 5 standalone ui-probe runs and the baseline without this change passed; no file under src/ changed. Recorded as a flaky probe to look at separately."
+      ]
     }
   ]
 }

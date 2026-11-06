@@ -9,8 +9,17 @@ declare module 'react-native' {
   import type { ComponentType, ReactNode, Ref } from 'react';
 
   type StyleValue = string | number | undefined;
-  export type Style = { [key: string]: StyleValue | Style | Style[] } ;
+  export type Style = { [key: string]: StyleValue | Style | Style[] };
   export type StyleProp = Style | false | null | undefined | StyleProp[];
+
+  export type LayoutEvent = { nativeEvent: { layout: { x: number; y: number; width: number; height: number } } };
+  export type ScrollEvent = {
+    nativeEvent: {
+      contentOffset: { x: number; y: number };
+      contentSize: { width: number; height: number };
+      layoutMeasurement: { width: number; height: number };
+    };
+  };
 
   interface Common {
     style?: StyleProp;
@@ -19,8 +28,17 @@ declare module 'react-native' {
     accessibilityLabel?: string;
     'aria-label'?: string;
     'aria-live'?: 'polite' | 'assertive' | 'off';
+    'aria-pressed'?: boolean;
+    'aria-expanded'?: boolean;
+    'aria-current'?: boolean | 'page' | 'step';
+    'aria-hidden'?: boolean;
+    'aria-level'?: number;
+    'aria-valuenow'?: number;
+    'aria-valuemin'?: number;
+    'aria-valuemax'?: number;
     role?: string;
     nativeID?: string;
+    onLayout?: (e: LayoutEvent) => void;
   }
   export interface ViewProps extends Common {
     ref?: Ref<HTMLElement>;
@@ -28,6 +46,9 @@ declare module 'react-native' {
   export interface TextProps extends Common {
     numberOfLines?: number;
     selectable?: boolean;
+    href?: string;
+    hrefAttrs?: { target?: string; rel?: string };
+    onPress?: () => void;
   }
   export interface PressableProps extends Common {
     onPress?: () => void;
@@ -43,8 +64,17 @@ declare module 'react-native' {
     editable?: boolean;
     multiline?: boolean;
   }
+  export interface ScrollViewHandle {
+    scrollTo(options: { x?: number; y?: number; animated?: boolean }): void;
+  }
   export interface ScrollViewProps extends Common {
+    ref?: Ref<ScrollViewHandle>;
     contentContainerStyle?: StyleProp;
+    horizontal?: boolean;
+    showsHorizontalScrollIndicator?: boolean;
+    scrollEventThrottle?: number;
+    onScroll?: (e: ScrollEvent) => void;
+    onContentSizeChange?: (width: number, height: number) => void;
   }
   export interface ActivityIndicatorProps extends Common {
     color?: string;
@@ -60,10 +90,7 @@ declare module 'react-native' {
   export const StyleSheet: {
     create<T extends Record<string, Style>>(styles: T): T;
     hairlineWidth: number;
+    absoluteFill: Style;
   };
   export function useWindowDimensions(): { width: number; height: number; scale: number; fontScale: number };
-  export const AppRegistry: {
-    registerComponent(key: string, getComponent: () => ComponentType): void;
-    runApplication(key: string, params: { rootTag: HTMLElement | null }): void;
-  };
 }

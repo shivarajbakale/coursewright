@@ -1,49 +1,95 @@
 /**
- * Phase 0 of the phone and iPad reader: the course library and one tutor box on a single screen.
- * Proves react-native-web, the shared API layer and a streamed tutor reply work together before
- * the reader screens are built (design: https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS).
+ * The phone and iPad reader (design: https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS).
+ *
+ * Layout follows the window, never the device, because iPad Split View and Slide Over change the
+ * window: under 700 px one column; from 700 px the outline is a drawer; from 1024 px it sits beside
+ * the chapter.
  */
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { useCourses } from './queries';
-import { TutorProbe } from './TutorProbe';
-import { color, font, radius, space } from './theme';
+import { useEffect } from 'react';
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useCourse } from './queries';
+import { href, navigate, useRoute } from './router';
+import { usePalette } from './settings';
+import { font, space } from './theme';
+import { layoutFor } from './courseMath';
+import { Outline } from './components/Outline';
+import { Message } from './components/States';
+import { ChapterScreen } from './screens/ChapterScreen';
+import { CourseScreen } from './screens/CourseScreen';
+import { LibraryScreen } from './screens/LibraryScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 
 export function App() {
+  const route = useRoute();
   const { width } = useWindowDimensions();
-  const courses = useCourses();
-  const first = courses.data?.[0]?.id ?? null;
+  const p = usePalette();
+  const layout = layoutFor(width);
 
-  return (
-    <ScrollView style={styles.page} contentContainerStyle={[styles.content, { maxWidth: width >= 700 ? 680 : undefined }]}>
-      <Text style={styles.h1} role="heading">Your courses</Text>
+  // The page behind the app, and the browser chrome, follow the reading theme.
+  useEffect(() => {
+    document.body.style.backgroundColor = p.ground;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', p.ground);
+  }, [p.ground]);
 
-      {courses.isPending && <ActivityIndicator color={color.accent} accessibilityLabel="Loading courses" />}
-      {courses.isError && <Text style={styles.error}>Couldn’t reach your server. Is Tailscale on?</Text>}
-      {courses.data?.length === 0 && <Text style={styles.muted}>No courses yet. Make one in the desktop app.</Text>}
-
-      <View style={styles.list} role="list">
-        {courses.data?.map((c) => (
-          <View key={c.id} style={styles.row} role="listitem">
-            <Text style={styles.courseTitle}>{c.title}</Text>
-            <Text style={styles.muted}>
-              {c.moduleCount} modules · {c.chapterCount} lessons · {c.chaptersDone} read
-            </Text>
+  let screen;
+  switch (route.name) {
+    case 'library':
+      screen = <LibraryScreen />;
+      break;
+    case 'settings':
+      screen = <SettingsScreen />;
+      break;
+    case 'course':
+      screen = <CourseScreen key={route.courseId} courseId={route.courseId} />;
+      break;
+    case 'chapter':
+      screen =
+        layout === 'split' ? (
+          <View style={styles.split}>
+            <Sidebar courseId={route.courseId} chapterId={route.chapterId} />
+            <ChapterScreen key={route.chapterId} courseId={route.courseId} chapterId={route.chapterId} layout="split" />
           </View>
-        ))}
-      </View>
+        ) : (
+          <ChapterScreen key={route.chapterId} courseId={route.courseId} chapterId={route.chapterId} layout={layout} />
+        );
+      break;
+    default:
+      screen = (
+        <View style={styles.missing}>
+          <Message title="There's nothing at this address." body="It may be an old link." action="Go to your courses" onAction={() => navigate(href({ name: 'library' }), { replace: true })} />
+        </View>
+      );
+  }
 
-      <TutorProbe courseId={first} />
-    </ScrollView>
+  return <View style={[styles.root, { backgroundColor: p.ground }]}>{screen}</View>;
+}
+
+function Sidebar({ courseId, chapterId }: { courseId: string; chapterId: string }) {
+  const p = usePalette();
+  const course = useCourse(courseId);
+  return (
+    <View role="navigation" aria-label="Course outline" style={[styles.sidebar, { borderRightColor: p.border }]}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.sidebarBody}>
+        <Text role="link" onPress={() => navigate(href({ name: 'library' }))} style={[styles.library, { color: p.muted }]}>
+          ‹ Library
+        </Text>
+        {course.data ? (
+          <>
+            <Text style={[styles.courseTitle, { color: p.text }]}>{course.data.title}</Text>
+            <Outline course={course.data} currentId={chapterId} onOpen={(id) => navigate(href({ name: 'chapter', courseId, chapterId: id }))} />
+          </>
+        ) : null}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: color.ground },
-  content: { width: '100%', alignSelf: 'center', paddingHorizontal: space.lg, paddingTop: 56, paddingBottom: 40, gap: space.xl },
-  h1: { color: color.text, fontFamily: font.ui, fontSize: 30, fontWeight: '600', letterSpacing: -0.6 },
-  list: { backgroundColor: color.surface, borderColor: color.border, borderWidth: 1, borderRadius: radius.lg, overflow: 'hidden' },
-  row: { padding: space.lg, gap: space.xs, borderBottomColor: color.border, borderBottomWidth: 1 },
-  courseTitle: { color: color.text, fontFamily: font.ui, fontSize: 16, fontWeight: '500', lineHeight: 21 },
-  muted: { color: color.muted, fontFamily: font.ui, fontSize: 13 },
-  error: { color: color.danger, fontFamily: font.ui, fontSize: 15 },
+  root: { flex: 1, minHeight: '100%' },
+  split: { flex: 1, flexDirection: 'row' },
+  sidebar: { width: 300, borderRightWidth: 1 },
+  sidebarBody: { padding: space.md, paddingTop: space.lg, gap: space.lg },
+  library: { fontFamily: font.ui, fontSize: 14, paddingHorizontal: space.sm, paddingVertical: 10 },
+  courseTitle: { fontFamily: font.reading, fontSize: 18, lineHeight: 24, fontWeight: '600', paddingHorizontal: space.sm },
+  missing: { flex: 1, padding: space.lg, justifyContent: 'center', maxWidth: 520, width: '100%', alignSelf: 'center' },
 });

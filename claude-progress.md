@@ -5,7 +5,7 @@
 - Repository root: this project
 - Standard startup path: `./init.sh`
 - Standard verification path: `make check` (install + type-check + lint + test)
-- Current highest-priority unfinished feature: none open; next: phone reader Phase 1 (library, outline, chapter reader, settings) planned with plan-feature from the design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS; later per-module skip quiz, later-name leaks in lessons
+- Current highest-priority unfinished feature: none open; next: phone reader Phase 2 (end-of-chapter quiz, Flowmovie/Mermaid diagrams), then Phase 3 tutor sheet (sheets size to content); design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS; flaky ui-probe M3 on desktop Sources (2 of 3 full make check runs); later per-module skip quiz, later-name leaks in lessons
 - Current blocker: none
 
 ## Session Log
@@ -21,6 +21,11 @@
   WebKit at 390x844 and 820x1180 against the Mac mini. Tutor runs on `@copilotkit/core` + `mobile/src/tutor.ts`
   (react-core's v2 entry bundles its chat UI: 700 KB gzipped vs 278 KB). See DECISIONS.md 2026-11-06.
 - Found: tutor replies carry citation markers like `[6]`; Phase 3 must turn them into chapter links.
+- Phase 1 (feature reader-pwa-read, plan reader-pwa-read.feature-plan.json): library with Continue card,
+  outline, chapter reader (markdown-it tokens to our own RN blocks, Key idea callouts, sideways-scrolling
+  code), reading settings (size, theme dark/light/sepia, serif/sans, spacing; localStorage), own History-API
+  router under /m. Progress: started on first open, finished at the end, each sent once (the server
+  overwrites finishedAt on every call). Node 26's global localStorage hides jsdom's: tests stub it.
 
 ### Session 011 — Coding agents can write courses (2026-11-06)
 

@@ -1,0 +1,269 @@
+{
+  "feature": {
+    "id": "reader-pwa-read",
+    "title": "Phone and iPad reader: library, outline, chapter reader, reading settings",
+    "problem": "Courses can only be read on the desktop web app, whose sidebar, panels and notes do not fit a phone. The owner wants to read a course on an iPhone or iPad the way they read a book: large, calm text, one tap to resume where they stopped, and nothing else on screen. The Phase 0 spike proved the stack (react-native-web at /m/, the shared API layer, the tutor stream); this phase builds the reading itself from the approved design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS.",
+    "nonGoals": [
+      "The tutor sheet, paragraph asking and docked tutor pane: Phase 3. The spike's tutor box is removed from the library screen.",
+      "End-of-chapter quizzes and Flowmovie/Mermaid diagrams: Phase 2. A chapter's diagrams and questions are not shown yet.",
+      "Offline reading, install manifest and service worker: Phase 4.",
+      "Notes, sources, creating courses and projects: never in the reader."
+    ]
+  },
+  "nav": ["Library", "Course", "Chapter", "Reading"],
+  "surfaces": [
+    {
+      "id": "library",
+      "name": "Library",
+      "route": "/m/",
+      "archetype": "list",
+      "moments": {
+        "peak": "one tap on Resume opens the exact chapter they stopped in, scrolled to where they were",
+        "end": "the course list with each course's progress, and the continue card showing what is next"
+      },
+      "purpose": "Pick up reading where you left off, or open another course.",
+      "primaryAction": "Resume",
+      "panels": [
+        {
+          "id": "continue",
+          "kind": "detail",
+          "title": "Continue reading",
+          "subtitle": "Reasoning block: the model's working-out…",
+          "fields": [
+            { "label": "Course", "value": "Build an agent harness…" },
+            { "label": "Where", "value": "Chapter 25 of 65" }
+          ],
+          "actions": ["Resume →"]
+        },
+        {
+          "id": "courses",
+          "kind": "table",
+          "toolbar": "All courses",
+          "rows": [
+            ["37%", "Build an agent harness…", "›"],
+            ["0%", "Distributed Systems: Raft", "›"],
+            ["7%", "Long-running coding agents", "›"]
+          ]
+        }
+      ],
+      "states": {
+        "loading": "The continue card and three course rows as skeletons with the same heights.",
+        "empty": "No courses yet. Make one in the desktop app; it appears here when it is ready.",
+        "error": "Couldn't reach your server. Check that Tailscale is on, then try again. [Try again]",
+        "success": "Continue card for the most recently opened ready course, then every ready course with its progress. Courses still building show 'Building…' and do not open."
+      }
+    },
+    {
+      "id": "reader",
+      "name": "Course and chapter",
+      "route": "/m/courses/:courseId and /m/courses/:courseId/chapters/:chapterId",
+      "archetype": "list-detail",
+      "moments": {
+        "peak": "the chapter opens straight into large serif text at a comfortable measure, with nothing competing with it",
+        "end": "the last paragraph read, the next chapter's title one tap away, and the chapter marked read in the outline"
+      },
+      "purpose": "Read one chapter, and move through the course without losing your place. Under 1024 px the outline is its own screen (phone) or a drawer (iPad portrait); from 1024 px it sits beside the chapter.",
+      "primaryAction": "Next chapter",
+      "panels": [
+        {
+          "id": "outline",
+          "kind": "table",
+          "ratio": 0.3,
+          "toolbar": "24 of 65 read",
+          "rows": [
+            ["✓", "1 · How a language model…", "8/8"],
+            ["▾", "4 · Talking to any provider", "3/6"],
+            ["✓", "  24 Model adapter", ""],
+            ["●", "  25 Reasoning block", "Reading"],
+            ["", "  26 Retry with backoff", ""]
+          ]
+        },
+        {
+          "id": "chapter",
+          "kind": "detail",
+          "title": "Reasoning block: the model's working-out",
+          "subtitle": "Talking to any model provider · about 4 min",
+          "fields": [
+            { "label": "Body", "value": "serif 18 px (20 on iPad), line 1.6, ~65ch" },
+            { "label": "Code", "value": "mono 13 px, scrolls sideways, never wraps" },
+            { "label": "Key idea", "value": "callout card" }
+          ],
+          "actions": ["‹ Previous", "Next chapter ›"]
+        }
+      ],
+      "states": {
+        "loading": "Title and six text-line skeletons at reading width; the top bar and progress bar are already in place.",
+        "empty": "This chapter is still being written. Pick another from the outline. [Open outline]",
+        "error": "Couldn't load this chapter. [Try again] [Back to the outline]",
+        "success": "Markdown rendered as React Native blocks: headings, paragraphs, lists, inline code, fenced code, block quotes (a 'Key idea' quote becomes a callout), tables scroll sideways. Reading progress bar follows scroll. Opening marks the chapter started; reaching the end marks it read."
+      }
+    },
+    {
+      "id": "settings",
+      "name": "Reading settings",
+      "route": "/m/settings",
+      "archetype": "settings",
+      "moments": {
+        "peak": "dragging the size slider and seeing the sample paragraph change size live",
+        "end": "Done returns to the same chapter at the same place, now in the chosen size and theme"
+      },
+      "purpose": "Make the text comfortable. Every change applies at once and is remembered on this device.",
+      "panels": [
+        {
+          "id": "text",
+          "kind": "detail",
+          "title": "Text",
+          "subtitle": "Sample paragraph in the current settings",
+          "fields": [
+            { "label": "Size", "value": "A ——●—— A   19 px" },
+            { "label": "Typeface", "value": "[Serif] Sans" },
+            { "label": "Spacing", "value": "Tight [Normal] Loose" }
+          ]
+        },
+        {
+          "id": "look",
+          "kind": "detail",
+          "title": "Theme and connection",
+          "fields": [
+            { "label": "Theme", "value": "Dark  Light  [Sepia]" },
+            { "label": "Server", "value": "● Connected" }
+          ]
+        }
+      ],
+      "states": {
+        "loading": "Never loads: settings are read from this device synchronously.",
+        "empty": "First visit: size starts from the device's text-size setting, theme Dark, Serif, Normal spacing.",
+        "error": "If the browser refuses storage (private mode), settings still apply for this visit and a line says they won't be remembered.",
+        "success": "Each control applies on change; no Save button."
+      }
+    }
+  ],
+  "overlays": [
+    {
+      "id": "outline-drawer",
+      "kind": "drawer",
+      "title": "Outline (iPad portrait, 700-1023 px)",
+      "fields": [
+        { "label": "Module 4", "placeholder": "▾ 3/6" },
+        { "label": "25", "placeholder": "Reasoning block" }
+      ],
+      "buttons": ["Close"]
+    }
+  ],
+  "components": [
+    {
+      "surface": "library",
+      "control": "ScrollView + mapped Pressable rows",
+      "why": "a handful of courses; every row renders at once, so a virtualised list buys nothing and complicates scroll restoration",
+      "rejected": "FlatList"
+    },
+    {
+      "surface": "library",
+      "control": "Continue card from lastOpenedChapterId",
+      "why": "the peak of this screen is resuming; the server already records the last opened chapter per course",
+      "rejected": "a 'recent' section built from local history (wrong on a second device)"
+    },
+    {
+      "surface": "reader",
+      "control": "markdown-it tokens rendered by our own React Native blocks (mobile/src/markdown/)",
+      "why": "we control typography, the Key idea callout and code scrolling exactly, with no native-only dependencies; markdown-it already ships in the tree",
+      "rejected": "react-native-markdown-display (pulls native-only packages and its own styling model)"
+    },
+    {
+      "surface": "reader",
+      "control": "Layout chosen by useWindowDimensions width (<700, 700-1023, >=1024)",
+      "why": "iPad Split View and Slide Over change the window, not the device; the width is the only honest signal",
+      "rejected": "user-agent or device detection"
+    },
+    {
+      "surface": "reader",
+      "control": "Hand-written router over the History API (mobile/src/router.ts, four routes)",
+      "why": "four routes, no nested layouts, back button and deep links are all it needs; avoids a second router package in the bundle",
+      "rejected": "TanStack Router (its code-based tree and devtools are built around the desktop shell) and React Navigation (native-first, heavy on web)"
+    },
+    {
+      "surface": "reader",
+      "control": "Scroll position saved per chapter on this device",
+      "why": "the peak of resuming is landing on the paragraph, not the top of the chapter",
+      "rejected": "server-side scroll position (no endpoint, and it would fight across devices)"
+    },
+    {
+      "surface": "settings",
+      "control": "Segmented buttons (aria-pressed) and a range input",
+      "why": "three or two mutually exclusive options read faster as visible choices than behind a menu, and each applies on change",
+      "rejected": "Select menus"
+    },
+    {
+      "surface": "settings",
+      "control": "Zustand store persisted to localStorage, wrapped in try/catch",
+      "why": "settings are per device and synchronous, and zustand is already a dependency",
+      "rejected": "a server endpoint (no reason for a phone's font size to follow you to the desktop)"
+    }
+  ],
+  "entities": [
+    {
+      "name": "ReaderSettings",
+      "fields": [
+        { "name": "size", "type": "number", "note": "16-26 px; first value from the device text size" },
+        { "name": "theme", "type": "'dark' | 'light' | 'sepia'" },
+        { "name": "typeface", "type": "'serif' | 'sans'" },
+        { "name": "spacing", "type": "'tight' | 'normal' | 'loose'", "note": "line height 1.45 / 1.6 / 1.8" }
+      ],
+      "relations": ["stored on this device only"]
+    },
+    {
+      "name": "ScrollMark",
+      "fields": [
+        { "name": "chapterId", "type": "string" },
+        { "name": "ratio", "type": "number", "note": "0-1 of the chapter height, so a size change still lands near the same paragraph" }
+      ],
+      "relations": ["one per chapter, this device only"]
+    }
+  ],
+  "endpoints": [
+    { "method": "GET", "path": "/api/courses", "auth": false, "purpose": "library rows and the continue card (existing, MSW handler exists)" },
+    { "method": "GET", "path": "/api/courses/:id", "auth": false, "purpose": "outline: modules and chapters with done marks (existing)" },
+    { "method": "GET", "path": "/api/chapters/:id", "auth": false, "purpose": "chapter markdown, prev/next (existing)" },
+    { "method": "POST", "path": "/api/chapters/:id/progress", "auth": false, "purpose": "started on open, finished at the end (existing)" }
+  ],
+  "integration": [
+    { "from": "mobile/src/queries.ts", "to": "courseService, chapterService", "note": "same services and MSW handlers as the web app" },
+    { "from": "chapter progress mutation", "to": "invalidates reader course + courses keys", "note": "outline ticks and library % update without a reload" },
+    { "from": "deploy/nginx.conf", "to": "/m/ falls back to /m/index.html", "note": "already done in Phase 0, so deep links work" },
+    { "from": "mobile/src/theme.ts", "to": "three palettes keyed by theme", "note": "every screen reads colours from the active palette" }
+  ],
+  "blastRadius": {
+    "new": [
+      "mobile/src/router.ts",
+      "mobile/src/settings.ts",
+      "mobile/src/scrollMarks.ts",
+      "mobile/src/markdown/blocks.tsx",
+      "mobile/src/markdown/parse.ts",
+      "mobile/src/screens/LibraryScreen.tsx",
+      "mobile/src/screens/CourseScreen.tsx",
+      "mobile/src/screens/ChapterScreen.tsx",
+      "mobile/src/screens/SettingsScreen.tsx",
+      "mobile/src/components/Outline.tsx",
+      "mobile/src/components/TopBar.tsx",
+      "mobile/src/components/States.tsx",
+      "mobile/src/reader.test.tsx",
+      "mobile/src/markdown/parse.test.ts"
+    ],
+    "changed": [
+      "mobile/src/App.tsx",
+      "mobile/src/queries.ts",
+      "mobile/src/theme.ts",
+      "mobile/src/react-native.d.ts",
+      "mobile/src/App.test.tsx",
+      "package.json (markdown-it as a direct dependency)"
+    ]
+  },
+  "verification": [
+    "npm run type-check",
+    "npm run lint",
+    "vitest run mobile",
+    "Playwright WebKit against the Mac mini at 390x844, 320x1000, 590x820, 820x1180, 1180x820, 1366x1024: library, resume, outline, chapter, settings; no horizontal overflow",
+    "Render every chapter of the 65-lesson harness course without a page error",
+    "make check"
+  ]
+}
