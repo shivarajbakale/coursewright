@@ -2,6 +2,23 @@
 
 In the agent loop, one question about `index.txt` took three model requests and two tool runs. Ask a follow-up and the work starts again. To log the work, count it, cap it or show progress, you need words for its two sizes. What is "one answer", and what is "one round" inside it?
 
+```inkling
+title "A turn of three steps"
+layout flow
+user: person "You"
+model: icon server "Model"
+tool: icon folder "read_file"
+answer: box "Answer" green
+step 1: user, model "You ask; the model asks for a tool"
+step 2: tool, model "The tool reads the file; the model asks again"
+step 3: model, answer "The model replies with plain text"
+user -> model : "question"
+model -> tool : "tool call"
+tool -> model : "tool result"
+model -> answer : "final text"
+circle answer
+```
+
 ## A trip to the help desk
 
 Picture a help desk. You walk up and ask a question. The clerk goes to the back room, comes back, goes again, and finally gives you the answer. Your visit, from question to answer, is one unit. Each trip to the back room is a smaller unit inside it. Ask a second question and a new visit begins, but the clerk still has the notes from the first one on the desk.

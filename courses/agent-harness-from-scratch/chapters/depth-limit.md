@@ -6,6 +6,28 @@ A child agent gets the same tools as its parent, and that includes the subagent 
 
 Picture a company rule: "a team lead may hand work to a colleague, but that colleague does the work themselves." Work can be split once, and then someone has to actually do it. Each extra level allowed by the rule adds one more layer of handing off.
 
+```inkling
+title "How the depth cap stops delegation"
+you: person "You"
+top: box "Top agent\ndepth 0" green
+child: box "Child agent\ndepth 1" yellow
+check: diamond "parent.depth >= MAX_DEPTH?"
+deep: box "Child agent\ndepth 2" gray
+work: round "Does the work itself"
+
+you -> top : "you talk to it"
+top -> check : "calls subagent"
+check -> child : "0 >= 1 is false"
+child -> check : "calls subagent anyway"
+check -> work : "1 >= 1 is true, error result"
+note check "MAX_DEPTH = 1 allows two levels"
+step 1: you, top "The agent you talk to has depth 0"
+step 2: check "It calls subagent, so the check runs"
+step 3: child "The child starts with depth 1 and its prompt says do the work"
+step 4: work "A second call is refused, so the child works itself"
+circle check
+```
+
 The picture stops holding because a model, unlike a colleague, does not read the company handbook unless you put the rule in front of it. So the cap needs two parts: a hard check that refuses, and a plain sentence in the prompt so the model does not waste a step trying.
 
 Give every `Agent` a `depth`: `0` for the agent the person talks to, and the parent's depth plus one for each child. Then in `src/agents.ts`:

@@ -6,7 +6,47 @@ So far every listener lands on one shared list. That is fine with one agent. Now
 
 Think of a conference with name badges. Announcements over the main speakers reach everyone. Notes left in a room for "team blue" are read only by people wearing blue badges. When team blue leaves, their room is cleared. The picture stops holding at the badge itself: a person can borrow a badge, while here the badge is fixed by which context made the registration, and cannot be changed afterwards.
 
+```inkling
+title "One agent scope, one set of registrations"
+layout flow
+emit: box "Announcement\nfor one agent"
+reg-global: round "Global listener\nno tag" green
+reg-main: round "Listener\ntag main" blue
+reg-research: round "Listener\ntag research" orange
+filter: diamond "Same tag\nor no tag?"
+emit -> filter : "agent/turn-end"
+filter -> reg-global : "runs"
+filter -> reg-main : "runs"
+filter -> reg-research : "skipped"
+note reg-research "other agents never see it"
+step 1: emit "Each agent announces through its own context"
+step 2: filter "The scope's key decides who hears it"
+step 3: reg-global "Untagged listeners are global and always run"
+step 4: reg-main "A listener with this agent's tag runs too"
+step 5: reg-research "Other tags are skipped"
+circle filter
+```
+
 An agent scope gives each agent its own child context with a tag, its key. Anything registered through that context carries the tag. When an announcement is made for that agent, untagged listeners run (they are global) plus listeners carrying that agent's tag. Other agents' listeners are skipped. Disposing the scope's context runs its disposers, so everything the agent registered goes with it.
+
+```inkling
+title "A scope owns what it registered"
+layout flow
+research: box "Research scope\ncontext" orange
+ctx: box "Child context\ncarries the key"
+reg: round "Research listener\nregistered here"
+gone: round "Listener removed"
+research -> ctx : "createScope(parent, key)"
+ctx -> reg : "on(...) tags the entry"
+research -> gone : "dispose() runs disposers"
+gone -> gone : "nothing leaks"
+note gone "other agents never saw it"
+step 1: research "The research agent gets its own scope"
+step 2: ctx "The child context carries the agent's key"
+step 3: reg "Registrations made through it carry that key"
+step 4: gone "Disposing the scope removes all of them"
+circle gone
+```
 
 ```ts
 // src/plugins.ts (changes)

@@ -10,6 +10,20 @@ A model works like that. Each API call is complete in itself. The model reads th
 
 So the memory has to live in your program. Your program keeps every message of the conversation in a list. Each time the user says something, you add it to the list and send the whole list. When the reply arrives, you add that too, labelled `assistant`. That is why the `assistant` role exists: it lets you hand the model its own earlier words.
 
+```inkling
+title "The program keeps the memory"
+layout down
+program: box "Your program" green
+list: db "History list"
+model: box "The model"
+step 1: user, program "The user types a message"
+step 2: list, program "Your program adds it to the list"
+step 3: model, program "The whole list is sent, every time"
+step 4: reply, list "The model's reply is added to the list"
+note list "the list grows by 2 each exchange"
+circle list
+```
+
 The picture stops holding in one place. A hotline operator could choose to take notes. The model cannot. Even if you send the same conversation twice, it starts from nothing each time.
 
 ## A chat that remembers

@@ -6,6 +6,21 @@ Plugins can now load and unload cleanly. But each one lives alone in its own chi
 
 Picture a shared kitchen shelf. Anyone may put a jar on it, but every jar gets a name tag, and only one jar per name. Anyone may take the jar labelled "salt" without knowing who brought it. When the person who brought it moves out, their jars leave with them. The picture stops holding in one way: a real shelf cannot tell you who placed a jar, while the kernel always remembers the owner, which is how the jar leaves at the right moment.
 
+```inkling
+title "A service on the shared shelf"
+layout flow
+owner: person "memoryLog"
+capability: box "session service" green
+shelf: box "Root services shelf"
+greeter: person "greeter"
+gone: box "Entry removed" gray
+step 1: owner, capability "The owner provides a named capability"
+step 2: shelf "The root shelf keeps it under one name"
+step 3: greeter, shelf "Another plugin looks up the name"
+step 4: owner, gone "Unloading the owner removes the entry"
+circle capability
+```
+
 That jar is a service: a named object one plugin provides for others to use, removed when its plugin unloads. All contexts share one shelf, kept on the root context, the first one you created.
 
 ```ts

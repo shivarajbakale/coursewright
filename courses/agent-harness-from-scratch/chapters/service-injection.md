@@ -8,6 +8,26 @@ Think of a recipe card pinned in a shared kitchen that says "needs: eggs, flour"
 
 That is service injection: a plugin declares the services it needs, and the host only starts it once they all exist. The host also stops it when one goes away, and starts it again when the service returns. Order on the page stops mattering.
 
+```inkling
+title "Service injection waits for readiness"
+layout flow
+shelf: box "Service shelf"
+needs: box "Needs\nsession"
+check: circle "Check needs"
+run: box "Plugin runs"
+watcher: box "Watcher"
+shelf -> watcher : "changed()"
+watcher -> check : "shelf may differ"
+check -> needs : "all present?"
+needs -> check : "still there?"
+check -> run : "start plugin"
+run -> check : "one goes away"
+circle run
+step 1: watcher "The watcher is registered"
+step 2: check "It compares the shelf with the needs list"
+step 3: run "All needs exist, so the plugin mounts"
+```
+
 The kernel needs one new piece: a way to tell waiting plugins that the shelf changed.
 
 ```ts

@@ -180,7 +180,6 @@ def markdown_problems(markdown: str, *, node: bool = True) -> list[str]:
             continue
         for e in r["errors"]:
             problems.append(f"{name} line {e['line']}: {e['message']}")
-        for w in r["warnings"]:
-            if w["code"] == "W-WIDE":
-                problems.append(f"{name} line {w['line']}: {w['message']}")
+        for w in r["warnings"]:  # a generated drawing is held to a clean check: a warning often loses a step
+            problems.append(f"{name} line {w['line']}: {w['message']}")
     return problems

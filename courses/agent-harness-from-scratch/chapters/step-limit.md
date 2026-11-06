@@ -6,6 +6,24 @@
 
 Picture a parent leaving a babysitter with a rule: "Read him stories until he falls asleep. If he is still awake after three, stop and call me." Usually he is asleep after one. The rule exists for the night he is not. It does not make him sleepy. It only makes sure the evening ends, and that someone finds out.
 
+```inkling
+title "How a step limit ends a turn"
+layout down
+model: box "Model"
+tool: box "Tool"
+reply: box "Final reply"
+stop: box "Step limit reached"
+model -> tool : "Ask for a tool"
+tool --> model : "Return result"
+step 1: model "The model asks for a tool"
+step 2: tool "The tool returns its result"
+step 3: reply "No tool calls means the turn ends"
+step 4: stop "Too many steps means the turn also ends"
+model -> reply : "Reply without tool calls"
+model -> stop : "Reach the maximum steps"
+circle stop
+```
+
 A step limit is that rule for a turn. You pick a maximum number of steps. If the model is still asking for tools when the turn reaches it, your program stops the turn and says so plainly.
 
 The picture stops holding in one place. A child who stays awake is not doing anything wrong. A long-running turn might be. But it might also be an honest, large task that needs many steps. A limit cannot tell the two apart. Choose it high enough for real work and low enough to cap the cost of a confused model.

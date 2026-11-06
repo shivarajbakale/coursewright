@@ -6,6 +6,23 @@ Your event log lives in memory. When the process exits or crashes, the whole con
 
 Picture a paper logbook kept in pen. You write one entry per line and never go back. If someone knocks your arm while you write, only the line you were writing is spoiled. Every line above it is finished and safe.
 
+```inkling
+title "One JSON event per line"
+layout down
+line1: box "{\"type\":\"session\",\"version\":1}" gray
+line2: box "{\"seq\":1,...}"
+line3: box "{\"seq\":2,...}"
+line4: box "{\"seq\":3,...}"
+line1 -> line2 : "append"
+line2 -> line3 : "append"
+line3 -> line4 : "append"
+note line4 "safe once the newline is written"
+step 1: line1 "The header line names the format and version"
+step 2: line2 "Then one line per event, in order"
+step 3: line3 "Each new line is only added at the end"
+step 4: line4 "Finished lines are never touched again"
+```
+
 A **JSONL file** (JSON Lines) is that logbook. Each line holds one complete JSON value, followed by a newline. Adding an event means adding bytes to the end of the file. Nothing already written is touched. `minidsh` starts the file with a header line naming the format and its version, so a future `minidsh` that changes the format can tell old files apart:
 
 ```text
@@ -48,6 +65,18 @@ export function loadEvents(path: string): SessionEvent[] {
 ```
 
 Walk through a crash. The file holds a header and events 1 to 7, each with its newline. The program is writing event 8 and dies after 30 bytes: `{"seq":8,"time":"2026-11-06T1`. There is no newline after it. `loadEvents` keeps the header and events 1 to 7, and truncates the file back to the end of line 7. The truncate matters: without it, the next append would be glued onto the broken bytes, and that line would never parse. A line in the middle that fails to parse is different. That is real damage, and `JSON.parse` throws rather than guessing.
+
+```inkling
+title "A crash cuts off the last line"
+layout compare
+columns "On disk after the crash", "After loading"
+row "Header": "kept", "kept"!
+row "Events 1 to 7": "each ends with newline", "parsed"!
+row "Event 8 half written": "no newline at the end", "dropped"
+row "File length": "longer than the last newline", "truncated back to newline"!
+row "Next append starts": "would glue onto broken bytes", "starts on a clean line"!
+steps auto
+```
 
 Dropping event 8 loses nothing that was promised: its batch never finished its fsync, so no one was told it was saved.
 

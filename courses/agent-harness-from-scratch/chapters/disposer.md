@@ -8,6 +8,24 @@ Think of checking into a hotel. Each time you borrow something at the desk, a ke
 
 In code, the slip is a list of functions. Every time a plugin sets something up, it hands the host a function that undoes it. That function is a disposer. When the plugin unloads, the host runs every disposer it collected.
 
+```inkling
+title "Effects collect undo functions"
+layout flow
+setup: box "Setup runs" yellow
+disposer: box "Disposer returned"
+host: box "Host keeps disposer"
+unload: box "Plugin unloads"
+step 1: setup "The plugin sets something up"
+step 2: disposer "It hands back a function that undoes it"
+step 3: host "The host keeps the disposer on a list"
+step 4: unload "On unload the host runs the disposers in reverse order"
+setup -> disposer : "hands back undo"
+disposer -> host : "kept on list"
+host -> unload : "runs in reverse"
+unload -> disposer : "undoes setup"
+circle disposer
+```
+
 The setup step that comes with a disposer is called an effect: you run some code now and receive a way to reverse it later. Here is the kernel with effects:
 
 ```ts
@@ -48,6 +66,22 @@ export class Context {
 Three things are going on. First, `effect` runs the setup now and keeps its undo on the list. The `done` flag makes the disposer safe to call twice: the second call does nothing. Second, each plugin gets its own child context, so its disposers stay separate from everyone else's. Third, mounting a plugin is itself an effect on the parent. Unloading a parent therefore unloads every child it mounted, all the way down.
 
 Now the heartbeat can be stopped:
+
+```inkling
+title "Stopping the heartbeat"
+layout timeline
+- 1: Interval starts
+- 2: It prints at 1,000 ms
+- 3: It prints at 2,000 ms
+- 4: It prints at 3,000 ms
+- 5: Disposer clears interval
+span 2..4 "three beats"
+step 1: 1 "The interval starts"
+step 2: 2 "It prints at 1,000 ms"
+step 3: 3 "It prints at 2,000 ms"
+step 4: 4 "It prints at 3,000 ms"
+step 5: 5 "The disposer clears the interval"
+```
 
 ```ts
 const heartbeat: Plugin<{ everyMs: number }> = (ctx, config) => {

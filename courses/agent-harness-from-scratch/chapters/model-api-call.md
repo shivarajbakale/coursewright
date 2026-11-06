@@ -6,6 +6,20 @@ A large model needs powerful, expensive hardware, so it usually runs on its prov
 
 Picture a takeaway hatch. You do not walk into the kitchen. You hand a written order through the hatch in the format the kitchen expects, with your account card. A while later, the food comes back through the same hatch.
 
+```inkling
+title "One request out, one reply back"
+layout down
+you: box "Your program" yellow
+req: sticky "Order\nJSON + API key"
+provider: box "Provider's model"
+reply: sticky "Reply\nJSON text + tokens"
+step 1: you, req "Your program writes the order"
+step 2: provider "The request travels to the provider"
+step 3: reply "The reply comes back through the hatch"
+circle req
+note provider "the model remembers nothing"
+```
+
 A provider offers the same arrangement for its model. It publishes an API, short for application programming interface: a fixed web address plus an agreed format for what you send and what you get back. You send an HTTP request, the same kind of message a browser sends when it loads a page. You get an HTTP response with the model's reply.
 
 Two pieces make up the order. The first is JSON, short for JavaScript Object Notation: plain text that writes data as nested `{ "key": value }` objects and `[ ]` lists. Both your order and the reply are JSON. The second is an API key: a long secret string the provider gives you. It identifies you, so the provider knows whom to bill. Keep it out of your code and out of version control. Put it in an environment variable instead.
@@ -38,6 +52,18 @@ console.log(data.usage)
 ```
 
 Walk through it. `fetch` sends a `POST` request, which is the HTTP method for sending data. The `Authorization` header carries your key after the word `Bearer`. The body is JSON. `model` names which model you want. `thinking` switches off the model's long working-out step, which it does by default; a later lesson turns it back on. `messages` holds your question; for now it is a list with one entry, and the next lesson explains the `role` label.
+
+```inkling
+title "What you send, what you get"
+layout compare
+columns "Request body", "Reply body"
+row "Names the model": "model: deepseek-flash", "model: deepseek-flash"
+row "Your text": "messages", "choices[0].message.content"
+row "Thinking": "thinking: disabled", "written reply"
+row "Cost": "none", "usage tokens"
+row "Missing key": "HTTP 401 error", "no reply"
+steps auto
+```
 
 If the key is missing or wrong, `res.ok` is false and you see the provider's error, for example status 401. Otherwise the reply body is JSON shaped roughly like this, trimmed to the parts you use:
 

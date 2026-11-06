@@ -8,6 +8,21 @@ Think of correcting a printed contract by hand. You do not retype the contract. 
 
 A safe file edit replaces one exact piece of text, only after the file has been read, and writes the result in one indivisible step. An atomic write means writing the new content to a temporary file and then renaming it over the original; a rename either happens completely or not at all, so a reader never sees a half-written file.
 
+```inkling
+title "Atomic write: temp file, then rename"
+layout down
+orig: db "config.ts\noriginal"
+tmp: db "config.ts.tmp\nnew content"
+final: db "config.ts\nnew content"
+orig -> tmp : "write"
+tmp -> orig : "rename over original"
+note orig "a reader sees old or new, never half a file"
+circle tmp
+step 1: orig "The original file is intact"
+step 2: tmp "The new content goes to a temp file"
+step 3: final "The rename replaces the original atomically"
+```
+
 ```ts
 // src/edit.ts
 import { readFile, writeFile, rename, stat } from 'node:fs/promises'
@@ -42,6 +57,34 @@ export async function editTool({ path, old_string, new_string, replace_all = fal
 ```
 
 Walk through the guards in order. An unread file is refused, so the model cannot edit from memory. A file whose size or modification time changed since the read is refused as stale, with a fix the model can follow. Line endings are made uniform for matching and restored afterwards, so a Windows-style file still matches. Zero matches is an error; two or more matches without `replace_all` is an error, because guessing which one is how the wrong line changes. The replacement uses a function so a `$` in the new text is not treated as a special pattern. Finally the temp file is renamed over the original, and the stored version is updated so the next edit does not need another read.
+
+```inkling
+title "The guards an edit passes through"
+layout down
+model: person "Model"
+req: sticky "Edit request\npath, old, new"
+read: box "File was read\nbefore?"
+fresh: box "File unchanged\nsince the read?"
+match: box "old_string found\nexactly once?"
+write: box "Write to temp file"
+rename: box "Rename over original"
+done: box "One atomic write"
+model -> req : "asks to edit"
+req -> read : "checked"
+read -> fresh : "passed"
+fresh -> match : "passed"
+match -> write : "passed"
+write -> rename : "new content"
+rename -> done : "swap"
+note match "two matches without replace_all is an error"
+circle done
+step 1: model, req "The model asks to edit"
+step 2: read "The file must have been read"
+step 3: fresh "The file must not have changed"
+step 4: match "The old text must be unique"
+step 5: write, rename "The new content goes to a temp file"
+step 6: done "The rename replaces the original"
+```
 
 Trace it. `config.ts` holds `port = 3000` once and `retries = 3` twice. The model edits `port = 3000` to `port = 8080` without reading: refused. It reads, then edits: one match, replaced. It tries `retries = 3` to `retries = 5`: `old_string appears 2 times`. It resends with the surrounding line included, one match, done. Meanwhile you save the file in your editor; its next edit is refused as changed, and it re-reads.
 

@@ -6,6 +6,26 @@ With the plugin kernel, a tool can now be a plugin. The file tools might live in
 
 Think of the front desk at a library. Every department registers its services with the desk. A visitor sees the printed list of what is offered, a name and a line of description each, never the staff rotas or the keys. When a visitor asks for something by name, the desk passes the request to the right department. The picture stops holding in one way: a library rarely changes its list, while plugins load and unload tools at any moment, and the list must follow.
 
+```inkling
+title "The tool registry"
+layout down
+plugin: box "Tool plugin"
+reg: db "Tool registry"
+schema: sticky "Schema only\nname, description, parameters"
+call: sticky "Tool call\nby name"
+
+step 1: plugin "Plugins register tools and receive a disposer"
+step 2: reg "The registry stores each tool by name"
+step 3: schema "schemas() drops execute and returns only the model-facing fields"
+step 4: call "get(name) finds the tool or reports an unknown tool"
+plugin -> reg : "register tool, get disposer"
+loop -> reg : "schemas() for the request"
+reg -> schema : "drops execute"
+loop -> reg : "get(name) when a call returns"
+reg -> call : "the tool, or unknown tool"
+circle reg
+```
+
 A tool registry is a service that holds every tool and gives the model only their schemas. Plugins register tools into it; the agent loop asks it for schemas when building a request and for a tool by name when a call comes back.
 
 ```ts

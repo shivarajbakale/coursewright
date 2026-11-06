@@ -8,6 +8,28 @@ Think of a bank that phones you before a large transfer. The transfer waits. If 
 
 Approval means pausing a risky tool call to ask the person, where only a clear yes lets it run. The answer is one of a small, closed set of outcomes, so no code path can invent a fifth answer that slips through:
 
+```inkling
+title "A risky call waits for approval"
+layout down
+call: box "Risky tool call" yellow
+person: person "Person"
+ask: diamond "Explicit y?"
+run: box "Call runs once"
+deny: box "Call is denied"
+call -> ask : "Ask for approval"
+ask -> person : "Show the question"
+person -> ask : "Return one outcome"
+ask -> run : "y: allowed-once"
+ask -> deny : "No, cancel, or unavailable"
+circle run
+note deny "Silence is not consent"
+step 1: call "The model asks for a risky call"
+step 2: ask "The call pauses and asks the person"
+step 3: person "The person answers yes, no, or nothing"
+step 4: run "Only an explicit yes runs the call, once"
+step 5: deny "Anything else denies the call"
+```
+
 ```ts
 // src/approval.ts
 import * as readline from 'node:readline/promises'

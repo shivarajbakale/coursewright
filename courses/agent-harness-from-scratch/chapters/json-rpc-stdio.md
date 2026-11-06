@@ -6,6 +6,23 @@ A code editor wants an agent panel. A test suite wants to drive `minidsh` step b
 
 Picture a deli counter that hands out numbered tickets. You ask for something and get ticket 7. Whatever comes back later is labelled 7, so you know it is yours even if other orders were served first. The counter also calls out announcements with no number, like "fresh bread out now", which need no reply.
 
+```inkling
+title "Numbered tickets on the pipe"
+layout sequence
+editor: person "Editor"
+harness: box "minidsh --stdio"
+editor -> harness : "id 1: initialize"
+harness --> editor : "id 1: server name"
+editor -> harness : "id 2: prompt: add a test"
+harness --> editor : "id 2: empty result"
+editor -> harness : "id 3: session/wait"
+harness --> editor : "no id: session/event"
+harness --> editor : "no id: session/event"
+harness --> editor : "id 3: final text"
+steps auto
+circle harness
+```
+
 That is **JSON-RPC 2.0**, a small standard for messages written as JSON. A request has `"jsonrpc": "2.0"`, an `id`, a `method` name and `params`. The response carries the same `id` and either a `result` or an `error`. A message with a `method` but no `id` is a notification: nobody replies to it. Over stdio, each message is one line of JSON, so a newline marks where one ends.
 
 The picture stops holding in one place. At a deli, other noises in the room do not matter. Here, standard output is the protocol, so nothing else may write to it. Every log line must go to standard error, or the caller will fail to parse it.

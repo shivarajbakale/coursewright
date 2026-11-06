@@ -6,6 +6,17 @@ A person in a browser wants to type a prompt and watch the answer arrive word by
 
 Think of ordering at a shop counter: you hand over your order and get a ticket back. That is an HTTP request. Now imagine the shop also keeps a phone line open to you for as long as you stay, and calls out each step: "grinding", "brewing", "ready". That open line is a **WebSocket**: a connection that starts as an ordinary HTTP request, then stays open so either side can send a message at any time.
 
+```inkling
+title "Ticket back or a phone line"
+layout compare
+columns "HTTP request", "WebSocket"
+row "Who speaks": "browser asks, server answers once", "either side sends any time"
+row "Shape": "one answer, then closed", "stays open for the whole visit"
+row "Progress": "server must wait for the whole reply", "server pushes each step as it happens"
+row "Reconnect": "ask again", "resume from the last sequence number"
+steps auto
+```
+
 The picture stops holding in one way. If the line drops and you call back, you do not want to hear everything again from the start, only what you missed. The event log's sequence numbers make that possible.
 
 Here is `src/server.ts`. Node has no built-in WebSocket server, so install the small `ws` package with `npm install ws`.

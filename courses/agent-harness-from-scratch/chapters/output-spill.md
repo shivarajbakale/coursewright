@@ -6,6 +6,20 @@ The model asks to run the test suite, and the command prints 1,000,000 character
 
 Think of a clerk handed a 500-page report. They do not read it aloud at the meeting. They read the first page, which says what it is, and the last page, which has the conclusion, and say: "the full report is in drawer 3 if you need a section". The picture stops holding in one way: a person in the meeting walks to the drawer, while the model can only reach the file by asking for another tool call, so the note must say how.
 
+```inkling
+title "Output spill: what the model sees"
+layout flow
+cmd: box "Run test suite"
+out: box "1,000,000 characters" gray
+file: db ".minidsh/spill/call_7.txt"
+model: box "Model" yellow
+step 1: cmd "The command prints a million characters"
+step 2: out "The tool result is too big to send"
+step 3: file "Over the limit, so all of it is saved to a file"
+step 4: model "The model gets the first 2,000 characters"
+circle model
+```
+
 Output spill means saving a tool result that is too big to a file, and showing the model only its start, its end and where the rest is. The start usually says what the output is; the end usually holds the error or summary. The middle stays on disk, one tool call away.
 
 It fits the pipeline as a post-execute listener, so it works for every tool without changing any of them:

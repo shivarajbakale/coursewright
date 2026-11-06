@@ -6,6 +6,21 @@ The agent loop reads DeepSeek's streaming format directly. It splits server-sent
 
 Think of shipping containers. Goods from any factory in any country go into boxes of a few standard sizes. Cranes, ships and trucks are built for the boxes, not for the goods, so a port handles a container from anywhere the same way. The work of packing happens once, at the factory.
 
+```inkling
+title "Packing any provider's stream into standard chunks"
+layout flow
+provider: cloud "Another provider\nraw stream"
+pack: box "translate()\npacks it once" yellow
+chunks: box "StreamChunk union\ntext-delta\ntool-call-delta\nusage\nfinish"
+app: box "rest of minidsh\nreads only chunks"
+provider -> pack : "data: lines"
+pack -> chunks : "yields typed pieces"
+chunks -> app : "one shape at a time"
+circle chunks
+note chunks "one vocabulary for stop reasons"
+steps auto
+```
+
 Do the same with a streamed reply. Define a few kinds of small piece that cover everything a streamed reply can contain, and translate each provider's stream into them at one place. The rest of the program only ever sees these pieces:
 
 ```ts
@@ -49,6 +64,21 @@ export function* translate(json: any, state: { finish?: FinishReason }): Generat
 Notice that `translate` does not emit `finish` when it sees `finish_reason`. DeepSeek may send usage with or after that line, so the translator remembers the reason and emits `finish` only at `[DONE]`. That is how the "usage before finish" rule is kept.
 
 Trace a short tool-calling reply. Four `data:` lines arrive: the first carries `tool_calls` with `index 0`, `id 'call_1'`, `name 'count_lines'` and arguments `{"pa`; the second carries `th":"notes.txt"}`; the third has `finish_reason: 'tool_calls'` and a usage object; the fourth is `[DONE]`. Out come four chunks: two `tool-call-delta` chunks for index 0, one `usage`, and one `finish` with reason `tool-calls`.
+
+```inkling
+title "One tool call traced through four data lines"
+layout sequence
+deepseek: box "DeepSeek stream"
+minidsh: box "translate()"
+deepseek -> minidsh : "data: tool_calls index 0"
+minidsh -> minidsh : "tool-call-delta arguments {\"pa"
+minidsh -> minidsh : "tool-call-delta arguments th\":\"notes.txt\"}"
+deepseek -> minidsh : "data: finish_reason tool_calls + usage"
+minidsh -> minidsh : "usage"
+deepseek -> minidsh : "data: [DONE]"
+minidsh -> minidsh : "finish reason tool-calls"
+steps auto
+```
 
 > **Key idea:** A stream chunk is one piece of a streamed reply in a small provider-neutral union (text, tool-call piece, usage, finish); each provider's stream is translated into chunks in one place, and the rest of the program reads only chunks.
 

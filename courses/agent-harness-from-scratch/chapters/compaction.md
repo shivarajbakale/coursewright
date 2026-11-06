@@ -8,6 +8,23 @@ After a long meeting, nobody rereads the full transcript. A secretary writes min
 
 Compaction does the same. The model itself writes the minutes, using a fixed template, and the old middle is replaced by them. The picture stops holding at accuracy. A good secretary was paying attention. A model summarizing 80,000 tokens will drop details, and a dropped detail is gone from the model's view. The fixed template exists to make the important kinds of fact hard to forget.
 
+```inkling
+title "How compaction shrinks the history"
+layout down
+begin: box "Fixed beginning" blue
+old: box "Old middle" gray
+recent: box "Newest messages" green
+summary: box "Fixed-format summary" yellow
+step 1: begin "The fixed beginning stays"
+step 2: old "The old middle is too big"
+step 3: summary "The model writes the minutes"
+step 4: recent "The newest messages stay"
+old -> summary : "replaced by"
+summary -> begin : "new history"
+summary -> recent : "new history"
+circle summary
+```
+
 ## Three steps
 
 First, choose the cut. Keep a fixed beginning: the system prompt and project instructions. Keep the newest messages, up to a retain budget, here 16 percent of the window minus the reply reserve. Everything between is summarized. One rule: never put the cut between a tool call and its result, or the kept part would start with a result whose request is gone.
@@ -27,6 +44,19 @@ export function chooseCut(history: Message[], start: number, retainTokens: numbe
 ```
 
 Second, ask for the summary. Send the history up to the cut, unchanged, then one more user message with the instruction. Because the request begins exactly like earlier ones, the provider can reuse its work for that prefix.
+
+```inkling
+title "Asking for the summary"
+layout sequence
+harness: box "Harness"
+provider: box "Provider"
+model: box "Model"
+harness -> provider : "history before the cut"
+provider -> model : "same prefix"
+harness -> provider : "summarization instruction"
+provider --> harness : "summary"
+steps auto
+```
 
 ```ts
 const SECTIONS = ['Primary Request and Intent', 'Key Technical Concepts', 'Files and Code', 'Errors and Fixes',

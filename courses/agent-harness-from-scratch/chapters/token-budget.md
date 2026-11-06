@@ -12,6 +12,26 @@ The picture stops holding at the gauge itself. A fuel gauge reads the tank direc
 
 So `minidsh` combines the two. Take the exact count from the last reply, which covers the prompt it sent plus the reply it got. Then estimate only the messages added since. A common rough rule for English text is about four characters per token. Code and other languages differ, which is one more reason to keep a reserve.
 
+```inkling
+title "Measuring the token budget before a step"
+layout flow
+last: box "Last reply\n98,000 + 1,400" yellow
+new: box "New tool result\n14,000 chars"
+measure: diamond "measure\n= 102,900"
+limit: box "threshold\n= 102,400"
+shrink: box "Shrink history"
+step 1: last "The last reply gives an exact count"
+step 2: new "Anything added since is estimated at 4 characters per token"
+step 3: measure "Exact count plus estimate gives the measure"
+step 4: limit "The measure is compared with the threshold"
+step 5: shrink "Past the line, history gets smaller"
+last -> measure : "exact count"
+new -> measure : "est. chars / 4"
+measure -> limit : "compare"
+limit -> shrink : "over the line"
+circle measure
+```
+
 ```ts
 // src/context.ts
 export const estimateTokens = (text: string) => Math.ceil(text.length / 4)
@@ -28,6 +48,18 @@ export function threshold(b: Budget): number {
 ```
 
 The threshold takes the smaller of two limits. The first is a fixed share of the window, here 80 percent. The second is what is left after reserving the reply's maximum length and a headroom for later work. Whichever is stricter wins.
+
+```inkling
+title "Two limits, the smaller one wins"
+layout compare
+columns "Share of window", "Reserves"
+row "Rule": "128,000 x 0.8", "128,000 - 8,000 - 16,000"
+row "Gives": "102,400", "104,000"
+row "Chosen": "102,400"!, "104,000"
+step 1: share-of-window "First limit: a fixed 80 percent of the window"
+step 2: reserves "Second limit: the window minus reply and headroom"
+step 3: chosen "The smaller number becomes the threshold"
+```
 
 Work one example. The window is 128,000 tokens, the reply may use up to 8,000, and the headroom is 16,000:
 

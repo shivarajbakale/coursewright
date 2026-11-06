@@ -6,6 +6,31 @@ Until now a turn starts because your code calls the loop with the person's messa
 
 Picture a desk with two trays. One says "next meeting": requests that should start a fresh piece of work once the current one is finished. The other says "pass me a note now": short notes you want read at the very next pause, inside the work already going on. When the desk is empty and someone drops a request in, the person at the desk gets up and starts.
 
+```inkling
+title "The agent inbox: two trays feeding the loop"
+layout down
+inbox: db "Inbox" blue
+nextturn: box "Next-turn tray\nfollowup" yellow
+nextstep: box "Next-step tray\nsteer, inject"
+agent: box "Agent loop" green
+loop: circle "runTurn"
+model: box "Model request"
+log: db "Event log\nuser/message"
+nextturn -> loop : "claims one, starts a turn"
+nextstep -> loop : "joins the next step"
+loop -> model : "history + claimed messages"
+model -> log : "appended as user/message"
+loop -> agent : "turn ends"
+agent -> loop : "next turn if tray not empty"
+circle loop
+note nextstep "a note joins the current turn, not a side chat"
+step 1: nextturn "A followup waits for a fresh turn"
+step 2: nextstep "A steer waits for the next step"
+step 3: loop "The loop claims one next-turn message"
+step 4: model "The model request carries history and claimed notes"
+step 5: log "Each claimed message is logged as a user message"
+```
+
 The picture stops holding in one place. A note in the second tray is not a side conversation. It becomes part of the record, exactly like anything the person typed, and the model reads it as a user message.
 
 Here is the smallest version for `minidsh`, in `src/agents.ts`:

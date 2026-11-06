@@ -6,6 +6,26 @@ Every repository has habits. This one runs tests with `pnpm test`. That one forb
 
 Picture a carpenter arriving at a workshop. A note on the door says "Tests: pnpm test. Never edit files in gen/." The carpenter reads it once on arrival, and a photocopy goes into the job folder. If the note is rewritten next week, the job folder still shows what the carpenter actually read.
 
+```inkling
+title "Where the file's text goes"
+layout flow
+door: sticky "AGENTS.md\nin the repo"
+log: db "Session log"
+sys: box "System prompt" gray
+hist: box "Derived history"
+user: person "The request"
+step 1: door "The harness reads the file once"
+step 2: log "The text is recorded as an event"
+step 3: hist "Replay sends it as a user message"
+step 4: user "The model sees it before the request"
+door -> log : "read once at session start"
+log -> hist : "replayed as a user message"
+sys -> hist : "unchanged"
+hist -> user : "sent to the model"
+circle log
+note log "survives a restart"
+```
+
 That is the design. The harness reads the file once, at the start of the session, and records its text as an event in the log. It is not a prompt section. Three reasons:
 
 - The system prompt describes the harness and its tools. The file is content from the repository, written by whoever owns it, perhaps a stranger. It should arrive with the authority of a message, not of the harness's own rules.
@@ -45,6 +65,17 @@ await session.append('user/message', { content: text, source: 'project-instructi
 ```
 
 Trace a repository with a 1,200-byte `AGENTS.md` and no `CLAUDE.md`:
+
+```inkling
+title "The log for one session"
+layout timeline
+- 0: system message, the prompt sections
+- 1: user message, the project instructions
+- 2: user message, your request
+span 0..2 "one turn"
+note 1 "source: project-instructions"
+steps auto
+```
 
 ```text
 seq 0  system/message   the rendered prompt sections

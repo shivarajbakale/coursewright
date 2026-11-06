@@ -6,6 +6,29 @@ So far the system prompt in `minidsh` is one string written in `src/loop.ts`. No
 
 Picture a newspaper page. Each desk writes its own column and gives it a slot number. The editor does not rewrite anyone's text. At print time the editor lays the columns out in slot order. If a desk closes, its column is gone from the next edition.
 
+```inkling
+title "The system prompt is assembled, not written"
+layout down
+identity: box "Harness identity" green
+edit: box "Edit tool plugin" green
+bash: box "Bash tool plugin" green
+reg: db "Section registry\nname + order" blue
+render: box "render()\nsort, join" yellow
+model: box "Model request" orange
+step 1: identity "The harness registers its identity section"
+step 2: edit "The edit tool registers its advice"
+step 3: bash "The bash tool registers its advice"
+step 4: reg "All sections land in one registry"
+step 5: render "render() sorts by order, then name"
+step 6: model "The joined text goes into the request"
+edit -> reg : "register 'tool:edit'"
+bash -> reg : "register 'tool:bash'"
+identity -> reg : "register 'identity'"
+reg -> render : "sorted by order, then name"
+render -> model : "system prompt text"
+note reg "unload the plugin: its disposer removes the section"
+```
+
 A system prompt can work the same way. Each plugin registers a named piece of text with an order number. Just before each request, the harness sorts the pieces and joins them. The picture stops holding at print time. A newspaper prints once a day. The harness lays out the page again at every step, so a section can change between two requests in the same turn.
 
 ## A section registry

@@ -2,6 +2,28 @@
 
 The registry finds the right tool by name. But a tool call carries its arguments as raw JSON text, written by the model one token at a time. Usually it is fine. Sometimes a required field is missing, a number arrives as the text `"ten"`, or the text is cut off halfway because the reply hit its length limit. If you hand that to `execute`, the tool crashes somewhere deep inside with a message the model cannot act on. What should happen first?
 
+```inkling
+title "How an argument check runs"
+layout down
+model: box "Model\nwrites raw JSON" yellow
+parse: box "parseArgs\nJSON to object"
+check: box "checkArgs\nagainst schema"
+tool: box "read_file\nthe tool"
+err: box "Tool error result\nto the model"
+step 1: model "The model writes the arguments as raw JSON text"
+step 2: parse "parseArgs turns the text into an object, or reports broken JSON"
+step 3: check "checkArgs looks for missing, unknown and mistyped fields"
+step 4: tool "Every field is good, so the tool runs"
+step 5: err "A problem is found, so the model gets an error result"
+model -> parse : "raw text"
+parse -> check : "object"
+check -> tool : "all fields good"
+check -> err : "problem found"
+err -> model : "Error: invalid arguments..."
+circle check
+note err "the model fixes it\non the next step"
+```
+
 ## Check the form at the counter
 
 Think of handing in a form at a council office. The clerk checks it before it goes to the back room: every required box filled, dates written as dates. If something is wrong, you get it back with a note saying exactly which box, and you fix it on the spot. The picture stops holding in one way: the clerk cannot judge whether your request makes sense, only whether the form is complete. The tool still has to check its own rules.

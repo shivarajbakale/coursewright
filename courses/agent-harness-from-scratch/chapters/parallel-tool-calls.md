@@ -6,6 +6,29 @@ One model reply can hold several tool calls. Say it asks to read five files, eac
 
 Think of a library reading room. Any number of people can read the same reference book at once; reading changes nothing. Someone correcting the book needs it alone, and the readers queued behind them must wait until the correction is done, so they read the new version. The picture stops holding at the door: the reading room has no limit, while your program caps how many calls run together, so a reply with 200 reads does not open 200 files at once.
 
+```inkling
+title "How a batch of tool calls runs"
+layout down
+reply: box "Model reply\nfour calls" blue
+step 1: reply "The reply lists four calls in order"
+read1: box "read a.ts" green
+read2: box "read b.ts" green
+reply -> read1 : "safe"
+reply -> read2 : "safe"
+step 2: read1, read2 "The two reads are safe, so they run together"
+read1 -> read2 : "about 200 ms"
+edit: box "edit a.ts" orange
+read1 -> edit : "reads finish first"
+reply -> edit : "not safe"
+step 3: edit "The edit runs alone, and nothing after it starts"
+last: box "read a.ts" green
+edit -> last : "now it starts, sees the new file"
+step 4: last "The last read runs after the edit"
+out: box "Results\nin call order" yellow
+last -> out : "result 4"
+note out "each result keeps its call id"
+```
+
 Concurrency means several pieces of work in progress at the same time. A tool declares whether its calls are safe to run concurrently, given the arguments. A read is safe; a write or a shell command is not. Parallel tool calls means running a stretch of safe calls together, while every unsafe call runs alone and acts as a barrier: nothing after it starts until it finishes. Results always go back in the order the model asked.
 
 ```ts

@@ -6,6 +6,34 @@ A tool call now needs several things done around it. It should be recorded in th
 
 Think of airport security. Every passenger passes the same stations in the same order: ticket check, bag scan, body scan, then the gate. A station can stop you. Nobody skips one, and new rules are added at a station, not by redesigning the airport. The picture stops holding in one detail: at the airport the record of your passage is kept by the staff, while here the log entry is written by the pipeline itself, before and after, whatever any station decides.
 
+```inkling
+title "Every tool call goes through the same stations"
+layout down
+step 1: call "A tool call arrives"
+step 2: log1 "The call is logged first"
+step 3: pre "The pre-execute hook may deny it"
+step 4: val "The arguments are checked"
+step 5: run "The tool runs inside a wrapping hook"
+step 6: post "The post-execute hook may replace the text"
+step 7: log2 "The result is logged with the call id"
+call: box "Tool call" yellow
+log1: db "Log the call"
+pre: circle "Pre-execute hook"
+val: diamond "Arguments valid?"
+run: box "Run the tool"
+post: circle "Post-execute hook"
+log2: db "Log the result"
+call -> log1 : "tool/call"
+log1 -> pre : "may deny"
+pre -> val : "allowed"
+val -> run : "yes"
+val -> log2 : "no, an error"
+run -> post : "result text"
+post -> log2 : "tool/result"
+circle run
+note run "a timeout wrapper sits here"
+```
+
 A tool pipeline is a fixed sequence of steps every tool call goes through, with waterfall hooks before and after the tool runs, and the call and its result logged. Plugins add behaviour by listening on the hooks; the sequence itself never changes.
 
 ```ts

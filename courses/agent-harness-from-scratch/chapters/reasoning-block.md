@@ -8,6 +8,24 @@ Think of a maths exam where you may do rough work in the margin. The examiner ca
 
 Some models, often called thinking models, do the same. They generate a stretch of working-out first, then the answer and any tool calls. Providers stream the two separately so you can treat them differently. Your program keeps them apart all the way through: a separate chunk type, a separate field in the finished message, a separate place on screen.
 
+```inkling
+title "Working-out and answer, kept apart"
+layout down
+model: box "Model"
+work: round "Reasoning\nworking-out" yellow
+answer: round "Answer text"
+call: round "Tool call"
+model -> work : "streams first"
+model -> answer : "streams after"
+model -> call : "may follow"
+step 1: model "The model starts a reply"
+step 2: work "Working-out arrives as its own deltas"
+step 3: answer "The answer arrives separately"
+step 4: call "Tool calls arrive in their own channel"
+note work "the margin, never the answer"
+circle work
+```
+
 Add one shape to the chunk union:
 
 ```ts

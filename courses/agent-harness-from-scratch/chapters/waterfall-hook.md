@@ -6,6 +6,19 @@ A listener can only watch. Suppose one plugin wants to stop a tool called `delet
 
 Think of a parcel passing through several checkpoints before it reaches the person who opens it. Each checkpoint can inspect it, wrap it in extra padding, note the time, or refuse it outright, and a refused parcel goes no further. When the reply comes back, it passes the same checkpoints in reverse. The picture stops holding in one detail: a real checkpoint hands the parcel forward and forgets it, while here each layer waits for everything inside it to finish, then sees the result on the way back.
 
+```inkling
+title "Waterfall layers around one action"
+layout down
+timer: box "Timer listener"
+blocker: box "Blocker listener"
+tool: box "Real tool action"
+circle blocker
+note blocker "may decide alone"
+step 1: timer "The timer notes the start and calls next"
+step 2: blocker "The blocker looks at the tool name and calls next"
+step 3: tool "The real tool runs and returns the result"
+```
+
 That is a waterfall hook. Listeners wrap one decision in turn. Each listener receives the event's arguments plus a next function, a function that hands control to the next layer and returns what came back. A listener that calls `next()` passes the decision on. A listener that returns without calling it decides on its own, and the layers inside it never run.
 
 ```ts

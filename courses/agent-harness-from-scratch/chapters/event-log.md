@@ -6,6 +6,26 @@ Your agent loop works. It keeps a `messages` array, pushes the user's question o
 
 Think of a bank. It does not keep your balance in one box that it rubs out and rewrites. It keeps a statement: every deposit and every withdrawal, in order, each written once. Your balance is something it works out from that list. When the bank makes a mistake, it does not erase the bad line. It adds a correcting line, so the history of the mistake stays visible.
 
+```inkling
+title "A log of facts, and what you compute from it"
+layout down
+user: person "You"
+ask: box "user said this"
+reply: box "model replied that"
+tool: box "tool returned this"
+log: db "Fact log\nappend only"
+msg: box "messages array\nfor the model"
+you -> ask : "question"
+ask -> log : "append"
+log -> reply : "next step"
+reply -> log : "append"
+log -> tool : "next step"
+tool -> log : "append"
+log -> msg : "compute from facts"
+circle log
+steps auto
+```
+
 An agent can work the same way. Instead of a `messages` array that the loop edits, it keeps a list of facts: "the user said this", "the model replied that", "this tool returned this". Each fact is added at the end and never changed. The message array the model needs becomes something you compute from the facts.
 
 The bank picture stops holding in one place. A statement is read by people, who can guess what a vague line meant. Your list is read by code, so every fact must be precise enough for a program to rebuild the conversation from it with no guessing.
@@ -42,6 +62,17 @@ After that turn the list holds two facts, in the order they happened. Nothing el
 ## Why one list of facts beats an edited array
 
 With an edited array plus a separate log written "for debugging", you have two records of the same thing. Sooner or later they disagree: a bug updates one and not the other, and you can no longer trust either. When the list of facts is the only record, there is nothing for it to disagree with.
+
+```inkling
+title "Two records drift; one record cannot"
+layout compare
+columns "Edited array plus a log", "One log of facts"
+row "Records of the turn": "two", "one"
+row "A bug edits the array": "log is now wrong", "log still right"
+row "Can you trust it": "no", "yes"
+row "Shorten the conversation": "delete old entries", "append a new fact"!
+steps auto
+```
 
 You also never lose information. Suppose a later feature needs to shorten a long conversation. It does not delete old facts. It appends a new fact that says "from here on, use this shorter version". The old facts are still there for anyone who wants to see what really happened.
 

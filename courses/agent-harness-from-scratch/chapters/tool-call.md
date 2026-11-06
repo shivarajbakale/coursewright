@@ -6,6 +6,21 @@ You sent the model a tool schema for `read_file`. Now a user asks "What does not
 
 Picture a manager who never leaves the desk. When they need a document from the archive, they do not fetch it. They fill in a request slip: which form, which file, plus a ticket number. A clerk takes the slip, does the work, and later brings the document back with the same ticket number on it.
 
+```inkling
+title "A tool call is a request, not an answer"
+layout sequence
+you: person "You"
+model: box "Model"
+program: box "Your program"
+tool: box "read_file"
+steps auto
+you -> model : "question + tool schemas"
+model --> program : "tool call: name + arguments"
+program -> tool : "run read_file(path)"
+tool --> program : "file contents"
+program --> model : "result, same tool call id"
+```
+
 The model is that manager. When it decides a tool would help, it does not write an answer. It replies with one or more request slips, each naming a tool and giving the arguments. This is a tool call. The reply's stop reason is `tool_calls`, and the text content is usually empty.
 
 The picture stops holding in one important way. A manager can watch the clerk. The model cannot see anything your program does. It only writes the request. Whether anything runs, and what happens, is entirely up to your program.

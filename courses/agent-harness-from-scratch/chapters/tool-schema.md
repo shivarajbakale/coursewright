@@ -8,6 +8,27 @@ Think of a restaurant menu. Each dish has a name, a line saying what it is, and 
 
 You give the model a menu of your functions in the same way. A function the model may request is called a tool. For each tool you describe three things:
 
+```inkling
+title "How a tool schema works"
+layout down
+model: box "Model" yellow
+menu: box "Tool schema\nname: read_file\ndescription: ...\nparameters: JSON Schema"
+ask: box "Tool request\nread_file"
+args: box "Arguments\n{\"path\": \"notes.txt\"}"
+run: box "Your program\nruns read_file"
+model -> menu : "reads the menu as text"
+menu -> model : "the model asks for read_file"
+model -> ask : "names the tool it wants"
+ask -> args : "carries the arguments"
+args -> run : "your program checks, then runs"
+note menu "the schema describes; it does not enforce"
+step 1: model "The model can only write text"
+step 2: menu "It reads a menu of your functions"
+step 3: ask "It asks for read_file by name"
+step 4: args "It fills in the arguments"
+step 5: run "Your program checks the request, then runs it"
+```
+
 - a `name`, such as `read_file`, which the model will use to ask for it;
 - a `description`, in plain words, saying what it does and when to use it;
 - `parameters`: the arguments it takes, written as a JSON Schema.

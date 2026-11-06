@@ -4,6 +4,54 @@ Every part of `minidsh` now exists, taught one concept at a time. Each lesson lo
 
 Think of a parcel moving through a sorting centre: the counter, the scales, the conveyor, the scanner, the van. Each station does one job and stamps the label, and the stamps tell the parcel's whole story afterwards. The picture stops holding because this parcel loops: it goes back through the stations once per step, until the model has nothing left to ask for.
 
+```inkling
+title "One request through the harness"
+
+layout cycle
+center "the loop"
+
+person: person "Person types"
+inbox: box "Agent inbox"
+prompt: box "Prompt sections"
+history: box "Derived history"
+adapter: box "Model adapter"
+assembler: box "Message assembler"
+pipeline: box "Tool pipeline"
+approval: box "Approval"
+sandbox: box "Sandbox"
+log: db "Event log"
+model: box "Model"
+compaction: box "Compaction"
+
+person -> inbox : "POST /prompt"
+inbox -> prompt : "opens a turn"
+prompt -> history : "renders sections"
+history -> adapter : "messages for the request"
+adapter -> assembler : "stream chunks"
+assembler -> pipeline : "assistant/message with a tool call"
+pipeline -> approval : "tool/call logged"
+approval -> sandbox : "allowed"
+sandbox -> log : "tool/result"
+log -> history : "rebuilt each step"
+history -> adapter
+log --> person : "live event stream"
+cycle inbox, prompt, history, adapter, assembler, pipeline, approval, sandbox, log
+circle log
+
+step 1: person "The person types a request in the browser"
+step 2: inbox "The inbox wakes the agent and claims the message"
+step 3: prompt "The system prompt is rendered from its sections"
+step 4: history "The messages are rebuilt from the event log"
+step 5: adapter "The adapter sends the request and retries on rate limits"
+step 6: assembler "The chunks join into one assistant message with a tool call"
+step 7: pipeline "The registry finds the tool and checks its arguments"
+step 8: approval "A hook asks the person, who clicks allow"
+step 9: sandbox "The sandbox runs the command with one write root"
+step 10: log "The result is spilled to a file and logged"
+step 11: compaction "Old events are summarized when the budget runs high"
+step 12: model "The model reads the files and asks for the next step"
+```
+
 ## One request, end to end
 
 The person types into the browser: "the test in `src/math.test.ts` fails, fix it".

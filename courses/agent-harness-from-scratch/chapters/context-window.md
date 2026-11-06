@@ -6,6 +6,20 @@ Now you count text in tokens. So here is a natural question: could you hand a mo
 
 There is a limit. Picture a whiteboard of fixed size. You write your question on it. The model reads the board and writes its answer underneath, on the same board. When the board is full, nothing more fits: not another line of your text, and not another word of its answer.
 
+```inkling
+title "One board, shared by input and answer"
+layout down
+you: person "You"
+board: box "Context window\n1,000 tokens" gray
+model: round "Model"
+step 1: you, board "Your input takes 700 tokens of the board"
+step 2: model "The model reads what fits on the board"
+answer: box "Your answer\n300 tokens left" yellow
+step 3: answer "Only 300 tokens left, so the answer is cut off"
+circle board
+note board "If the input needs more than the whole board, the request is rejected"
+```
+
 That board is the model's working space for one request. The model reads only what is on it. If a fact is not on the board, the model does not know it was ever there. It has no side drawer of notes to check.
 
 The picture stops holding in two places. You can rub out part of a real whiteboard and keep going. A model cannot: if your text is too long, the provider refuses the whole request with an error. And the board's size is fixed by the model's design, so you cannot buy a bigger board for the same model.

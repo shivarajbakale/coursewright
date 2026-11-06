@@ -6,6 +6,22 @@ Twice now you kept the start of the request the same: fast-changing facts stay o
 
 Before a model can write its reply, it processes every input token in order. The work for each token depends only on the tokens before it. So if a new request starts with exactly the same tokens as an earlier one, the provider can keep the work it did for that shared start and reuse it. The shared start is called the prefix. Reuse stops at the first token that differs. Everything after it is processed again.
 
+```inkling
+title "Where the cache hit stops"
+layout down
+sys: box "System prompt" yellow
+instr: box "Project instructions"
+user: box "User message"
+asst: box "Assistant reply"
+tool: box "Tool result"
+sys -> instr -> user -> asst -> tool
+circle sys
+circle instr
+circle user
+step 1: sys, instr, user "The start is unchanged, so its work is kept"
+step 2: asst "A new token differs here, so reuse stops"
+```
+
 Picture a long book you are summarizing. Someone changes one word on page 3. Your notes for pages 1 and 2 still hold. Everything from page 3 on must be reread, even if the rest is unchanged. The picture stops holding in one way. Your notes are yours to keep. A provider's stored work is best effort: it may expire or be evicted, and it is reused only in chunks, so a hit is never guaranteed.
 
 DeepSeek's API does this automatically, with no setting. Each reply's `usage` reports `prompt_cache_hit_tokens` and `prompt_cache_miss_tokens`, and hit tokens are billed at a lower price. Your adapter can pass the hit count on in its usage chunk:

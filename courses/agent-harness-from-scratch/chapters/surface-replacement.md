@@ -8,6 +8,18 @@ A museum keeps every object in its archive. The exhibition wall shows a selectio
 
 Here the archive is the event log and the wall is the surface: the ordered list of model-visible events that derived history turns into messages. The picture stops holding in one way. A curator physically takes objects down. Nothing moves in `minidsh`. The wall is rebuilt from the archive on every step, and the archive itself contains the instruction "show this placard in place of those objects."
 
+```inkling
+title "One surface, two views"
+layout compare
+columns "Before", "After compaction"
+row "System prompt": "seq 0", "seq 0"
+row "Instructions": "seq 1", "seq 1"
+row "Old work": "seq 2 to 57", "summary (seq 74)"
+row "Newer work": "seq 58 to 71", "seq 58 to 71"
+row "Event log": "keeps all 72 events", "keeps all 76 events"!
+steps auto
+```
+
 ## A replace instruction inside the log
 
 Each message event can carry a `surfaceOp` in its data. Most say, in effect, "add me at the end". The summary says "put me in place of the events from `startSeq` to `endSeq`":

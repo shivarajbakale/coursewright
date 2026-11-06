@@ -2,6 +2,15 @@
 
 The event log is now a JSONL file that survives the process. Tomorrow you run `minidsh` again with the same file and type a new question. The new run should know everything said before, number its events after the old ones, and cope with the case where the last run died halfway through a turn. What does the program have to do when it opens an existing file?
 
+```inkling
+title "Resuming after a crash"
+layout sequence
+log: box "Event log file"
+next: box "New turn"
+log -> next : "append closers, then work"
+steps auto
+```
+
 ## The clean case: read, derive, carry on
 
 Because the model is a stateless model, there is no hidden state to restore. Everything it saw was rebuilt from the log by derived history, so the same log rebuilds the same messages. Resuming is three small things:

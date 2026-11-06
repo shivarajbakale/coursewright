@@ -6,6 +6,25 @@ With approval, `minidsh` pauses before a risky tool call and asks you. That help
 
 Picture a guest in an office building. You do not follow the guest around checking every door they try. You give them a key card that opens one room. The building's lock system, not the guest's good intentions, decides which doors open. Anyone the guest brings along gets the same card.
 
+```inkling
+title "A fence the kernel enforces"
+command: box "The command" yellow
+kernel: box "The kernel\nchecks each write"
+inside: db "Files inside\nthe workspace"
+outside: db "Files outside\nthe workspace"
+child: box "Programs it starts"
+command -> kernel : "asks to write"
+kernel --> inside : "allowed"
+kernel --> outside : "refused"
+kernel -> child : "same rules apply"
+circle kernel
+step 1: command "The command starts"
+step 2: kernel "The kernel checks each write against the rules"
+step 3: inside "A write inside the workspace is allowed"
+step 4: outside "A write outside the workspace is refused"
+step 5: child "Every program it starts inherits the same rules"
+```
+
 A sandbox works the same way for a command. Before the command starts, your harness hands the operating system a set of rules. From then on the kernel, the core of the operating system that every program must ask before it writes a file, checks each write against those rules. The command cannot argue its way out, and every program it starts inherits the same rules.
 
 The picture stops holding in one important place. A key card controls every door. The sandbox in this course controls only one kind of door: changes to files. The command can still read any file your user account can read, such as `~/.ssh`. It can still reach the network. It can still use all your CPU.
@@ -25,6 +44,17 @@ export interface SandboxPolicy {
 ```
 
 Here is one command under each mode, with the session working in `/work/app`:
+
+```inkling
+title "Three fences, one command"
+columns "read-only", "workspace-write", "danger-full-access"
+row "Write in /work/app": no, yes, yes
+row "Write in home folder": no, no, yes
+note read-only "both refused"
+step 1: read-only "Under read-only the kernel refuses both writes"
+step 2: workspace-write "Under workspace-write the write inside /work/app succeeds"
+step 3: danger-full-access "Under danger-full-access nothing is checked"
+```
 
 ```text
 command: bash -c 'echo hi > notes.txt; echo hi > ~/notes.txt'

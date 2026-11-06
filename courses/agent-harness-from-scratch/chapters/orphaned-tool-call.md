@@ -4,9 +4,40 @@ Session resume closes an unfinished turn with interrupted markers. That was enou
 
 It fails. Providers reject a history in which a tool call has no tool result with the same id. Closing the turn does not help, because derived history still contains that assistant message. Without a fix, this session can never talk to the model again.
 
+```inkling
+title "Why the next request fails"
+layout flow
+turn: box "Assistant message\n2 tool calls" yellow
+call1: box "call_1\ndelete_file" yellow
+call2: box "call_2\nlist_files"
+res1: box "tool/result\nerror: unknown" green
+res2: box "tool/result\nerror: not started" green
+turn -> call1 : "asked for"
+turn -> call2 : "asked for"
+call1 -> res1 : "synthetic result"
+call2 -> res2 : "synthetic result"
+note turn "provider rejects a call with no result"
+step 1: turn "The model asked for two tools"
+step 2: call1 "The first tool started, then the crash"
+step 3: call2 "The second tool never started"
+step 4: res1 "We write a result for call_1"
+step 5: res2 "Then one for call_2"
+```
+
 ## A result written by your program, saying what is known
 
 Picture a restaurant whose kitchen loses power during service. On reopening, the manager goes through the order pad, and every ticket must end with a note. A ticket that reached the kitchen gets "may or may not have been cooked; check before making it again". A ticket that never left the pad gets "never started; make it if the guest still wants it".
+
+```inkling
+title "Two kinds of orphaned tool call"
+layout compare
+columns "Started", "Never started"
+row "Log shows": "tool/call event recorded", "no tool/call event"
+row "What we know": "outcome unknown", "safe to run again"
+row "The note we write": "may or may not have happened", "never started"
+row "Model's choice": "check before retrying", "run it if needed"
+steps auto
+```
 
 A tool call with no recorded result is an **orphaned tool call**. The fix is to append a **synthetic** result for each one: a tool result your program writes itself, marked as an error, whose text tells the model honestly what is known. The shape is the one the tool error result taught: a result for the call's id, flagged as a failure. The events from the session event lesson tell you which of the two notes to write:
 

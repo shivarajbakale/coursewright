@@ -8,6 +8,28 @@ Think of the keyboard on your phone. When you type "see you", it offers "soon", 
 
 A language model does the same thing on a far larger scale. It has studied an enormous amount of written text. Given any text, it scores every possible next piece by how likely it is. Then it picks one, adds it to the end, and repeats.
 
+```inkling
+title "How a model writes a reply"
+layout cycle
+center "the writing loop"
+given: box "Text so far" yellow
+score: box "Score every next piece"
+pick: box "Pick one piece"
+append: box "Append it to the text"
+done: diamond "Reply finished?"
+given -> score : "the text you have"
+score -> pick : "a probability for each option"
+pick -> append : "the chosen piece"
+append -> given : "now look again"
+append -> done : "no"
+done -> given : "keep going"
+step 1: given "You give the model the text so far"
+step 2: score "It gives every next piece a probability"
+step 3: pick "It picks one, weighted by those probabilities"
+step 4: append "That piece joins the end of the text"
+step 5: done "If the reply is not finished, it starts over"
+```
+
 The keyboard picture stops holding in one place. Your keyboard looks at the last word or two. A large model looks at everything before the gap. So "bank" in a sentence about rivers gets a different next guess than "bank" in a sentence about money.
 
 Here is the smallest working version, in TypeScript. It learns from three short sentences by counting which word follows which.

@@ -8,6 +8,25 @@ A restaurant does not cook every dish and lay them all out. It hands you a menu:
 
 A skill works the same way. The model sees a short menu of skill names and one-line descriptions. When a job matches, it calls a tool to load that skill's full text. The picture stops holding at the ordering. A diner knows when they are hungry. The model only orders a skill if the description makes clear when it applies. So a good description says what the skill does and when to use it.
 
+```inkling
+title "How a skill gets loaded"
+catalog: box "Catalog\n12 names, one line each" green
+model: circle "Model"
+tool: box "skill tool"
+body: db "Full body\n~3000 tokens"
+job: sticky "A job matches"
+catalog -> model : "always in context"
+job -> model
+model -> tool : "skill(name)"
+tool -> body : "loads one"
+body -> model : "only this cost"
+step 1: catalog "The catalog is always in context, one line per skill"
+step 2: job, model "A job arrives that matches one description"
+step 3: model, tool "The model calls skill with that name"
+step 4: body "The full instructions arrive as a tool result"
+step 5: unused "The other eleven skills stay unloaded"
+```
+
 ## Files, a catalog and a loader tool
 
 Each skill is a folder containing `SKILL.md`. The file starts with frontmatter: a block between two `---` lines holding simple `key: value` fields, here `name` and `description`. The instructions follow.

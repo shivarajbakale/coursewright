@@ -8,6 +8,21 @@ Go back to the manager and the clerk. The clerk fetches the document and returns
 
 Your program plays the clerk. It runs the function, then adds a new message to the history with a fourth role, `tool`. That message holds two things: the output as text, and the id of the request it answers. This message is a tool result, and the id it carries is the call id.
 
+```inkling
+title "A tool result answers one request"
+layout sequence
+model: box "Model"
+prog: box "Your program"
+file: db "notes.txt"
+model -> prog : "request id call_0_8f2a"
+activate prog
+prog -> file : "read notes.txt"
+file --> prog : "Buy milk. Call Sam."
+prog --> model : "tool message id call_0_8f2a"
+deactivate prog
+steps auto
+```
+
 Then your program sends the whole history again. The model now sees its own request followed by the answer, and it can finish its reply.
 
 The picture stops holding at the clerk's honesty. The model takes whatever text you put in a result as true. It has no other way to see your files.

@@ -8,6 +8,25 @@ Compare two ways of getting a message from a friend. In one, they write a whole 
 
 Streaming is the second way. You set `stream: true` in the request. The provider keeps the HTTP response open and sends the reply in small pieces as the model writes them. Your program can print each piece the moment it arrives.
 
+```inkling
+title "How streaming reaches your program"
+layout sequence
+you: person "Your program"
+provider: box "Model provider"
+reply: sticky "Reply pieces"
+
+you -> provider : "Request with stream true"
+activate provider
+provider -> reply : "First text arrives"
+reply -> you : "Print text now"
+provider -> reply : "Next text arrives"
+reply -> you : "Print more text"
+provider -> you : "Finish signal"
+deactivate provider
+circle reply
+steps auto
+```
+
 The picture stops holding in one detail. Pieces do not come one keystroke at a time. They are usually a token or a few tokens, and the network may bunch several together or split one piece across two deliveries.
 
 ## The format on the wire

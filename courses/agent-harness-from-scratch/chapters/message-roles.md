@@ -6,6 +6,20 @@ Your first model call sent a list called `messages` with one entry, labelled `ro
 
 Think of a play script. Every line starts with the name of who speaks it. At the top, before any dialogue, there is a short note for the actors: "A small kitchen. Late at night. Speak quietly." Nobody says the note aloud, but it shapes every line that follows.
 
+```inkling
+title "A chat request is an ordered script"
+layout down
+system: sticky "System\ninstructions"
+user: person "User\nquestion"
+api: box "Model API"
+assistant: icon chat "Assistant\nreply"
+step 1: system "Your note about how to behave goes first"
+step 2: user "Then the question the person typed"
+step 3: api "The messages list goes to the model"
+step 4: assistant "The model replies with the assistant role"
+circle system
+```
+
 A chat request is written the same way. It is a list of messages, and each message has a role saying who it comes from:
 
 - `system`: the note at the top. Instructions from you, the programmer, about how the model should behave.

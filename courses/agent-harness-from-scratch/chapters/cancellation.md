@@ -6,6 +6,29 @@ You watch the reply stream in: "I'll start by deleting the build fol". That is n
 
 Think of cancelling a print job. The printer stops feeding paper. Pages already printed stay in the tray. Jobs waiting behind it never start. The printer is ready for the next job straight away.
 
+```inkling
+title "One abort signal, passed everywhere"
+
+ctrl: person "You press Ctrl+C"
+ctl: box "AbortController" yellow
+req: box "Model request"
+tool: box "Running tool"
+proc: box "Other tools waiting"
+log: db "Event log"
+
+step 1: ctrl, ctl "You press Ctrl+C, the process stays alive"
+step 2: req, tool "The signal reaches the model request and the running tool"
+step 3: proc "Tools that never started are marked as never started"
+step 4: log "The log records exactly what the person saw"
+
+ctl -> req : "signal"
+ctl -> tool : "signal"
+ctl -> proc : "signal"
+ctl -> log : "the text so far"
+circle ctl
+note log "next request is rebuilt from this"
+```
+
 The harness should do the same three things. Stop the model request or the running tool. Keep whatever the person already saw. Mark everything that never started as never started.
 
 The picture stops holding at the record. A printer keeps no notes about the half-printed page. Your harness must write down exactly what was shown, because the next request is rebuilt from the log, and the model should see what the person saw.
@@ -41,6 +64,23 @@ The signal goes into the request (`ModelRequest` gains `signal?: AbortSignal`, w
 ```
 
 Trace the opening example. The assembler holds the text "I'll start by deleting the build fol" and the start of a tool call. The step appends an `assistant/message` with that text, marked `interrupted: true`, and no tool call: a half-received call is never run. Then `step/end` and `turn/end { reason: 'aborted' }`. You type "Don't delete anything, list it instead." Derived history includes the cut-off sentence, so the model knows what it was saying and why you stopped it. If nothing had streamed yet, there is nothing the person saw, so the try is logged as `assistant/attempt`, which the model never sees.
+
+```inkling
+title "What the turn log records"
+
+layout compare
+columns "Text already streamed", "Nothing streamed yet"
+row "Log entry": "assistant/message", "assistant/attempt"
+row "Marked interrupted": yes, no
+row "Model sees it": yes, no
+row "Turn ends": "reason 'aborted'", "reason 'aborted'"
+row "Tool calls": "answered with an error result", "answered with an error result"
+step 1: log-entry "The log entry says which kind of record this is"
+step 2: marked-interrupted "Only the streamed text is marked interrupted"
+step 3: model-sees-it "The model only sees the streamed text"
+step 4: turn-ends "Either way the turn ends as aborted"
+step 5: tool-calls "Every tool call still gets an answer"
+```
 
 Now say the stop comes later. The model asked for `run_tests` (`call_1`) and `write_file` (`call_2`). `call_1` is running when you press Ctrl+C. The tool sees the signal, kills its test process, and returns a tool error result: "Stopped by the user." `call_2` never started. It gets a synthetic error result, "aborted before it started", the same move you made for an orphaned tool call. Both calls are answered, so the next request is valid.
 

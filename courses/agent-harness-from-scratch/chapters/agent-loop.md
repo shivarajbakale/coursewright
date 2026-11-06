@@ -13,6 +13,26 @@ Your program is the assistant, and the rule is short:
 3. If the reply holds no tool calls, it is the answer. Stop.
 4. Otherwise run every tool call, add each tool result, and go back to 1.
 
+```inkling
+title "The agent loop"
+layout cycle
+center "one round"
+ask: round "Send history\nand schemas"
+reply: round "Model replies\nwith tool calls"
+run: round "Run every\ntool call"
+add: round "Add results\nto history"
+step 1: ask "The history and tool schemas are sent"
+step 2: reply "The model chooses its next action"
+step 3: run "Every requested tool runs"
+step 4: add "The results join the history"
+cycle ask, reply, run, add
+ask --> reply : "model decides what to do"
+reply --> run : "tool calls present"
+run --> add : "output of each tool"
+add --> ask : "back to the model"
+note ask "no tool calls: that reply is the answer"
+```
+
 This is the agent loop. A model on its own only writes text. Wrapped in this loop, it can look things up, act, look at what happened, and act again. That is what people mean by an agent.
 
 The picture stops holding in one place. A detective remembers what they read. The model is stateless, so every round sends the whole history again, every record fetched so far included.

@@ -8,6 +8,26 @@ Go back to the bank. Your balance is not stored anywhere. Each time you ask, the
 
 The model's messages work the same way. Before each model request, walk the log from the first event to the last. Each event either contributes one message or contributes nothing. Where the picture stops holding: a balance is one number, while here you build a list, and the order of the list matters as much as its contents.
 
+```inkling
+title "Reading the log to build messages"
+layout down
+log: db "Event log\n11 events" yellow
+derive: box "deriveMessages\nwalk top to bottom"
+visible: sticky "Message-carrying events\nuser/message\nassistant/message\ntool/result"
+drop: sticky "Bookkeeping events\nturn/start, step/end\ntool/call"
+req: box "Model request\nmessages array"
+log -> derive : "one event at a time"
+derive -> visible : "keep one message"
+derive -> drop : "contributes nothing"
+visible -> req : "in log order"
+circle req
+step 1: log "Start at the first event"
+step 2: derive "Walk through each event in order"
+step 3: visible "Keep events that carry a message"
+step 4: drop "Skip bookkeeping events"
+step 5: req "Send the derived messages with the request"
+```
+
 Three event types carry a message the model should see. Everything else, such as `turn/start`, `step/end` or `tool/call`, is bookkeeping for your program and turns into nothing:
 
 ```ts

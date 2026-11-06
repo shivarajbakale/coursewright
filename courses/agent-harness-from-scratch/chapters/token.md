@@ -6,6 +6,24 @@ Your toy predictor cut text at the spaces and worked with whole words. A real mo
 
 Picture a box of rubber stamps. Common words such as "the" or "and" get a stamp of their own. Rarer words are printed with two or three stamps of word parts, such as "un" + "happy". And there is one stamp for every single letter, so any text at all can be printed, however strange.
 
+```inkling
+title "Words built from token stamps"
+layout mindmap
+- Text
+  - Common word stamps
+    - " the"
+    - " and"
+  - Word part stamps
+    - " un" + "happy"
+  - Single letter stamps
+    - "a" to "z"
+note text "Every text can be stamped"
+step 1: text "Text can always be represented"
+step 2: common-word-stamps "Common words get their own stamps"
+step 3: word-part-stamps "Rarer words use word parts"
+step 4: single-letter-stamps "Single letters cover anything else"
+```
+
 A model reads and writes text in exactly these stamps. Each stamp is called a token, and each token has a number. The model never sees letters. It sees a list of token numbers, and it predicts the number of the next token.
 
 The picture stops holding in one detail. The stamps are not chosen by a person. A program picks them by studying lots of text and keeping the chunks that appear most often. Real vocabularies hold many thousands of tokens, and a leading space is often part of the token, as in " am".
@@ -43,6 +61,18 @@ for (const text of ['I am unhappy', 'I am unhapy']) {
 ```
 
 Walk through the first text, "I am unhappy", which is 12 characters. At the start, "I" matches. Next comes " am", which beats the single space because it is longer. Then " un". Then "happy" matches, while "happi" does not, because the text has a "y" where "happi" has an "i". Four tokens in all.
+
+```inkling
+title "Same sentence, different token counts"
+layout compare
+columns "I am unhappy", "I am unhapy"
+row "Tokens": "4", "7"
+row "Pieces": "I / am / un / happy", "I / am / un / h / a / p / y"!
+row "Cost": "4 tokens", "7 tokens"
+step 1: i-am-unhappy "The first text matches four tokens"
+step 2: i-am-unhapy "The typo falls back to letters"
+note i-am-unhapy "seven tokens instead of four"
+```
 
 Now the typo "unhapy". Neither "happi" nor "happy" matches, so the tokenizer falls back to single letters. The same idea now costs 7 tokens instead of 4. Nothing is lost, since every letter has a token. It is only more expensive.
 

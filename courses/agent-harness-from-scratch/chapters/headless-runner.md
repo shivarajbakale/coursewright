@@ -2,6 +2,22 @@
 
 You want to run `minidsh` from a script or a nightly job: give it one task, get the answer on standard output, and an exit code that says whether it worked. Nobody is watching, so there is no conversation to keep open. The tricky question is when to stop. The top agent going idle is not enough. It may have ended its turn on purpose because two helpers are still working, and their answers will wake it again. Stop too early and you print "I have started two reviews" and lose the real answer. How do you know the work is truly done?
 
+```inkling
+title "How the runner decides the work is done"
+layout cycle
+center "the whole tree is quiet"
+check: box "Check\nFind busy descendants"
+wait: box "Wait\nWait for each busy one"
+again: box "Check again\nAfter they finish"
+quiet: box "Nothing busy\nAnd agent idle"
+step 1: check "Look at the agent tree for anything still running"
+step 2: wait "Wait for every busy descendant to finish"
+step 3: again "A helper's answer may have woken the top agent"
+step 4: quiet "Only a pass with nothing busy ends the loop"
+cycle check, wait, again, quiet
+note check "A pass that finds busy work never ends the loop"
+```
+
 ## Closing time
 
 A restaurant does not close the moment one table goes quiet. It closes when every table has paid and the kitchen has no orders left. A table that looks finished may still be waiting for dessert.
@@ -19,6 +35,27 @@ whenIdle(): Promise<void> {
 ```
 
 Then `src/cli.ts`:
+
+```inkling
+title "What the headless runner does, in order"
+layout down
+task: box "Task\nFrom argv"
+agent: box "Agent\nApproval: never"
+stream: box "Live text\nTo stderr"
+loop: box "Wait loop\nUntil nothing busy"
+flush: box "Flush log\nTo disk"
+out: box "Final answer\nTo stdout"
+code: box "Exit code\n0 if completed"
+step 1: task "Read the one task from the command line"
+step 2: agent "Start the agent; nobody can approve a risky call"
+step 3: stream "Print live text as it arrives, on stderr"
+step 4: loop "Wait for the agent, then for busy helpers, until a pass finds nothing"
+step 5: flush "Flush the session log to disk"
+step 6: out "Print the final answer on stdout"
+step 7: code "Exit 0 only if the turn completed"
+task -> agent -> stream -> loop -> flush -> out -> code
+circle out
+```
 
 ```ts
 const task = process.argv[2]

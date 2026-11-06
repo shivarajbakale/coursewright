@@ -6,6 +6,21 @@ Your `confine` function ends with a `throw` for platforms it does not know. Othe
 
 Think about an electronic door lock when the power fails. A fire exit unlocks, so people can get out. A bank vault stays locked, so nobody gets in. Each lock fails in the direction that protects what matters most. A sandbox is a vault, not a fire exit. If the fence cannot be built, the command must not run.
 
+```inkling
+title "Which way a lock should fail"
+layout compare
+columns "Fire exit", "Bank vault"
+row "Power cut": "unlocks, people escape", "stays locked, nobody enters"
+row "Fence missing": "run anyway", "refuse to run"
+row "Who chose it": "nobody, an accident", "the user picked it"
+note bank-vault "a sandbox is a vault, not a fire exit"
+step 1: fire-exit, bank-vault "A fire exit lets people out; a vault lets nobody in"
+step 2: power-cut "In a power cut each lock fails toward safety"
+step 3: fence-missing "So if the fence cannot be built, the command must not run"
+step 4: who-chose-it "Unless the user picked danger-full-access on purpose"
+circle bank-vault
+```
+
 The picture stops holding in one place. A vault in a power cut has no choice. Your user does: they can pick `danger-full-access` on purpose. That is a visible decision a person made. Running unfenced because a runner happened to be missing is an accident nobody chose.
 
 ## Probe once, refuse loudly, read the outcome
@@ -34,6 +49,27 @@ export function confine(argv: string[], policy: SandboxPolicy): string[] {
 ```
 
 First, the probe. It runs `true`, a program that does nothing and exits with status 0, under the real read-only profile. Exit 0 means the runner started and the kernel accepted the rules. A missing program, a refused profile or a five-second hang all count as failure. The verdict is stored, so the probe runs once per process, not once per command.
+
+```inkling
+title "Probe once, then refuse"
+layout down
+policy: box "Sandbox policy" yellow
+probe: diamond "Runner works?"
+cache: box "Verdict cached per process"
+throw: box "Throw SANDBOX_UNAVAILABLE" red
+run: box "Run under the fence"
+step 1: policy "You ask for a confined command"
+step 2: probe "The probe runs true under the read-only profile"
+step 3: cache "Exit 0 means the fence works, and the verdict is kept"
+step 4: throw "No working runner means refusing to run"
+step 5: run "Otherwise the command runs under the fence"
+policy -> probe : "confined mode?"
+probe -> cache : "run true, read-only, 5 s limit"
+cache -> throw : "no"
+cache -> run : "yes"
+policy -> run : "danger-full-access"
+circle throw
+```
 
 Second, the refusal. With no working runner, `confine` throws instead of returning `argv` unchanged. Your tool pipeline turns the throw into a tool error result, so the model reads exactly why nothing ran.
 

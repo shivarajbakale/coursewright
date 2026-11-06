@@ -6,6 +6,27 @@ Your event log is an append-only list of `{ type, data }` facts. That is enough 
 
 Think of letters in the post. Every envelope has the same things on the outside: a postmark with a date, a tracking number, and an address that tells the sorter what to do with it. What is inside differs from letter to letter. The sorting office handles every envelope the same way without opening it.
 
+```inkling
+title "The same envelope around every fact"
+layout down
+event: box "Session event" yellow
+seq: text "seq: 1, 2, 3"
+time: text "time: ISO 8601"
+kind: text "type: tool/result"
+data: text "data: the fact"
+event -> seq
+event -> time
+event -> kind
+event -> data
+note event "every fact wears this same wrapper"
+circle seq
+step 1: event "Every fact arrives in the same envelope"
+step 2: seq "seq gives its position, with no gaps"
+step 3: time "time says when it was recorded"
+step 4: kind "type names which kind of fact it is"
+step 5: data "data holds the fact itself, shaped by the type"
+```
+
 A recorded fact gets the same treatment. Every one has the same outer fields, and only `data` differs:
 
 ```ts

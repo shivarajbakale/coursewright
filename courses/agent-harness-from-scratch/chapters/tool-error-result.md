@@ -2,6 +2,25 @@
 
 A user asks "What does note.txt say?" The file is really called `notes.txt`. The model asks for `read_file` with `{"path":"note.txt"}`, and `readFile` throws. Right now that exception escapes `runTurn` and crashes your program. The conversation is lost, and the model never learns what went wrong. What should happen instead?
 
+```inkling
+title "A failed tool call returns a result"
+layout down
+model: box "Model"
+call: sticky "Call id 7\nread_file"
+run: box "runCall"
+error: sticky "Error: read_file failed\nENOENT: note.txt"
+result: sticky "Tool result\nCall id 7"
+reply: box "Model's next step"
+step 1: model, call "The model asks for read_file"
+step 2: run "The call goes to runCall"
+step 3: error "runCall catches the exception"
+step 4: result "The error becomes the result text"
+step 5: reply "The model can adjust its next request"
+run -> error
+error -> result
+result -> reply
+```
+
 ## The clerk comes back empty-handed
 
 Think of the clerk from the archive again. Asked for a file that is not there, a good clerk does not walk out of the building. They come back with the ticket and a note: "No file by that name. There is one called notes.txt." The manager reads it and decides what to do next.

@@ -8,6 +8,24 @@ Think of a seating chart for a dinner. The venue keeps a standard chart. For you
 
 A config row is one line in the application's list: an `id`, the plugin's `name`, its `config`, and an optional `disabled` flag. A patch is a list of changes keyed by `id`: a row with a known id replaces that row's config or flag; a row with a new id is inserted. The whole application is the base rows with patches applied in order, then mounted.
 
+```inkling
+title "Base rows, patches, then mount"
+layout down
+base: box "Base rows\nloop, timeout" yellow
+patch: box "Patch rows\ntimeout, heartbeat"
+apply: box "applyPatch\nreplace config by id\ninsert new ids"
+mount: box "mount\nskip disabled rows"
+base -> apply : "rows"
+patch -> apply : "rows"
+apply -> mount : "rows in order"
+note apply "config is replaced whole, not merged"
+circle apply
+step 1: base "The base list holds every plugin row"
+step 2: patch "A patch names rows by id"
+step 3: apply "Known id replaces the config, new id is inserted"
+step 4: mount "Every row that is not disabled is mounted"
+```
+
 ```ts
 // src/config.ts
 import { Context, type Plugin } from './plugins.ts'

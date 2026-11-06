@@ -6,6 +6,21 @@ Stream chunks and the message assembler are provider-neutral. Two DeepSeek-shape
 
 Think of a travel plug adapter. Your laptop charger has one plug. Each country has its own wall socket. You do not rewire the charger for each trip. You carry a small adapter whose one job is to fit your plug on one side and the local socket on the other.
 
+```inkling
+title "One interface over every provider"
+layout flow
+loop: box "The loop\nprovider-neutral"
+own: box "Your types\nMessage, ToolSchema"
+chunk: box "StreamChunk"
+prov: box "DeepSeek\nchat/completions"
+step 1: own "The loop builds a request in your own types"
+step 2: loop "The loop calls adapter.stream(request)"
+step 3: prov "The adapter builds the provider's request JSON"
+step 4: chunk "The adapter returns chunks in your own types"
+note chunk "usage before finish, raw argument strings"
+circle chunk
+```
+
 In code, the plug is an **interface**: a TypeScript type that lists the methods an object must have, without saying how they work. Any object with those methods fits. Here the interface has exactly one method:
 
 ```ts
@@ -69,6 +84,18 @@ export class ScriptedAdapter implements ModelAdapter {
 ```
 
 Give it two replies, first a `count_lines` tool call with `finish: 'tool-calls'`, then a text answer with `finish: 'stop'`, and you can test a whole two-step turn with no network and no API key.
+
+```inkling
+title "Real adapter and fake adapter"
+layout compare
+columns "DeepSeekAdapter", "ScriptedAdapter"
+row "Where it runs": "against the network", "no network, no key"!
+row "Request it builds": "DeepSeek request JSON", "ignored"
+row "Chunks it yields": "translated from server-sent events", "fixed chunks you wrote"
+row "Fits ModelAdapter": yes, yes
+row "Used for": "real turns", "testing the loop"!
+steps auto
+```
 
 > **Key idea:** A model adapter is an object with one method, `stream(request)`, that takes a request in your own types and returns stream chunks; it hides one provider's URL, request shape and stream format so the rest of the harness works with any provider.
 

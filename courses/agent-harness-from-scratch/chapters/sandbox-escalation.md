@@ -2,6 +2,29 @@
 
 The fence now holds, or the command does not run. But sometimes the fence blocks something the task really needs. The model runs `npm install` under `workspace-write`, and npm tries to write its download cache in `~/.npm`, outside the roots. The write is refused. The model has two bad options. It can try to sneak around the fence, for example by writing through another tool. Or you can switch the whole session to a wider mode, which opens the fence for every later command too. Is there a narrower way?
 
+```inkling
+title "One wider retry, then fenced again"
+layout down
+call: box "npm install" red
+denied: box "Write refused" red
+request: box "Retry with wider sandbox\nand written reason" yellow
+person: person "Person"
+retry: box "One unfenced retry" yellow
+call -> denied : "runs under workspace-write"
+denied -> request : "result says how to ask"
+request -> person : "approve one call?"
+person -> retry : "yes: run once without fence"
+retry -> next: box "npm test" green
+next -> next : "back under workspace-write"
+circle request
+step 1: call "The command runs under workspace-write"
+step 2: denied "The write to ~/.npm is refused"
+step 3: request "The model retries once with a wider mode and a reason"
+step 4: person "The person reads the reason and says yes"
+step 5: retry "That one call runs with no fence"
+step 6: next "The next call is fenced again"
+```
+
 ## A one-visit pass with a written reason
 
 Picture asking a building manager for a pass to the storeroom. You write down why you need it. The manager reads the reason and says yes or no. The pass works for one visit, then it is void.

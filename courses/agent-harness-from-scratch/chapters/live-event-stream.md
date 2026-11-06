@@ -6,9 +6,36 @@ Everything `minidsh` does now happens inside one process. A model reply streams 
 
 Think of a football match. The scoreboard shows the official facts: goals, cards, the clock. Anyone arriving late reads the scoreboard and knows where things stand. Alongside it, a radio commentator describes every pass as it happens. The commentary is lively, but nobody keeps it; if you missed it, the scoreboard still tells you the score.
 
+```inkling
+title "Two channels of progress"
+layout compare
+columns "Event log", "Stream chunks"
+row "What arrives": "recorded facts", "live pieces"
+row "Kept": "yes", "no"
+row "Use for": "replay and catch-up", "immediate display"
+row "Has sequence": "yes", "no"
+step 1: event-log, what-arrives "Facts are recorded"
+step 2: stream-chunks, what-arrives "Pieces arrive live"
+```
+
 `minidsh` has both already. The scoreboard is the event log: every `user/message`, `tool/call` and `tool/result` is a recorded fact. The commentary is the stream chunks: the `text-delta` pieces that arrive before the message assembler builds the finished `assistant/message`. The deltas are never logged, because the finished message is.
 
 The picture stops holding in one place. Nobody owns the stadium speakers. The core does not send to anyone. It announces on the plugin kernel's event hooks, and each screen subscribes.
+
+```inkling
+title "How screens receive progress"
+layout flow
+core: box "Core loop"
+hook: round "Event hooks"
+screen: box "Screen plugin"
+core -> hook : "emit facts and chunks"
+hook -> screen : "subscribed events"
+note core "no screen names inside"
+circle hook
+step 1: core "The core records and streams"
+step 2: hook "It announces through event hooks"
+step 3: screen "Each screen subscribes"
+```
 
 ```ts
 // src/session.ts: announce every fact right after it is appended

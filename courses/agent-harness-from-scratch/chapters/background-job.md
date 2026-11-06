@@ -6,6 +6,22 @@ The model asks to run `npm test`. On a large project that takes four minutes. A 
 
 You load the washing machine, press start and go do something else. You can glance at the display whenever you like, and it beeps when it finishes. You do not stand in front of it for an hour.
 
+```inkling
+title "A background job"
+layout sequence
+model: person "Model"
+tool: box "bash tool"
+proc: box "npm test"
+inbox: sticky "Agent inbox"
+model -> tool : "run npm test in background"
+tool --> model : "Started job-1"
+tool -> proc : "start, keep running"
+model -> inbox : "the agent keeps working"
+proc --> inbox : "exit code and last output"
+inbox -> model : "the agent wakes and reads failures"
+steps auto
+```
+
 The picture stops holding in two places. The machine's display shows a fixed amount, but a command can print without limit, so you must decide how much output to keep. And the beep is not a sound: it is a message, delivered to the agent's inbox, the same way a helper agent's answer arrives.
 
 In `minidsh`, add a small job registry to `src/agents.ts`:

@@ -6,6 +6,28 @@ A service lets one plugin call another. But sometimes the direction is backwards
 
 Think of a station announcement: "the 9:15 to Leeds is now boarding". The announcer does not know who is waiting. Everyone who cares about that train reacts, and everyone else ignores it. The picture stops holding in one way: on a platform people react at the same moment, while in the simplest kernel the reactions run one after another, in the order they signed up.
 
+```inkling
+title "Announce, and let listeners react"
+layout flow
+loop: box "Agent loop" yellow
+map: box "Listener list" gray
+title1: box "Title plugin"
+counter: box "Step counter"
+summary: box "Summary plugin"
+disposer: box "Disposer" blue
+loop -> map : "serial('agent/turn-end')"
+map -> title1 : "listener"
+map -> counter : "listener"
+map -> summary : "listener"
+counter -> loop : "prints step count"
+map -> disposer : "removes the listener"
+note map "the loop never knows who is here"
+step 1: loop "The loop finishes a turn and announces"
+step 2: map "Listeners wait in a map by name"
+step 3: title1, counter, summary "Each plugin that signed up runs now"
+step 4: disposer "Unloading a plugin removes its listener"
+```
+
 That is an event hook. Part of the program announces a named event, and plugins register listeners, functions that run when that event is announced. Registering a listener is an effect, so it disappears when its plugin unloads.
 
 ```ts

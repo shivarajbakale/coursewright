@@ -6,6 +6,24 @@ Some tasks are too big for one conversation. Say the person asks the agent to re
 
 Think of a team lead who writes a short brief and hands it to a colleague. The colleague works at their own desk, with their own notebook, and the lead's notebook only says "asked Sam to review the parser". The lead's head stays clear for the overall picture.
 
+```inkling
+title "Handing a brief to a subagent"
+layout down
+parent: box "Parent agent" yellow
+child: box "Child agent"
+brief: sticky "Brief: review src/parser.ts"
+answer: sticky "Report: file and line per bug"
+parent -> child : "tool call: subagent(task)"
+child -> child : "reads files, own event log"
+child --> parent : "answer, later"
+note parent "History stays small"
+note child "Approval: never"
+step 1: parent "The lead writes a short brief"
+step 2: brief "The brief is the only context the colleague gets"
+step 3: child "The colleague works at its own desk"
+step 4: answer "Only the answer comes back to the lead"
+```
+
 The picture stops holding in two ways. The colleague starts knowing nothing except the brief, so the brief must be complete. And the colleague follows the lead's rules: the same model, the same sandbox. It cannot walk over and ask the person for permission either, so anything that would need approval is refused.
 
 In `minidsh` the helper is started by a tool call, so the model decides when to delegate. Add this to `src/agents.ts`:
@@ -42,6 +60,22 @@ export function subagentTool(parent: Agent): Tool {
 ```
 
 Walk through one call. The parent model replies with a tool call: `subagent` with `{"task": "Review src/parser.ts for bugs. Report file and line for each."}`. The tool pipeline runs it like any tool. `execute` builds a new `Agent` with an empty event log in `sessions/child-1.jsonl`, drops the brief into its inbox as a followup, and returns at once. The child's inbox wakes it, and it starts its own turns, reading files and calling tools, all recorded in its own log.
+
+```inkling
+title "One subagent call, step by step"
+layout sequence
+model: box "Parent model"
+tool: box "subagent tool"
+child: box "Child agent"
+log: db "sessions/child-1.jsonl"
+model -> tool : "subagent(task)"
+tool -> child : "new Agent, own log"
+tool -> child : "followup: the brief"
+tool --> model : "Started child-1."
+child -> log : "writes its own events"
+circle tool
+steps auto
+```
 
 The parent's log gains exactly two events: the `tool/call` and a `tool/result` saying "Started child-1." Everything the child reads stays out of the parent's history.
 

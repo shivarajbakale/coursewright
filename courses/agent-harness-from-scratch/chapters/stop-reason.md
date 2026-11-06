@@ -6,6 +6,16 @@ The last piece of a streamed reply carried `"finish_reason": "stop"`. Non-stream
 
 Picture a courier who leaves a slip with every delivery. "Complete." Or: "Partial: the rest did not fit in the van." Or: "Signature needed before we can continue." The parcel alone does not tell you which. A half-delivered sofa and a small chair look alike from the doorway. The slip does.
 
+```inkling
+title "The stop reason label on a reply"
+layout compare
+columns "Text looks like", "Label says"
+row "Complete answer": "ordinary text", "stop"
+row "Cut off at limit": "ordinary text", "length"
+row "Asking for a tool": "no answer at all", "tool_calls"
+steps auto
+```
+
 Every model reply ends with such a slip. For DeepSeek it is the `finish_reason` field, and the three values you will meet are:
 
 - `stop`: the model finished its answer by itself. The text is complete.
@@ -19,6 +29,19 @@ The picture stops holding in one place. A courier knows what is missing. With `l
 ## Seeing a cut-off reply
 
 Make the limit tiny so you can watch it happen. Add `max_tokens: 5` to the request body, ask "Describe Paris.", and print both fields.
+
+```inkling
+title "How a limit turns into a label"
+layout flow
+you: person "You"
+api: box "Model API"
+note you "max_tokens: 5"
+step 1: you, api "You ask for a short description"
+you -> api : "Describe Paris."
+api --> you : "Paris, the capital of"
+note api "finish_reason: length"
+circle api
+```
 
 ```ts
 // body: { model: 'deepseek-flash', thinking: { type: 'disabled' }, messages, max_tokens: 5 }

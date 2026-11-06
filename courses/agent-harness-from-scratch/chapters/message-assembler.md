@@ -6,6 +6,39 @@ A streamed reply now arrives as stream chunks: text deltas, tool-call pieces, us
 
 Think of a jigsaw puzzle where pieces arrive by post, a few at a time, from several puzzles at once. Each piece says which puzzle it belongs to. You keep one tray per puzzle and drop each piece into its tray. When the last envelope arrives, each tray holds a finished picture.
 
+```inkling
+title "Collecting pieces into finished parts"
+layout down
+text: box "Text tray" green
+call0: box "Tool call 0" blue
+call1: box "Tool call 1" blue
+usage: sticky "Usage" orange
+done: diamond "Finish" yellow
+chunk: box "Stream chunk"
+text-delta: box "Text delta"
+piece: box "Tool call piece\nindex 0"
+piece2: box "Tool call piece\nindex 1"
+finish: box "Finish chunk"
+chunk -> text-delta : "arrives"
+chunk -> piece : "arrives"
+chunk -> piece2 : "arrives"
+chunk -> finish : "arrives"
+text-delta -> text : "append"
+piece -> call0 : "id, name, arguments"
+piece2 -> call1 : "id, name, arguments"
+finish -> done : "close the reply"
+done -> text : "keep text"
+done -> call0 : "keep call"
+done -> call1 : "keep call"
+circle done
+note call0 "ordered by first-seen index"
+step 1: chunk "A chunk arrives in the stream"
+step 2: text-delta "A text delta is appended to the text tray"
+step 3: piece "A tool call piece fills its own tray by index"
+step 4: piece2 "The next tool call gets its own tray"
+step 5: finish "Finish closes the reply and keeps the parts"
+```
+
 Text is one tray: append each `text-delta`. Each tool call is another tray, keyed by its `index`: the first piece usually brings the `id` and `name`, and every piece adds to the arguments string. Usage is noted. `finish` closes the reply.
 
 ```ts

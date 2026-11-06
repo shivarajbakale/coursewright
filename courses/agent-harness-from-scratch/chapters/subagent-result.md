@@ -2,6 +2,22 @@
 
 The subagent tool returned "Started child-1" and the parent ended its turn. Now the parent is idle and the child is working. When the child finishes, its final answer exists only in the child's own log. The parent could keep calling a "check on child-1" tool, but every check costs a model request and most of them would say "still working". How should the answer travel back, and what makes the parent read it?
 
+```inkling
+title "How a child result reaches its parent"
+layout sequence
+child: box "Child agent"
+parent: box "Parent agent"
+inbox: db "Parent inbox"
+log: db "Parent event log"
+steps auto
+child -> inbox : "Final answer arrives"
+inbox -> parent : "Followup wakes the idle parent"
+parent -> inbox : "Steer joins a running turn"
+inbox -> log : "Ordinary user message is recorded"
+circle inbox
+note inbox "same inbox and log the person uses"
+```
+
 ## A memo in the tray
 
 The right place for it already exists. Think of the colleague dropping a finished memo into the lead's inbox tray. If the lead is free, the memo starts new work. If the lead is in the middle of something, it is passed in at the next pause. Nobody has to keep walking over to ask.

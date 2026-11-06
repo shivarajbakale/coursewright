@@ -6,6 +6,33 @@ A sandbox in `workspace-write` mode lets a command change files in the working f
 
 Think of the key card again, this time with a printed list of rooms it opens: your office, the shared print room, the kitchen. The guard does not judge each visit. They read the room number and look for it on the list.
 
+```inkling
+title "Write roots and the check"
+layout down
+work: box "Working folder" yellow
+extra: box "Extra folders"
+tmp: box "/tmp"
+otmp: box "os.tmpdir()"
+roots: box "Real, resolved roots"
+target: box "Target path"
+rel: box "Relative path"
+outside: box "Outside every root"
+step 1: work, extra, tmp, otmp "The four kinds of folder that may stay writable"
+step 2: roots "Each one is resolved to its real name"
+step 3: target "The path someone wants to write"
+step 4: rel "How to get from a root to the target"
+step 5: outside "Climbing out with .. means refuse"
+work -> roots : "resolve"
+extra -> roots : "resolve"
+tmp -> roots : "resolve"
+otmp -> roots : "resolve"
+roots -> target : "resolve the target"
+target -> rel : "relative(root, target)"
+rel -> outside : "starts with .. or is absolute"
+circle rel
+note roots "one real name per folder"
+```
+
 The picture stops holding at the room numbers. In a building every room has one number. On a computer one folder can have several names. On macOS, `/tmp` is a link to `/private/tmp`, so the same folder answers to both. The kernel compares the real, resolved name. A list written with the other spelling matches nothing.
 
 ## Building and checking the list
@@ -46,6 +73,20 @@ canWrite('/tmp/out.txt')             /tmp resolves to /private/tmp    -> true
 ```
 
 The second line is the trap worth remembering. A plain text check, `'/work/app-secrets/key'.startsWith('/work/app')`, returns true. Asking how to get from the root to the target, and refusing any answer that starts by climbing out with `..`, gets it right. Under `read-only` the list is empty, so `canWrite` refuses everything.
+
+```inkling
+title "Two ways to test one path"
+layout compare
+columns "String check", "Relative check"
+target: box "/work/app-secrets/key"
+row "Test": "startsWith('/work/app')", "relative(root, target)"
+row "Result": "true (wrong)", "false (right)"
+row "Sibling folder": "allowed by mistake", "refused"
+circle relative-check
+step 1: target "One sibling folder, outside the root"
+step 2: string-check "String check says it is inside"
+step 3: relative-check "Relative check says it is outside"
+```
 
 ## Fence the file tools too
 

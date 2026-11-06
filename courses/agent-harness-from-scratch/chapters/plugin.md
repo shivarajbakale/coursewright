@@ -6,6 +6,21 @@ Your `minidsh` now streams replies, runs tools, records every event, retries fai
 
 Think of a power strip. The strip does nothing by itself. Every useful thing, a lamp or a charger, is a separate device you plug in. Unplug the lamp and the charger keeps working. You never open the strip to add a device.
 
+```inkling
+title "A host and the plugins plugged into it"
+layout down
+host: box "Host program\njust a context" gray
+banner: box "Banner plugin" blue
+heartbeat: box "Heartbeat plugin" blue
+banner -> host : "app.plugin(banner, config)"
+heartbeat -> host : "app.plugin(heartbeat, config)"
+note host "The strip has no features of its own"
+step 1: host "You make the empty host"
+step 2: banner "The banner plugin adds its feature"
+step 3: heartbeat "The heartbeat plugin mounts too"
+step 4: timer "Unmount it and the interval stops"
+```
+
 A plugin works the same way. It is a self-contained piece of code that adds one feature to a host program. The host offers a few ways to plug in, and every feature arrives through them. The picture stops holding in one place: devices on a power strip never talk to each other, while plugins often must. One plugin offers a tool, another runs the agent loop that calls it. The next lessons build the ways they cooperate.
 
 Here is the smallest version, the start of `src/plugins.ts`:
