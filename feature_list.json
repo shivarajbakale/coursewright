@@ -431,11 +431,20 @@
       "priority": 21,
       "area": "Course content",
       "title": "Every chapter carries Inkling explainers, inline, chosen to fit its idea",
-      "user_visible_behavior": "Chapters show 1-2 hand-drawn Inkling explainers inline (```inkling fences in the lesson), in the desktop app and the phone/iPad reader, drawn step by step on first view, paper matched to the theme. The builder adds them to new courses, the MCP and folder check validate them, and POST /api/courses/:id/explainers adds them to an existing course (the harness course first).",
-      "status": "in_progress",
+      "user_visible_behavior": "Chapters show 1-2 hand-drawn Inkling explainers inline (```inkling fences), on desktop and in the reader, drawn step by step on paper matched to the theme; the builder, MCP and folder check handle them; POST /api/courses/:id/explainers backfills a course.",
+      "status": "passing",
       "plan": "inkling-explainers.feature-plan.json",
-      "verification": [],
-      "evidence": []
+      "verification": [
+        "agent pytest",
+        "vitest",
+        "make check",
+        "harness backfill on the Mac mini; WebKit desktop, iPhone, iPad"
+      ],
+      "evidence": [
+        "Harness course: 65/65 chapters, 90 explainers (40x1, 25x2); flow 55, compare 15, sequence 11, cycle 5, timeline 3, mindmap 1; all pass the Inkling check with no warnings",
+        "Live WebKit, chapter Token: inline on desktop/iPhone/iPad, no sideways scroll, no errors; a wide mind map is redrawn top to bottom on a phone",
+        "courses/agent-harness-from-scratch synced; course-check 0 errors"
+      ]
     }
   ]
 }

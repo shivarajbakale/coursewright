@@ -6,26 +6,33 @@ With approval, `minidsh` pauses before a risky tool call and asks you. That help
 
 Picture a guest in an office building. You do not follow the guest around checking every door they try. You give them a key card that opens one room. The building's lock system, not the guest's good intentions, decides which doors open. Anyone the guest brings along gets the same card.
 
-```inkling
-title "A fence the kernel enforces"
-command: box "The command" yellow
-kernel: box "The kernel\nchecks each write"
-inside: db "Files inside\nthe workspace"
-outside: db "Files outside\nthe workspace"
-child: box "Programs it starts"
-command -> kernel : "asks to write"
-kernel --> inside : "allowed"
-kernel --> outside : "refused"
-kernel -> child : "same rules apply"
-circle kernel
-step 1: command "The command starts"
-step 2: kernel "The kernel checks each write against the rules"
-step 3: inside "A write inside the workspace is allowed"
-step 4: outside "A write outside the workspace is refused"
-step 5: child "Every program it starts inherits the same rules"
-```
+
 
 A sandbox works the same way for a command. Before the command starts, your harness hands the operating system a set of rules. From then on the kernel, the core of the operating system that every program must ask before it writes a file, checks each write against those rules. The command cannot argue its way out, and every program it starts inherits the same rules.
+
+```inkling
+title "A fence the kernel enforces"
+layout flow
+rules: sticky "Kernel rules\nfrom your harness" yellow
+cmd: box "The command" blue
+child: box "Programs it starts"
+kernel: box "Kernel\nchecks each write"
+inside: box "notes.txt\nin /work/app" green
+outside: box "~/notes.txt\noutside" red
+step 1: rules "Your harness hands the operating system its rules"
+step 2: kernel "The kernel receives the rules before the command starts"
+step 3: cmd "The command starts under those rules"
+step 4: child "Every program it starts inherits the rules"
+step 5: inside "A write inside the fence is allowed"
+step 6: outside "A write outside the fence is refused"
+rules -> kernel : "handed over first"
+kernel -> cmd : "run it under these rules"
+cmd -> child : "starts it"
+child -> kernel : "asks to write"
+kernel -> inside : "inside the fence: allowed"
+kernel -> outside : "outside the fence: refused"
+circle kernel
+```
 
 The picture stops holding in one important place. A key card controls every door. The sandbox in this course controls only one kind of door: changes to files. The command can still read any file your user account can read, such as `~/.ssh`. It can still reach the network. It can still use all your CPU.
 
@@ -45,16 +52,7 @@ export interface SandboxPolicy {
 
 Here is one command under each mode, with the session working in `/work/app`:
 
-```inkling
-title "Three fences, one command"
-columns "read-only", "workspace-write", "danger-full-access"
-row "Write in /work/app": no, yes, yes
-row "Write in home folder": no, no, yes
-note read-only "both refused"
-step 1: read-only "Under read-only the kernel refuses both writes"
-step 2: workspace-write "Under workspace-write the write inside /work/app succeeds"
-step 3: danger-full-access "Under danger-full-access nothing is checked"
-```
+
 
 ```text
 command: bash -c 'echo hi > notes.txt; echo hi > ~/notes.txt'
@@ -65,6 +63,18 @@ danger-full-access  both files written, because there is no fence
 ```
 
 Walk through it. The command tries two writes, one inside the working folder and one in your home folder. Under `read-only`, the kernel refuses both, and the shell prints the error. Under `workspace-write`, the write inside `/work/app` succeeds and the one outside fails. Under `danger-full-access`, nothing is checked. The name is long and alarming on purpose.
+
+```inkling
+title "One command under three fences"
+layout compare
+columns "read-only", "workspace-write", "danger-full-access"
+row "Write in /work/app": "refused", "written", "written"
+row "Write in ~/": "refused", "refused", "written"
+row "Fence": "nothing changes", "only the workspace", "no fence"
+step 1: read-only "Under read-only, both writes are refused"
+step 2: workspace-write "Under workspace-write, the workspace write succeeds"
+step 3: danger-full-access "Under danger-full-access, both files are written"
+```
 
 Notice that the policy is a value you pass with each command, not a global switch. Two commands can run at the same moment under different modes. That matters later, when one single call needs a wider fence than the rest.
 

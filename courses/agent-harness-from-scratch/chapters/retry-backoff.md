@@ -9,26 +9,24 @@ Think of phoning a busy office. If the line is engaged, redialling every second 
 ```inkling
 title "Retry with backoff"
 layout cycle
-center "one model request"
-fail: circle "It fails"
-decide: diamond "Retryable?"
-wait: circle "Wait longer, plus jitter"
-again: circle "Try again"
-giveup: box "Give up and log" gray
-fail -> decide : "code?"
-decide -> wait : "yes, up to 5 times"
-decide -> giveup : "no"
-wait -> again
-again -> fail
-circle wait
-note wait "500 ms, 1 s, 2 s, 4 s, 8 s, cap 10 s"
-note again "jitter spreads many clients out"
-step 1: fail "The request fails"
-step 2: decide "The error code says if it can pass on its own"
-step 3: wait "We wait a growing, slightly random time"
-step 4: again "We try the same request again"
-step 5: giveup "After 5 retries we stop and log it"
+center "try again until it works"
+attempt: box "Send request" yellow
+wait: box "Wait longer each time"
+jitter: box "Add random jitter"
+success: box "Request succeeds"
+giveup: box "Give up after 5 retries"
+step 1: attempt "The request fails with a retryable error"
+step 2: wait "The wait doubles: 500 ms, 1 s, 2 s, 4 s, 8 s"
+step 3: jitter "A random 10 percent either way spreads clients out"
+step 5: success "The reply arrives and the turn continues"
+step 6: giveup "The wait caps at 10 s and the turn ends"
+cycle attempt, wait, jitter
+attempt -> success : "reply"
+wait -> giveup : "after 5 retries"
+circle jitter
 ```
+
+
 
 Those are the three parts. First, decide which failures are worth another try. Second, wait longer after each failure: that is **backoff**. Third, add a small random amount to each wait, called **jitter**, so many clients do not retry in lockstep.
 

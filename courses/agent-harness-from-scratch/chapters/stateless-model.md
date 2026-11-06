@@ -6,23 +6,26 @@ Try two calls in a row. In the first, the user says "My name is Ana." In the sec
 
 Picture a help hotline where nobody takes notes. Every time you call, the person who answers has never heard of you. If you want help with something you discussed yesterday, you must read out the whole story again from the start. Then they can answer as if they remembered.
 
+```inkling
+title "Where the memory lives"
+layout flow
+you: person "You"
+program: box "Your program" green
+model: box "The model" yellow
+list: db "Message list"
+circle program
+step 1: you "You type a message"
+step 2: program "Your program adds it to the list"
+step 3: model "The whole list is sent to the model"
+step 5: list "The reply is added to the list"
+note list "the only place the past exists"
+```
+
 A model works like that. Each API call is complete in itself. The model reads the messages in that request, writes a reply, and keeps nothing afterwards. This is what stateless means: no state, no memory, carried from one request to the next.
 
 So the memory has to live in your program. Your program keeps every message of the conversation in a list. Each time the user says something, you add it to the list and send the whole list. When the reply arrives, you add that too, labelled `assistant`. That is why the `assistant` role exists: it lets you hand the model its own earlier words.
 
-```inkling
-title "The program keeps the memory"
-layout down
-program: box "Your program" green
-list: db "History list"
-model: box "The model"
-step 1: user, program "The user types a message"
-step 2: list, program "Your program adds it to the list"
-step 3: model, program "The whole list is sent, every time"
-step 4: reply, list "The model's reply is added to the list"
-note list "the list grows by 2 each exchange"
-circle list
-```
+
 
 The picture stops holding in one place. A hotline operator could choose to take notes. The model cannot. Even if you send the same conversation twice, it starts from nothing each time.
 
@@ -49,6 +52,17 @@ while (true) {
 ```
 
 Walk through two exchanges. You type "My name is Ana." The program sends 2 messages: system and user. The reply, "Nice to meet you, Ana.", is added, so the list now holds 3.
+
+```inkling
+title "The list grows with every exchange"
+layout timeline
+- 1: send 2 messages
+- 2: send 4 messages
+- 3: send 6 messages
+- 4: send 8 messages
+span 2..4 "more tokens each time"
+steps auto
+```
 
 You type "What is my name?" The program sends 4 messages: system, your first line, the model's reply, and your new question. The model reads the earlier line and answers "Ana". It did not remember. Your program reminded it.
 

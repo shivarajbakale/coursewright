@@ -7,25 +7,23 @@ You now have a list of writable folders and a check for file tools. But your she
 Each operating system ships a small program whose job is to apply rules and then start another program inside them. Think of a lock installer who sets the building's locks, hands the guest the card, and opens the door. You never install the locks yourself. You tell the installer which rooms, and who walks in.
 
 ```inkling
-title "How the sandbox runner wraps a command"
+title "How a sandbox runner wraps a command"
 layout down
-argv: box "['bash', '-c', cmd]"
-runner: box "sandbox-exec\nor bwrap" yellow
-rules: box "profile\nor mount flags"
-sep: diamond "--"
-orig: box "['bash', '-c', cmd]"
-argv -> runner : "prefix"
-runner -> rules : "apply rules"
-rules -> sep : "then"
-sep -> orig : "then start"
-circle orig
-note sep "my options end here"
-step 1: argv "The original command starts as an argument list"
-step 2: runner "The sandbox runner is placed before it"
-step 3: rules "The runner receives the rules for the current mode"
-step 4: sep "A separator marks where runner options end"
-step 5: orig "The original command then runs inside the rules"
+harness: box "Harness" yellow
+runner: box "sandbox-exec or bwrap"
+cmd: box "bash -c your command"
+kernel: box "Kernel"
+step 1: harness "Your shell tool hands over the argument list"
+step 2: runner "The runner adds its rules, then a --, then your list"
+step 3: cmd "Your command starts inside the rules"
+step 4: kernel "The kernel refuses writes outside the roots"
+harness -> runner : "argv"
+runner -> cmd : "-- argv"
+cmd -> kernel : "write outside roots"
+kernel --> cmd : "Operation not permitted"
 ```
+
+
 
 The picture stops holding in one way: each operating system has its own installer, speaking its own rule language. You need one translation per platform.
 
@@ -64,18 +62,22 @@ export function confine(argv: string[], policy: SandboxPolicy): string[] {
 Read the Seatbelt profile in order. Allow everything by default. Then deny every kind of file write. Then allow writes to `/dev/null`, because shells send unwanted output there all the time. Then allow writes under each root. The later, more specific allows win for those paths. Reading and the network stay open, exactly as the modes promise.
 
 ```inkling
-title "Seatbelt rules, read in order"
-layout timeline
-- 1: allow default
-- 2: deny file-write*
-- 3: allow /dev/null
-- 4: allow each writable root
-span 3..4 "later, more specific allows win"
-step 1: allow-default "Start by allowing everything"
-step 2: deny-file-writes "Then deny every file write"
-step 3: allow-dev-null "Allow writes to the null device"
-step 4: allow-writable-root "Allow writes under each writable root"
+title "Seatbelt rules in order"
+layout down
+default: box "allow default" yellow
+deny: box "deny file-write*"
+devnull: box "allow /dev/null"
+roots: box "allow subpath root"
+step 1: default "Everything is allowed to start"
+step 2: deny "Now every write is denied"
+step 3: devnull "Writes to /dev/null are allowed again"
+step 4: roots "Writes under each root are allowed again"
+default -> deny : "then"
+deny -> devnull : "later wins"
+devnull -> roots : "later wins"
 ```
+
+
 
 The bubblewrap list says the same thing as mounts. `--ro-bind / /` shows the whole file system read-only. `--dev` and `--proc` add the device and process folders a program needs. `--unshare-pid` gives the command its own process numbering, and `--die-with-parent` stops it if your harness dies. Under `workspace-write`, `--tmpfs /tmp` adds a fresh empty `/tmp`, and `--bind root root` makes the workspace writable again.
 

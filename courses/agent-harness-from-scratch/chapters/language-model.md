@@ -6,33 +6,46 @@ You type "The capital of France is" into a chat app, and it answers "Paris". Nob
 
 Think of the keyboard on your phone. When you type "see you", it offers "soon", "tomorrow" and "later" above the keys. It has learned from text which words tend to follow which. Tap a suggestion and it suggests again. Keep tapping and you get a whole sentence, built one guess at a time.
 
+```inkling
+title "Predicting one piece at a time"
+layout cycle
+center "the loop"
+text: sticky "Text so far\n\"The capital of France is\""
+score: box "Score every\npossible next piece"
+pick: box "Pick one\nweighted by probability"
+append: box "Add the piece\nto the text"
+done: box "Reply is\nfinished?"
+cycle text, score, pick, append, done
+step 1: text "Start from the text you typed"
+step 2: score "It scores every possible next piece"
+step 3: pick "It picks one, weighted by probability"
+step 4: append "The piece joins the text"
+step 5: done "When the reply is done, it stops"
+note pick "sometimes it draws the less likely option"
+```
+
 A language model does the same thing on a far larger scale. It has studied an enormous amount of written text. Given any text, it scores every possible next piece by how likely it is. Then it picks one, adds it to the end, and repeats.
 
-```inkling
-title "How a model writes a reply"
-layout cycle
-center "the writing loop"
-given: box "Text so far" yellow
-score: box "Score every next piece"
-pick: box "Pick one piece"
-append: box "Append it to the text"
-done: diamond "Reply finished?"
-given -> score : "the text you have"
-score -> pick : "a probability for each option"
-pick -> append : "the chosen piece"
-append -> given : "now look again"
-append -> done : "no"
-done -> given : "keep going"
-step 1: given "You give the model the text so far"
-step 2: score "It gives every next piece a probability"
-step 3: pick "It picks one, weighted by those probabilities"
-step 4: append "That piece joins the end of the text"
-step 5: done "If the reply is not finished, it starts over"
-```
+
 
 The keyboard picture stops holding in one place. Your keyboard looks at the last word or two. A large model looks at everything before the gap. So "bank" in a sentence about rivers gets a different next guess than "bank" in a sentence about money.
 
 Here is the smallest working version, in TypeScript. It learns from three short sentences by counting which word follows which.
+
+```inkling
+title "From counted text to probabilities"
+layout down
+sent: sticky "the cat sat .\nthe cat ran .\nthe dog sat ."
+count: db "Counts\nthe → cat 2, dog 1\ncat → sat 1, ran 1"
+prob: box "Probabilities\ncat 0.67, dog 0.33\nsat 0.5, ran 0.5"
+sent -> count : "count who follows whom"
+count -> prob : "divide by the total"
+circle prob
+note count "the total of each row is the number of times the word appeared"
+step 1: sent "Start with the training sentences"
+step 2: count "Count how often each word follows another"
+step 3: prob "Divide each count by the total for that word"
+```
 
 ```ts
 // predict.ts — run with: npx tsx predict.ts

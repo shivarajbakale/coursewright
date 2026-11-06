@@ -6,26 +6,26 @@ Your team writes careful instructions for recurring jobs: how to write release n
 
 A restaurant does not cook every dish and lay them all out. It hands you a menu: dish names, each with one line of description. The kitchen cooks only what you order.
 
+```inkling
+title "Loading a skill only when needed"
+layout down
+menu: box "Skill catalog\nnames and descriptions" blue
+model: person "Model"
+tool: icon gear "Skill loader"
+full: box "Full skill\ninstructions"
+step 1: menu "The model always sees the short catalog"
+step 2: model "The job matches one skill"
+step 3: tool "The model calls the skill tool by name"
+step 4: full "Only that skill's full text is loaded"
+menu -> model : "available skills"
+model -> tool : "load release-notes"
+tool -> full : "return instructions"
+circle full
+```
+
 A skill works the same way. The model sees a short menu of skill names and one-line descriptions. When a job matches, it calls a tool to load that skill's full text. The picture stops holding at the ordering. A diner knows when they are hungry. The model only orders a skill if the description makes clear when it applies. So a good description says what the skill does and when to use it.
 
-```inkling
-title "How a skill gets loaded"
-catalog: box "Catalog\n12 names, one line each" green
-model: circle "Model"
-tool: box "skill tool"
-body: db "Full body\n~3000 tokens"
-job: sticky "A job matches"
-catalog -> model : "always in context"
-job -> model
-model -> tool : "skill(name)"
-tool -> body : "loads one"
-body -> model : "only this cost"
-step 1: catalog "The catalog is always in context, one line per skill"
-step 2: job, model "A job arrives that matches one description"
-step 3: model, tool "The model calls skill with that name"
-step 4: body "The full instructions arrive as a tool result"
-step 5: unused "The other eleven skills stay unloaded"
-```
+
 
 ## Files, a catalog and a loader tool
 
