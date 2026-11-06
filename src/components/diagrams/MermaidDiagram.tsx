@@ -21,8 +21,11 @@ export function MermaidDiagram({ source }: { source: string }) {
     let cancelled = false;
     import('mermaid')
       .then(async ({ default: mermaid }) => {
+        // Mermaid is loaded lazily; if the diagram unmounted meanwhile there is no scratch box, and Mermaid
+        // would fall back to laying the diagram out in <body>, scrolling the whole document. Draw nothing.
+        if (cancelled || !scratch.current) return;
         mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: scheme === 'dark' ? 'dark' : 'neutral' });
-        const out = await mermaid.render(`m${id}`, source, scratch.current ?? undefined);
+        const out = await mermaid.render(`m${id}`, source, scratch.current);
         if (!cancelled) setSvg(out.svg);
       })
       .catch((e: Error) => !cancelled && setError(e.message));

@@ -83,7 +83,9 @@ export function sampleMotion(root: Element): AuditedElement[] {
       visibility: style.visibility,
       width: box.width,
       height: box.height,
-      contentKey: `${el.childElementCount}:${(el.textContent ?? '').length}`,
+      // Every descendant, not only direct children: a placeholder swapped for a diagram deep inside the box
+      // is content arriving (React committing), not the box animating.
+      contentKey: `${el.querySelectorAll('*').length}:${(el.textContent ?? '').length}`,
     });
   }
   return out;

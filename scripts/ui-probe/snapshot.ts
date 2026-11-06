@@ -116,12 +116,21 @@ export function snapshot(root: Element, label: string): Snapshot {
       const parent = el.parentElement?.getBoundingClientRect();
       if (r.bottom > limit && r.height > 0 && (!parent || parent.bottom <= limit || el.parentElement === doc.body)) {
         const attrs = Array.from(el.attributes)
-          .filter((a) => a.name.startsWith('data-') || a.name === 'class' || a.name === 'id' || a.name === 'aria-label')
+          .filter((a) => a.name.startsWith('data-') || ['class', 'id', 'aria-label', 'style', 'role'].includes(a.name))
           .map((a) => `${a.name}="${a.value.slice(0, 40)}"`)
           .join(' ');
-        overflowing.push(`<${el.tagName.toLowerCase()} ${attrs}> bottom ${Math.round(r.bottom)}px`);
+        const inside = Array.from(el.children).slice(0, 3).map((c) => `${c.tagName.toLowerCase()}${c.id ? '#' + c.id : ''}${c.getAttribute('data-section') ? '[' + c.getAttribute('data-section') + ']' : ''}`);
+        const text = (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60);
+        overflowing.push(`<${el.tagName.toLowerCase()} ${attrs}> top ${Math.round(r.top)}px bottom ${Math.round(r.bottom)}px, holds ${inside.join(' ') || 'nothing'}${text ? ` "${text}"` : ''}`);
         if (overflowing.length >= 5) break;
       }
+    }
+    // What sits in <body> beside the page: an element left there (a portal, a library's scratch node) pushes
+    // everything after it down.
+    for (const el of Array.from(doc.body.children) as HTMLElement[]) {
+      const r = el.getBoundingClientRect();
+      if (r.height <= 0) continue;
+      overflowing.push(`body child <${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''} class="${(el.getAttribute('class') ?? '').slice(0, 40)}" style="${(el.getAttribute('style') ?? '').slice(0, 60)}"> top ${Math.round(r.top)}px height ${Math.round(r.height)}px`);
     }
   }
   return {
