@@ -89,7 +89,8 @@ export async function mountExplainer(
   let diagram: Diagram = ink.mount(stage, source, look);
   // A wide drawing in a narrow column shrinks until its writing is too small to read (a mind map on a
   // phone). Most layouts can also run top to bottom; when that reads larger here, use it instead.
-  const room = host.clientWidth;
+  // The host is hidden until the drawing is ready, so measure the column it sits in.
+  const room = host.clientWidth || host.parentElement?.clientWidth || 0;
   const width = (d: Diagram) => Number(d.svg.getAttribute('width')) || room;
   if (room > 0 && room / width(diagram) < MIN_SCALE) {
     const taller = document.createElement('div');
