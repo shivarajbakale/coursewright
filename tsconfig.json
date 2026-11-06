@@ -28,7 +28,7 @@
   // vite 7, so a config that hands vite-5 plugins to vitest's `defineConfig`
   // has two irreconcilable `Plugin` types. Both configs are exercised for real
   // every run — `npm test` and `npm run ui-probe` would not start otherwise.
-  "include": ["src", "electron", "scripts", ".storybook"],
+  "include": ["src", "mobile/src", "electron", "scripts", ".storybook"],
   "references": [
     {
       "path": "./tsconfig.node.json"

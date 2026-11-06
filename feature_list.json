@@ -1,6 +1,6 @@
 {
   "project": "react_app",
-  "last_updated": "2026-11-05",
+  "last_updated": "2026-11-06",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -318,6 +318,29 @@
         "make check: exit 0"
       ],
       "notes": "Not yet run: an agent writing a full course through the MCP server and importing it to the deployed instance, viewed in the browser (owner deferred course writing). Rules: agent/app/authoring.py; MCP: agent/app/mcp_server.py; guide: docs/authoring-courses.md"
+    },
+    {
+      "id": "reader-pwa-spike",
+      "priority": 16,
+      "area": "Phone and iPad reader",
+      "title": "A react-native-web reader app at /m/ lists courses and streams one tutor reply",
+      "user_visible_behavior": "Opening /m/ on a phone shows the course library from /api/courses, built from React Native primitives rendered by react-native-web. A tutor box on the same screen sends a question through the existing CopilotKit runtime and shows the reply as it streams. Proves the phone reader's riskiest parts (react-native-web build, CopilotKit hooks without their chat UI, streaming) before the reader screens are built.",
+      "status": "passing",
+      "plan": "none: throwaway spike screen with no product design; the reader screens are planned with plan-feature in the next feature, from the approved design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS",
+      "verification": [
+        "tsc, eslint, vitest for mobile/",
+        "npm run build:mobile",
+        "Playwright WebKit at 390x844 and 820x1180 against the Mac mini API and tutor runtime",
+        "make check"
+      ],
+      "evidence": [
+        "npx vitest run mobile: 2 passed (library lists /api/courses through MSW with React Native components; tutor lines keep only user questions and assistant text)",
+        "npm run build:mobile: dist/m/assets/index-*.js 1,004.55 kB, 278.31 kB gzipped (was 2,377.55 kB / 699.27 kB with @copilotkit/react-core/v2)",
+        "WebKit 26.6, 390x844, dev server proxied to http://coursewright:8080: library showed 6 real courses; tutor question 'In one short paragraph: what is an agent loop?' streamed, reply text grew through 10 distinct lengths (46 → 797 chars) over 6.2 s; no page errors; horizontal overflow 0 px",
+        "WebKit 26.6, 820x1180: library centred at 680 px wide, no page errors, horizontal overflow 0 px",
+        "Finding for later phases: tutor replies carry citation markers like [6]; the reader must render them as chapter links",
+        "make check: exit 0 (type-check, lint, ui-lint, plan-lint, tests 153 passed in ui-probe, doc-lint)"
+      ]
     }
   ]
 }

@@ -14,6 +14,9 @@ export default defineConfig({
       // defines no CommonJS globals, and warns on every boot of every generated
       // app that it is about to become the default.
       '@': path.resolve(import.meta.dirname, './src'),
+      // The phone reader (mobile/, built by vite.mobile.config.ts) is written against React Native
+      // and rendered by react-native-web; its tests run under this config, so they need the alias.
+      'react-native': 'react-native-web',
     },
     // kit is linked from ../kit with its own node_modules; one React and one
     // Mantine for the whole page, or hooks and context break across the boundary.

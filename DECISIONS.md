@@ -37,3 +37,22 @@ Append-only. New entries go at the top. Each entry should answer:
 - **Rejected:** keeping R8 and writing stories anyway; dropping storybook-lint entirely (the remaining
   rules still catch broken stories that exist).
 - **Constraint:** don't add stories by default; components are verified by tests and the UI probe.
+
+## 2026-11-06 — The phone and iPad reader is react-native-web, outside Mantine
+
+- **What:** `mobile/` is a second Vite app (`vite.mobile.config.ts`, served at `/m/`) written with
+  React Native components rendered by react-native-web. It shares `src/api` (client, services, types)
+  and `src/lib/queryClient` through the `@` alias. Its tokens live in `mobile/src/theme.ts`;
+  `ui-lint` and the Mantine rules in AGENTS.md cover `src/` only. The tutor uses `@copilotkit/core`
+  with a small hook (`mobile/src/tutor.ts`), not `@copilotkit/react-core`.
+- **Why:** the owner asked for a PWA built with react-native-web, for iPhone and iPad. The spike
+  measured `@copilotkit/react-core/v2` at a 2.4 MB main chunk (700 KB gzipped) because its entry
+  bundles the chat UI and its stylesheet; the core with our hook is 1.0 MB (278 KB gzipped) for the
+  whole app, and streaming works the same through `/api/copilotkit`.
+- **Rejected:** Expo (no built-in offline support for the web build, a second toolchain); making the
+  Mantine app responsive (the owner asked for react-native-web); calling `/agents/tutor` directly with
+  `@ag-ui/client` (it would need a new nginx route and the shared secret in the browser).
+- **Constraint:** `mobile/` never imports Mantine or `src/components`; server data still goes through
+  a query hook over a service in `src/api/services`. `mobile/src/react-native.d.ts` types only what the
+  app uses (react-native-web ships Flow types); extend it rather than adding `@types/react-native-web`,
+  which installs all of React Native.

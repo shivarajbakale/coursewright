@@ -5,10 +5,22 @@
 - Repository root: this project
 - Standard startup path: `./init.sh`
 - Standard verification path: `make check` (install + type-check + lint + test)
-- Current highest-priority unfinished feature: none open; next: write a real course through the coursewright MCP and import it to the deployed instance, per-module skip quiz, later-name leaks in lessons
+- Current highest-priority unfinished feature: none open; next: phone reader Phase 1 (library, outline, chapter reader, settings) planned with plan-feature from the design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS; later per-module skip quiz, later-name leaks in lessons
 - Current blocker: none
 
 ## Session Log
+
+### Session 012 — Phone and iPad reader, Phase 0 spike (2026-11-06)
+
+- Owner: a phone/iPad reading app, a PWA built with react-native-web, easy to read, an Ask-tutor button,
+  no notes. Plan: Vite + react-native-web app in `mobile/`, served at `/m/` by the same nginx; phases
+  0 spike, 1 read, 2 rich content, 3 tutor, 4 PWA (offline, install), 5 ship. iPad: layout by window
+  width (<700 one column, 700-1023 wide column + sheet, >=1024 three panes with docked tutor).
+- Design canvas approved: https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS (6 iPhone, 2 iPad screens).
+- Spike (feature reader-pwa-spike): library from /api/courses and a streamed tutor reply, verified in
+  WebKit at 390x844 and 820x1180 against the Mac mini. Tutor runs on `@copilotkit/core` + `mobile/src/tutor.ts`
+  (react-core's v2 entry bundles its chat UI: 700 KB gzipped vs 278 KB). See DECISIONS.md 2026-11-06.
+- Found: tutor replies carry citation markers like `[6]`; Phase 3 must turn them into chapter links.
 
 ### Session 011 — Coding agents can write courses (2026-11-06)
 

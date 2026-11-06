@@ -7,6 +7,7 @@
   "author": "Shivaraj Bakale",
   "dependencies": {
     "@ag-ui/client": "^1.0.3",
+    "@copilotkit/core": "^1.84.1",
     "@copilotkit/react-core": "^1.84.1",
     "@copilotkit/runtime": "^1.84.1",
     "@hookform/resolvers": "^4.1.3",
@@ -36,6 +37,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.54.2",
+    "react-native-web": "^0.21.4",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^3.1.0",
     "zod": "^3.24.2",
@@ -87,7 +89,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && npm run build:mobile",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
     "ui-lint": "node scripts/ui-lint.mjs",
@@ -117,7 +119,9 @@
     "deploy": "bash deploy/deploy.sh",
     "deploy:status": "bash deploy/deploy.sh --status",
     "deploy:logs": "bash deploy/deploy.sh --logs",
-    "deploy:down": "bash deploy/deploy.sh --down"
+    "deploy:down": "bash deploy/deploy.sh --down",
+    "dev:mobile": "vite -c vite.mobile.config.ts",
+    "build:mobile": "vite build -c vite.mobile.config.ts"
   },
   "license": "MIT",
   "repository": {
