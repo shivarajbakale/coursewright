@@ -15,6 +15,8 @@ export type Inline = {
   href?: string;
   /** A hard line break inside a paragraph. */
   br?: boolean;
+  /** A tutor citation, `[n]`: the number of the search hit it points at. */
+  cite?: number;
 };
 
 export type Block =
@@ -33,6 +35,47 @@ export function parseChapter(markdown: string): Block[] {
   const blocks = parseBlocks(md.parse(markdown, {}));
   if (blocks[0]?.kind === 'heading' && blocks[0].level === 1) blocks.shift();
   return blocks;
+}
+
+/** A paragraph's words, the way the tutor receives it. */
+export function plainText(inlines: Inline[]): string {
+  return inlines.map((r) => r.text).join('').replace(/\s+/g, ' ').trim();
+}
+
+/** A tutor reply: markdown whose `[n]` markers become citation runs (never inside code). */
+export function parseReply(markdown: string): Block[] {
+  return mapInlines(parseBlocks(md.parse(markdown, {})), splitCites);
+}
+
+function splitCites(runs: Inline[]): Inline[] {
+  return runs.flatMap((r) => {
+    if (r.code || r.br || !/\[\d+\]/.test(r.text)) return [r];
+    return r.text
+      .split(/(\[\d+\])/)
+      .filter(Boolean)
+      .map((piece) => {
+        const m = /^\[(\d+)\]$/.exec(piece);
+        return m ? { ...r, text: m[1], cite: Number(m[1]) } : { ...r, text: piece };
+      });
+  });
+}
+
+function mapInlines(blocks: Block[], f: (runs: Inline[]) => Inline[]): Block[] {
+  return blocks.map((b) => {
+    switch (b.kind) {
+      case 'heading':
+      case 'paragraph':
+        return { ...b, inlines: f(b.inlines) };
+      case 'list':
+        return { ...b, items: b.items.map((item) => mapInlines(item, f)) };
+      case 'quote':
+        return { ...b, blocks: mapInlines(b.blocks, f) };
+      case 'table':
+        return { ...b, header: b.header.map(f), rows: b.rows.map((row) => row.map(f)) };
+      default:
+        return b;
+    }
+  });
 }
 
 /** One line of inline markdown (a quiz prompt, an answer): `code`, **bold**, *italic*, links. */

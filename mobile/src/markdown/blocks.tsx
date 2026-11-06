@@ -5,9 +5,20 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Style } from 'react-native';
 import { font, radius, space, type Palette } from '../theme';
-import type { Block, Inline } from './parse';
+import { plainText, type Block, type Inline } from './parse';
 
-export type Look = { size: number; lineHeight: number; family: string; palette: Palette };
+export type Look = {
+  size: number;
+  lineHeight: number;
+  family: string;
+  palette: Palette;
+  /** Tutor replies: a tapped `[n]` citation. */
+  onCite?: (n: number) => void;
+  /** Chapters: a tapped paragraph, as plain text, to ask the tutor about. */
+  onParagraph?: (text: string) => void;
+  /** The paragraph currently picked for the tutor. */
+  selected?: string | null;
+};
 
 export function Blocks({ blocks, look }: { blocks: Block[]; look: Look }) {
   return (
@@ -37,12 +48,28 @@ function BlockView({ block, look }: { block: Block; look: Look }) {
         </Text>
       );
     }
-    case 'paragraph':
+    case 'paragraph': {
+      if (!look.onParagraph) {
+        return (
+          <Text style={body}>
+            <Runs inlines={block.inlines} look={look} />
+          </Text>
+        );
+      }
+      const words = plainText(block.inlines);
+      const picked = look.selected === words;
+      const pick = look.onParagraph;
       return (
-        <Text style={body}>
+        <Text
+          style={[body, styles.tappable, picked && { backgroundColor: p.tint, borderColor: p.accentInk }]}
+          onPress={() => pick(words)}
+          aria-pressed={picked}
+          accessibilityLabel={picked ? 'Picked for the tutor. Tap again to unpick.' : undefined}
+        >
           <Runs inlines={block.inlines} look={look} />
         </Text>
       );
+    }
     case 'list':
       return (
         <View style={styles.list} role="list">
@@ -137,6 +164,20 @@ export function Runs({ inlines, look }: { inlines: Inline[]; look: Look }) {
         if (r.bold) style.fontWeight = '600';
         if (r.italic) style.fontStyle = 'italic';
         if (r.code) Object.assign(style, { fontFamily: font.mono, fontSize: Math.round(look.size * 0.84), backgroundColor: p.raised, color: p.text, borderRadius: 5, paddingHorizontal: 4 });
+        if (r.cite !== undefined) {
+          const n = r.cite;
+          return (
+            <Text
+              key={i}
+              role={look.onCite ? 'link' : undefined}
+              accessibilityLabel={`Source ${n}`}
+              onPress={look.onCite ? () => look.onCite?.(n) : undefined}
+              style={[styles.cite, { color: p.accentInk, backgroundColor: p.tint, borderColor: p.border }]}
+            >
+              {n}
+            </Text>
+          );
+        }
         if (r.href) {
           return (
             <Text key={i} href={r.href} hrefAttrs={{ target: '_blank', rel: 'noopener noreferrer' }} style={[style, { color: p.accentInk, textDecorationLine: 'underline' }]}>
@@ -169,4 +210,7 @@ const styles = StyleSheet.create({
   tr: { flexDirection: 'row', borderBottomWidth: 1 },
   cell: { width: 160, paddingVertical: 10, paddingHorizontal: 12, fontFamily: font.ui, fontSize: 14, lineHeight: 20 },
   rule: { height: 1, marginVertical: space.sm },
+  // A paragraph you can tap: a transparent frame that tints when picked, so picking never shifts the text.
+  tappable: { borderRadius: 8, borderWidth: 1, borderColor: 'transparent', marginHorizontal: -9, paddingHorizontal: 8, cursor: 'pointer' },
+  cite: { fontFamily: font.mono, fontSize: 11, fontWeight: '600', borderRadius: 6, borderWidth: 1, paddingHorizontal: 5, marginHorizontal: 2, cursor: 'pointer' },
 });

@@ -5,7 +5,7 @@
  * Progress: opening a chapter never started marks it started; reaching the end marks it read.
  * The server overwrites `finishedAt` on every call, so each is sent at most once.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { ScrollEvent, ScrollViewHandle } from 'react-native';
 import type { Chapter } from '@/api/types';
@@ -23,86 +23,233 @@ import { Icon, IconButton, SettingsButton, TopBar } from '../components/TopBar';
 import { Diagrams } from '../diagrams/Diagrams';
 import { Quiz } from '../quiz/Quiz';
 import { Bar } from './LibraryScreen';
+import { useTutorUi } from '../tutor/store';
+import type { Hit } from '../tutor/transcript';
+
+// The tutor (and the CopilotKit client under it) downloads the first time it opens.
+const TutorPanel = lazy(() => import('../tutor/TutorPanel'));
 
 /** Within this many pixels of the bottom counts as having read to the end. */
 const END_SLACK = 160;
 
-export function ChapterScreen({ courseId, chapterId, layout }: { courseId: string; chapterId: string; layout: Layout }) {
+export function ChapterScreen({
+  courseId,
+  chapterId,
+  layout,
+}: {
+  courseId: string;
+  chapterId: string;
+  layout: Layout;
+}) {
   const p = usePalette();
   const chapter = useChapter(chapterId);
   const course = useCourse(courseId);
   const where = chapterNumber(course.data, chapterId);
   const [drawer, setDrawer] = useState(false);
 
-  const openOutline = () => (layout === 'narrow' ? navigate(href({ name: 'course', courseId })) : setDrawer(true));
+  const ui = useTutorUi();
+  const split = layout === 'split';
+
+  const openOutline = () =>
+    layout === 'narrow' ? navigate(href({ name: 'course', courseId })) : setDrawer(true);
+  const openSource = (hit: Hit) => {
+    if (!hit.chapterId) return;
+    if (!split) ui.close();
+    navigate(
+      href({ name: 'chapter', courseId: hit.courseId ?? courseId, chapterId: hit.chapterId })
+    );
+  };
+
+  // "/" opens the tutor from a hardware keyboard (iPad Magic Keyboard), unless you are typing.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (
+        e.key === '/' &&
+        !(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable))
+      ) {
+        e.preventDefault();
+        ui.openTutor();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ui]);
+
+  const tutor = ui.open ? (
+    <Suspense fallback={null}>
+      <TutorPanel
+        courseId={courseId}
+        chapterId={chapterId}
+        courseTitle={course.data?.title ?? ''}
+        chapterTitle={chapter.data?.title ?? ''}
+        label={where ? `Chapter ${where.n}` : 'This chapter'}
+        mode={split ? 'pane' : 'sheet'}
+        onOpenSource={openSource}
+      />
+    </Suspense>
+  ) : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: p.ground }}>
-      <TopBar
-        left={
-          layout === 'split' ? null : (
-            <IconButton label="Course outline" onPress={openOutline}>
-              <Icon name="outline" color={p.text} stroke={1.8} />
-            </IconButton>
-          )
-        }
-        center={where ? <Text style={[styles.where, { color: p.muted }]}>{`${where.n} / ${where.total}`}</Text> : null}
-        right={<SettingsButton onPress={() => navigate(href({ name: 'settings' }))} />}
-      />
-      {chapter.isPending ? (
-        <View style={[styles.column, styles.loading]}>
-          <Skeleton lines={2} height={30} />
-          <Skeleton lines={6} height={18} />
-        </View>
-      ) : chapter.isError ? (
-        <View style={[styles.column, styles.loading]}>
-          <Message
-            tone="error"
-            title="Couldn't load this chapter."
-            body="Check your connection, then try again."
-            action="Try again"
-            onAction={() => void chapter.refetch()}
-          />
-        </View>
-      ) : (
-        <Reading key={chapter.data.id} chapter={chapter.data} courseId={courseId} layout={layout} onOutline={openOutline} />
-      )}
-
-      {drawer && course.data ? (
-        <View style={[StyleSheet.absoluteFill, styles.drawerWrap]}>
-          <Pressable accessibilityLabel="Close the outline" onPress={() => setDrawer(false)} style={[StyleSheet.absoluteFill, { backgroundColor: p.scrim }]} />
-          <View role="dialog" aria-label="Course outline" style={[styles.drawer, { backgroundColor: p.ground, borderRightColor: p.border }]}>
-            <View style={styles.drawerHead}>
-              <Text style={[styles.drawerTitle, { color: p.text }]} numberOfLines={2}>
-                {course.data.title}
-              </Text>
-              <IconButton label="Close the outline" onPress={() => setDrawer(false)}>
-                <Icon name="close" color={p.text} />
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: p.ground }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <TopBar
+          left={
+            layout === 'split' ? null : (
+              <IconButton label="Course outline" onPress={openOutline}>
+                <Icon name="outline" color={p.text} stroke={1.8} />
               </IconButton>
-            </View>
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.drawerBody}>
-              <Outline
-                course={course.data}
-                currentId={chapterId}
-                onOpen={(id) => {
-                  setDrawer(false);
-                  navigate(href({ name: 'chapter', courseId, chapterId: id }));
-                }}
-              />
-            </ScrollView>
+            )
+          }
+          center={
+            where ? (
+              <Text
+                style={[styles.where, { color: p.muted }]}
+              >{`${where.n} / ${where.total}`}</Text>
+            ) : null
+          }
+          right={
+            <>
+              {split ? (
+                <IconButton
+                  label={ui.open ? 'Close the tutor' : 'Ask tutor'}
+                  onPress={() => (ui.open ? ui.close() : ui.openTutor())}
+                >
+                  <Icon name="chat" color={ui.open ? p.accentInk : p.text} stroke={1.8} />
+                </IconButton>
+              ) : null}
+              <SettingsButton onPress={() => navigate(href({ name: 'settings' }))} />
+            </>
+          }
+        />
+        {chapter.isPending ? (
+          <View style={[styles.column, styles.loading]}>
+            <Skeleton lines={2} height={30} />
+            <Skeleton lines={6} height={18} />
           </View>
-        </View>
-      ) : null}
+        ) : chapter.isError ? (
+          <View style={[styles.column, styles.loading]}>
+            <Message
+              tone="error"
+              title="Couldn't load this chapter."
+              body="Check your connection, then try again."
+              action="Try again"
+              onAction={() => void chapter.refetch()}
+            />
+          </View>
+        ) : (
+          <Reading
+            key={chapter.data.id}
+            chapter={chapter.data}
+            courseId={courseId}
+            layout={layout}
+            onOutline={openOutline}
+          />
+        )}
+
+        {!split && !ui.open ? <AskButton /> : null}
+        {!split ? tutor : null}
+
+        {drawer && course.data ? (
+          <View style={[StyleSheet.absoluteFill, styles.drawerWrap]}>
+            <Pressable
+              accessibilityLabel="Close the outline"
+              onPress={() => setDrawer(false)}
+              style={[StyleSheet.absoluteFill, { backgroundColor: p.scrim }]}
+            />
+            <View
+              role="dialog"
+              aria-label="Course outline"
+              style={[styles.drawer, { backgroundColor: p.ground, borderRightColor: p.border }]}
+            >
+              <View style={styles.drawerHead}>
+                <Text style={[styles.drawerTitle, { color: p.text }]} numberOfLines={2}>
+                  {course.data.title}
+                </Text>
+                <IconButton label="Close the outline" onPress={() => setDrawer(false)}>
+                  <Icon name="close" color={p.text} />
+                </IconButton>
+              </View>
+              <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.drawerBody}>
+                <Outline
+                  course={course.data}
+                  currentId={chapterId}
+                  onOpen={id => {
+                    setDrawer(false);
+                    navigate(href({ name: 'chapter', courseId, chapterId: id }));
+                  }}
+                />
+              </ScrollView>
+            </View>
+          </View>
+        ) : null}
+      </View>
+      {split ? tutor : null}
     </View>
   );
 }
 
-function Reading({ chapter, courseId, layout, onOutline }: { chapter: Chapter; courseId: string; layout: Layout; onOutline: () => void }) {
+/** The floating Ask button, and above it the chip for a paragraph you tapped. */
+function AskButton() {
+  const p = usePalette();
+  const ui = useTutorUi();
+  return (
+    <View style={styles.ask} pointerEvents="box-none">
+      {ui.selection ? (
+        <View style={[styles.picked, { backgroundColor: p.surface, borderColor: p.borderStrong }]}>
+          <Pressable role="button" onPress={() => ui.openTutor()} style={styles.pickedMain}>
+            <Text style={[styles.pickedText, { color: p.text }]}>Ask about this paragraph</Text>
+          </Pressable>
+          <Pressable
+            role="button"
+            accessibilityLabel="Unpick the paragraph"
+            onPress={() => ui.select(null)}
+            style={styles.pickedX}
+          >
+            <Icon name="close" size={14} color={p.muted} />
+          </Pressable>
+        </View>
+      ) : null}
+      <Pressable
+        role="button"
+        onPress={() => ui.openTutor()}
+        style={({ pressed, hovered }) => [
+          styles.fab,
+          { backgroundColor: p.accent },
+          (pressed || hovered) && { opacity: 0.88 },
+        ]}
+      >
+        <Icon name="chat" size={20} color={p.onAccent} />
+        <Text style={[styles.fabText, { color: p.onAccent }]}>Ask tutor</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function Reading({
+  chapter,
+  courseId,
+  layout,
+  onOutline,
+}: {
+  chapter: Chapter;
+  courseId: string;
+  layout: Layout;
+  onOutline: () => void;
+}) {
   const p = usePalette();
   const { size, typeface, spacing } = useSettings();
   const progress = useChapterProgress(chapter.id, courseId);
   const blocks = useMemo(() => parseChapter(chapter.markdown), [chapter.markdown]);
-  const look: Look = { size, lineHeight: lineHeights[spacing], family: typeface === 'serif' ? font.reading : font.ui, palette: p };
+  const ui = useTutorUi();
+  const look: Look = {
+    size,
+    lineHeight: lineHeights[spacing],
+    family: typeface === 'serif' ? font.reading : font.ui,
+    palette: p,
+    onParagraph: ui.select,
+    selected: ui.selection,
+  };
 
   const scroller = useRef<ScrollViewHandle>(null);
   const viewport = useRef(0);
@@ -160,30 +307,52 @@ function Reading({ chapter, courseId, layout, onOutline }: { chapter: Chapter; c
       <ScrollView
         ref={scroller}
         style={{ flex: 1 }}
-        contentContainerStyle={styles.column}
+        contentContainerStyle={[styles.column, layout !== 'split' && styles.roomForAsk]}
         scrollEventThrottle={64}
         onScroll={onScroll}
-        onLayout={(e) => (viewport.current = e.nativeEvent.layout.height)}
+        onLayout={e => (viewport.current = e.nativeEvent.layout.height)}
         onContentSizeChange={onContentSize}
       >
         <View role="article" style={styles.article}>
           <View style={styles.header}>
             <Text style={[styles.module, { color: p.muted }]}>{chapter.moduleTitle}</Text>
-            <Text role="heading" aria-level={1} style={[styles.title, { color: p.text, fontSize: Math.round(size * 1.65), lineHeight: Math.round(size * 1.65 * 1.2) }]}>
+            <Text
+              role="heading"
+              aria-level={1}
+              style={[
+                styles.title,
+                {
+                  color: p.text,
+                  fontSize: Math.round(size * 1.65),
+                  lineHeight: Math.round(size * 1.65 * 1.2),
+                },
+              ]}
+            >
               {chapter.title}
             </Text>
-            <Text style={[styles.module, { color: p.muted }]}>About {chapter.readingMinutes} min</Text>
+            <Text style={[styles.module, { color: p.muted }]}>
+              About {chapter.readingMinutes} min
+            </Text>
           </View>
           {blocks.length ? (
             <Blocks blocks={blocks} look={look} />
           ) : (
-            <Message title="This chapter is still being written." body="Pick another from the outline." action="Open outline" onAction={onOutline} />
+            <Message
+              title="This chapter is still being written."
+              body="Pick another from the outline."
+              action="Open outline"
+              onAction={onOutline}
+            />
           )}
         </View>
         {chapter.diagrams.length || chapter.questions.length ? (
           <View style={styles.extras}>
             <Diagrams diagrams={chapter.diagrams} startOpen={layout !== 'narrow'} />
-            <Quiz chapterId={chapter.id} questions={chapter.questions} />
+            <Quiz
+              chapterId={chapter.id}
+              questions={chapter.questions}
+              onAskWhy={ask => ui.openTutor({ ask, selection: null })}
+            />
           </View>
         ) : null}
         <End chapter={chapter} courseId={courseId} />
@@ -198,18 +367,35 @@ function End({ chapter, courseId }: { chapter: Chapter; courseId: string }) {
   return (
     <View style={styles.end} role="navigation" aria-label="Chapters">
       {chapter.next ? (
-        <Pressable role="link" onPress={() => go(chapter.next!.id)} style={({ pressed, hovered }) => [styles.next, { backgroundColor: p.accent }, (pressed || hovered) && { opacity: 0.88 }]}>
+        <Pressable
+          role="link"
+          onPress={() => go(chapter.next!.id)}
+          style={({ pressed, hovered }) => [
+            styles.next,
+            { backgroundColor: p.accent },
+            (pressed || hovered) && { opacity: 0.88 },
+          ]}
+        >
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={[styles.nextLabel, { color: p.onAccent }]}>Next chapter</Text>
-            <Text style={[styles.nextTitle, { color: p.onAccent }]}>{shortTitle(chapter.next.title)}</Text>
+            <Text style={[styles.nextTitle, { color: p.onAccent }]}>
+              {shortTitle(chapter.next.title)}
+            </Text>
           </View>
           <Icon name="arrowRight" size={22} color={p.onAccent} stroke={2.2} />
         </Pressable>
       ) : (
-        <Message title="You've reached the end of this course." body="Every chapter is in your outline whenever you want to go back." />
+        <Message
+          title="You've reached the end of this course."
+          body="Every chapter is in your outline whenever you want to go back."
+        />
       )}
       {chapter.prev ? (
-        <Pressable role="link" onPress={() => go(chapter.prev!.id)} style={({ hovered }) => [styles.prev, hovered && { backgroundColor: p.surface }]}>
+        <Pressable
+          role="link"
+          onPress={() => go(chapter.prev!.id)}
+          style={({ hovered }) => [styles.prev, hovered && { backgroundColor: p.surface }]}
+        >
           <Icon name="arrowLeft" size={16} color={p.muted} />
           <Text style={[styles.prevText, { color: p.muted }]} numberOfLines={1}>
             {shortTitle(chapter.prev.title)}
@@ -222,7 +408,14 @@ function End({ chapter, courseId }: { chapter: Chapter; courseId: string }) {
 
 const styles = StyleSheet.create({
   where: { fontFamily: font.mono, fontSize: 13 },
-  column: { width: '100%', maxWidth: readingWidth, alignSelf: 'center', paddingHorizontal: 22, paddingTop: space.xl, paddingBottom: 64 },
+  column: {
+    width: '100%',
+    maxWidth: readingWidth,
+    alignSelf: 'center',
+    paddingHorizontal: 22,
+    paddingTop: space.xl,
+    paddingBottom: 64,
+  },
   loading: { gap: space.xxl },
   article: { gap: 22 },
   header: { gap: space.sm, marginBottom: space.xs },
@@ -230,14 +423,88 @@ const styles = StyleSheet.create({
   title: { fontFamily: font.reading, fontWeight: '600', letterSpacing: -0.3 },
   extras: { marginTop: 40, gap: space.xl },
   end: { marginTop: 40, gap: space.md },
-  next: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, minHeight: 72 },
+  next: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    padding: space.lg,
+    borderRadius: radius.lg,
+    minHeight: 72,
+  },
   nextLabel: { fontFamily: font.ui, fontSize: 13, fontWeight: '500' },
   nextTitle: { fontFamily: font.reading, fontSize: 19, fontWeight: '600', lineHeight: 25 },
-  prev: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44, paddingHorizontal: space.md, borderRadius: radius.sm, alignSelf: 'flex-start', maxWidth: '100%' },
+  prev: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    minHeight: 44,
+    paddingHorizontal: space.md,
+    borderRadius: radius.sm,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+  },
   prevText: { fontFamily: font.ui, fontSize: 14, flexShrink: 1 },
-  drawerWrap: { zIndex: 10 },
-  drawer: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 380, maxWidth: '86%', borderRightWidth: 1 },
-  drawerHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingLeft: space.xl, paddingRight: space.sm, paddingTop: space.md, paddingBottom: space.sm },
-  drawerTitle: { flex: 1, fontFamily: font.reading, fontSize: 18, lineHeight: 24, fontWeight: '600' },
+  // The floating Ask button (and the paragraph chip above it) must never cover the Next chapter button.
+  roomForAsk: { paddingBottom: 150 },
+  drawerWrap: { zIndex: 30 },
+  ask: {
+    position: 'absolute',
+    right: space.xl,
+    bottom: 28,
+    alignItems: 'flex-end',
+    gap: space.sm,
+    zIndex: 10,
+  },
+  fab: {
+    height: 56,
+    paddingLeft: 18,
+    paddingRight: 22,
+    borderRadius: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+  },
+  fabText: { fontFamily: font.ui, fontSize: 16, fontWeight: '600' },
+  picked: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    boxShadow: '0 6px 18px rgba(0,0,0,0.3)',
+  },
+  pickedMain: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingLeft: space.lg,
+    paddingRight: space.xs,
+  },
+  pickedText: { fontFamily: font.ui, fontSize: 14, fontWeight: '500' },
+  pickedX: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  drawer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: 380,
+    maxWidth: '86%',
+    borderRightWidth: 1,
+  },
+  drawerHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingLeft: space.xl,
+    paddingRight: space.sm,
+    paddingTop: space.md,
+    paddingBottom: space.sm,
+  },
+  drawerTitle: {
+    flex: 1,
+    fontFamily: font.reading,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '600',
+  },
   drawerBody: { paddingHorizontal: space.md, paddingBottom: space.xxl },
 });

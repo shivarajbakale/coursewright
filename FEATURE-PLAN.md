@@ -1,29 +1,29 @@
 <!-- feature-plan:v1 — generated, do not hand-edit.
-     Regenerate with: node scripts/feature-plan.mjs reader-pwa-rich.feature-plan.json -->
+     Regenerate with: node scripts/feature-plan.mjs reader-pwa-tutor.feature-plan.json -->
 
-# Phone and iPad reader: chapter diagrams and the end-of-chapter quiz
+# Phone and iPad reader: ask the tutor about a chapter or a paragraph
 
-`reader-pwa-rich` · 1 surface
+`reader-pwa-tutor` · 1 surface
 
 ## Problem
 
-The reader shows a chapter's text but drops its diagrams (the 'Your map so far' concept map on every lesson, and Flowmovie movies such as the agent loop) and its 2-3 check questions. Without them a chapter on the phone teaches less than the same chapter on the desktop, and there is no way to check yourself before moving on. Design: the 'End-of-chapter quiz' screen on https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS.
+Reading on the phone has no way to ask anything: a confusing paragraph or a wrong quiz answer means switching to the desktop app. The owner wants an easy Ask-tutor option: one tap from the chapter, about the paragraph you are on, with answers that point back into the course. Design: 'Ask about this paragraph' (iPhone), 'iPad portrait' (sheet) and 'iPad landscape' (docked) on https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS, with the sheet fixes the owner asked for (size to content, full-width content, aligned edges).
 
 ## Not in this feature
 
-- Asking the tutor about a wrong answer: Phase 3 adds an 'Ask why' button that opens the tutor sheet.
-- Drawing or editing diagrams: the reader only plays what the course already has.
-- Offline diagrams: the Flowmovie player and Mermaid load from the server; Phase 4 caches them.
+- Saving tutor answers as notes: the reader has no notes, and the tutor is told so (surface: mobile).
+- Voice input and attachments.
+- Offline asking: the tutor needs the server; offline reading is Phase 4.
 
 ## Surfaces
 
-### Chapter: diagrams and Check yourself · `/m/courses/:courseId/chapters/:chapterId (below the text)`
+### Tutor (sheet below 1024 px, docked pane from 1024 px) · `/m/courses/:courseId/chapters/:chapterId (over or beside the chapter)`
 
-Archetype: `detail` — See the chapter's diagrams, then check you understood it, before moving on.
+Archetype: `detail` — Ask about this chapter, or the paragraph you tapped, without leaving it.
 
-**Peak** — choosing an answer and seeing at once whether it was right, with the one-line reason
+**Peak** — the answer streams in plain words about the exact paragraph you tapped, with [n] links that open the passage it used
 
-**End** — the last question answered, the score for the chapter, and the Next chapter button right below it
+**End** — closing the sheet puts you back on the same paragraph, and the conversation is still there next time you open this chapter
 
 **Desktop @1440**
 
@@ -31,31 +31,26 @@ Archetype: `detail` — See the chapter's diagrams, then check you understood it
 ┌────────────────────────────────────────────────────────────────────────────┐
 │ ▨ Acme      ⌕ Search…                                       ⌘K   ◐   ⬤     │
 ├───────────────┬────────────────────────────────────────────────────────────┤
-│ Library       │ Chapter: diagrams and Check yourself      [ Next chapter ] │
+│ Library       │ Tutor (sheet below 1024 px, docked …         [ Ask tutor ] │
 │ Course        │                                                            │
 │ Chapter       │ ┌────────────────────────────────────────────────────────┐ │
-│ Reading       │ │ Diagrams                                               │ │
-│ Chapter: diag…│ │ Movie · The agent loop    Diagram · Your map so far    │ │
+│ Reading       │ │ Tutor                                       Chapter 25 │ │
+│ Tutor (sheet …│ │ About “Think of a maths exam…”                         │ │
 │               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ Phone (<700)            a row per diagram; tap to open │ │
-│               │ │ iPad (>=700)                       open from the start │ │
-│               │ │ Movie                     Flowmovie player, scrubbable │ │
-│               │ │ Diagram                       Mermaid, themed to match │ │
+│               │ │ You       Explain simpler. What is the margin in code? │ │
+│               │ │ Tutor        The margin is the model's rough work… [1] │ │
+│               │ │ Sources                Reasoning block · Model adapter │ │
 │               │ └────────────────────────────────────────────────────────┘ │
 │               │                                                            │
 │               │ ┌────────────────────────────────────────────────────────┐ │
-│               │ │ Check yourself                                   ▬ ▬ ▭ │ │
-│               │ │ Question 2 of 3                                        │ │
+│               │ │ Ask                                                    │ │
 │               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ ○                             It never logs reasoning… │ │
-│               │ │ ●                          It logs reasoning always… ✓ │ │
-│               │ │ Right               The log keeps the fact either way… │ │
-│               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ [Next question]                                        │ │
+│               │ │ Quick  [Explain simpler] [Give an example] [Quiz me] … │ │
+│               │ │ Input            Ask about this chapter            (↑) │ │
 │               │ └────────────────────────────────────────────────────────┘ │
 │               │                                                            │
 │               │ ────────────────────────────────────────────────────────── │
-│               │                                           [ Next chapter ] │
+│               │                                              [ Ask tutor ] │
 └───────────────┴────────────────────────────────────────────────────────────┘
 ```
 
@@ -63,15 +58,14 @@ Archetype: `detail` — See the chapter's diagrams, then check you understood it
 
 ```
 ┌──────────────────────────┐
-│ ☰  Chapter: diagrams…⌕   │
+│ ☰  Tutor (sheet belo…⌕   │
 ├──────────────────────────┤
 │ ┌──────────────────────┐ │
-│ │ Phone (<700)  a row… │ │
-│ │ iPad (>=700)  open … │ │
-│ │ Movie         Flowm… │ │
-│ │ Diagram       Merma… │ │
+│ │ You      Explain si… │ │
+│ │ Tutor    The margin… │ │
+│ │ Sources  Reasoning … │ │
 │ └──────────────────────┘ │
-│     [ Next chapter ]     │
+│      [ Ask tutor ]       │
 └──────────────────────────┘
 ```
 
@@ -80,33 +74,43 @@ Archetype: `detail` — See the chapter's diagrams, then check you understood it
 ```
         loading                     empty                      error
 ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ A chapter with no    │   │ ⚠                    │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ diagrams and no      │   │ A movie that can't   │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ questions shows      │   │ load says 'This      │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ neither section;     │   │ movie can't play     │
-│                      │   │ Next chapter follows │   │ right now' with Try  │
-│                      │   │ the text as now.     │   │ again; a diagram     │
-│                      │   │                      │   │ with a syntax slip   │
-│                      │   │ [ Next chapter ]     │   │ shows its source     │
-│                      │   │                      │   │ text in a code box.  │
-│                      │   │                      │   │ A failed answer save │
-│                      │   │                      │   │ says 'Couldn't save  │
-│                      │   │                      │   │ your answer' and     │
-│                      │   │                      │   │ keeps the choice so  │
-│                      │   │                      │   │ a retry is one tap.  │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ No conversation yet  │   │ ⚠                    │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ for this chapter:    │   │ 'The tutor couldn't  │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ one line ('Ask       │   │ answer.' with Try    │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ anything about this  │   │ again, which resends │
+│                      │   │ chapter, or tap a    │   │ the last question;   │
+│                      │   │ paragraph first')    │   │ offline: the Ask     │
+│                      │   │ above the quick      │   │ button reads 'Tutor  │
+│                      │   │ prompts.             │   │ needs a connection'  │
+│                      │   │                      │   │ and the input is     │
+│                      │   │ [ Ask tutor ]        │   │ disabled.            │
 │                      │   │                      │   │                      │
 │                      │   │                      │   │ [ Try again ]        │
 └──────────────────────┘   └──────────────────────┘   └──────────────────────┘
  Skeleton mirrors rows       one CTA, 3 lines max      retry, never raw text
 ```
 
-Success: Diagrams play in place. Questions go one at a time: choose, see Right or Not quite with the explanation and the right answer marked, then Next question. After the last: 'You got 2 of 3 right' and a Try again link. Answers already given show as answered when you come back.
+Success: Replies render as markdown; [n] markers become small links to the cited chapter, and the sources are listed under the reply. A made quiz plays inline; a made movie or diagram plays inline. The conversation is kept per chapter on this device.
 
 Held to:
 
 - B5 — exactly one <h1>, and it names the subject
 - B5 — content in at least two declared sections (data-section)
 - B5 — the primary action is pinned outside the scroll region
+
+## Overlays
+
+```
+        sheet · tutor-sheet
+┌────────────────────────────────┐
+│ Tutor · Chapter 25 (below 1…   │
+│ ────────────────────────────── │
+│ Height  [ fits the conv…]      │
+│ Expand  [ full height ⌃ ]      │
+│ ────────────────────────────── │
+│                      [ Close ] │
+└────────────────────────────────┘
+```
 
 ## Components
 
@@ -117,49 +121,65 @@ the choices between families live in
 
 | Surface | Control | Why this one | Not |
 | --- | --- | --- | --- |
-| chapter-end | `One question at a time with step marks` | the approved design; one question on a phone screen keeps the choices large and the explanation next to them | `all questions in one long list (the desktop layout)` |
-| chapter-end | `Answer rows as radio buttons (role radio, aria-checked) in a radiogroup` | exactly one choice per question, read correctly by VoiceOver; each row is at least 56 px tall | `plain buttons with no selected state` |
-| chapter-end | `Diagram rows that open in place (aria-expanded) on phones, open by default from 700 px` | players are heavy and tall; on a phone they load only when asked so scrolling the text stays smooth | `a full-screen diagram viewer (one more screen to leave and come back from)` |
-| chapter-end | `The vendored Flowmovie player and Mermaid, loaded lazily into a View's DOM node` | react-native-web renders real DOM, so the same players the web app uses run unchanged; nothing loads until a diagram opens | `a WebView or iframe (not available on the web, and iframes are slower and harder to size)` |
+| tutor | `Bottom sheet that sizes to its content (max 75% of the window, expandable to full)` | the owner rejected a fixed-height sheet with an empty band; the chapter stays visible above a short conversation | `a fixed-height sheet, and a separate tutor screen (loses the paragraph you were on)` |
+| tutor | `Docked right pane from 1024 px` | an iPad in landscape has room to read and ask side by side, as in the approved design | `the sheet at every width (covers half the text on a wide screen)` |
+| tutor | `Tap a paragraph, then 'Ask about this' chip` | text selection is unreliable on touch; a paragraph is the natural unit and one tap marks it | `long-press text selection menus` |
+| tutor | `Transcript built from the agent's messages (text, tool calls and their results)` | search_course results carry the numbered hits, so each [n] in a reply links to the chapter of the most recent search before it | `CopilotKit's chat UI (needs its 2.4 MB bundle and Tailwind CSS, measured in the spike)` |
+| tutor | `The quiz component, in a local mode for tutor-made questions` | one quiz look everywhere; tutor questions have no server ids, so they are checked on the device | `a second quiz design` |
+| tutor | `Tutor code loaded on first open (React.lazy)` | the CopilotKit core adds about 90 KB gzipped; a reader who never asks never downloads it | `loading it with the app` |
+
+## Data model
+
+- **TutorThread (this device)**
+  - `chapterId`: string — one conversation per chapter
+  - `threadId`: string — sent to the agent so its checkpoint matches
+  - `messages`: AG-UI Message[] — last 60 kept
+  - `selections`: Record<messageId, string> — the paragraph each question was about, for the label
+  - _relations:_ stored in localStorage; nothing new on the server
 
 ## API endpoints
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| GET | `/api/chapters/:id` | no | diagrams and questions with the last attempt (existing) |
-| POST | `/api/questions/:id/attempts` | no | record an answer; returns correct, answer, explanation (existing, MSW handler exists) |
-| GET | `/m/vendor/flowmovie/flowmovie.js` | no | the player, served from the shared public folder under /m |
+| POST | `/api/copilotkit` | no | tutor runs through the existing CopilotKit runtime to /agents/tutor (existing) |
 
 ## Integration points
 
 ```
-  vite.mobile.config.ts  ──▶  publicDir ../public   (the reader serves the same vendored player and icons under /m/)
-  attempt mutation       ──▶  updates the chapter query's question in place   (no chapter refetch, so the reading position does not jump)
-  theme palette          ──▶  Mermaid theme (dark → dark, light and sepia → neutral)   (diagram redraws when the reading theme changes)
+  ChapterScreen         ──▶  Ask button, paragraph tap, tutor sheet or pane   (the chapter keeps its scroll position under the sheet)
+  Quiz (chapter)        ──▶  'Ask why' on a wrong answer   (opens the tutor with the question and your choice)
+  agent prompt context  ──▶  {courseId, chapterId, selection, surface: 'mobile'}   (the tutor never offers notes here)
+  citation link         ──▶  router: chapter of the cited hit   (a pane stays open; a sheet closes first)
 ```
 
 ## Blast radius
 
 ```
-new (5)
-  ├── mobile/src/diagrams/FlowMovie.tsx
-  ├── mobile/src/diagrams/Mermaid.tsx
-  ├── mobile/src/diagrams/Diagrams.tsx
-  ├── mobile/src/quiz/Quiz.tsx
-  └── mobile/src/quiz/quiz.test.tsx
+new (7)
+  ├── mobile/src/tutor/TutorPanel.tsx
+  ├── mobile/src/tutor/Transcript.tsx
+  ├── mobile/src/tutor/transcript.ts
+  ├── mobile/src/tutor/threads.ts
+  ├── mobile/src/tutor/store.ts
+  ├── mobile/src/tutor/transcript.test.ts
+  └── mobile/src/tutor/tutor.test.tsx
 
-changed (3)
+changed (7)
+  ├── mobile/src/tutor.ts (moves to mobile/src/tutor/useTutor.ts; per-chapter threads)
+  ├── mobile/src/tutorLines.ts (replaced by transcript.ts)
   ├── mobile/src/screens/ChapterScreen.tsx
-  ├── mobile/src/queries.ts
-  └── vite.mobile.config.ts
+  ├── mobile/src/markdown/parse.ts (citation runs)
+  ├── mobile/src/markdown/blocks.tsx (citation links, paragraph tap)
+  ├── mobile/src/quiz/Quiz.tsx (local mode, Ask why)
+  └── mobile/src/App.tsx (docked pane from 1024 px)
 ```
 
 ## Verification plan
 
 - [ ] `npm run type-check`
 - [ ] `npm run lint`
-- [ ] `vitest run mobile (quiz: one at a time, right and wrong, score, resume answered; diagrams: open on tap, source shown on a syntax error)`
-- [ ] `Playwright WebKit against the Mac mini at 390x844 and 820x1180: a chapter with a Flowmovie and the map diagram plays both; answering the quiz on a seed chapter (writes intercepted)`
+- [ ] `vitest run mobile (transcript: [n] mapped to the latest search, tool cards; sheet opens, Ask why prompt, paragraph label)`
+- [ ] `Playwright WebKit against the Mac mini at 390x844, 820x1180 and 1180x820: tap a paragraph, ask, answer streams, a citation opens its chapter, conversation is back after reload`
 - [ ] `make check`
 - [ ] `ux-prepass` — all seven boxes, `npm run ui-lint` green is the evidence for item 7
 

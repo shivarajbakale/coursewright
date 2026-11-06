@@ -2,28 +2,39 @@
  * Check yourself: the chapter's questions one at a time. Choose an answer, see at once whether it
  * was right and why, then move on; after the last, the score. Answers already given show as
  * answered when you come back, and Try again lets you answer afresh.
+ *
+ * With a `chapterId` answers are saved to the server; without one (a quiz the tutor made) they are
+ * checked on the device. A wrong answer can hand the question to the tutor (`onAskWhy`).
  */
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { Question } from '@/api/types';
 import { useAnswer } from '../queries';
 import { usePalette } from '../settings';
 import { font, radius, space, touch } from '../theme';
 import { Icon } from '../components/TopBar';
 import { Runs } from '../markdown/blocks';
 import { parseInline } from '../markdown/parse';
+import { askWhyPrompt, type QuizQuestion, type Result } from './quizTypes';
 
-type Result = { chosen: number; correct: boolean };
-
-function fromServer(questions: Question[]): Record<string, Result> {
+function fromServer(questions: QuizQuestion[]): Record<string, Result> {
   const out: Record<string, Result> = {};
   for (const q of questions) if (q.lastAttempt) out[q.id] = q.lastAttempt;
   return out;
 }
 
-export function Quiz({ chapterId, questions }: { chapterId: string; questions: Question[] }) {
+export function Quiz({
+  chapterId,
+  questions,
+  onAskWhy,
+  title = 'Check yourself',
+}: {
+  chapterId?: string;
+  questions: QuizQuestion[];
+  onAskWhy?: (prompt: string) => void;
+  title?: string;
+}) {
   const p = usePalette();
-  const save = useAnswer(chapterId);
+  const save = useAnswer(chapterId ?? '');
   const [results, setResults] = useState<Record<string, Result>>(() => fromServer(questions));
   const [index, setIndex] = useState(() => {
     const open = questions.findIndex((q) => !q.lastAttempt);
@@ -43,6 +54,11 @@ export function Quiz({ chapterId, questions }: { chapterId: string; questions: Q
   const choose = (chosen: number) => {
     if (result || save.isPending) return;
     setPending(chosen);
+    if (!chapterId) {
+      setResults((all) => ({ ...all, [q.id]: { chosen, correct: chosen === q.answer } }));
+      setPending(null);
+      return;
+    }
     save.mutate(
       { questionId: q.id, chosen },
       {
@@ -55,10 +71,10 @@ export function Quiz({ chapterId, questions }: { chapterId: string; questions: Q
   };
 
   return (
-    <View style={[styles.box, { backgroundColor: p.surface, borderColor: p.border }]} role="region" aria-label="Check yourself">
+    <View style={[styles.box, { backgroundColor: p.surface, borderColor: p.border }]} role="region" aria-label={title}>
       <View style={styles.head}>
         <Text role="heading" aria-level={2} style={[styles.kicker, { color: p.muted }]}>
-          Check yourself
+          {title}
         </Text>
         <View style={styles.steps} role="img" aria-label={done ? `${questions.length} of ${questions.length} answered` : `Question ${index + 1} of ${questions.length}`}>
           {questions.map((x, i) => (
@@ -134,6 +150,12 @@ export function Quiz({ chapterId, questions }: { chapterId: string; questions: Q
               <Text style={[styles.verdictTitle, { color: result.correct ? p.accentInk : p.danger }]}>{result.correct ? 'Right' : 'Not quite'}</Text>
               <Text style={[styles.body, { color: p.body }]}>{md(q.explanation, 14)}</Text>
             </View>
+          ) : null}
+
+          {result && !result.correct && onAskWhy ? (
+            <Pressable role="button" onPress={() => onAskWhy(askWhyPrompt(q, result.chosen))} style={styles.link}>
+              <Text style={[styles.linkText, { color: p.accentInk }]}>Ask the tutor why</Text>
+            </Pressable>
           ) : null}
 
           {result ? (

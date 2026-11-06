@@ -334,12 +334,10 @@
         "make check"
       ],
       "evidence": [
-        "npx vitest run mobile: 2 passed (library lists /api/courses through MSW with React Native components; tutor lines keep only user questions and assistant text)",
-        "npm run build:mobile: dist/m/assets/index-*.js 1,004.55 kB, 278.31 kB gzipped (was 2,377.55 kB / 699.27 kB with @copilotkit/react-core/v2)",
-        "WebKit 26.6, 390x844, dev server proxied to http://coursewright:8080: library showed 6 real courses; tutor question 'In one short paragraph: what is an agent loop?' streamed, reply text grew through 10 distinct lengths (46 → 797 chars) over 6.2 s; no page errors; horizontal overflow 0 px",
-        "WebKit 26.6, 820x1180: library centred at 680 px wide, no page errors, horizontal overflow 0 px",
-        "Finding for later phases: tutor replies carry citation markers like [6]; the reader must render them as chapter links",
-        "make check: exit 0 (type-check, lint, ui-lint, plan-lint, tests 153 passed in ui-probe, doc-lint)"
+        "vitest mobile: 2 passed",
+        "build: 1,004.55 kB / 278.31 kB gz (react-core v2: 2,377.55 / 699.27)",
+        "WebKit 390x844 vs Mac mini: 6 courses listed; tutor reply streamed 46→797 chars over 6.2 s; overflow 0; no errors. 820x1180: overflow 0",
+        "make check: exit 0"
       ]
     },
     {
@@ -357,11 +355,11 @@
         "make check"
       ],
       "evidence": [
-        "npx vitest run mobile: 11 passed (parser: title dropped, inline runs, fenced code, Key idea detection, safe links only, ordered start, tables, HTML as text; reader: routes, layout by width, Continue card resumes ch-2-2 and renders its headings and Next chapter, outline opens a chapter, settings apply on change and persist)",
-        "WebKit 26.6 against http://coursewright:8080 at 390x844, 320x1000, 590x820, 820x1180, 1180x820, 1366x1024: library, Resume, outline (own screen <700, drawer 700-1023, sidebar >=1024), settings; horizontal overflow 0 px on all 24 views; no page or console errors",
-        "All 65 chapters of 'Build an agent harness like DeepSeek Harness' rendered at 390x844: 0 failures, 0 page errors, 65 Key idea callouts, 136 code blocks, max horizontal overflow 0 px; scrolling the last chapter to its end sent finished=true once (progress writes intercepted; last-opened chapter restored afterwards)",
-        "npm run build:mobile: 544.47 kB, 185.66 kB gzipped (the tutor client is not loaded until Phase 3)",
-        "make check: exit 0 on the third run (349 + 153 tests). Two earlier full runs failed ui-probe M3 on the desktop 'Sources' page (reveal box grows 55 px while data arrives); it passed in 5 standalone ui-probe runs and the baseline without this change passed; no file under src/ changed. Recorded as a flaky probe to look at separately."
+        "vitest mobile: 11 passed (parser; routes; layout by width; Continue card resumes ch-2-2; outline opens a chapter; settings apply and persist)",
+        "WebKit vs Mac mini at 390x844, 320x1000, 590x820, 820x1180, 1180x820, 1366x1024: library, Resume, outline (screen/drawer/sidebar), settings; overflow 0 on 24 views; no errors",
+        "All 65 harness chapters at 390x844: 0 failures, 65 Key idea callouts, 136 code blocks, overflow 0; end of chapter sent finished=true once (writes intercepted, last-opened restored)",
+        "build: 544.47 kB / 185.66 kB gz",
+        "make check: exit 0 on run 3; runs 1-2 failed ui-probe M3 on desktop Sources (flaky; passes alone and on baseline; src/ unchanged)"
       ]
     },
     {
@@ -378,12 +376,32 @@
         "make check"
       ],
       "evidence": [
-        "npx vitest run mobile: 16 passed (new: quiz one at a time, wrong choice and right answer marked, Next question, score, Try again; answered questions shown on return; diagrams closed on phones and open on tap; a broken Mermaid source shown as text; quiz lines parsed as inline markdown)",
-        "WebKit 26.6 against http://coursewright:8080, chapter 'Agent loop: ask the model, run its requests, ask again' (diagrams: flow 'One question, three rounds', mermaid 'Your map so far'; 3 questions), at 390x844 and 820x1180: movie player loaded and drew in the dark theme, map rendered 1 SVG with no syntax error, quiz answered [0, 3, 2] gave 'You got 2 of 3 right.', horizontal overflow 0 px, no page errors; progress and answer writes intercepted, last-opened chapter restored",
-        "Fixed during verification: the Flowmovie player styles its mount node and react-native-web rewrote that node's classes on re-render (text went black on dark); the player now mounts in a plain child div. Quiz prompts showed raw backticks; prompts, answers and explanations now render inline markdown.",
-        "Known limit: at 390 px the vendored player's own transport row is tight (time label touches Play); it is the player's layout, not the reader's.",
-        "npm run build:mobile: index 557.18 kB / 189.33 kB gzipped; mermaid loads as a separate chunk only when a diagram opens; dist/m/vendor/flowmovie present",
-        "make check: exit 0 (354 + 153 tests)"
+        "vitest mobile: 16 passed (quiz one at a time, marks, score, Try again, answered on return; diagrams open on tap; broken Mermaid shown as text; inline markdown in quiz)",
+        "WebKit vs Mac mini, 'Agent loop' at 390x844 and 820x1180: movie played in dark theme, map drew 1 SVG, quiz [0,3,2] scored 2 of 3, overflow 0, no errors (writes intercepted)",
+        "Fixed: player mounts in a child div (react-native-web rewrote its classes); quiz text renders inline markdown",
+        "Known: at 390 px the vendored player's transport row is tight",
+        "build: 557.18 kB / 189.33 kB gz; mermaid separate chunk. make check: exit 0"
+      ]
+    },
+    {
+      "id": "reader-pwa-tutor",
+      "priority": 19,
+      "area": "Phone and iPad reader",
+      "title": "Ask the tutor from the phone and iPad reader, about a chapter or a tapped paragraph",
+      "user_visible_behavior": "In a chapter, an Ask tutor button opens the tutor: a bottom sheet that sizes to its content below 1024 px, a docked pane beside the chapter from 1024 px. Tapping a paragraph offers 'Ask about this'. Quick prompts (Explain simpler, Give an example, Quiz me, Why does this matter?). Answers stream as markdown; [n] citations link to the cited chapter and sources are listed. Tutor-made quizzes and movies play inline. A wrong quiz answer offers Ask why. The conversation is kept per chapter on the device.",
+      "status": "passing",
+      "plan": "reader-pwa-tutor.feature-plan.json",
+      "verification": [
+        "tsc, eslint, vitest for mobile/",
+        "Playwright WebKit against the Mac mini tutor at 390x844, 820x1180 and 1180x820",
+        "make check"
+      ],
+      "evidence": [
+        "vitest mobile: 26 passed (transcript, [n] to latest search, sources by chapter, cites not in code; panel label, citations, quick prompt keeps paragraph until run ends, pending sent on open, Escape; Ask why)",
+        "WebKit vs live tutor, 'Reasoning block' with a tapped paragraph: 390x844 sheet 633 px (75% cap), 12 citations; 820x1180 sheet answered from the chapter's example; 1180x820 docked pane, 5 citations; citation opened its chapter (sheet closed, pane stayed); conversation back after reload at all 3 sizes; overflow 0; no errors (progress writes intercepted)",
+        "Fixed: picked paragraph was cleared on send before the run read its context; now cleared when the run ends; titles added to context",
+        "build: app 190.67 kB gz; TutorPanel 154.44 kB gz loaded on first open (plan guessed ~90 KB)",
+        "make check: tests 364 + 153 passed; doc-lint prelude trimmed (sessions 008-010 to docs/history)"
       ]
     }
   ]

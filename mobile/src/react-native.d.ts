@@ -42,6 +42,7 @@ declare module 'react-native' {
   }
   export interface ViewProps extends Common {
     ref?: Ref<HTMLElement>;
+    pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only';
   }
   export interface TextProps extends Common {
     numberOfLines?: number;
