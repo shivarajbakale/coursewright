@@ -294,6 +294,30 @@
         "Same eval: 0/83 vague titles, 0 forward references, 0 later names used early (was 11), beginner reader stuck 0 times in lesson 1, 6.59 per lesson (5.46 with two revision rounds; 12.64 for the old course)"
       ],
       "notes": "Rules in agent/app/jobs/pedagogy.py; measured by agent/evals/teaching.py"
+    },
+    {
+      "id": "agent-authored-courses",
+      "priority": 15,
+      "area": "Course authoring",
+      "title": "Any coding agent can write a course, through files, a CLI or an MCP server, and import it",
+      "user_visible_behavior": "A coding agent (Claude Code, Codex, any other) writes a course either as a folder by docs/authoring-courses.md and the write-course skill, or through the coursewright MCP server (rules as tools/resources/prompt, save tools that check each piece, check_course, import_course). `make course-check` reports errors and teaching warnings with file paths; `make course-import` or POST /api/courses/import saves it as a ready course in the Library, indexed for the tutor, with a 'Your map so far' diagram per lesson; --replace updates it.",
+      "status": "passing",
+      "plan": "none: agent service, CLI, MCP server and docs only, no screen changes (imported courses render through the existing Library and chapter pages)",
+      "verification": [
+        "agent pytest",
+        "CLI check on the seed and three built courses",
+        "MCP server launched over stdio and driven by an MCP client",
+        "make check"
+      ],
+      "evidence": [
+        "cd agent && uv run pytest: 96 passed (9 new: folder check errors with file paths, broken outline, import + map diagrams + conflict + replace, POST /api/courses/import 201/409/422/strict/path escape, CLI exit codes, schema; MCP rules as tools/resources/prompt, full start→outline→lessons→diagram→check→import flow through an in-process MCP client)",
+        "uv run python -m app.cli check on the Raft seed and the three courses in agent/data/jobs: reads all four; 2 real ordering errors in the Raft seed and 1 in the Rust course (a lesson taught before its prerequisite), 34-68 teaching warnings each on these pre-teach-from-zero courses",
+        "A broken Flowmovie source is reported with the compiler's line errors; a valid one passes",
+        "MCP server started over stdio as Claude Code launches it (uv --directory agent run python -m app.mcp_server): 13 tools, the write-course prompt, list_courses answers",
+        "A fresh agent following only the skill and guide wrote a 14-lesson course folder before the owner stopped it; that draft was moved out of the repo, not imported",
+        "make check: exit 0"
+      ],
+      "notes": "Not yet run: an agent writing a full course through the MCP server and importing it to the deployed instance, viewed in the browser (owner deferred course writing). Rules: agent/app/authoring.py; MCP: agent/app/mcp_server.py; guide: docs/authoring-courses.md"
     }
   ]
 }

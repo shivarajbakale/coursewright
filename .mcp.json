@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "coursewright": {
+      "command": "uv",
+      "args": ["--directory", "agent", "run", "python", "-m", "app.mcp_server"]
+    }
+  }
+}

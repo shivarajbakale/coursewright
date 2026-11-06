@@ -100,6 +100,7 @@ Reach for the skill that names your task instead of improvising it.
 | `auth-page` | a login or signup screen |
 | `wire-to-backend` | swap a resource's MSW mock for a real API |
 | `verify` | prove a change works by running the app |
+| `write-course` | write a course yourself as a folder, check it, import it ([guide](docs/authoring-courses.md)) |
 
 ## Validation hierarchy
 

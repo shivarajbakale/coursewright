@@ -5,10 +5,22 @@
 - Repository root: this project
 - Standard startup path: `./init.sh`
 - Standard verification path: `make check` (install + type-check + lint + test)
-- Current highest-priority unfinished feature: none open; next: per-module skip quiz, later-name leaks in lessons
+- Current highest-priority unfinished feature: none open; next: write a real course through the coursewright MCP and import it to the deployed instance, per-module skip quiz, later-name leaks in lessons
 - Current blocker: none
 
 ## Session Log
+
+### Session 011 — Coding agents can write courses (2026-11-06)
+
+- Owner: wants Claude Code, Codex or any agent to write a course. The course folder the builder already
+  writes is the contract; `agent/app/authoring.py` checks it (errors block import, teaching rules from
+  pedagogy.py are warnings) and imports it under seed_key `authored:<slug>`, adding the map diagram.
+- Ways in: `make course-check|course-import|course-schema` (app/cli.py), POST /api/courses/import, the
+  `write-course` skill + docs/authoring-courses.md, and the `coursewright` MCP server
+  (agent/app/mcp_server.py, mcp 2.x, stdio, registered in .mcp.json): rules as tools, resources and a prompt;
+  save tools check each piece.
+- The check found real prerequisite-order errors in the Raft seed (2) and the Rust course (1); not fixed.
+- A 14-lesson Bloom filter draft from a test agent sits outside the repo; owner deferred course writing.
 
 ### Session 010 — Every course starts from zero, one concept per lesson (2026-11-06)
 

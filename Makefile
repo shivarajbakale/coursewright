@@ -3,7 +3,7 @@
 
 NPM ?= $(if $(NPM_BIN),$(NPM_BIN),npm)
 
-.PHONY: setup type-check lint ui-lint plan-lint capability-lint doc-links storybook-lint skill-lint a11y feature-plan test ui-probe ui-shots check dev build clean help commit-feature doc-lint loop-lint
+.PHONY: setup type-check lint ui-lint plan-lint capability-lint doc-links storybook-lint skill-lint a11y feature-plan test ui-probe ui-shots check dev build clean help commit-feature doc-lint loop-lint course-check course-import course-schema
 
 help:
 	@echo "Targets:"
@@ -105,6 +105,19 @@ loop-lint: ## Goal contracts — the definition of done was written first, and s
 	npm run loop-lint
 
 check: setup type-check lint ui-lint plan-lint capability-lint doc-links storybook-lint skill-lint test ui-probe doc-lint loop-lint
+
+# Courses written by a coding agent, as a folder (docs/authoring-courses.md).
+#   make course-check DIR=courses/x    make course-import DIR=courses/x ARGS=--replace
+course-check:
+	@test -n "$(DIR)" || (echo "usage: make course-check DIR=<course folder>" && exit 2)
+	cd agent && uv run python -m app.cli check "$(abspath $(DIR))" $(ARGS)
+
+course-import:
+	@test -n "$(DIR)" || (echo "usage: make course-import DIR=<course folder> [ARGS=--replace]" && exit 2)
+	cd agent && uv run python -m app.cli import "$(abspath $(DIR))" $(ARGS)
+
+course-schema:
+	@cd agent && uv run python -m app.cli schema
 
 dev:
 	$(NPM) run dev

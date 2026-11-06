@@ -411,6 +411,20 @@ def to_outline(cur: CurriculumOut, topic: str = "", projects: bool = True) -> Co
     })
 
 
+MAP_TITLE = "Your map so far"
+
+
+def map_diagram(outline: CourseOutline, ch: ChapterSpec) -> DiagramSpec:
+    """The concepts the learner has so far, this lesson's highlighted: drawn by code, no tokens."""
+    chapters = [c for m in outline.modules for c in m.chapters]
+    names = {c.key: c.name for c in outline.concepts}
+    lessons = [(c.conceptKeys[0] if c.conceptKeys else c.key, names.get(c.conceptKeys[0], c.title) if c.conceptKeys else c.title)
+               for c in chapters]
+    edges = [(e.from_, e.to) for e in outline.edges]
+    source = pedagogy.map_so_far(lessons, edges, chapters.index(ch))
+    return DiagramSpec(kind="mermaid", title=MAP_TITLE, source=source)
+
+
 def word_count(markdown: str) -> int:
     prose = re.sub(r"```.*?```", " ", markdown, flags=re.S)
     return len(re.findall(r"[A-Za-z0-9][\w'-]*", prose))
@@ -763,14 +777,7 @@ class Run:
         (self.course / "chapters" / f"{ch.key}.terms.json").write_text(json.dumps(terms, indent=2))
 
     def map_diagram(self, outline: CourseOutline, ch: ChapterSpec) -> DiagramSpec:
-        """The concepts the learner has so far, this lesson's highlighted: drawn by code, no tokens."""
-        chapters = [c for m in outline.modules for c in m.chapters]
-        names = {c.key: c.name for c in outline.concepts}
-        lessons = [(c.conceptKeys[0] if c.conceptKeys else c.key, names.get(c.conceptKeys[0], c.title) if c.conceptKeys else c.title)
-                   for c in chapters]
-        edges = [(e.from_, e.to) for e in outline.edges]
-        source = pedagogy.map_so_far(lessons, edges, chapters.index(ch))
-        return DiagramSpec(kind="mermaid", title="Your map so far", source=source)
+        return map_diagram(outline, ch)
 
     def known_terms(self, outline: CourseOutline, ch: ChapterSpec) -> list[str]:
         """Every term the learner has met before this lesson: earlier concepts and the supporting terms the plan

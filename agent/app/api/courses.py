@@ -54,6 +54,53 @@ def create_course(body: CreateCourse):
         return ok({"course": get_course_summary(conn, cid), "jobId": job_id})
 
 
+class ImportCourse(BaseModel):
+    # {relative path: text}: outline.json, chapters/<key>.md|json, diagrams/<key>.flow|mmd, projects/<key>.json
+    files: dict[str, str] = Field(min_length=1)
+    replace: bool = False
+    strict: bool = False
+
+
+MAX_IMPORT_BYTES = 8_000_000
+
+
+@router.post("/courses/import", status_code=201)
+async def import_course(body: ImportCourse):
+    """A course folder written outside the builder (by a coding agent, see docs/authoring-courses.md), sent as
+    files: checked like `python -m app.cli check`, then saved as a ready course and indexed for the tutor."""
+    import asyncio
+    import tempfile
+    from pathlib import Path
+
+    from fastapi.responses import JSONResponse
+
+    from app import authoring, config
+    from app.rag import ingest
+
+    if sum(len(t) for t in body.files.values()) > MAX_IMPORT_BYTES:
+        raise HTTPException(status_code=413, detail="The course is over 8 MB")
+    with tempfile.TemporaryDirectory(prefix="cw-import-") as d:
+        folder = Path(d)
+        refused = authoring.write_bundle(body.files, folder)
+        if refused:
+            raise HTTPException(status_code=422, detail=f"Not a course file: {', '.join(sorted(refused)[:10])}")
+        report = await asyncio.to_thread(authoring.check_folder, folder)
+        if not report.ok(body.strict):
+            return JSONResponse(status_code=422, content={"message": "The course has problems", "report": report.as_dict()})
+
+        def save() -> tuple[str, bool]:
+            with db() as conn:
+                return authoring.import_folder(conn, folder, replace=body.replace)
+
+        try:
+            course_id, created = await asyncio.to_thread(save)
+        except authoring.ImportConflict as e:
+            raise HTTPException(status_code=409, detail=str(e)) from e
+    await ingest.ingest_course(course_id, llm_context=bool(config.anthropic_key()))
+    with db() as conn:
+        return ok({"course": get_course_summary(conn, course_id), "created": created, "report": report.as_dict()})
+
+
 @router.post("/courses/{course_id}/resume")
 def resume_course(course_id: str):
     """Continue a build that stopped: the same job runs again from its checkpoint and the files on disk."""
