@@ -42,6 +42,15 @@ describe('Inkling explainers', () => {
     expect(await ratio(300)).toBeLessThan(1); // a phone: top to bottom
   });
 
+  it('turns a mind map too, keeping it a mind map', async () => {
+    const map = 'title "Map"\nlayout mindmap\n- Text\n  - Common word stamps\n    - the\n    - and\n  - Word part stamps\n    - un + happy\n  - Single letter stamps\n    - a to z\nsteps auto';
+    const host = document.createElement('div');
+    Object.defineProperty(host, 'clientWidth', { value: 346 });
+    await mountExplainer(host, map, 'chalkboard', () => {});
+    const [w, h] = (host.querySelector('svg') as SVGElement).style.aspectRatio.split(' / ').map(Number);
+    expect(w / h).toBeLessThan(2);
+  });
+
   it('refuses a source with a mistake, with the first error', async () => {
     await expect(mountExplainer(document.createElement('div'), 'layout spiral', 'notebook', () => {})).rejects.toThrow(/No layout called "spiral"/);
   });

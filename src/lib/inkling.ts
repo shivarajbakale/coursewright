@@ -94,7 +94,8 @@ export async function mountExplainer(
   const width = (d: Diagram) => Number(d.svg.getAttribute('width')) || room;
   if (room > 0 && room / width(diagram) < MIN_SCALE) {
     const taller = document.createElement('div');
-    const down = ink.mount(taller, source, { ...look, direction: 'down' });
+    // As a directive in the source: the mount option alone is ignored by some layouts (mind maps).
+    const down = ink.mount(taller, ink.setDirective(source, 'direction', 'down'), look);
     if (width(down) < width(diagram) * 0.85) {
       diagram.destroy();
       stage.replaceChildren(...taller.childNodes);
