@@ -1,6 +1,7 @@
 """Notifications: one row when work you started and are waiting on finishes or fails.
 
-Written from the job worker. A course build or a project review notifies on success and on failure; an
+Written from the job worker. A course build or a project review notifies on success and on failure (a build that stops at its outline
+for you to review says so); an
 ingest notifies only when it fails for a link you added (note and chapter re-indexes stay silent). A
 cancelled job writes nothing: you did that yourself. `job_id` is unique, so a job that is re-claimed and
 finished twice still notifies once."""
@@ -32,9 +33,18 @@ def _notice(conn: sqlite3.Connection, job: dict, status: str, error: str | None)
     inp = jload(job.get("input") or "{}", {})
     failed = status == "failed"
     if kind == "build_course" and job.get("course_id"):
-        c = row(conn, "SELECT id, title FROM courses WHERE id=?", (job["course_id"],))
+        c = row(conn, "SELECT id, title, status FROM courses WHERE id=?", (job["course_id"],))
         if not c:
             return None
+        if not failed and c["status"] == "planning":
+            # The build stopped at the outline, as asked: nothing is written until you approve it.
+            return {
+                "kind": "outline_ready",
+                "title": f"Outline ready: {c['title']}",
+                "body": "Change the chapters by asking, then start writing.",
+                "href": f"/courses/{c['id']}/building",
+                "course_id": c["id"],
+            }
         if failed:
             return {
                 "kind": "course_failed",

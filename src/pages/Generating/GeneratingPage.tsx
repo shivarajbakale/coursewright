@@ -21,7 +21,9 @@ import { AnchorLink, ButtonLink } from '@/components/links';
 import { ErrorState } from '@/components/state-panel';
 import { Reveal } from '@/components/reveal';
 import { StageScene, type SceneData, type SceneStage } from '@/illustrations';
-import { useCancelJob, useCourse, useJob, useJobEvents, useResumeCourse } from '@/hooks/useCoursewright';
+import { cwKeys, useCancelJob, useCourse, useJob, useJobEvents, useResumeCourse } from '@/hooks/useCoursewright';
+import { useQueryClient } from '@tanstack/react-query';
+import { OutlineReview } from './OutlineReview';
 import type { JobEvent } from '@/api/types';
 
 const STAGES: { key: SceneStage; label: string; blurb: string }[] = [
@@ -68,9 +70,21 @@ export function GeneratingPage() {
   const cancel = useCancelJob();
   const resume = useResumeCourse();
 
+  const qc = useQueryClient();
+  // A build that stops at its outline ends its job without finishing the course: refetch to learn which.
+  const jobStatus = job.data?.status;
+  useEffect(() => {
+    if (jobStatus === 'done') void qc.invalidateQueries({ queryKey: cwKeys.course(courseId) });
+  }, [jobStatus, courseId, qc]);
+
+  const reviewing = !!course.data?.outlineReady;
   const last = events[events.length - 1];
-  const done = last?.stage === 'done' || job.data?.status === 'done';
-  const stageIndex = done ? STAGES.length : Math.max(0, STAGES.findIndex((s) => s.key === last?.stage));
+  const done = !reviewing && (last?.stage === 'done' || (job.data?.status === 'done' && course.data?.status === 'ready'));
+  const stageIndex = done
+    ? STAGES.length
+    : reviewing
+      ? STAGES.findIndex((s) => s.key === 'outline')
+      : Math.max(0, STAGES.findIndex((s) => s.key === last?.stage));
   const current = STAGES[Math.min(stageIndex, STAGES.length - 1)];
   const data = useMemo(() => sceneData(course.data?.topic ?? '', events), [course.data?.topic, events]);
 
@@ -115,7 +129,13 @@ export function GeneratingPage() {
     <PageShell
       title={course.data.title}
       description={
-        done || ready ? 'Your course is ready' : failed ? 'The build stopped' : `Building: ${current.blurb.toLowerCase()}`
+        done || ready
+          ? 'Your course is ready'
+          : reviewing
+            ? 'Review the outline: change it by asking, then write the course'
+            : failed
+              ? 'The build stopped'
+              : `Building: ${current.blurb.toLowerCase()}`
       }
       archetype="sequence"
       breadcrumb={
@@ -130,7 +150,7 @@ export function GeneratingPage() {
           <ButtonLink to="/courses/$courseId" params={{ courseId }} rightSection={<ArrowRight size={16} />}>
             Open course
           </ButtonLink>
-        ) : !failed && jobId ? (
+        ) : !failed && !reviewing && jobId ? (
           <Button
             variant="default"
             color="red"
@@ -146,7 +166,12 @@ export function GeneratingPage() {
       <Stack gap="lg">
         <Stepper active={stageIndex} size="sm" allowNextStepsSelect={false} data-progress>
           {STAGES.map((s) => (
-            <Stepper.Step key={s.key} label={s.label} loading={!done && !failed && s.key === current.key} />
+            <Stepper.Step
+              key={s.key}
+              label={s.label}
+              description={reviewing && s.key === 'outline' ? 'Your review' : undefined}
+              loading={!done && !failed && !reviewing && s.key === current.key}
+            />
           ))}
         </Stepper>
 
@@ -184,6 +209,11 @@ export function GeneratingPage() {
           </Alert>
         )}
 
+        {reviewing ? (
+          <Reveal key="review">
+            <OutlineReview courseId={courseId} />
+          </Reveal>
+        ) : (
         <Reveal>
         <Grid gap="lg">
           <Grid.Col span={{ base: 12, lg: 8 }}>
@@ -243,6 +273,7 @@ export function GeneratingPage() {
           </Grid.Col>
         </Grid>
         </Reveal>
+        )}
       </Stack>
     </PageShell>
   );

@@ -5,7 +5,10 @@
 import { http, HttpResponse, delay } from 'msw';
 import type {
   CourseBrief,
+  CoursePlan,
   CourseSummary,
+  PlanChapter,
+  PlanOutline,
   InterviewQuestion,
   JobEvent,
   NotePage,
@@ -33,9 +36,12 @@ const uid = () => crypto.randomUUID();
 // ── state ────────────────────────────────────────────────────────────────
 const notes = new Map<string, NotePage>(NOTES.map((n) => [n.id, structuredClone(n)]));
 const extraCourses: CourseSummary[] = [buildingSummary()];
-const jobs = new Map<string, { courseId: string; topic: string; startedAt: number; cancelled: boolean }>([
-  [BUILDING_JOB_ID, { courseId: 'c-rust', topic: 'Rust ownership', startedAt: Date.now() - 20_000, cancelled: false }],
+type Phase = 'all' | 'plan' | 'write';
+type MockJob = { courseId: string; topic: string; startedAt: number; cancelled: boolean; phase: Phase; finished?: boolean };
+const jobs = new Map<string, MockJob>([
+  [BUILDING_JOB_ID, { courseId: 'c-rust', topic: 'Rust ownership', startedAt: Date.now() - 20_000, cancelled: false, phase: 'all' }],
 ]);
+const plans = new Map<string, CoursePlan>();
 const milestoneDone = new Map<string, string | null>();
 const submissions = new Map<string, Submission>();
 
@@ -49,7 +55,7 @@ const INTERVIEW: InterviewQuestion[] = [
     options: [
       { label: 'New to it', description: 'Start from first principles, define every term.' },
       { label: 'Some exposure', description: 'I have used it but never studied how it works.', recommended: true },
-      { label: 'Comfortable', description: 'Skip the basics, go deep on the hard parts.' },
+      { label: 'Comfortable', description: 'Move quickly through the basics, then go deep on the hard parts.' },
     ],
   },
   {
@@ -89,25 +95,82 @@ const INTERVIEW: InterviewQuestion[] = [
 ];
 
 // ── build job events (simulated) ─────────────────────────────────────────
-function scriptFor(topic: string): Omit<JobEvent, 'id' | 'seq' | 'at'>[] {
+function scriptFor(topic: string, phase: Phase = 'all'): Omit<JobEvent, 'id' | 'seq' | 'at'>[] {
   const words = topic.split(/\s+/).filter(Boolean);
   const modules = ['Foundations', `How ${words[0] ?? 'it'} works`, 'The hard parts', 'Putting it together'];
   const chapters = ['The mental model', 'First example', 'Common mistakes', 'Under the hood', 'Edge cases', 'Patterns'];
-  return [
+  const plan: Omit<JobEvent, 'id' | 'seq' | 'at'>[] = [
     { stage: 'research', message: `Researching ${topic}`, payload: { terms: [...words, 'pitfalls', 'references', 'exercises'] } },
     { stage: 'research', message: 'Reading what learners struggle with', payload: { terms: ['misconceptions', 'prerequisites'] } },
     { stage: 'concepts', message: 'Mapping concepts and prerequisites', payload: { concepts: ['Core idea', 'Model', 'Invariants', 'Failure cases', 'Performance', 'Tooling'] } },
     { stage: 'outline', message: 'Drafting the outline', payload: { modules } },
+  ];
+  const write: Omit<JobEvent, 'id' | 'seq' | 'at'>[] = [
     ...chapters.map((c, i) => ({ stage: 'chapters' as Stage, message: `Writing “${c}”`, payload: { chapter: c, done: i + 1, total: chapters.length } })),
     { stage: 'projects', message: 'Designing projects', payload: { projects: ['A tiny prototype', 'Break it on purpose', 'The real thing'] } },
     { stage: 'index', message: 'Indexing for the tutor', payload: { chunks: 184 } },
   ];
+  if (phase === 'plan') return [...plan, { stage: 'outline', message: 'The outline is ready for you to review', payload: { review: true } }];
+  if (phase === 'write') return [{ stage: 'chapters', message: 'Writing the course from your outline', payload: { modules } }, ...write];
+  return [...plan, ...write];
+}
+
+// ── outline review (simulated) ───────────────────────────────────────────
+const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'chapter';
+const chapter = (key: string, title: string, summary: string): PlanChapter => ({ key, title, summary, readingMinutes: 8, conceptKeys: [] });
+
+function mockOutline(topic: string): PlanOutline {
+  const t = topic.charAt(0).toUpperCase() + topic.slice(1);
+  return {
+    title: t, topic, summary: '', colour: 'cyan', icon: '', concepts: [], edges: [],
+    modules: [
+      { key: 'm1', title: `Foundations: what ${topic} is and why`, summary: '', projectKey: 'p1', chapters: [
+        chapter('c01-problem', 'The problem it solves', 'What goes wrong without it, in one concrete story'),
+        chapter('c02-vocabulary', 'The words you need', 'Every core term, defined from zero'),
+        chapter('c03-mechanism', 'The basic mechanism', 'How it works, one step at a time'),
+      ] },
+      { key: 'm2', title: 'Using it for real', summary: '', projectKey: 'p2', chapters: [
+        chapter('c04-first-build', 'A first working example', 'Real code, walked through line by line'),
+        chapter('c05-mistakes', 'Common mistakes', 'What people get wrong, and why'),
+      ] },
+      { key: 'm3', title: 'The hard parts', summary: '', projectKey: 'p3', chapters: [
+        chapter('c06-edge-cases', 'Edge cases', 'Where the simple picture stops holding'),
+        chapter('c07-performance', 'Making it fast', 'What it costs and how to measure it'),
+      ] },
+    ],
+  };
+}
+
+const planEstimate = (o: PlanOutline) => ({ tokens: o.modules.reduce((n, m) => n + m.chapters.length, 0) * 18_000 + 30_000 });
+
+/** A small stand-in for the outline chat: understands "add …" and "remove/drop N.N". */
+function mockChat(o: PlanOutline, message: string): { outline: PlanOutline; reply: string; changed: string[] } {
+  const next = structuredClone(o);
+  const ref = message.match(/(\d+)\.(\d+)/);
+  if (/^(remove|drop|delete)\b/i.test(message) && ref) {
+    const m = next.modules[Number(ref[1]) - 1];
+    const ch = m?.chapters[Number(ref[2]) - 1];
+    if (m && ch && m.chapters.length > 1) {
+      m.chapters = m.chapters.filter((c) => c.key !== ch.key);
+      return { outline: next, reply: `Removed ${ref[0]} ${ch.title}.`, changed: [] };
+    }
+    return { outline: o, reply: 'That chapter is the last in its module, so I kept it.', changed: [] };
+  }
+  const what = message.replace(/^(please\s+)?(add|include)\s+(a\s+)?(chapter\s+)?(on|about)?\s*/i, '').replace(/\s+(before|after)\s+\d+\.\d+.*$/i, '').trim();
+  const title = what ? what.charAt(0).toUpperCase() + what.slice(1) : 'A new chapter';
+  const mi = ref ? Math.min(Number(ref[1]), next.modules.length) - 1 : 0;
+  const m = next.modules[mi];
+  const at = ref ? Math.min(Number(ref[2]) - (/after/i.test(message) ? 0 : 1), m.chapters.length) : m.chapters.length;
+  const key = `c${String(Date.now() % 1000).padStart(3, '0')}-${slug(title)}`;
+  m.chapters.splice(Math.max(0, at), 0, chapter(key, title, `What ${what || 'it'} is and where it fits`));
+  const total = next.modules.reduce((n, mm) => n + mm.chapters.length, 0);
+  return { outline: next, reply: `Added ${mi + 1}.${Math.max(0, at) + 1} ${title}, ${total} chapters now.`, changed: [key] };
 }
 
 function sse(jobId: string, after: number) {
   const job = jobs.get(jobId);
   const encoder = new TextEncoder();
-  const script = scriptFor(job?.topic ?? 'your topic');
+  const script = scriptFor(job?.topic ?? 'your topic', job?.phase);
   const stream = new ReadableStream({
     async start(controller) {
       let seq = 0;
@@ -119,7 +182,17 @@ function sse(jobId: string, after: number) {
         const full: JobEvent = { id: seq, seq, at: new Date().toISOString(), ...ev };
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(full)}\n\n`));
       }
-      if (!job?.cancelled) {
+      if (!job?.cancelled && job?.phase === 'plan') {
+        // The build stops at the outline and waits for the learner.
+        const course = extraCourses.find((c) => c.jobId === jobId);
+        if (course) {
+          course.status = 'planning';
+          course.outlineReady = true;
+          const outline = mockOutline(course.topic);
+          plans.set(course.id, { courseId: course.id, status: 'planning', outline, messages: [], estimate: planEstimate(outline), approvedAt: null });
+        }
+        job.finished = true;
+      } else if (!job?.cancelled) {
         seq++;
         const course = extraCourses.find((c) => c.jobId === jobId);
         if (course) {
@@ -215,9 +288,11 @@ export const coursewrightHandlers = [
       chaptersDone: 0,
       jobId,
       lastOpenedChapterId: null,
+      outlineReady: false,
     };
     extraCourses.unshift(course);
-    jobs.set(jobId, { courseId: id, topic: brief.topic, startedAt: Date.now(), cancelled: false });
+    const phase: Phase = brief.reviewOutline === false ? 'all' : 'plan';
+    jobs.set(jobId, { courseId: id, topic: brief.topic, startedAt: Date.now(), cancelled: false, phase });
     return ok({ course, jobId }, { status: 201 });
   }),
 
@@ -235,9 +310,55 @@ export const coursewrightHandlers = [
     if (!c) return HttpResponse.json({ message: 'Course not found' }, { status: 404 });
     if (c.status !== 'failed' || !c.jobId) return HttpResponse.json({ message: 'This course has no stopped build to continue' }, { status: 409 });
     // Same job id, restarted clock: the mock build replays from the start.
-    jobs.set(c.jobId, { courseId: c.id, topic: c.topic, startedAt: Date.now(), cancelled: false });
+    jobs.set(c.jobId, { ...(jobs.get(c.jobId) ?? { phase: 'all' as Phase }), courseId: c.id, topic: c.topic, startedAt: Date.now(), cancelled: false, finished: false });
     c.status = 'building';
     return ok({ course: c, jobId: c.jobId });
+  }),
+
+  // Outline review
+  http.get('/api/courses/:id/plan', ({ params }) => {
+    const p = plans.get(String(params.id));
+    return p ? ok(p) : HttpResponse.json({ message: 'This course has no outline yet' }, { status: 404 });
+  }),
+  http.post('/api/courses/:id/plan/chat', async ({ params, request }) => {
+    const p = plans.get(String(params.id));
+    if (!p) return HttpResponse.json({ message: 'This course has no outline yet' }, { status: 404 });
+    const { message } = (await request.json()) as { message: string };
+    await delay(900);
+    const res = mockChat(p.outline, message);
+    const at = new Date().toISOString();
+    const next: CoursePlan = {
+      ...p,
+      outline: res.outline,
+      estimate: planEstimate(res.outline),
+      messages: [...p.messages, { role: 'user', text: message, at }, { role: 'agent', text: res.reply, at, changed: res.changed }],
+    };
+    plans.set(p.courseId, next);
+    return ok({ ...next, reply: res.reply, changed: res.changed });
+  }),
+  http.post('/api/courses/:id/plan/remove', async ({ params, request }) => {
+    const p = plans.get(String(params.id));
+    if (!p) return HttpResponse.json({ message: 'This course has no outline yet' }, { status: 404 });
+    const { chapterKey } = (await request.json()) as { chapterKey: string };
+    const outline = structuredClone(p.outline);
+    const m = outline.modules.find((mm) => mm.chapters.some((c) => c.key === chapterKey));
+    if (!m) return HttpResponse.json({ message: 'That chapter isn’t in the outline' }, { status: 404 });
+    if (m.chapters.length === 1) return HttpResponse.json({ message: 'A module keeps at least one chapter' }, { status: 409 });
+    m.chapters = m.chapters.filter((c) => c.key !== chapterKey);
+    const next = { ...p, outline, estimate: planEstimate(outline) };
+    plans.set(p.courseId, next);
+    return ok(next);
+  }),
+  http.post('/api/courses/:id/plan/approve', ({ params }) => {
+    const p = plans.get(String(params.id));
+    const c = extraCourses.find((x) => x.id === params.id);
+    if (!p || !c) return HttpResponse.json({ message: 'This course has no outline yet' }, { status: 404 });
+    if (p.approvedAt) return HttpResponse.json({ message: 'The course is already being written from this outline' }, { status: 409 });
+    p.approvedAt = new Date().toISOString();
+    const jobId = uid();
+    jobs.set(jobId, { courseId: c.id, topic: c.topic, startedAt: Date.now(), cancelled: false, phase: 'write' });
+    Object.assign(c, { status: 'building', outlineReady: false, jobId });
+    return ok({ course: c, jobId });
   }),
 
   http.delete('/api/courses/:id', ({ params }) => {
@@ -436,7 +557,7 @@ export const coursewrightHandlers = [
     return ok({
       id: String(params.id),
       kind: 'build_course',
-      status: j.cancelled ? 'cancelled' : course?.status === 'ready' ? 'done' : 'running',
+      status: j.cancelled ? 'cancelled' : course?.status === 'ready' || j.finished ? 'done' : 'running',
       courseId: j.courseId,
       error: null,
       createdAt: new Date(j.startedAt).toISOString(),

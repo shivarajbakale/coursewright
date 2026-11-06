@@ -6,7 +6,7 @@ from tests.conftest import drain
 
 SUMMARY = {
     "id", "title", "topic", "status", "colour", "icon", "createdAt", "moduleCount", "chapterCount",
-    "projectCount", "chaptersDone", "jobId", "lastOpenedChapterId",
+    "projectCount", "chaptersDone", "jobId", "lastOpenedChapterId", "outlineReady",
 }
 DETAIL = SUMMARY | {"brief", "summary", "modules", "concepts", "edges", "weakSpots"}
 CHAPTER = {

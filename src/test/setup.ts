@@ -38,6 +38,13 @@ beforeAll(() => {
     } as unknown as typeof ResizeObserver;
   }
 
+  // Mantine's autosizing Textarea re-measures when web fonts finish loading; jsdom has no FontFaceSet.
+  if (!document.fonts) {
+    Object.defineProperty(document, 'fonts', {
+      value: { addEventListener: () => {}, removeEventListener: () => {}, ready: Promise.resolve() },
+    });
+  }
+
   // TanStack Router restores scroll on every navigation; jsdom has no layout,
   // so the call is meaningless here but noisy if left unstubbed.
   window.scrollTo = () => {};

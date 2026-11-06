@@ -50,8 +50,9 @@ To build your own courses and talk to the tutor, [set it up with your own AI key
       <strong>A short interview, not a form.</strong> Name a topic and answer a few questions one at a time:
       how much you know, what you want to be able to do, how much time you have. Number keys pick, Enter moves on.</td>
     <td width="50%"><img src="docs/media/building.png" alt="A course being built, stage by stage"><br>
-      <strong>Watch it being built.</strong> Agents research the topic, map the concepts, outline modules, write
-      chapters, draw diagrams and design projects. Each stage animates live; leave and come back any time.</td>
+      <strong>Shape it, then watch it being built.</strong> The build stops at the outline so you can add,
+      remove, merge or reorder chapters by asking. Then it writes chapters, draws diagrams and designs
+      projects, each stage animating live; leave and come back any time.</td>
   </tr>
   <tr>
     <td><img src="docs/media/chapter-notes.png" alt="A chapter with notes open beside it"><br>
@@ -79,23 +80,29 @@ resizable panels; light and dark themes; and empty and error states that tell yo
 ## How it works
 
 ```
- Interview ──▶ brief ──▶ ┌──────────── course builder (deepagents) ────────────┐
-                         │ researcher → curriculum → writers → diagrammer      │
-                         │            → project designer → reviewer            │
-                         └──────────────────────────┬──────────────────────────┘
-                                                    ▼
+ Interview ──▶ brief ──▶ research ──▶ outline ──▶ you review it (chat, remove, reorder)
+                                                         │ Write this course
+                                                         ▼
+                   chapters (4 at a time) ──▶ diagrams ──▶ projects ──▶ review + fixes
+                   one model call per piece, checked in code, tokens counted per stage
+                                                         ▼
                     chapters · questions · diagrams · projects  (files → SQLite)
-                                                    ▼
+                                                         ▼
                     hybrid search index (sqlite-vec + FTS5)  ◀── your notes, links you add
-                                                    ▼
+                                                         ▼
                     tutor (CopilotKit + deepagents): answers with [n] citations
 ```
 
-- **One shared rule for clarity.** Every agent that writes for the learner follows the same
+- **A pipeline, not an agent loop.** Plain code runs the build stages in order. Each chapter is one
+  structured model call that gets only what it needs (the brief, the research notes, the outline and the
+  concepts earlier chapters taught), so a course costs a few hundred thousand tokens instead of millions.
+  Code checks every outline and chapter (size, every concept taught before it is used, chapter length, the
+  key-idea callout) and sends it back once with the problems.
+- **One shared rule for clarity.** Every stage that writes for the learner follows the same
   [explaining rules](agent/app/prompts/course_format.md): start from the problem, define each term before using
   it, intuition before formula, no "simply" or "obviously". The reviewer treats unclear writing as blocking.
-- **Builds that survive.** Builds checkpoint as they go. A stopped or interrupted build continues from where it
-  was, and a build that has written its whole course is saved even past its token budget.
+- **Builds that survive.** Every piece is a file on disk as soon as it is written. A stopped or interrupted
+  build continues from where it was and skips what is already done.
 - **Diagrams that are checked.** Movies are [Flowmovie](agent/vendor/flowmovie) scripts, compiled
   and checked before they ship; anything that fails falls back to Mermaid.
 
@@ -145,7 +152,7 @@ ANTHROPIC_API_KEY=sk-ant-your-key-here
 | `ANTHROPIC_BASE_URL`, `CW_MODEL` | No | Use another provider or model ([below](#use-another-model)) |
 | `VOYAGE_API_KEY` | No | Better search over your courses and notes ([voyageai.com](https://www.voyageai.com)); without it a local embedder is used |
 | `GITHUB_TOKEN` | No | Higher GitHub rate limits when reviewing project code |
-| `CW_BUILD_TOKEN_BUDGET` | No | Tokens after which a build stops polishing and saves the course (default 4,000,000) |
+| `CW_BUILD_TOKEN_BUDGET` | No | Tokens after which a build skips its optional diagrams and review pass (default 2,000,000) |
 
 ### 4. Start it
 
@@ -175,9 +182,10 @@ CW_MODEL=MiniMax-M3
 
 `CW_MODEL` also picks a Claude model, e.g. `CW_MODEL=claude-sonnet-5-5`; the default is `claude-opus-5-5`.
 
-**About cost:** building a course runs a team of agents and makes many model calls, typically several
-million tokens per course. Check your provider's pricing first; a smaller model (Sonnet, or MiniMax) costs far
-less. Reading, notes, quizzes and search use no model calls.
+**About cost:** building a course makes one model call per piece (research, outline, each chapter,
+diagram and project, one review), a few hundred thousand tokens for a typical course; the outline review
+shows an estimate before anything is written. Check your provider's pricing first; a smaller model (Sonnet,
+or MiniMax) costs far less. Reading, notes, quizzes and search use no model calls.
 
 ### If something doesn't work
 

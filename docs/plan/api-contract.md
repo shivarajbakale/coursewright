@@ -22,12 +22,25 @@ interface CourseSummary {
   chaptersDone: number;
   jobId: string | null;       // the build job while status is planning/building
   lastOpenedChapterId: string | null;
+  outlineReady: boolean;      // the build stopped at its outline and waits for you to review it
 }
 
 interface CourseBrief {
   topic: string;
   answers: { question: string; answer: string[] }[];
   level?: string; goal?: string; pace?: string;   // filled by the interviewer when known
+  reviewOutline?: boolean;    // default true: stop after the outline so it can be changed first
+}
+
+// The outline a build pauses on (the course file format's outline; chapters carry a one-line summary).
+interface CoursePlan {
+  courseId: string; status: CourseStatus;
+  outline: { title: string; concepts: {key, name, summary}[]; edges: {from, to}[];
+             modules: { key: string; title: string; projectKey: string | null;
+                        chapters: { key: string; title: string; summary: string; conceptKeys: string[] }[] }[] };
+  messages: { role: 'user' | 'agent'; text: string; at: string; changed?: string[] }[];
+  estimate: { tokens: number };  // rough cost to write this outline
+  approvedAt: string | null;
 }
 
 interface ChapterRef { id: string; position: number; title: string; readingMinutes: number; done: boolean }
@@ -109,6 +122,11 @@ POST   /interview/next   {topic, answers}         -> InterviewStep   (max 6 ques
 GET    /courses                                  -> CourseSummary[]
 POST   /courses          {brief: CourseBrief}     -> {course: CourseSummary, jobId}
 GET    /courses/:id                              -> CourseDetail
+POST   /courses/:id/resume                       -> {course, jobId}   (continue a stopped build)
+GET    /courses/:id/plan                         -> CoursePlan
+POST   /courses/:id/plan/chat   {message}        -> CoursePlan & {reply, changed: chapterKey[]}  (502: outline unchanged)
+POST   /courses/:id/plan/remove {chapterKey}     -> CoursePlan   (no model call; 409 for a module's last chapter)
+POST   /courses/:id/plan/approve                 -> {course, jobId}   (queues the writing job)
 DELETE /courses/:id                              -> {ok: true}
 GET    /chapters/:id                             -> Chapter
 POST   /chapters/:id/progress {finished: bool}   -> {startedAt, finishedAt}

@@ -55,6 +55,7 @@ export function NewCoursePage() {
   /** The answer to prefill when Back returns to a question. */
   const [prefill, setPrefill] = useState<string[] | null>(null);
   const [briefExtras, setBriefExtras] = useState<{ level?: string; goal?: string; pace?: string }>({});
+  const [reviewOutline, setReviewOutline] = useState(true);
 
   async function ask(nextAnswers: Answered[]) {
     // The cap is enforced here too, so a misbehaving model can never run the interview long.
@@ -108,6 +109,7 @@ export function NewCoursePage() {
       topic: topic.trim(),
       answers: answers.map(({ question: q, answer: a }) => ({ question: q, answer: a })),
       ...briefExtras,
+      reviewOutline,
     });
     await navigate({ to: '/courses/$courseId/building', params: { courseId: res.course.id } });
   }
@@ -158,6 +160,8 @@ export function NewCoursePage() {
                 summary={summary}
                 onBack={back}
                 onGenerate={generate}
+                reviewOutline={reviewOutline}
+                setReviewOutline={setReviewOutline}
                 generating={create.isPending}
                 error={(create.error as { message?: string } | null)?.message ?? null}
               />
@@ -394,6 +398,8 @@ function SummaryStep({
   summary,
   onBack,
   onGenerate,
+  reviewOutline,
+  setReviewOutline,
   generating,
   error,
 }: {
@@ -401,6 +407,8 @@ function SummaryStep({
   summary: string | null;
   onBack: () => void;
   onGenerate: () => void;
+  reviewOutline: boolean;
+  setReviewOutline: (v: boolean) => void;
   generating: boolean;
   error: string | null;
 }) {
@@ -415,6 +423,12 @@ function SummaryStep({
         Agents research the topic, map its concepts, write the chapters with diagrams, design a project per
         module and index everything for the tutor. It takes a few minutes, and you can leave and come back.
       </Text>
+      <Checkbox
+        checked={reviewOutline}
+        onChange={(e) => setReviewOutline(e.currentTarget.checked)}
+        label="Let me review the outline before it’s written"
+        description="The build stops at the outline so you can add, remove or reorder chapters by asking."
+      />
       {error && (
         <Alert color="red" variant="light" title="Could not start the build">
           {error}

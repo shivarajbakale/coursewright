@@ -14,13 +14,31 @@ export interface CourseSummary {
   chaptersDone: number;
   jobId: string | null;       // the build job while status is planning/building
   lastOpenedChapterId: string | null;
+  outlineReady: boolean;      // the build stopped at its outline and waits for you to review it
 }
 
 export interface CourseBrief {
   topic: string;
   answers: { question: string; answer: string[] }[];
   level?: string; goal?: string; pace?: string;   // filled by the interviewer when known
+  reviewOutline?: boolean;    // stop after the outline so you can change it before anything is written
 }
+
+/** The outline a build pauses on: the course file format's outline (agent/app/materialise.py). */
+export interface PlanChapter { key: string; title: string; summary: string; readingMinutes: number; conceptKeys: string[] }
+export interface PlanModule { key: string; title: string; summary: string; chapters: PlanChapter[]; projectKey: string | null }
+export interface PlanOutline {
+  title: string; topic: string; summary: string; colour: string; icon: string;
+  concepts: { key: string; name: string; summary: string }[];
+  edges: { from: string; to: string }[];
+  modules: PlanModule[];
+}
+export interface PlanMessage { role: 'user' | 'agent'; text: string; at: string; changed?: string[] }
+export interface CoursePlan {
+  courseId: string; status: CourseStatus; outline: PlanOutline; messages: PlanMessage[];
+  estimate: { tokens: number }; approvedAt: string | null;
+}
+export interface PlanChatResult extends CoursePlan { reply: string; changed: string[] }
 
 export interface ChapterRef { id: string; position: number; title: string; readingMinutes: number; done: boolean }
 export interface ProjectRef { id: string; title: string; milestonesDone: number; milestonesTotal: number }

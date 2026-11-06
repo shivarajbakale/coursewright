@@ -77,7 +77,7 @@ def _fallback_questions(topic: str) -> list[dict]:
             "options": [
                 {"label": "New to it", "description": "Start from first principles and define every term."},
                 {"label": "Some basics", "description": "Skim the fundamentals and spend time on the core ideas.", "recommended": True},
-                {"label": "Used it before", "description": "Skip the basics and go deep on edge cases and trade-offs."},
+                {"label": "Used it before", "description": "Move quickly through the basics, then go deep on edge cases and trade-offs."},
             ],
         },
         {

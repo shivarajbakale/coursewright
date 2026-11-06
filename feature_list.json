@@ -244,6 +244,56 @@
         "Chrome on the real stack: Notes opens the panel; typing created 'Notes: Elections and timeouts' under the course page and saved the full sentence; Add to notes appended the quote to the same page; close/reopen kept the text; Open in Notes opened it; the next chapter opened its own empty notes (test pages removed afterwards)"
       ],
       "notes": "Spec: FEATURE-PLAN.md (chapter-notes.feature-plan.json)"
+    },
+    {
+      "id": "outline-review",
+      "priority": 13,
+      "area": "Course builder",
+      "title": "Outline review and a code-driven build pipeline",
+      "user_visible_behavior": "A build pauses after the outline; you reshape it in a chat or remove chapters, then Write this course continues. The build runs as a code-driven pipeline (one model call per artifact, checks in code, tokens recorded per stage).",
+      "status": "passing",
+      "verification": [
+        "make check",
+        "agent pytest",
+        "a real build on the Mac mini",
+        "builder eval before vs after"
+      ],
+      "evidence": [
+        "make check: green (outline-review.test.tsx new: remove, chat with a failed turn, approve)",
+        "cd agent && uv run pytest: 72 passed (test_pipeline.py, test_plans.py new; old orchestrator tests removed)",
+        "Headless Chromium on mock mode, dark 1440px and light 390px: interview checkbox, build pauses at the outline, chat adds a chapter marked Changed, remove, Library 'Outline ready', Write this course continues to the course; no page errors",
+        "Mac mini, MiniMax-M3, brief of the old 'Agentic RAG' course: plan 21k tokens; one real chat turn 22k tokens rebuilt module 1 from zero; writing failed once on an empty provider reply (fixed: retried), Continue resumed the same job skipping 14 written chapters; course ready",
+        "Fresh unattended build, same brief: 0.66M tokens in 9 minutes, 13 chapters (old engine: 11.9M tokens for the same brief; its rerun failed on 'database is locked')",
+        "Builder eval (MiniMax judge, noisy: the old course scored 3/5 and 4/5 on reruns): old engine 4/5, 4/5 (accuracy 4); pipeline without a per-chapter check 3/5, 3/5 (accuracy 2-3)",
+        "With the verify stage (per-chapter check of numbers, code, answer keys): fresh unattended build, same brief, 0.76M tokens (verify 41k, fixes 358k), 12 chapters; eval 4/5, 4/5 with accuracy 4/5 both runs: parity with the old engine at ~1/16 of its tokens. A verify answer that failed validation stopped the first attempt; fixed (optional stages never fail a build) and Continue finished it"
+      ],
+      "notes": "Spec: FEATURE-PLAN.md (outline-review.feature-plan.json)"
+    },
+    {
+      "id": "teach-from-zero",
+      "priority": 14,
+      "area": "Course builder",
+      "title": "Courses start from zero and teach one concept per lesson",
+      "user_visible_behavior": "Every course starts from the same floor whatever the learner's level, and teaches one concept per short lesson titled '<concept>: <plain words>', in an order where each lesson rests only on earlier ones. Each lesson ends with 'What you have now' and a 'Your map so far' diagram.",
+      "status": "passing",
+      "plan": "none: agent pipeline and prompts only, no screen changes (lessons render through the existing chapter page and its diagram cards)",
+      "verification": [
+        "agent pytest",
+        "teaching eval baseline vs new build",
+        "a real build on the Mac mini",
+        "make check"
+      ],
+      "evidence": [
+        "cd agent && uv run pytest: 84 passed (curriculum checks, lesson term checks, dependency waves, beginner reader + revision rounds, failed revision keeps the draft, level never reaches curriculum or writer)",
+        "Baseline (evals/teaching.py on the deployed Agentic RAG course, exported via evals/export_course.py): 14 chapters, 14/14 vague titles, 17 forward references, 2 sentences assuming experience; beginner reader stuck 18 times in chapter 1, 12.64 per chapter",
+        "Local build, same brief, MiniMax-M3, after the fixes: 80 lessons in 12 modules, one concept each, 119 prerequisite links, opens with 'Language model: a program that predicts what comes next in text'; 4.08M tokens, ~35 min including one Continue after a failed revision (now tolerated)",
+        "Same eval on it: 1/80 vague titles, 0 forward references, 0 assuming experience, 11 later names used early; beginner reader stuck 5 times in lesson 1, 5.46 per lesson (was 12.64), blind answer rate 0.99; accuracy check corrected 7 of 80",
+        "Every lesson carries a code-drawn 'Your map so far' Mermaid diagram with the real prerequisite edges (rendered through the existing chapter diagram card)",
+        "Deployed to the Mac mini (npm run deploy, health 200); fresh unattended build of the same brief there: ready, 84 lessons in 6 modules, 4.37M tokens, no errors; opens with 'Language models: programs that predict likely continuations of text'",
+        "Context packs, planned terms, 8 lessons at a time, 1 revision round (local, same brief, MiniMax-M3): 83 lessons in 23.3 min (was ~40-70), 3.09M tokens (was 4.1-4.4M plus ~0.4M untracked indexing calls, now none); lesson prompt ~1.5k tokens (was ~7.5k)",
+        "Same eval: 0/83 vague titles, 0 forward references, 0 later names used early (was 11), beginner reader stuck 0 times in lesson 1, 6.59 per lesson (5.46 with two revision rounds; 12.64 for the old course)"
+      ],
+      "notes": "Rules in agent/app/jobs/pedagogy.py; measured by agent/evals/teaching.py"
     }
   ]
 }

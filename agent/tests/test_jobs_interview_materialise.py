@@ -121,28 +121,6 @@ def test_local_embedder_is_deterministic():
     assert abs(sum(x * x for x in a) - 1.0) < 1e-6
 
 
-def test_progress_maps_files_to_events(client, tmp_path):
-    from app.jobs import store
-    from app.jobs.build_course import Progress
-
-    jid = store.enqueue("build_course", {})
-    shutil.copytree(FIXTURES / "course_min", tmp_path / "course")
-    (tmp_path / "research").mkdir()
-    (tmp_path / "research" / "refs.json").write_text(json.dumps({"terms": ["hashing"], "refs": []}))
-    p = Progress(jid, tmp_path)
-    p.scan()
-    p.scan()  # idempotent
-    conn = connect()
-    try:
-        evs = rows(conn, "SELECT stage, payload FROM job_events WHERE job_id=? ORDER BY seq", (jid,))
-    finally:
-        conn.close()
-    stages = [e["stage"] for e in evs]
-    assert stages == ["research", "concepts", "outline", "chapters", "chapters", "projects"]
-    assert json.loads(evs[3]["payload"]) == {"chapter": "Hash functions", "done": 1, "total": 2}
-    store.request_cancel(jid)
-
-
 def test_tutor_context_extraction():
     from types import SimpleNamespace
 

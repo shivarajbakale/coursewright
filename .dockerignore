@@ -1,0 +1,17 @@
+node_modules
+dist
+storybook-static
+.git
+.env
+.env.*
+!.env.example
+agent/.venv
+agent/data
+agent/.env
+.memsearch
+.ui-probe
+coverage
+*.log
+.ts-deploy.*
+docs/media
+agent

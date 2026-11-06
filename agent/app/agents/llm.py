@@ -13,6 +13,10 @@ schema is the Pydantic model's JSON schema, validated here.
 
 from __future__ import annotations
 
+import asyncio
+import logging
+import os
+
 from typing import Literal, TypeVar
 
 from pydantic import BaseModel
@@ -21,6 +25,8 @@ from app import config
 
 Effort = Literal["low", "medium", "high", "xhigh", "max"]
 T = TypeVar("T", bound=BaseModel)
+
+log = logging.getLogger(__name__)
 
 
 class MissingKey(RuntimeError):
@@ -107,6 +113,35 @@ def _repair(value, schema: dict):
     return value
 
 
+RATE_WAITS = (20, 40, 80, 160, 300)  # seconds; about ten minutes in all before a rate limit fails a call
+_gates: dict[int, asyncio.Semaphore] = {}
+
+
+def _gate() -> asyncio.Semaphore:
+    """One cap on model calls in flight across every job in this process (CW_MAX_CALLS, default 8), so two
+    builds at once don't double the rate a provider plan allows."""
+    loop = id(asyncio.get_running_loop())
+    if loop not in _gates:
+        _gates[loop] = asyncio.Semaphore(int(os.environ.get("CW_MAX_CALLS", "8")))
+    return _gates[loop]
+
+
+async def _create(method, **kwargs):
+    """A model call that waits out a rate limit or an overloaded provider instead of failing the build."""
+    import anthropic
+
+    for i, wait in enumerate((*RATE_WAITS, None)):
+        try:
+            async with _gate():
+                return await method(**kwargs)
+        except (anthropic.RateLimitError, anthropic.InternalServerError) as e:
+            status = getattr(e, "status_code", 0)
+            if wait is None or (isinstance(e, anthropic.InternalServerError) and status not in (500, 502, 503, 529)):
+                raise
+            log.warning("model call hit %s (try %d); waiting %ss", status, i + 1, wait)
+            await asyncio.sleep(wait)
+
+
 def _client():
     import anthropic
 
@@ -125,8 +160,11 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
     }
     messages: list[dict] = [{"role": "user", "content": user}]
     usage = {"inputTokens": 0, "outputTokens": 0}
-    for _ in range(2):
-        msg = await client.messages.create(
+    empty = 0
+    invalid = 0
+    while True:
+        msg = await _create(
+            client.messages.create,
             model=config.model(),
             max_tokens=max_tokens,
             system=system,
@@ -134,14 +172,23 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
             tools=[tool],
             tool_choice={"type": "tool", "name": "respond"},
         )
-        usage["inputTokens"] += msg.usage.input_tokens
-        usage["outputTokens"] += msg.usage.output_tokens
-        call = next((b for b in msg.content if getattr(b, "type", "") == "tool_use"), None)
+        if msg.usage:
+            usage["inputTokens"] += msg.usage.input_tokens or 0
+            usage["outputTokens"] += msg.usage.output_tokens or 0
+        # Some providers now and then return a reply with no content at all: ask again, twice at most.
+        call = next((b for b in (msg.content or []) if getattr(b, "type", "") == "tool_use"), None)
         if call is None:
-            raise RuntimeError(f"model returned no structured output (stop_reason={msg.stop_reason})")
+            empty += 1
+            if empty > 2:
+                raise RuntimeError(f"model returned no structured output (stop_reason={msg.stop_reason})")
+            continue
         try:
             return schema.model_validate(_repair(call.input, tool["input_schema"])), usage
         except ValidationError as e:
+            invalid += 1
+            log.info("%s did not validate (%d): %s", schema.__name__, invalid, str(e)[:600])
+            if invalid > 1:
+                raise RuntimeError("model's structured output did not validate after a retry") from e
             # One retry, telling the model what was wrong.
             messages += [
                 {"role": "assistant", "content": [call.model_dump()]},
@@ -152,7 +199,6 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
                     ],
                 },
             ]
-    raise RuntimeError("model's structured output did not validate after a retry")
 
 
 async def parse(
@@ -167,7 +213,8 @@ async def parse(
     if not config.is_anthropic():
         return await _parse_with_tool(system=system, user=user, schema=schema, max_tokens=max_tokens)
     client = _client()
-    msg = await client.messages.parse(
+    msg = await _create(
+        client.messages.parse,
         model=config.model(),
         max_tokens=max_tokens,
         system=system,
@@ -185,7 +232,8 @@ async def parse(
 async def text(*, system: str, user: str, effort: Effort = "low", max_tokens: int = 1000) -> str:
     client = _client()
     extra = {"output_config": {"effort": effort}} if config.is_anthropic() else {}
-    msg = await client.messages.create(
+    msg = await _create(
+        client.messages.create,
         model=config.model(),
         max_tokens=max_tokens,
         system=system,

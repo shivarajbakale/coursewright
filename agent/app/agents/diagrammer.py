@@ -1,12 +1,10 @@
 """Diagrammer: Flowmovie for processes and protocols, Mermaid otherwise, and only checked movies are kept.
 
-Two entry points share the same prompt (`prompts/diagrammer.md`) and the same check:
-- In the course builder, a `diagrammer` subagent with the tools `flow_check`, `flow_story` and
-  `save_diagram`. `save_diagram` re-checks a movie before writing `/course/diagrams/<chapterKey>.flow`, counts
-  failed attempts per chapter and, after three, accepts only Mermaid (`.mmd`). The fallback is enforced in
-  code, not only in the prompt.
-- `make_movie(spec)`: a deterministic loop for one movie (used by the tutor's `make_flow`): ask the model for
-  a `.flow`, check it, feed the errors back, at most three tries, then ask for Mermaid.
+- `make_movie(spec)`: a deterministic loop for one movie (the course pipeline and the tutor's `make_flow`):
+  ask the model for a `.flow`, check it, feed the errors back, at most MAX_FLOW_ATTEMPTS tries, then ask for
+  Mermaid. The result carries the tokens it spent.
+- `make_mermaid(spec)`: one Mermaid diagram for a static structure, with one retry if it doesn't parse.
+- `DiagramSaver` writes `<course>/diagrams/<chapterKey>.flow|.mmd`, checking a movie again before it lands.
 """
 
 from __future__ import annotations
@@ -15,7 +13,7 @@ import asyncio
 import json
 import re
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from langchain_core.tools import tool
 
@@ -115,31 +113,6 @@ class DiagramSaver:
         return "Refused: kind must be 'flow' or 'mermaid'."
 
 
-def builder_tools(course_dir: Path) -> list:
-    saver = DiagramSaver(course_dir)
-
-    @tool
-    async def save_diagram(chapter_key: str, kind: Literal["flow", "mermaid"], title: str, source: str) -> str:
-        """Save a chapter's diagram. kind='flow' saves /course/diagrams/<chapter_key>.flow only if the movie
-        compiles (it is checked again here); after 3 failed movies for a chapter only kind='mermaid' is
-        accepted. kind='mermaid' saves /course/diagrams/<chapter_key>.mmd. Saving one kind replaces the other."""
-        return await asyncio.to_thread(saver.save, chapter_key, kind, title, source)
-
-    return [flow_check, flow_story, save_diagram]
-
-
-def subagent_spec(course_dir: Path, model) -> dict:
-    return {
-        "name": "diagrammer",
-        "description": "Draws the diagrams that chapters request (diagramRequest in /course/chapters/<key>.json): "
-        "a checked Flowmovie for processes and protocols, Mermaid otherwise. Give it the chapter keys to draw. "
-        "It saves /course/diagrams/<chapterKey>.flow or .mmd.",
-        "system_prompt": config.prompt("diagrammer") + "\n\n" + config.prompt("diagrammer_builder"),
-        "model": model,
-        "tools": builder_tools(course_dir),
-    }
-
-
 def validate_course_diagrams(course_dir: Path) -> list[str]:
     """Final gate before materialise: a `.flow` that doesn't compile is moved aside (never saved to the DB).
     Returns the chapter keys whose movie was rejected."""
@@ -173,8 +146,16 @@ async def make_movie(spec: str, *, model=None, max_tries: int = MAX_FLOW_ATTEMPT
     )
     messages: list = [SystemMessage(content=config.prompt("diagrammer")), HumanMessage(content=ask)]
     errors: list[str] = []
+    usage = {"inputTokens": 0, "outputTokens": 0}
+
+    def count(reply) -> None:
+        u = getattr(reply, "usage_metadata", None) or {}
+        usage["inputTokens"] += int(u.get("input_tokens") or 0)
+        usage["outputTokens"] += int(u.get("output_tokens") or 0)
+
     for attempt in range(1, max_tries + 1):
         reply = await model.ainvoke(messages)
+        count(reply)
         source = extract_source(_text(reply))
         result = await asyncio.to_thread(flowmovie.check, source)
         if result["ok"]:
@@ -184,6 +165,7 @@ async def make_movie(spec: str, *, model=None, max_tries: int = MAX_FLOW_ATTEMPT
                 "source": source,
                 "attempts": attempt,
                 "errors": errors,
+                "usage": usage,
             }
         report = flowmovie.format_check(result)
         errors.append(report)
@@ -200,6 +182,7 @@ async def make_movie(spec: str, *, model=None, max_tries: int = MAX_FLOW_ATTEMPT
         )
     )
     reply = await model.ainvoke(messages)
+    count(reply)
     source = extract_source(_text(reply))
     title = flowmovie.mermaid_title(source) or spec.strip().splitlines()[0][:80]
     return {
@@ -208,7 +191,42 @@ async def make_movie(spec: str, *, model=None, max_tries: int = MAX_FLOW_ATTEMPT
         "source": with_mermaid_title(source, title),
         "attempts": max_tries,
         "errors": errors,
+        "usage": usage,
     }
+
+
+async def make_mermaid(spec: str, *, model=None, context: str = "") -> dict:
+    """One Mermaid diagram for a static structure; one retry when it doesn't parse."""
+    from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
+    if model is None:
+        from app.agents.llm import chat_model
+
+        model = chat_model("low", max_tokens=4000)
+    ask = (
+        f"Draw this as a Mermaid diagram (flowchart for a structure, sequenceDiagram for messages between "
+        f"parties):\n\n{spec.strip()}\n"
+        + (f"\nWhat the course says about it (use its names and numbers):\n{context.strip()}\n" if context.strip() else "")
+        + "\nStart with a line `%% title: <title>` and reply with only the source in one ```mermaid block."
+    )
+    messages: list = [SystemMessage(content=config.prompt("diagrammer")), HumanMessage(content=ask)]
+    usage = {"inputTokens": 0, "outputTokens": 0}
+    source = ""
+    for _ in range(2):
+        reply = await model.ainvoke(messages)
+        u = getattr(reply, "usage_metadata", None) or {}
+        usage["inputTokens"] += int(u.get("input_tokens") or 0)
+        usage["outputTokens"] += int(u.get("output_tokens") or 0)
+        source = extract_source(_text(reply))
+        problem = flowmovie.mermaid_problem(source)
+        if not problem:
+            break
+        messages += [
+            reply if isinstance(reply, AIMessage) else AIMessage(content=_text(reply)),
+            HumanMessage(content=f"That doesn't parse: {problem}. Reply with the corrected source in one ```mermaid block."),
+        ]
+    title = flowmovie.mermaid_title(source) or spec.strip().splitlines()[0][:80]
+    return {"kind": "mermaid", "title": title, "source": with_mermaid_title(source, title), "usage": usage}
 
 
 def public(result: dict) -> str:

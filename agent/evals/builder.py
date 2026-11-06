@@ -2,7 +2,7 @@
 
 1. Structural (no model): the folder parses with the strict materialise schema; every .flow movie compiles;
    counts of chapters, questions, diagrams, projects.
-2. Rubric (LLM judge, claude-opus-5-5): coverage of the brief, prerequisite order, accuracy, chapter
+2. Rubric (LLM judge, the configured model or CW_JUDGE_MODEL): starting from the basics, coverage of the brief, prerequisite order, accuracy, chapter
    quality (key idea, worked example), question quality, diagram fit, project quality. Each 1-5 with reasons.
 
 Default folder: the newest data/jobs/*/course; or pass --folder (the seed course works as a baseline:
@@ -35,7 +35,7 @@ def estimate(folder: Path | None = None) -> list[Estimate]:
 
 
 class Criterion(BaseModel):
-    name: Literal["coverage", "prerequisites", "accuracy", "chapters", "questions", "diagrams", "projects"]
+    name: Literal["foundations", "coverage", "prerequisites", "accuracy", "chapters", "questions", "diagrams", "projects"]
     score: int  # 1-5
     reasons: str
     worst_example: str
@@ -51,6 +51,9 @@ class Rubric(BaseModel):
 JUDGE_SYSTEM = """You review a generated personal course before a learner sees it. Grade each criterion 1-5
 (5 = an expert teacher would ship it unchanged) with concrete reasons and the single worst example (file and
 quote):
+- foundations: module 1 teaches the topic's own building blocks from zero, whatever the learner's level; the
+  first chapter assumes nothing about the topic itself, and no chapter leans on a term no earlier chapter
+  defined (a learner who "built a basic X" still gets X explained, briefly);
 - coverage: the outline covers what the brief and topic need, at the right depth for the level;
 - prerequisites: no concept is used before the chapter that teaches it; the concept graph is sensible;
 - accuracy: technical content is correct; subtle points are stated plainly;

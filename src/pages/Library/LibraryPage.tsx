@@ -221,7 +221,11 @@ function CourseCard({ course }: { course: CourseSummary }) {
         <CourseTitle
           course={course}
           badge={
-            building ? (
+            course.outlineReady ? (
+              <Badge variant="light" style={{ flexShrink: 0 }}>
+                Outline ready
+              </Badge>
+            ) : building ? (
               <Badge variant="light" color="blue" leftSection={<Loader size={10} color="blue" />} style={{ flexShrink: 0 }}>
                 Building
               </Badge>
@@ -232,7 +236,11 @@ function CourseCard({ course }: { course: CourseSummary }) {
             ) : null
           }
         />
-        {building ? (
+        {course.outlineReady ? (
+          <Text size="sm" c="dimmed">
+            Waiting for you: review the outline, then start writing.
+          </Text>
+        ) : building ? (
           <Text size="sm" c="dimmed">
             Being researched and written. Open it to watch.
           </Text>

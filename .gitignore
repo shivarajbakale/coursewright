@@ -45,3 +45,6 @@ agent/.env
 
 # Local tooling data
 .memsearch/
+
+# ts-deploy generated files (host-specific)
+.ts-deploy.*

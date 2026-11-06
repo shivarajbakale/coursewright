@@ -142,12 +142,12 @@ def finish(job_id: str, status: str, *, error: str | None = None, output: dict |
         )
 
 
-def set_usage(job_id: str, input_tokens: int, output_tokens: int) -> None:
+def set_usage(job_id: str, input_tokens: int, output_tokens: int, stages: dict | None = None) -> None:
+    usage: dict = {"inputTokens": input_tokens, "outputTokens": output_tokens}
+    if stages is not None:
+        usage["stages"] = stages
     with db() as conn:
-        conn.execute(
-            "UPDATE jobs SET usage=? WHERE id=?",
-            (jdump({"inputTokens": input_tokens, "outputTokens": output_tokens}), job_id),
-        )
+        conn.execute("UPDATE jobs SET usage=? WHERE id=?", (jdump(usage), job_id))
 
 
 def request_cancel(job_id: str) -> None:
@@ -160,7 +160,7 @@ def request_cancel(job_id: str) -> None:
 
 def resume(job_id: str) -> bool:
     """Put a failed or cancelled job back in the queue as the same job, so it continues: build_course picks up
-    its checkpointed thread and the files already on disk. Its old notice goes, since a new one follows."""
+    the files already on disk. Its old notice goes, since a new one follows."""
     with db() as conn, tx(conn):
         cur = conn.execute(
             "UPDATE jobs SET status='queued', error=NULL, attempts=0, cancel_requested=0, finished_at=NULL,"

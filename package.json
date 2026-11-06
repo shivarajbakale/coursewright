@@ -113,7 +113,11 @@
     "loop-lint": "node scripts/loop-lint.mjs --strict",
     "runtime": "tsx runtime-dev/server.ts",
     "agent": "cd agent && uv run uvicorn app.main:app --port 8123 --reload --timeout-graceful-shutdown 3",
-    "dev:stack": "bash scripts/dev-stack.sh"
+    "dev:stack": "bash scripts/dev-stack.sh",
+    "deploy": "bash deploy/deploy.sh",
+    "deploy:status": "bash deploy/deploy.sh --status",
+    "deploy:logs": "bash deploy/deploy.sh --logs",
+    "deploy:down": "bash deploy/deploy.sh --down"
   },
   "license": "MIT",
   "repository": {

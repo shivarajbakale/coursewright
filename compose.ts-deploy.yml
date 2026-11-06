@@ -1,0 +1,61 @@
+# Coursewright as ONE Tailscale node on the Mac mini, deployed with ts-deploy (private, tailnet only):
+#   ts-deploy '~/projects/coursewright' -b
+#
+# Three services share the Tailscale sidecar's network namespace, so they reach each other on
+# localhost and `ports:` is not used; `expose:` on web is what ts-deploy serves on :443.
+#
+# Bring your own key: the model key lives in agent/.env on the host (copy agent/.env.example), passed
+# in at start, never baked into an image or committed. Do not deploy this node public (Funnel): the
+# app has no login of its own, the tailnet is the gate, and a public node would spend your key.
+name: coursewright
+
+services:
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: ./agent/.env
+    environment:
+      CW_DB_PATH: /data/coursewright.db
+    volumes:
+      - coursewright-data:/data
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8123/api/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+
+  runtime:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    environment:
+      AGENT_URL: http://127.0.0.1:8123
+      RUNTIME_PORT: '4000'
+    depends_on:
+      - agent
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: web
+    restart: unless-stopped
+    expose:
+      - '8080'
+    depends_on:
+      - agent
+      - runtime
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:8080/']
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  coursewright-data:

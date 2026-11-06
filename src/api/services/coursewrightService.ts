@@ -9,6 +9,8 @@ import type {
   Chapter,
   CourseBrief,
   CourseDetail,
+  CoursePlan,
+  PlanChatResult,
   CourseSummary,
   Health,
   IndexStats,
@@ -60,8 +62,17 @@ export const courseService = {
   create: (brief: CourseBrief) =>
     post<{ course: CourseSummary; jobId: string }>('/courses', { brief }),
   remove: (id: string) => del<{ ok: true }>(`/courses/${id}`),
-  /** Continue a stopped build: the same job runs again from its checkpoint and the files it already wrote. */
+  /** Continue a stopped build: the same job runs again and keeps every file it already wrote. */
   resume: (id: string) => post<{ course: CourseSummary; jobId: string }>(`/courses/${id}/resume`, {}),
+};
+
+/** The outline review: a build that stopped after its outline, waiting for you. */
+export const planService = {
+  get: (courseId: string) => get<CoursePlan>(`/courses/${courseId}/plan`),
+  chat: (courseId: string, message: string) => post<PlanChatResult>(`/courses/${courseId}/plan/chat`, { message }),
+  remove: (courseId: string, chapterKey: string) =>
+    post<CoursePlan>(`/courses/${courseId}/plan/remove`, { chapterKey }),
+  approve: (courseId: string) => post<{ course: CourseSummary; jobId: string }>(`/courses/${courseId}/plan/approve`, {}),
 };
 
 export const chapterService = {
