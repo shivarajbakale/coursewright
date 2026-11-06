@@ -137,9 +137,17 @@ _LOOK = re.compile(r"^\s*(paper|pen|hand)\s+\S+\s*$", re.M)
 
 
 def _clean(source: str) -> str:
-    """The app chooses the paper, pen and hand; a fence inside the source would end the lesson's fence."""
+    """The app chooses the paper, pen and hand; a fence inside the source would end the lesson's fence; and
+    an empty step is removed."""
     source = source.strip().removeprefix("```inkling").removesuffix("```").strip()
-    return _LOOK.sub("", source).strip()
+    source = _LOOK.sub("", source).strip()
+    # A step that only names things an earlier step drew draws nothing, and Inkling drops it with its
+    # caption. Models write such "now look at X" steps often; drop them here rather than fail the drawing.
+    empty = set(inkling.empty_steps(source))
+    if empty:
+        source = "\n".join(ln for ln in source.split("\n")
+                            if not ((m := re.match(r"\s*step\s+(\d+)\s*:", ln)) and int(m.group(1)) in empty))
+    return source
 
 
 # ---- one lesson ------------------------------------------------------------------------------------------

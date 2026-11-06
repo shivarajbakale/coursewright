@@ -174,3 +174,10 @@ def test_a_step_that_brings_in_nothing_new_is_flagged():
     assert inkling.empty_steps(src) == [2]
     assert any("step 2 only names things" in p for p in inkling.source_problems(src))
     assert inkling.empty_steps(GOOD) == []
+
+
+def test_clean_drops_steps_that_draw_nothing():
+    src = 'title "t"\na -> b\nstep 1: a "first"\nstep 2: a "look at a again"\nstep 3: b "then b"'
+    out = explainers._clean(src)
+    assert "look at a again" not in out and 'step 3: b "then b"' in out
+    assert inkling.empty_steps(out) == []
