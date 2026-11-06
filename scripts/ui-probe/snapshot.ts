@@ -125,6 +125,13 @@ export function snapshot(root: Element, label: string): Snapshot {
         if (overflowing.length >= 5) break;
       }
     }
+    // What sits in <body> beside the page: an element left there (a portal, a library's scratch node) pushes
+    // everything after it down.
+    for (const el of Array.from(doc.body.children) as HTMLElement[]) {
+      const r = el.getBoundingClientRect();
+      if (r.height <= 0) continue;
+      overflowing.push(`body child <${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''} class="${(el.getAttribute('class') ?? '').slice(0, 40)}" style="${(el.getAttribute('style') ?? '').slice(0, 60)}"> top ${Math.round(r.top)}px height ${Math.round(r.height)}px`);
+    }
   }
   return {
     label,
