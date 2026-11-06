@@ -2,7 +2,10 @@
  * Reading settings. Every control applies on change, the sample paragraph shows the result live,
  * and Done goes back to wherever you came from.
  */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { isApple, isInstalled, useInstall } from '../offline/register';
+import { formatBytes, removeEverything, useSavedCourses } from '../offline/saved';
+import { useOutbox } from '../offline/outbox';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useCourses } from '../queries';
 import { back, href } from '../router';
@@ -157,6 +160,9 @@ export function SettingsScreen() {
           />
         </Group>
 
+        <AppGroup />
+        <StorageGroup />
+
         <View style={[styles.status, { backgroundColor: p.surface }]}>
           <View
             style={[
@@ -193,6 +199,69 @@ export function SettingsScreen() {
         ) : null}
       </ScrollView>
     </View>
+  );
+}
+
+/** How to put the reader on the home screen, for this device; hidden once it runs from there. */
+function AppGroup() {
+  const p = usePalette();
+  const prompt = useInstall((st) => st.prompt);
+  if (isInstalled()) return null;
+  return (
+    <Group title="The app">
+      {prompt ? (
+        <Pressable role="button" onPress={() => void prompt.prompt().then(() => useInstall.setState({ prompt: null }))} style={[styles.action, { backgroundColor: p.accent }]}>
+          <Text style={[styles.actionText, { color: p.onAccent }]}>Install the reader</Text>
+        </Pressable>
+      ) : (
+        <Text style={[styles.note, { color: p.muted }]}>
+          {isApple()
+            ? 'Put the reader on your home screen: tap Share, then "Add to Home Screen". It then opens on its own, with no browser bar, and reads saved courses offline.'
+            : "Your browser's menu has \"Install\" or \"Add to Home screen\" for this page."}
+        </Text>
+      )}
+    </Group>
+  );
+}
+
+/** What is kept on this device, what waits to be sent, and a way to free it all. */
+function StorageGroup() {
+  const p = usePalette();
+  const saved = useSavedCourses();
+  const waiting = useOutbox().length;
+  const [confirm, setConfirm] = useState(false);
+  const list = Object.values(saved);
+  const bytes = list.reduce((n, c) => n + c.bytes, 0);
+  return (
+    <Group title="On this device">
+      <Text style={[styles.note, { color: p.text }]}>
+        {list.length
+          ? `${list.length} saved ${list.length === 1 ? 'course' : 'courses'} · ${formatBytes(bytes)}`
+          : 'Chapters you open are kept automatically. Save a whole course from its outline.'}
+      </Text>
+      {waiting ? (
+        <Text style={[styles.note, { color: p.muted }]}>
+          {waiting} {waiting === 1 ? 'update waits' : 'updates wait'} to be sent; they go when you're online.
+        </Text>
+      ) : null}
+      {list.length ? (
+        confirm ? (
+          <View style={styles.confirm}>
+            <Text style={[styles.note, { color: p.text, flex: 1 }]}>Remove everything saved? Your progress stays.</Text>
+            <Pressable role="button" onPress={() => setConfirm(false)} style={[styles.ghost, { borderColor: p.borderStrong }]}>
+              <Text style={[styles.actionText, { color: p.text }]}>Cancel</Text>
+            </Pressable>
+            <Pressable role="button" onPress={() => void removeEverything().then(() => setConfirm(false))} style={[styles.action, { backgroundColor: p.accent }]}>
+              <Text style={[styles.actionText, { color: p.onAccent }]}>Remove</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable role="button" onPress={() => setConfirm(true)} style={[styles.ghost, { borderColor: p.borderStrong, alignSelf: 'flex-start' }]}>
+            <Text style={[styles.actionText, { color: p.text }]}>Remove everything saved</Text>
+          </Pressable>
+        )
+      ) : null}
+    </Group>
   );
 }
 
@@ -251,6 +320,10 @@ function Segmented<T extends string>({
 }
 
 const styles = StyleSheet.create({
+  action: { minHeight: touch, paddingHorizontal: space.lg, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start' },
+  ghost: { minHeight: touch, paddingHorizontal: space.lg, borderRadius: radius.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  actionText: { fontFamily: font.ui, fontSize: 15, fontWeight: '600' },
+  confirm: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
   h1: { fontFamily: font.ui, fontSize: 24, fontWeight: '600', paddingLeft: space.md },
   done: { minHeight: touch, paddingHorizontal: space.md, justifyContent: 'center' },
   doneText: { fontFamily: font.ui, fontSize: 16, fontWeight: '600' },

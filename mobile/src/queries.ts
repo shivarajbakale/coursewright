@@ -5,6 +5,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { chapterService, courseService } from '@/api/services/coursewrightService';
 import type { Chapter, CourseDetail } from '@/api/types';
+import { enqueue, isRetryable } from './offline/outbox';
+import { isOnline } from './offline/online';
+
+// TanStack Query pauses requests while the browser says it is offline. The reader's requests must still
+// go out: the service worker answers them from what is saved on the device, and the outbox keeps writes.
+const reads = { networkMode: 'offlineFirst' } as const;
+const writes = { networkMode: 'always' } as const;
 
 export const readerKeys = {
   courses: ['reader', 'courses'] as const,
@@ -13,11 +20,12 @@ export const readerKeys = {
 };
 
 export function useCourses() {
-  return useQuery({ queryKey: readerKeys.courses, queryFn: courseService.list });
+  return useQuery({ ...reads, queryKey: readerKeys.courses, queryFn: courseService.list });
 }
 
 export function useCourse(id: string | null) {
   return useQuery({
+    ...reads,
     queryKey: readerKeys.course(id ?? ''),
     queryFn: () => courseService.get(id as string),
     enabled: Boolean(id),
@@ -25,7 +33,7 @@ export function useCourse(id: string | null) {
 }
 
 export function useChapter(id: string) {
-  return useQuery({ queryKey: readerKeys.chapter(id), queryFn: () => chapterService.get(id) });
+  return useQuery({ ...reads, queryKey: readerKeys.chapter(id), queryFn: () => chapterService.get(id) });
 }
 
 /**
@@ -35,8 +43,33 @@ export function useChapter(id: string) {
 export function useChapterProgress(chapterId: string, courseId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (finished: boolean) => chapterService.progress(chapterId, finished),
-    onSuccess: () => {
+    ...writes,
+    // Offline, or the request fails for lack of a connection: kept on the device (offline/outbox.ts) and
+    // marked in the cached chapter, so the reader sees it at once and the server hears it later.
+    mutationFn: async (finished: boolean) => {
+      const keep = () => {
+        enqueue({ kind: 'progress', chapterId, finished });
+        const at = new Date().toISOString();
+        qc.setQueryData<Chapter>(readerKeys.chapter(chapterId), (ch) =>
+          ch ? { ...ch, startedAt: ch.startedAt ?? at, finishedAt: finished ? at : ch.finishedAt } : ch,
+        );
+        if (finished)
+          qc.setQueryData<CourseDetail>(readerKeys.course(courseId), (c) =>
+            c ? { ...c, modules: c.modules.map((m) => ({ ...m, chapters: m.chapters.map((x) => (x.id === chapterId ? { ...x, done: true } : x)) })) } : c,
+          );
+        return { queued: true };
+      };
+      if (!isOnline()) return keep();
+      try {
+        await chapterService.progress(chapterId, finished);
+        return { queued: false };
+      } catch (e) {
+        if (isRetryable(e)) return keep();
+        throw e;
+      }
+    },
+    onSuccess: ({ queued }) => {
+      if (queued) return;
       void qc.invalidateQueries({ queryKey: readerKeys.chapter(chapterId) });
       void qc.invalidateQueries({ queryKey: readerKeys.course(courseId) });
       void qc.invalidateQueries({ queryKey: readerKeys.courses });
@@ -59,7 +92,23 @@ export function chapterNumber(course: CourseDetail | undefined, chapterId: strin
 export function useAnswer(chapterId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ questionId, chosen }: { questionId: string; chosen: number }) => chapterService.attempt(questionId, chosen),
+    ...writes,
+    mutationFn: async ({ questionId, chosen }: { questionId: string; chosen: number }) => {
+      // The answer comes with the chapter, so offline the device checks it and the attempt is sent later.
+      const keep = () => {
+        const q = qc.getQueryData<Chapter>(readerKeys.chapter(chapterId))?.questions.find((x) => x.id === questionId);
+        if (!q) throw new Error('This question is not on this device.');
+        enqueue({ kind: 'attempt', questionId, chapterId, chosen });
+        return { correct: chosen === q.answer, answer: q.answer, explanation: q.explanation };
+      };
+      if (!isOnline()) return keep();
+      try {
+        return await chapterService.attempt(questionId, chosen);
+      } catch (e) {
+        if (isRetryable(e)) return keep();
+        throw e;
+      }
+    },
     onSuccess: (result, { questionId, chosen }) => {
       qc.setQueryData<Chapter>(readerKeys.chapter(chapterId), (ch) =>
         ch

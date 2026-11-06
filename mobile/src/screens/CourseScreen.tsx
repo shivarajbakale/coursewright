@@ -13,6 +13,7 @@ import { Message, Skeleton } from '../components/States';
 import { Icon, IconButton, SettingsButton, TopBar } from '../components/TopBar';
 import { Bar } from './LibraryScreen';
 import { nextUp } from '../courseMath';
+import { SaveRow } from '../components/SaveRow';
 
 export function CourseScreen({ courseId }: { courseId: string }) {
   const p = usePalette();
@@ -71,6 +72,7 @@ function CourseBody({ course, onOpen }: { course: CourseDetail; onOpen: (id: str
             <Icon name="arrowRight" size={18} color={p.onAccent} stroke={2.2} />
           </Pressable>
         ) : null}
+        <SaveRow course={course} />
       </View>
       <Outline course={course} currentId={course.lastOpenedChapterId} onOpen={onOpen} />
     </View>

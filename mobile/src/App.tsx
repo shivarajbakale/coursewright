@@ -14,6 +14,10 @@ import { font, space } from './theme';
 import { layoutFor } from './courseMath';
 import { Outline } from './components/Outline';
 import { Message } from './components/States';
+import { OfflineBar } from './components/OfflineBar';
+import { UpdatePrompt } from './components/UpdatePrompt';
+import { startOutbox } from './offline/outbox';
+import { useQueryClient } from '@tanstack/react-query';
 import { ChapterScreen } from './screens/ChapterScreen';
 import { CourseScreen } from './screens/CourseScreen';
 import { LibraryScreen } from './screens/LibraryScreen';
@@ -24,6 +28,11 @@ export function App() {
   const { width } = useWindowDimensions();
   const p = usePalette();
   const layout = layoutFor(width);
+  const qc = useQueryClient();
+
+  // What was done offline goes to the server now and whenever the connection returns; then the
+  // reader refreshes from the server's view.
+  useEffect(() => startOutbox(() => void qc.invalidateQueries({ queryKey: ['reader'] })), [qc]);
 
   // The page behind the app, and the browser chrome, follow the reading theme.
   useEffect(() => {
@@ -76,7 +85,13 @@ export function App() {
       );
   }
 
-  return <View style={[styles.root, { backgroundColor: p.ground }]}>{screen}</View>;
+  return (
+    <View style={[styles.root, { backgroundColor: p.ground }]}>
+      <OfflineBar />
+      <View style={styles.root}>{screen}</View>
+      <UpdatePrompt />
+    </View>
+  );
 }
 
 function Sidebar({ courseId, chapterId }: { courseId: string; chapterId: string }) {

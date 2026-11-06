@@ -10,6 +10,8 @@ import { usePalette } from '../settings';
 import { font, radius, readingWidth, space, touch } from '../theme';
 import { Message, Skeleton } from '../components/States';
 import { Icon, IconButton } from '../components/TopBar';
+import { useOnline } from '../offline/online';
+import { useSavedCourses } from '../offline/saved';
 
 function percent(c: CourseSummary): number {
   return c.chapterCount ? Math.round((c.chaptersDone / c.chapterCount) * 100) : 0;
@@ -18,6 +20,7 @@ function percent(c: CourseSummary): number {
 export function LibraryScreen() {
   const p = usePalette();
   const courses = useCourses();
+  const online = useOnline();
   const ready = (courses.data ?? []).filter(c => c.status === 'ready');
   const resume = ready.find(c => c.lastOpenedChapterId) ?? null;
 
@@ -51,13 +54,17 @@ export function LibraryScreen() {
             </View>
           </View>
         ) : courses.isError ? (
-          <Message
-            tone="error"
-            title="Couldn't reach your server."
-            body="Check that Tailscale is on, then try again."
-            action="Try again"
-            onAction={() => void courses.refetch()}
-          />
+          online ? (
+            <Message
+              tone="error"
+              title="Couldn't reach your server."
+              body="Check that Tailscale is on, then try again."
+              action="Try again"
+              onAction={() => void courses.refetch()}
+            />
+          ) : (
+            <Message title="Your courses aren't on this device yet." body="Open the reader once while online and your courses will be here." />
+          )
         ) : (courses.data ?? []).length === 0 ? (
           <Message
             title="No courses yet."
@@ -146,6 +153,12 @@ function CourseRow({
   const p = usePalette();
   const ready = course.status === 'ready';
   const to = href({ name: 'course', courseId: course.id });
+  const online = useOnline();
+  const saved = useSavedCourses()[course.id];
+  // Offline, a course that was never saved may still open (its outline, chapters you read), but most of
+  // it needs a connection: say so and dim it.
+  const away = !online && ready && !saved;
+  const where = saved ? ' · saved' : away ? ' · needs a connection' : '';
   return (
     <Pressable
       role="link"
@@ -154,6 +167,7 @@ function CourseRow({
       accessibilityLabel={`${course.title}, ${ready ? `${percent(course)}% read` : 'still building'}`}
       style={({ hovered }) => [
         styles.row,
+        away && { opacity: 0.55 },
         !last && { borderBottomWidth: 1, borderBottomColor: p.border },
         hovered && ready && { backgroundColor: p.raised },
       ]}
@@ -167,7 +181,7 @@ function CourseRow({
         <Text style={[styles.rowTitle, { color: ready ? p.text : p.muted }]}>{course.title}</Text>
         <Text style={[styles.small, { color: p.muted }]}>
           {ready
-            ? `${course.moduleCount} modules · ${course.chapterCount} lessons${twin ? ` · made ${new Date(course.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : ''}`
+            ? `${course.moduleCount} modules · ${course.chapterCount} lessons${twin ? ` · made ${new Date(course.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : ''}${where}`
             : 'Building…'}
         </Text>
       </View>

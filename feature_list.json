@@ -445,6 +445,17 @@
         "Live WebKit, chapter Token: inline on desktop/iPhone/iPad, no sideways scroll, no errors; a wide mind map is redrawn top to bottom on a phone",
         "courses/agent-harness-from-scratch synced; course-check 0 errors"
       ]
+    },
+    {
+      "id": "reader-pwa-offline",
+      "priority": 22,
+      "area": "Phone and iPad reader",
+      "title": "Install the reader, read saved courses offline, update cleanly",
+      "user_visible_behavior": "The reader installs to the home screen, keeps saved courses and opened chapters on the device, reads and quizzes offline, sends progress when back online, and asks before updating.",
+      "status": "in_progress",
+      "plan": "reader-pwa-offline.feature-plan.json",
+      "verification": [],
+      "evidence": []
     }
   ]
 }

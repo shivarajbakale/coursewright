@@ -19,6 +19,7 @@ import { parseChapter } from '../markdown/parse';
 import { Outline } from '../components/Outline';
 import { shortTitle, type Layout } from '../courseMath';
 import { Message, Skeleton } from '../components/States';
+import { useOnline } from '../offline/online';
 import { Icon, IconButton, SettingsButton, TopBar } from '../components/TopBar';
 import { Diagrams } from '../diagrams/Diagrams';
 import { Quiz } from '../quiz/Quiz';
@@ -44,6 +45,7 @@ export function ChapterScreen({
 }) {
   const p = usePalette();
   const chapter = useChapter(chapterId);
+  const online = useOnline();
   const course = useCourse(courseId);
   const where = chapterNumber(course.data, chapterId);
   const [drawer, setDrawer] = useState(false);
@@ -161,13 +163,22 @@ export function ChapterScreen({
           </View>
         ) : chapter.isError ? (
           <View style={[styles.column, styles.loading]}>
-            <Message
-              tone="error"
-              title="Couldn't load this chapter."
-              body="Check your connection, then try again."
-              action="Try again"
-              onAction={() => void chapter.refetch()}
-            />
+            {online ? (
+              <Message
+                tone="error"
+                title="Couldn't load this chapter."
+                body="Check your connection, then try again."
+                action="Try again"
+                onAction={() => void chapter.refetch()}
+              />
+            ) : (
+              <Message
+                title="This chapter isn't on this device yet."
+                body="Open it once while online, or save the whole course from its outline."
+                action="Back to the outline"
+                onAction={() => navigate(href({ name: 'course', courseId }))}
+              />
+            )}
           </View>
         ) : (
           <Reading

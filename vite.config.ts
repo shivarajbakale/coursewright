@@ -45,5 +45,7 @@ export default defineConfig({
     // The kit packages (vendor/kit) import their CSS from JavaScript. Node can't load .css, so Vitest
     // processes them itself instead of handing them to Node like other installed packages.
     server: { deps: { inline: [/@shivarajbakale\//] } },
+    // The reader's service worker module exists only in its own build (vite.mobile.config.ts).
+    alias: { 'virtual:pwa-register': path.resolve(import.meta.dirname, 'mobile/src/offline/pwa-register.stub.ts') },
   },
 });

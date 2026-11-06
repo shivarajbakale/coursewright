@@ -6,8 +6,10 @@ import { App } from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { CrashScreen } from './components/States';
 import { installRandomUUID } from './uid';
+import { registerWorker } from './offline/register';
 
 installRandomUUID();
+void registerWorker();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

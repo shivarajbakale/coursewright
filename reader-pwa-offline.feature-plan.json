@@ -1,0 +1,472 @@
+{
+  "feature": {
+    "id": "reader-pwa-offline",
+    "title": "Phone and iPad reader: install it, read offline, update cleanly",
+    "problem": "The reader is a web page: on an iPhone 'Add to Home Screen' opens it like a browser tab, and with no signal (a plane, the underground) every screen fails with 'Couldn't load this chapter'. The owner reads on the move. Phase 4 makes the reader an installable app that opens on its own icon, keeps the courses you choose (and every chapter you open) on the device, lets you read, answer quizzes and keep your place offline, sends what you did once you are back online, and tells you when a new version is ready instead of changing under you.",
+    "nonGoals": [
+      "Asking the tutor offline: it needs the server; the Ask button already says 'Tutor needs a connection'.",
+      "Push notifications (a finished build, a new course): later, if at all.",
+      "Offline for the desktop app at /: the service worker's scope is /m/ only.",
+      "Background sync while the app is closed: iOS has none; queued progress goes when the app is next open and online.",
+      "Plain http://coursewright:8080: browsers only run service workers on https (the tailnet name) or localhost; over http the reader works as today, online only."
+    ]
+  },
+  "nav": [
+    "Library",
+    "Course",
+    "Chapter",
+    "Reading"
+  ],
+  "surfaces": [
+    {
+      "id": "library",
+      "name": "Library (offline aware)",
+      "route": "/m/",
+      "archetype": "list",
+      "moments": {
+        "peak": "opening the app on a plane and the Continue card still takes you straight into your chapter",
+        "end": "a list where saved courses read normally and the rest say plainly they need a connection"
+      },
+      "purpose": "Resume reading, online or not.",
+      "primaryAction": "Resume",
+      "panels": [
+        {
+          "id": "status",
+          "kind": "detail",
+          "title": "Offline bar (only when offline)",
+          "fields": [
+            {
+              "label": "Bar",
+              "value": "You're offline. Saved courses and chapters you opened still read."
+            }
+          ]
+        },
+        {
+          "id": "courses",
+          "kind": "list",
+          "title": "Courses",
+          "columns": [
+            "Course",
+            "Progress",
+            "On this device"
+          ],
+          "rows": [
+            [
+              "Build an agent harness",
+              "12 of 65",
+              "Saved"
+            ],
+            [
+              "Distributed Systems: Raft",
+              "3 of 18",
+              "4 chapters"
+            ],
+            [
+              "How Postgres executes a query",
+              "0 of 40",
+              "Needs a connection"
+            ]
+          ]
+        }
+      ],
+      "states": {
+        "loading": "Online: as today. Offline with a saved library: the saved list at once, no skeleton.",
+        "empty": "Offline before the library was ever loaded on this device: 'Open the reader once while online and your courses will be here.'",
+        "error": "Online but the server fails: the saved list with 'Showing what's saved on this device' and Try again.",
+        "success": "Saved courses look as they do online; unsaved ones are dimmed with 'Needs a connection' and open their outline only if it was saved."
+      }
+    },
+    {
+      "id": "course",
+      "name": "Course outline with Save for offline",
+      "route": "/m/courses/:courseId",
+      "archetype": "list",
+      "moments": {
+        "peak": "one tap on 'Save for offline' and every chapter, its drawings and its quiz are on the phone",
+        "end": "'Saved on this device · 65 chapters · 4.2 MB' under the title, with Remove"
+      },
+      "purpose": "Keep a whole course on the device before going offline.",
+      "primaryAction": "Save for offline",
+      "panels": [
+        {
+          "id": "save",
+          "kind": "detail",
+          "title": "On this device",
+          "fields": [
+            {
+              "label": "Not saved",
+              "value": "[Save for offline]  (chapters you open are kept anyway)"
+            },
+            {
+              "label": "Saving",
+              "value": "Saving 23 of 65 chapters…  [Stop]"
+            },
+            {
+              "label": "Saved",
+              "value": "Saved · 65 chapters · 4.2 MB   [Remove]"
+            }
+          ]
+        },
+        {
+          "id": "outline",
+          "kind": "list",
+          "title": "Outline",
+          "columns": [
+            "Chapter",
+            "State"
+          ],
+          "rows": [
+            [
+              "1  Language model",
+              "✓ read"
+            ],
+            [
+              "2  Token",
+              "saved"
+            ],
+            [
+              "3  Message roles",
+              "needs a connection (offline only)"
+            ]
+          ]
+        }
+      ],
+      "states": {
+        "loading": "The outline as today; the save row shows once the device's storage is known.",
+        "empty": "A course with no chapters: no save row.",
+        "error": "Saving stops on a failed chapter: 'Saved 40 of 65. Some chapters didn't download.' with Try again (keeps what it has); storage full: 'This device is out of space for courses.'",
+        "success": "Saved: every chapter opens offline; the row shows the count and size, and Remove frees it."
+      }
+    },
+    {
+      "id": "chapter",
+      "name": "Chapter (offline)",
+      "route": "/m/courses/:courseId/chapters/:chapterId",
+      "archetype": "detail",
+      "moments": {
+        "peak": "reading, the explainer drawing itself and the quiz all working with no signal",
+        "end": "finishing a chapter offline and seeing it ticked; the server hears about it the moment you're back"
+      },
+      "purpose": "Read a saved chapter exactly as online.",
+      "panels": [
+        {
+          "id": "body",
+          "kind": "detail",
+          "title": "Chapter",
+          "fields": [
+            {
+              "label": "Text, explainers, diagrams",
+              "value": "from the device"
+            },
+            {
+              "label": "Quiz",
+              "value": "checked on the device (the answer comes with the chapter); the attempt is sent later"
+            },
+            {
+              "label": "Ask tutor",
+              "value": "disabled: 'Tutor needs a connection'"
+            }
+          ]
+        },
+        {
+          "id": "queued",
+          "kind": "detail",
+          "title": "Kept for later (offline only)",
+          "fields": [
+            {
+              "label": "Line under the quiz",
+              "value": "Answer kept; it reaches your progress when you're online"
+            },
+            {
+              "label": "End of chapter",
+              "value": "Finished ✓ (sent when you're online)"
+            }
+          ]
+        }
+      ],
+      "states": {
+        "loading": "From the device: immediate.",
+        "empty": "Offline and this chapter isn't saved: 'This chapter isn't on this device yet. Open it once online, or save the course.' with Back to the outline.",
+        "error": "A drawing library that was never downloaded (Mermaid, opened offline for the first time): that diagram shows its text, the chapter still reads.",
+        "success": "The chapter reads normally; progress and answers are kept on the device and sent in order once online."
+      }
+    },
+    {
+      "id": "settings",
+      "name": "Reading settings: app and storage",
+      "route": "/m/settings",
+      "archetype": "settings",
+      "moments": {
+        "peak": "seeing exactly how to put the reader on the home screen for this device",
+        "end": "knowing what is saved and how much room it takes"
+      },
+      "purpose": "Install the reader, and manage what is saved.",
+      "panels": [
+        {
+          "id": "app",
+          "kind": "detail",
+          "title": "The app",
+          "fields": [
+            {
+              "label": "iPhone / iPad",
+              "value": "Share ⬆, then 'Add to Home Screen'"
+            },
+            {
+              "label": "Android / Chrome",
+              "value": "[Install]"
+            },
+            {
+              "label": "Installed",
+              "value": "'Opened from your home screen' (row hidden)"
+            }
+          ]
+        },
+        {
+          "id": "storage",
+          "kind": "detail",
+          "title": "On this device",
+          "fields": [
+            {
+              "label": "Saved courses",
+              "value": "2 · 6.8 MB"
+            },
+            {
+              "label": "Waiting to send",
+              "value": "3 updates (sent when you're online)"
+            },
+            {
+              "label": "",
+              "value": "[Remove everything saved]"
+            }
+          ]
+        }
+      ],
+      "states": {
+        "loading": "Storage figures appear when the browser reports them.",
+        "empty": "Nothing saved: 'Chapters you open are kept automatically. Save a whole course from its outline.'",
+        "error": "The browser won't report storage: the row shows course counts only.",
+        "success": "Install instructions match the device; Remove asks once, then frees the space."
+      }
+    }
+  ],
+  "overlays": [
+    {
+      "id": "update",
+      "kind": "popover",
+      "title": "A new version of the reader is ready",
+      "fields": [
+        {
+          "label": "",
+          "placeholder": "Reload when you're ready; your place is kept"
+        }
+      ],
+      "buttons": [
+        "Later",
+        "Reload"
+      ]
+    },
+    {
+      "id": "remove",
+      "kind": "alert-dialog",
+      "title": "Remove saved course?",
+      "fields": [
+        {
+          "label": "",
+          "placeholder": "Frees 4.2 MB. Your progress stays."
+        }
+      ],
+      "buttons": [
+        "Cancel",
+        "Remove"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "surface": "library",
+      "control": "Service worker scoped to /m/, built with vite-plugin-pwa (Workbox generateSW) in the reader's Vite config only",
+      "why": "precache manifest of hashed assets and runtime caching rules are generated from the build, so a deploy can never ship a stale list; the desktop app and its MSW worker at / are untouched",
+      "rejected": "a hand-written sw.js (asset lists drift with every build) and one worker for both apps (the desktop app has no offline need and its dev MSW worker owns /)"
+    },
+    {
+      "surface": "library",
+      "control": "Precache: the app shell, every reader chunk except Mermaid's, Inkling, the Flowmovie player, app-switch.js and the icons; Mermaid cached on first use",
+      "why": "about 1 MB that the reader always needs offline; Mermaid's chunks are several MB and few chapters use them",
+      "rejected": "precaching everything (Mermaid alone would multiply the first install)"
+    },
+    {
+      "surface": "chapter",
+      "control": "API GETs (courses, course, chapter, chapter progress) NetworkFirst with a 4 s timeout, then the cached copy",
+      "why": "online you always see the latest; on a bad connection you get your saved copy instead of a spinner",
+      "rejected": "StaleWhileRevalidate (shows yesterday's progress first) and persisting TanStack Query to localStorage (5 MB cap, a second store of the same data)"
+    },
+    {
+      "surface": "course",
+      "control": "'Save for offline' fetches every chapter of the course through the same cache, 4 at a time, with a progress row and Stop",
+      "why": "one explicit action before a trip; chapters opened normally are kept anyway, so most reading is covered without it",
+      "rejected": "saving every course automatically (hundreds of chapters on a phone) and a separate download format"
+    },
+    {
+      "surface": "chapter",
+      "control": "An outbox in localStorage for progress and quiz attempts, sent in order on 'online' and on app start; quiz checked on the device from the chapter's answer",
+      "why": "iOS has no background sync; the queue is small and the server's writes are idempotent per chapter/question",
+      "rejected": "Workbox background sync (not on Safari) and blocking the quiz offline"
+    },
+    {
+      "surface": "library",
+      "control": "Update popover when a new worker is waiting (registerType 'prompt'); Reload activates it",
+      "why": "the reader never reloads under you mid-chapter; the place is kept by the existing scroll marks",
+      "rejected": "autoUpdate (reloads while reading) and silently waiting for every tab to close (iOS standalone apps rarely close)"
+    },
+    {
+      "surface": "settings",
+      "control": "Install row: Share-sheet steps on iOS/iPadOS, a button from beforeinstallprompt on Chromium, hidden when display-mode is standalone",
+      "why": "Safari has no install prompt, so the steps are the only way; Chrome offers the real prompt",
+      "rejected": "a banner on the library (nags every visit)"
+    },
+    {
+      "surface": "library",
+      "control": "Web app manifest at /m/manifest.webmanifest: name 'Coursewright Reader', id/start_url/scope /m/, display standalone, the existing icons, theme and background #0B0D10",
+      "why": "opens on its own icon with no browser bar; the existing site.webmanifest stays for the desktop app",
+      "rejected": "editing site.webmanifest (its scope is the desktop app)"
+    },
+    {
+      "surface": "library",
+      "control": "Offline bar under the top bar while navigator.onLine is false or a request fell back to the cache",
+      "why": "says once why some things are dimmed; no per-screen error",
+      "rejected": "a toast (disappears) and nothing (reads as a broken app)"
+    }
+  ],
+  "entities": [
+    {
+      "name": "Saved course (this device)",
+      "fields": [
+        {
+          "name": "courseId",
+          "type": "string",
+          "note": ""
+        },
+        {
+          "name": "chapterIds",
+          "type": "string[]",
+          "note": "what Save fetched; opened chapters are in the cache without a record"
+        },
+        {
+          "name": "bytes",
+          "type": "number",
+          "note": "summed from the cached responses"
+        },
+        {
+          "name": "savedAt",
+          "type": "ISO date",
+          "note": ""
+        }
+      ],
+      "relations": [
+        "localStorage 'cw-reader-saved'; the responses themselves live in the 'cw-api' cache"
+      ]
+    },
+    {
+      "name": "Outbox item (this device)",
+      "fields": [
+        {
+          "name": "kind",
+          "type": "'progress' | 'attempt'",
+          "note": ""
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "note": "/api/chapters/:id/progress or the attempt path"
+        },
+        {
+          "name": "body",
+          "type": "object",
+          "note": ""
+        },
+        {
+          "name": "at",
+          "type": "ISO date",
+          "note": "sent oldest first; a 4xx drops the item, a network error keeps it"
+        }
+      ],
+      "relations": [
+        "localStorage 'cw-reader-outbox'"
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/courses, /api/courses/:id, /api/chapters/:id",
+      "auth": false,
+      "purpose": "unchanged; cached by the worker"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chapters/:id/progress, quiz attempts",
+      "auth": false,
+      "purpose": "unchanged; replayed from the outbox when offline"
+    }
+  ],
+  "integration": [
+    {
+      "from": "vite.mobile.config.ts",
+      "to": "vite-plugin-pwa (manifest, generateSW, scope /m/)",
+      "note": "dev: worker off unless VITE_PWA_DEV=1"
+    },
+    {
+      "from": "deploy/nginx.conf",
+      "to": "/m/sw.js and /m/manifest.webmanifest no-cache",
+      "note": "a cached worker would pin an old app"
+    },
+    {
+      "from": "queries.ts",
+      "to": "progress and answer mutations go through the outbox when offline",
+      "note": "the cached chapter is updated as today"
+    },
+    {
+      "from": "Quiz",
+      "to": "local check from question.answer when offline",
+      "note": "same look; the attempt is queued"
+    },
+    {
+      "from": "Library, Course, Chapter",
+      "to": "offline bar, saved/needs-a-connection markers, 'not on this device' state",
+      "note": ""
+    },
+    {
+      "from": "Google Fonts (text and Inkling hands)",
+      "to": "CacheFirst runtime cache",
+      "note": "so text and drawings keep their faces offline"
+    }
+  ],
+  "blastRadius": {
+    "new": [
+      "mobile/src/offline/register.ts (worker registration, update popover state)",
+      "mobile/src/offline/outbox.ts",
+      "mobile/src/offline/saved.ts (Save for offline, sizes, remove)",
+      "mobile/src/offline/useOnline.ts (shared with the tutor panel)",
+      "mobile/src/components/OfflineBar.tsx",
+      "mobile/src/components/UpdatePrompt.tsx",
+      "mobile/src/offline.test.ts"
+    ],
+    "changed": [
+      "vite.mobile.config.ts, package.json (vite-plugin-pwa)",
+      "mobile/index.html (manifest link, apple-touch-icon)",
+      "mobile/src/main.tsx, mobile/src/App.tsx",
+      "mobile/src/queries.ts",
+      "mobile/src/quiz/Quiz.tsx",
+      "mobile/src/screens/LibraryScreen.tsx, CourseScreen.tsx, ChapterScreen.tsx, SettingsScreen.tsx",
+      "mobile/src/tutor/TutorPanel.tsx (useOnline moves out)",
+      "deploy/nginx.conf"
+    ]
+  },
+  "verification": [
+    "vitest: outbox order and drop rules, saved-course sizes, offline quiz check, offline bar and not-on-this-device states",
+    "make check",
+    "Playwright WebKit and Chromium against the Mac mini over https: install worker, save a course, go offline (context.setOffline), reload, read a saved chapter with its explainer, answer a quiz, finish it; back online the outbox empties and the server shows the progress",
+    "Deploy a second build: the update popover appears, Reload lands on the same chapter and scroll place",
+    "iPhone and iPad by hand: Add to Home Screen opens standalone at /m/"
+  ]
+}

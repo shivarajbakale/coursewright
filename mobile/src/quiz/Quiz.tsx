@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAnswer } from '../queries';
+import { useOnline } from '../offline/online';
 import { usePalette } from '../settings';
 import { font, radius, space, touch } from '../theme';
 import { Icon } from '../components/TopBar';
@@ -35,6 +36,7 @@ export function Quiz({
 }) {
   const p = usePalette();
   const save = useAnswer(chapterId ?? '');
+  const online = useOnline();
   const [results, setResults] = useState<Record<string, Result>>(() => fromServer(questions));
   const [index, setIndex] = useState(() => {
     const open = questions.findIndex((q) => !q.lastAttempt);
@@ -149,10 +151,13 @@ export function Quiz({
             <View style={[styles.verdict, { backgroundColor: p.ground }]} aria-live="polite">
               <Text style={[styles.verdictTitle, { color: result.correct ? p.accentInk : p.danger }]}>{result.correct ? 'Right' : 'Not quite'}</Text>
               <Text style={[styles.body, { color: p.body }]}>{md(q.explanation, 14)}</Text>
+              {!online && chapterId ? (
+                <Text style={[styles.note, { color: p.muted }]}>Checked on this device; your answer reaches your progress when you're online.</Text>
+              ) : null}
             </View>
           ) : null}
 
-          {result && !result.correct && onAskWhy ? (
+          {result && !result.correct && onAskWhy && online ? (
             <Pressable role="button" onPress={() => onAskWhy(askWhyPrompt(q, result.chosen))} style={styles.link}>
               <Text style={[styles.linkText, { color: p.accentInk }]}>Ask the tutor why</Text>
             </Pressable>
@@ -170,6 +175,7 @@ export function Quiz({
 }
 
 const styles = StyleSheet.create({
+  note: { fontFamily: font.ui, fontSize: 13, lineHeight: 18, marginTop: space.sm },
   box: { borderWidth: 1, borderRadius: radius.lg, padding: space.lg, gap: space.lg },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   kicker: { fontFamily: font.ui, fontSize: 13, fontWeight: '500', letterSpacing: 0.8, textTransform: 'uppercase' },

@@ -7,6 +7,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CourseDetail, ModuleOut } from '@/api/types';
 import { usePalette } from '../settings';
 import { font, radius, space, touch } from '../theme';
+import { useOnline } from '../offline/online';
+import { useChaptersOnDevice } from '../offline/saved';
 import { Icon } from './TopBar';
 import { shortTitle } from '../courseMath';
 
@@ -39,6 +41,11 @@ export function Outline({
       return next;
     });
 
+  // Offline, chapters that are not on this device are dimmed: opening one would only say so.
+  const online = useOnline();
+  const onDevice = useChaptersOnDevice();
+  const away = !online && onDevice ? (id: string) => !onDevice.has(id) : () => false;
+
   let number = 0;
   return (
     <View style={styles.list} role="list" aria-label="Modules">
@@ -55,6 +62,7 @@ export function Outline({
             currentId={currentId}
             onOpen={onOpen}
             compact={compact}
+            away={away}
           />
         );
       })}
@@ -70,7 +78,9 @@ function ModuleRow({
   currentId,
   onOpen,
   compact,
+  away,
 }: {
+  away: (id: string) => boolean;
   compact: boolean;
   module: ModuleOut;
   first: number;
@@ -138,15 +148,17 @@ function ModuleRow({
         <View style={styles.chapters} role="list">
           {m.chapters.map((c, i) => {
             const current = c.id === currentId;
+            const missing = away(c.id);
             return (
               <Pressable
                 key={c.id}
                 role="link"
                 aria-current={current ? 'page' : undefined}
-                accessibilityLabel={`${first + i}. ${c.title}${c.done ? ', read' : ''}`}
+                accessibilityLabel={`${first + i}. ${c.title}${c.done ? ', read' : ''}${missing ? ', not on this device' : ''}`}
                 onPress={() => onOpen(c.id)}
                 style={({ hovered, pressed }) => [
                   styles.chapter,
+                  missing && styles.away,
                   current && { backgroundColor: p.raised },
                   (hovered || pressed) && !current && { backgroundColor: p.raised },
                 ]}
@@ -180,6 +192,7 @@ function ModuleRow({
 }
 
 const styles = StyleSheet.create({
+  away: { opacity: 0.45 },
   moduleHeadCompact: { paddingHorizontal: space.md, gap: 10 },
   moduleTitleCompact: { fontSize: 14, lineHeight: 19 },
   list: { gap: 10 },

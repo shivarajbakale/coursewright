@@ -14,23 +14,9 @@ import { Icon, IconButton } from '../components/TopBar';
 import { useTutorUi } from './store';
 import { Transcript, type OpenSource } from './Conversation';
 import { useTutor } from './useTutor';
+import { useOnline } from '../offline/online';
 
 const PROMPTS = ['Explain simpler', 'Give an example', 'Quiz me', 'Why does this matter?'];
-
-function useOnline(): boolean {
-  const [online, setOnline] = useState(() => navigator.onLine);
-  useEffect(() => {
-    const up = () => setOnline(true);
-    const down = () => setOnline(false);
-    window.addEventListener('online', up);
-    window.addEventListener('offline', down);
-    return () => {
-      window.removeEventListener('online', up);
-      window.removeEventListener('offline', down);
-    };
-  }, []);
-  return online;
-}
 
 export default function TutorPanel({
   courseId,
