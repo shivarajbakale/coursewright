@@ -482,3 +482,37 @@ def test_indexing_a_lesson_makes_no_model_call(monkeypatch):
     assert where.startswith("From chapter 1.2 Bit arrays") and calls == []
     asyncio.run(ingest._contextualise("url", "A page", {}, "", "chunk", "doc", True))
     assert len(calls) == 1  # a source whose structure we don't know still gets its sentence
+
+
+def test_a_rate_limit_waits_and_retries_instead_of_failing(monkeypatch):
+    """A provider plan's rate limit (429) is waited out; the build carries on."""
+    from types import SimpleNamespace
+
+    import anthropic
+    import httpx
+
+    from app import config
+
+    waits = []
+
+    async def no_sleep(s):
+        waits.append(s)
+
+    req = httpx.Request("POST", "https://example.invalid")
+    limited = anthropic.RateLimitError("Token Plan rate limit reached", response=httpx.Response(429, request=req), body=None)
+    replies = [limited, limited, SimpleNamespace(
+        content=[SimpleNamespace(type="tool_use", id="t1", input={"notes": "n", "terms": []})],
+        stop_reason="tool_use", usage=SimpleNamespace(input_tokens=10, output_tokens=5))]
+
+    class Messages:
+        async def create(self, **_):
+            r = replies.pop(0)
+            if isinstance(r, Exception):
+                raise r
+            return r
+
+    monkeypatch.setattr(config, "is_anthropic", lambda: False)
+    monkeypatch.setattr(llm, "_client", lambda: SimpleNamespace(messages=Messages()))
+    monkeypatch.setattr(llm.asyncio, "sleep", no_sleep)
+    out, _ = asyncio.run(llm.parse(system="s", user="u", schema=pipeline.ResearchOut))
+    assert out.notes == "n" and waits == [20, 40] and not replies

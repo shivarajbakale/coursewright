@@ -13,7 +13,9 @@ schema is the Pydantic model's JSON schema, validated here.
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import os
 
 from typing import Literal, TypeVar
 
@@ -111,6 +113,35 @@ def _repair(value, schema: dict):
     return value
 
 
+RATE_WAITS = (20, 40, 80, 160, 300)  # seconds; about ten minutes in all before a rate limit fails a call
+_gates: dict[int, asyncio.Semaphore] = {}
+
+
+def _gate() -> asyncio.Semaphore:
+    """One cap on model calls in flight across every job in this process (CW_MAX_CALLS, default 8), so two
+    builds at once don't double the rate a provider plan allows."""
+    loop = id(asyncio.get_running_loop())
+    if loop not in _gates:
+        _gates[loop] = asyncio.Semaphore(int(os.environ.get("CW_MAX_CALLS", "8")))
+    return _gates[loop]
+
+
+async def _create(method, **kwargs):
+    """A model call that waits out a rate limit or an overloaded provider instead of failing the build."""
+    import anthropic
+
+    for i, wait in enumerate((*RATE_WAITS, None)):
+        try:
+            async with _gate():
+                return await method(**kwargs)
+        except (anthropic.RateLimitError, anthropic.InternalServerError) as e:
+            status = getattr(e, "status_code", 0)
+            if wait is None or (isinstance(e, anthropic.InternalServerError) and status not in (500, 502, 503, 529)):
+                raise
+            log.warning("model call hit %s (try %d); waiting %ss", status, i + 1, wait)
+            await asyncio.sleep(wait)
+
+
 def _client():
     import anthropic
 
@@ -132,7 +163,8 @@ async def _parse_with_tool(*, system: str, user: str, schema: type[T], max_token
     empty = 0
     invalid = 0
     while True:
-        msg = await client.messages.create(
+        msg = await _create(
+            client.messages.create,
             model=config.model(),
             max_tokens=max_tokens,
             system=system,
@@ -181,7 +213,8 @@ async def parse(
     if not config.is_anthropic():
         return await _parse_with_tool(system=system, user=user, schema=schema, max_tokens=max_tokens)
     client = _client()
-    msg = await client.messages.parse(
+    msg = await _create(
+        client.messages.parse,
         model=config.model(),
         max_tokens=max_tokens,
         system=system,
@@ -199,7 +232,8 @@ async def parse(
 async def text(*, system: str, user: str, effort: Effort = "low", max_tokens: int = 1000) -> str:
     client = _client()
     extra = {"output_config": {"effort": effort}} if config.is_anthropic() else {}
-    msg = await client.messages.create(
+    msg = await _create(
+        client.messages.create,
         model=config.model(),
         max_tokens=max_tokens,
         system=system,
