@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The log for one turn has eleven events but the model receives only four messages. Why?",
+      "options": [
+        "Only the last four events of a turn are sent",
+        "Events such as turn/start, step/end and tool/call carry no message, so they contribute nothing",
+        "The model only accepts four messages per request",
+        "Tool results are merged into the user's message"
+      ],
+      "answer": 1,
+      "explanation": "Only user/message, assistant/message and tool/result events carry a message. Structure events and tool/call are bookkeeping for your program, and the call is already inside the assistant message.",
+      "conceptKeys": [
+        "derived-history"
+      ]
+    },
+    {
+      "prompt": "You run deriveMessages twice on the same log with no new events in between. What do you get?",
+      "options": [
+        "Two identical message lists",
+        "A longer list the second time",
+        "A list with the newest message first",
+        "An error, because the log has already been read"
+      ],
+      "answer": 0,
+      "explanation": "deriveMessages is pure: the same events in give the same messages out. Like a balance worked out from an unchanged statement, it does not change until new events are added.",
+      "conceptKeys": [
+        "derived-history"
+      ]
+    },
+    {
+      "prompt": "Why is it useful that each request's message list starts with exactly the previous request's list?",
+      "options": [
+        "It lets you send only the newest message to the model",
+        "It means the model remembers earlier requests",
+        "It happens because the log only grows at the end, so requests stay stable from one to the next",
+        "It means deriveMessages can skip reading old events"
+      ],
+      "answer": 2,
+      "explanation": "The model is stateless, so the full list is still sent each time. Because events are only appended, each new list is the old list plus a few more messages at its end.",
+      "conceptKeys": [
+        "derived-history"
+      ]
+    }
+  ],
+  "diagrams": []
+}

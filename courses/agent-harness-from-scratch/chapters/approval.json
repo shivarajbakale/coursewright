@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "minidsh runs in a CI job with no terminal attached and policy ask. The model calls run_command. What outcome does askPerson return?",
+      "options": [
+        "allowed-once, because CI is trusted",
+        "unavailable, because there is no terminal and nobody can answer",
+        "cancelled, because the job will end",
+        "It waits until someone types an answer"
+      ],
+      "answer": 1,
+      "explanation": "With no terminal, nobody can answer, so the outcome is unavailable, which the listener treats as a denial.",
+      "conceptKeys": [
+        "approval"
+      ]
+    },
+    {
+      "prompt": "You answer \"yes please\" at the [y/N] prompt. What happens?",
+      "options": [
+        "The call runs, because the answer starts with y",
+        "The program asks again",
+        "The call is denied, because only exactly y counts as a grant",
+        "The call runs once and future calls are allowed too"
+      ],
+      "answer": 2,
+      "explanation": "Anything other than a clear y is rejected. Requiring an exact yes means a typo or a vague answer never allows a risky action.",
+      "conceptKeys": [
+        "approval"
+      ]
+    },
+    {
+      "prompt": "Why does the denial message tell the model to stop and explain instead of working around it?",
+      "options": [
+        "Without it, the model may try the same action through a different tool",
+        "Because the model cannot read the outcome name",
+        "Because the pipeline requires every error to be two sentences",
+        "So the person gets asked a second time"
+      ],
+      "answer": 0,
+      "explanation": "A model told only that a call failed may look for another route to the same goal. Saying the person refused, and what to do instead, stops that.",
+      "conceptKeys": [
+        "approval"
+      ]
+    }
+  ],
+  "diagrams": []
+}

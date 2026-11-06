@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A skill's description says only \"Release notes.\" What problem might this cause?",
+      "options": [
+        "The skill body will be truncated",
+        "The skill tool will reject the name",
+        "The model may not realize when to load it, because the description does not say when it applies",
+        "The catalog will be too long for the context window"
+      ],
+      "answer": 2,
+      "explanation": "The model sees only names and descriptions until it asks. A description that says what the skill does and when to use it is what makes the model load it at the right time.",
+      "conceptKeys": [
+        "skill"
+      ]
+    },
+    {
+      "prompt": "Twelve skills of about 3,000 tokens each are installed and the model loads one. Roughly how many skill tokens reach the model?",
+      "options": [
+        "About 360 for the catalog plus 3,000 for the one loaded skill",
+        "36,000, because every skill is sent",
+        "Only 3,000, because the catalog is free",
+        "About 360, because bodies are never sent"
+      ],
+      "answer": 0,
+      "explanation": "The catalog is about 30 tokens per skill, around 360. Only the requested body, about 3,000 tokens, arrives as a tool result.",
+      "conceptKeys": [
+        "skill"
+      ]
+    },
+    {
+      "prompt": "Why is the catalog recorded as a user message rather than added as a prompt section?",
+      "options": [
+        "Prompt sections cannot contain lists",
+        "It keeps the system prompt identical across repositories, since each repository has different skills",
+        "User messages are hidden from the model",
+        "The skill tool can only read user messages"
+      ],
+      "answer": 1,
+      "explanation": "The skills differ per repository. Recording the catalog as a message, like project instructions, keeps the system prompt unchanged so its beginning stays reusable.",
+      "conceptKeys": [
+        "skill"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "You want to add a second provider to minidsh. With a model adapter in place, what do you change?",
+      "options": [
+        "The agent loop, to branch on which provider is in use",
+        "The message assembler, to read the new provider's JSON",
+        "Nothing in the loop or assembler; you write a new class with a stream method",
+        "The event log, to store the new provider's raw stream"
+      ],
+      "answer": 2,
+      "explanation": "Everything provider-specific lives inside the adapter's stream method. A new provider is a new adapter that returns the same chunks, so the loop and assembler stay as they are.",
+      "conceptKeys": [
+        "model-adapter"
+      ]
+    },
+    {
+      "prompt": "What makes ScriptedAdapter useful for testing the agent loop?",
+      "options": [
+        "It records real DeepSeek replies to a file",
+        "It fits the same interface, so the loop runs a whole turn on fixed chunks with no network",
+        "It checks that the loop sends valid JSON to DeepSeek",
+        "It makes model replies faster by skipping the assembler"
+      ],
+      "answer": 1,
+      "explanation": "The loop only needs an object with a stream method returning chunks. A scripted one replays known replies, so tests are repeatable and need no API key.",
+      "conceptKeys": [
+        "model-adapter"
+      ]
+    },
+    {
+      "prompt": "Where does a plug adapter stop being a good picture of a model adapter?",
+      "options": [
+        "A model adapter translates between formats, so it must map meaning without losing or inventing any",
+        "A model adapter can only be used with one provider",
+        "A plug adapter has many methods, a model adapter only one",
+        "A model adapter changes the model's answer to fit your program"
+      ],
+      "answer": 0,
+      "explanation": "A plug passes electricity through unchanged. A model adapter translates each provider's reply into the same chunks, which is why the chunk rules every adapter must keep are written down.",
+      "conceptKeys": [
+        "model-adapter"
+      ]
+    }
+  ],
+  "diagrams": []
+}

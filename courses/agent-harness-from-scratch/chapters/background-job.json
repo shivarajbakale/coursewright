@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A background job prints 200,000 characters and KEEP is 64,000. What does job_output return at the end?",
+      "options": [
+        "All 200,000 characters",
+        "The first 64,000 characters",
+        "The last 64,000 characters",
+        "Only the last 2,000 characters"
+      ],
+      "answer": 2,
+      "explanation": "keep appends then slices to the last KEEP characters, so the newest 64,000 stay. The 2,000-character tail is only what the completion message includes.",
+      "conceptKeys": [
+        "background-job"
+      ]
+    },
+    {
+      "prompt": "A job finishes while the agent is idle. What happens?",
+      "options": [
+        "Nothing until the person types again",
+        "A followup with the exit code and output tail wakes the agent and starts a turn",
+        "The job's output is added to the last tool result",
+        "The agent is told only on its next model request"
+      ],
+      "answer": 1,
+      "explanation": "The close handler calls deliver, which sends a followup to an idle agent. A followup wakes it and starts a new turn.",
+      "conceptKeys": [
+        "background-job"
+      ]
+    },
+    {
+      "prompt": "Why return a job id at once instead of waiting with a long timeout?",
+      "options": [
+        "The agent can keep working, and commands that never end are not killed",
+        "Ids are cheaper than tool results",
+        "Waiting would break the tool schema",
+        "The sandbox only allows short commands"
+      ],
+      "answer": 0,
+      "explanation": "A blocking call freezes the step and a timeout would kill long or endless commands. Returning an id lets work continue and the result arrive later.",
+      "conceptKeys": [
+        "background-job"
+      ]
+    }
+  ],
+  "diagrams": []
+}

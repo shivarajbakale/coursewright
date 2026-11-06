@@ -1,0 +1,44 @@
+title One question, three rounds
+
+user    "User"
+program "Your program (the loop)"
+model   "Model"
+tool    "read_file tool"
+history "Messages in history" counter 0
+
+user -> program -> model
+program -> tool
+
+question at user
+
+# The loop sends the history again until the model answers in plain text.
+pause "One question that needs two files read, one after the other."
+
+# Round one: the model cannot read files, so it asks for index.txt.
+question -> program "The question is the first message."
+history +1
+question -> model : waiting "Round one sends 1 message."
+new ask1 at model
+remove question
+ask1 -> program "A request: read_file with path index.txt."
+
+# The program runs the request and adds the request and its result.
+ask1 -> tool : running
+ask1 -> program : done "The result is the text notes.txt."
+history +2
+
+# Round two: now the model knows which file it needs.
+ask1 -> model "Round two sends 3 messages."
+new ask2 at model
+remove ask1
+ask2 -> program "A request: read_file with path notes.txt."
+ask2 -> tool : running
+ask2 -> program : done "The result is: Buy milk. Call Sam."
+history +2
+
+# Round three: no requests in the reply, so the loop stops.
+ask2 -> model "Round three sends 5 messages."
+new answer at model
+remove ask2
+answer -> program "Plain text with no tool calls: the loop's only exit."
+answer -> user : done "Three model requests, two tool runs."

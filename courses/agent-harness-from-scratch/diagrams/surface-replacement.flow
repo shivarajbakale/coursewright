@@ -1,0 +1,28 @@
+title Summarizing old history without deleting it
+
+view    "Model's view"
+summ    "Summary request"
+log     "Event log"
+hidden  "Logged, not shown"
+size    "Tokens in view" counter 102900
+
+old, recent at view
+
+# The view is rebuilt from the log each step, and it is now past the threshold
+pause "Threshold 102,400 tokens; the view holds 102,900."
+
+# The old middle is sent once more, with the template instruction at the end
+old -> summ : running "Same beginning as earlier requests, so the provider can reuse its work."
+
+# The summary is recorded as a new message carrying a replace instruction
+new summary at summ
+summary -> log : done "user/message with surfaceOp replace, startSeq 2, endSeq 57."
+
+# The view now shows the summary where the old range was
+together
+  summary -> view
+  old -> hidden : done
+size = 24400
+
+# Nothing was deleted: the old events stay in the log for resume and debugging
+pause "The view shrank from 102,900 to about 24,400 tokens."

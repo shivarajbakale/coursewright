@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "In the power-strip picture, what plays the role of the strip itself?",
+      "options": [
+        "The heartbeat plugin, because it keeps running",
+        "The context, which does nothing until plugins are mounted on it",
+        "The config object passed to each plugin",
+        "The agent loop, because every other part depends on it"
+      ],
+      "answer": 1,
+      "explanation": "The host context has no features of its own, like a power strip. Every feature, including the agent loop in the finished kernel, arrives as a plugin.",
+      "conceptKeys": [
+        "plugin"
+      ]
+    },
+    {
+      "prompt": "You call app.plugin(heartbeat, { everyMs: 5000 }) twice with different configs. What happens?",
+      "options": [
+        "The second call replaces the first heartbeat",
+        "The second call throws because the plugin is already mounted",
+        "Two independent heartbeats run, each with its own interval",
+        "Only the first call runs because plugins are deduplicated"
+      ],
+      "answer": 2,
+      "explanation": "A plugin is a function run once per mount with that mount's config. Mounting it twice gives two independent copies.",
+      "conceptKeys": [
+        "plugin"
+      ]
+    },
+    {
+      "prompt": "What problem does the heartbeat plugin expose in this first kernel?",
+      "options": [
+        "Once mounted it can never be stopped, because the host does not know what it set up",
+        "It cannot read its config",
+        "It runs before the banner plugin",
+        "It needs the agent loop to exist first"
+      ],
+      "answer": 0,
+      "explanation": "The interval keeps firing forever. The host only called the function and never learned how to undo what it did.",
+      "conceptKeys": [
+        "plugin"
+      ]
+    }
+  ],
+  "diagrams": []
+}

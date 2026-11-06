@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the session entry vanish from the shelf when unloadLog() runs?",
+      "options": [
+        "get() checks whether the owner is still loaded",
+        "provide() was an effect on memoryLog's context, so its disposer deleted the entry",
+        "The greeter plugin deletes services it has used",
+        "The root context clears the shelf every time any plugin unloads"
+      ],
+      "answer": 1,
+      "explanation": "provide wraps the set in effect(), and the returned disposer deletes the name. That disposer runs when the providing plugin unloads.",
+      "conceptKeys": [
+        "service"
+      ]
+    },
+    {
+      "prompt": "Two plugins both call ctx.provide('session', ...). What happens?",
+      "options": [
+        "The second value silently replaces the first",
+        "Both values are stored in a list under that name",
+        "The first value wins and the second call is ignored",
+        "The second call throws because the name is already taken"
+      ],
+      "answer": 3,
+      "explanation": "provide refuses a name that is already on the shelf, so a clash is reported instead of one plugin quietly overwriting another.",
+      "conceptKeys": [
+        "service"
+      ]
+    },
+    {
+      "prompt": "You mount greeter before memoryLog. What does greeter see?",
+      "options": [
+        "get('session') returns undefined, so nothing is appended",
+        "The kernel waits for memoryLog automatically",
+        "The kernel reorders the plugins by name",
+        "An error, because get() throws for missing names"
+      ],
+      "answer": 0,
+      "explanation": "get only looks at the shelf as it is right now. Nothing has provided session yet, so the lookup returns undefined.",
+      "conceptKeys": [
+        "service"
+      ]
+    }
+  ],
+  "diagrams": []
+}

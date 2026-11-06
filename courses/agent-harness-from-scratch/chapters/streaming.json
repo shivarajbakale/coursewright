@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does `streamText` keep the last line of each batch in `buffer` instead of parsing it straight away?",
+      "options": [
+        "The last line is always `data: [DONE]`",
+        "The provider sends the last line twice",
+        "Keeping it makes the model write faster",
+        "A network batch can end in the middle of a line, and parsing half a line of JSON would fail"
+      ],
+      "answer": 3,
+      "explanation": "Bytes arrive in batches that ignore line endings. The last line may be cut off, so it waits in the buffer until the next batch completes it.",
+      "conceptKeys": [
+        "streaming"
+      ]
+    },
+    {
+      "prompt": "Three deltas arrive with content \"The capital\", \" is\" and \" Paris.\". What should your program show?",
+      "options": [
+        "Only \" Paris.\", the newest delta",
+        "\"The capital is Paris.\", the deltas joined in order",
+        "\"The capitalThe capital is\", each delta repeating the earlier ones",
+        "Nothing until `[DONE]` arrives"
+      ],
+      "answer": 1,
+      "explanation": "Each delta holds only the new text since the last piece. Joining them in order gives the full reply.",
+      "conceptKeys": [
+        "streaming"
+      ]
+    },
+    {
+      "prompt": "A reply takes 6 seconds to generate. What does streaming change?",
+      "options": [
+        "The first words appear after a fraction of a second, though the full reply still takes about 6 seconds",
+        "The full reply now takes about 1 second",
+        "The reply uses fewer tokens",
+        "The model sees the context window in pieces"
+      ],
+      "answer": 0,
+      "explanation": "Streaming does not speed up the model. It shortens the wait before something appears, because each piece is sent as soon as it is written.",
+      "conceptKeys": [
+        "streaming"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does a tool-call-delta chunk carry an index?",
+      "options": [
+        "To count how many tool calls the model has made in the session",
+        "Because pieces of two tool calls requested at once can arrive interleaved",
+        "Because tool calls must be run in index order",
+        "To tell the provider which tool schema was used"
+      ],
+      "answer": 1,
+      "explanation": "When the model asks for several tools in one reply, their pieces can be mixed together in the stream. The index says which call each piece belongs to.",
+      "conceptKeys": [
+        "stream-chunk"
+      ]
+    },
+    {
+      "prompt": "translate sees finish_reason: 'tool_calls' on a data line. Why doesn't it emit the finish chunk right away?",
+      "options": [
+        "Usage may still arrive, and nothing may come after finish",
+        "The finish chunk must wait until the tool has run",
+        "DeepSeek sends finish_reason more than once per reply",
+        "The reason must first be checked against the tool schema"
+      ],
+      "answer": 0,
+      "explanation": "The rule is usage before finish and nothing after it. The translator remembers the reason and emits finish only at [DONE], once usage has been passed on.",
+      "conceptKeys": [
+        "stream-chunk"
+      ]
+    },
+    {
+      "prompt": "Why are tool-call arguments kept as raw string fragments in chunks, rather than parsed objects?",
+      "options": [
+        "Parsing JSON is too slow to do while streaming",
+        "The model sends arguments in a format that is not JSON",
+        "A fragment such as {\"pa is only part of a JSON object and cannot be parsed yet",
+        "The rest of the program never needs the arguments"
+      ],
+      "answer": 2,
+      "explanation": "Arguments arrive a few characters at a time. Until all the pieces are joined, the text is not a complete JSON object, so it stays a string.",
+      "conceptKeys": [
+        "stream-chunk"
+      ]
+    }
+  ],
+  "diagrams": []
+}

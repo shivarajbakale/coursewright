@@ -1,0 +1,32 @@
+title Two tool calls through a waterfall hook
+
+loop    "Agent loop"
+timer   "timer listener"
+blocker "blocker listener"
+tool    "The real tool"
+
+loop -> timer -> blocker -> tool
+
+readcall, delcall at loop
+
+# Two plugins wrap the same action: timer outside, blocker inside.
+pause "Each listener gets the call and a next function. Calling next passes it inward."
+
+# read_file goes in: each layer calls next, so the tool runs.
+readcall -> timer "timer notes the start time, then calls next."
+readcall -> blocker "Not delete_file, so blocker calls next too."
+readcall -> tool : running "Every layer passed it on, so the real tool runs."
+
+# The answer comes back out through the same layers in reverse.
+readcall : done
+readcall -> blocker "blocker returns the contents unchanged."
+readcall -> timer "timer prints read_file took 12 ms."
+readcall -> loop "The loop gets the file contents."
+
+# delete_file goes in, and blocker decides alone.
+delcall -> timer "timer notes the start and calls next."
+delcall -> blocker : blocked "blocker returns an error without calling next."
+
+# The tool never ran, yet timer still sees a result.
+delcall -> timer "timer still prints a time: it wraps everything inside it."
+delcall -> loop "The loop gets the error text instead of a deletion."

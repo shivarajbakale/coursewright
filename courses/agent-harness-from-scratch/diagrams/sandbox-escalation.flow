@@ -1,0 +1,31 @@
+title Widening the fence for one retry
+
+model  "Model"
+tool   "Shell tool"
+person "Person"
+fence  "Fence (workspace-write)"
+cache  "~/.npm cache"
+
+call1, call2 at model
+
+# npm install runs fenced, and its write to ~/.npm is outside the allowed folders
+pause "The fence allows writes only in the project and temp folders."
+
+# The first try is refused by the fence
+call1 -> tool
+call1 -> fence : blocked "The kernel refuses the write to ~/.npm."
+call1 -> model : failed "The result says access was denied and that one retry may ask."
+
+# The model retries the same command with a wider mode and a reason
+call2 -> tool : waiting "It names danger-full-access and gives one sentence for the person."
+
+# The person reads the reason and allows it once
+new ask at tool
+ask -> person : waiting
+ask : done "Only a clear yes widens anything."
+ask -> tool
+remove ask
+
+# This one call skips the fence and the cache write succeeds
+call2 -> cache : done "The wider mode is used for this call and stored nowhere."
+call2 -> model "The next command is fenced again."

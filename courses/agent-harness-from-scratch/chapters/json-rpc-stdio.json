@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The caller sends request id 3, then receives four notification lines, then a line with id 3. How does it know which line answers its request?",
+      "options": [
+        "The answer is always the next line after the request",
+        "It matches the id: notifications have none, the response carries 3",
+        "It counts lines and takes the fifth",
+        "It reads the method name of the response"
+      ],
+      "answer": 1,
+      "explanation": "Responses repeat the request's id. Notifications have a method but no id, so they never get confused with answers.",
+      "conceptKeys": [
+        "json-rpc-stdio"
+      ]
+    },
+    {
+      "prompt": "A plugin in --stdio mode prints debug text with console.log. What goes wrong?",
+      "options": [
+        "Nothing, debug text is ignored",
+        "The agent stops responding to notifications",
+        "The caller tries to parse the debug line as a JSON-RPC message and fails",
+        "The text is sent to the model"
+      ],
+      "answer": 2,
+      "explanation": "Standard output is the protocol channel. Logs must go to standard error.",
+      "conceptKeys": [
+        "json-rpc-stdio"
+      ]
+    },
+    {
+      "prompt": "Why does each message sit on its own line?",
+      "options": [
+        "The newline marks where one message ends on a continuous stream",
+        "JSON cannot contain newlines",
+        "The standard requires one request per second",
+        "Lines are faster to send than bytes"
+      ],
+      "answer": 0,
+      "explanation": "Stdio is a stream of bytes with no built-in message boundaries. One message per line lets the reader split them.",
+      "conceptKeys": [
+        "json-rpc-stdio"
+      ]
+    }
+  ],
+  "diagrams": []
+}

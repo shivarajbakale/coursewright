@@ -1,0 +1,87 @@
+{
+  "title": "Give minidsh a session log that survives a crash",
+  "brief": "Replace minidsh's in-memory message array with an append-only event log stored as a JSONL file. Every turn, step, message, tool call and tool result becomes a session event with a sequence number and a time. The messages sent to the model are derived from the log on every step. Running minidsh again with the same file continues the conversation, and if the last run was killed mid-turn, minidsh closes the open turn as interrupted and writes synthetic error results for any tool calls that never got one, so the provider accepts the next request. Add a `--session <file>` flag to choose the log file, a `--show` flag that prints the loaded events one per line without calling the model, and a test-only `MINIDSH_CRASH_AFTER=<event type>` environment variable that makes the process exit with code 137 right after it appends the first event of that type, so you can reproduce a crash on demand.",
+  "starter": [
+    {
+      "path": "src/types.ts",
+      "note": "Add SessionEvent = { seq, time, type, data } beside Message and ToolCall."
+    },
+    {
+      "path": "src/session.ts",
+      "note": "New: Session (append, events), deriveMessages, appendBatch, loadEvents, openSession, closeOpenTurn."
+    },
+    {
+      "path": "src/loop.ts",
+      "note": "Append events instead of pushing to an array; derive messages before each model request."
+    },
+    {
+      "path": "src/cli.ts",
+      "note": "Parse --session and --show; open the session before the first turn."
+    },
+    {
+      "path": "sessions/",
+      "note": "Where the JSONL files go; add it to .gitignore."
+    }
+  ],
+  "hints": [
+    "Make Session.append the only way events enter the log, and have it fill in seq and time, so no caller can get the numbering wrong.",
+    "Write each step's events as one batch: one write, one fsync. Calling fsync per event works but is slow.",
+    "When loading, keep only text up to the last newline, and truncate the file to that length before the next append.",
+    "Resume continues seq from the last event and the turn number from the last turn/start.",
+    "For each open step, track tool call ids from assistant/message, mark them started on tool/call, and remove them on tool/result. Whatever is left needs a synthetic error result, written before step/end.",
+    "Reuse the last real event's time for every synthetic closer, so repairing the same log twice gives the same events."
+  ],
+  "rubric": [
+    {
+      "criterion": "The loop never edits or removes a recorded fact; every change is an append",
+      "chapterKey": "event-log"
+    },
+    {
+      "criterion": "Every event has a gap-free seq starting at 1, an ISO time, a type and data, and the eight event types are used",
+      "chapterKey": "session-event"
+    },
+    {
+      "criterion": "Each model request's messages come from deriveMessages over the log; no separate message array exists",
+      "chapterKey": "derived-history"
+    },
+    {
+      "criterion": "Events are stored one JSON object per line after a header line, written in fsynced batches, and a torn last line is dropped and truncated",
+      "chapterKey": "jsonl-file"
+    },
+    {
+      "criterion": "Reopening a file continues numbering and closes an open turn with step/end and turn/end reason interrupted",
+      "chapterKey": "session-resume"
+    },
+    {
+      "criterion": "Unanswered tool calls get synthetic error results that distinguish started from never started, before step/end",
+      "chapterKey": "orphaned-tool-call"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Record a turn as events",
+      "body": "Add SessionEvent and Session.append, and change the loop to append turn/start, step/start, user/message, assistant/message, tool/call, tool/result, step/end and turn/end. Write each step's events to the --session file as a batch. The file should start with a header line and then one event per line with seq 1, 2, 3 and so on.",
+      "checkCmd": "rm -f sessions/a.jsonl && npx tsx src/cli.ts --session sessions/a.jsonl \"How many lines are in package.json?\" && cat sessions/a.jsonl"
+    },
+    {
+      "title": "Derive history and continue a session",
+      "body": "Remove the loop's message array. Before each model request, build the messages with deriveMessages over the session's events. Load an existing file with loadEvents so a second run continues where the first ended: seq carries on and the new question becomes turn 2.",
+      "checkCmd": "npx tsx src/cli.ts --session sessions/a.jsonl \"What did I ask you a moment ago?\" && npx tsx src/cli.ts --session sessions/a.jsonl --show | tail -3"
+    },
+    {
+      "title": "Survive a torn last line",
+      "body": "Simulate a crash in the middle of a write by adding half an event with no newline. Loading must ignore it, and the next append must truncate it so the file stays one valid event per line.",
+      "checkCmd": "printf '{\"seq\":99,\"ti' >> sessions/a.jsonl && npx tsx src/cli.ts --session sessions/a.jsonl \"Say hi\" && node -e \"require('fs').readFileSync('sessions/a.jsonl','utf8').trim().split('\\n').forEach(l => JSON.parse(l)); console.log('every line parses')\""
+    },
+    {
+      "title": "Close a turn that was killed mid-step",
+      "body": "Add MINIDSH_CRASH_AFTER. Crash right after a step/start, then open the same file. closeOpenTurn should append step/end and turn/end with reason interrupted, reusing the last event's time, and the next question should work.",
+      "checkCmd": "rm -f sessions/b.jsonl; MINIDSH_CRASH_AFTER=step/start npx tsx src/cli.ts --session sessions/b.jsonl \"Count the lines in package.json\"; npx tsx src/cli.ts --session sessions/b.jsonl --show | tail -2"
+    },
+    {
+      "title": "Answer orphaned tool calls",
+      "body": "Crash right after the first tool/call. On reopening, every tool call in the open step without a result gets a synthetic error tool/result, saying whether it had started, before step/end and turn/end. Then a new question in the same session must succeed, which proves the provider accepts the repaired history.",
+      "checkCmd": "rm -f sessions/c.jsonl; MINIDSH_CRASH_AFTER=tool/call npx tsx src/cli.ts --session sessions/c.jsonl \"Count the lines in package.json and in README.md\"; npx tsx src/cli.ts --session sessions/c.jsonl --show | tail -4 && npx tsx src/cli.ts --session sessions/c.jsonl \"Please carry on\""
+    }
+  ]
+}

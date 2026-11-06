@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "You set `max_tokens: 5` and the reply ends with `finish_reason: \"length\"`. What does that tell you?",
+      "options": [
+        "The model finished its answer in exactly 5 tokens",
+        "The reply was cut off by the 5-token limit and is probably incomplete",
+        "The model wants your program to run a function",
+        "The request was rejected for being too long"
+      ],
+      "answer": 1,
+      "explanation": "`length` means a token limit stopped the reply. With a limit of 5 the text ends wherever the fifth token fell, not where the model meant to stop.",
+      "conceptKeys": [
+        "stop-reason"
+      ]
+    },
+    {
+      "prompt": "Your program only reads `message.content` and ignores `finish_reason`. What can go wrong?",
+      "options": [
+        "Nothing, because a cut-off reply is always empty",
+        "The provider charges for the unread field",
+        "A truncated reply looks like a complete one, so the program may act on half an answer",
+        "The model repeats its reply in the next request"
+      ],
+      "answer": 2,
+      "explanation": "A cut-off reply is ordinary-looking text. Only the stop reason says it was truncated, so ignoring it means treating half a list or half a block of code as finished.",
+      "conceptKeys": [
+        "stop-reason"
+      ]
+    },
+    {
+      "prompt": "A reply arrives with a `finish_reason` value your code does not recognise. What is the safe thing to do?",
+      "options": [
+        "Treat it as a failure rather than a finished answer",
+        "Treat it as `stop` and show the text",
+        "Send the same request again forever until it says `stop`",
+        "Delete the reply from the history and continue"
+      ],
+      "answer": 0,
+      "explanation": "Only `stop` means the model finished by itself. An unknown reason gives no such promise, so handling it as a failure avoids acting on a reply that may be incomplete.",
+      "conceptKeys": [
+        "stop-reason"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "You approved `npm test`, and a cleanup step inside it deletes a folder outside your project. What would have stopped it?",
+      "options": [
+        "Approval, because you said yes to the command first",
+        "A sandbox in workspace-write mode, because the kernel refuses writes outside the working folder",
+        "Nothing, because a sandbox only checks the command's first word",
+        "A sandbox in danger-full-access mode"
+      ],
+      "answer": 1,
+      "explanation": "Approval judges the words of a command, not what it does. Under workspace-write the kernel checks each write and refuses those outside the working folder, whatever the script turns out to do.",
+      "conceptKeys": [
+        "sandbox"
+      ]
+    },
+    {
+      "prompt": "A command runs under workspace-write. Which of these can it still do?",
+      "options": [
+        "Write a file in your home folder",
+        "Read your ~/.ssh folder and send it over the network",
+        "Nothing outside the working folder at all",
+        "Start a child program that has no fence"
+      ],
+      "answer": 1,
+      "explanation": "These modes govern file changes only. Reading files and using the network are outside the fence, and child programs inherit the same rules.",
+      "conceptKeys": [
+        "sandbox"
+      ]
+    },
+    {
+      "prompt": "Why does `minidsh` pass the sandbox policy with each command instead of setting it once for the whole program?",
+      "options": [
+        "So two commands can run at the same moment under different modes",
+        "Because the kernel forgets the rules after each write",
+        "Because the model must choose the mode for every command",
+        "So the approval prompt can be skipped"
+      ],
+      "answer": 0,
+      "explanation": "A policy carried per call lets different commands run under different fences at once, including one call that is allowed a wider fence than the rest.",
+      "conceptKeys": [
+        "sandbox"
+      ]
+    }
+  ],
+  "diagrams": []
+}

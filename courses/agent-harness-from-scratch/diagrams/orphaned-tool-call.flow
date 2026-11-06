@@ -1,0 +1,38 @@
+title A crash mid-step, then resume
+
+oldrun  "First run" state running
+log     "session.jsonl"
+tool    "delete_file tool"
+newrun  "Second run"
+model   "Model provider"
+
+style unknown #e5a23e
+
+call1, call2 at oldrun
+
+# The model asked for two tools, and the process is about to be killed.
+pause "Events 1 to 3 are on disk: the turn and step start, and the user's question."
+
+# Both requests are written in the assistant message
+together
+  call1 -> log
+  call2 -> log 900ms "Event 4 lists both calls. Neither has a result yet."
+
+# call_1 starts, then the process is killed
+call1 -> tool : running "Event 5 is tool/call for call_1, so it really started."
+oldrun : down "Killed before any tool/result was written."
+call1 : unknown "Did old.log get deleted? Nothing on disk says."
+
+# A new run reads the file and finds two calls with no result
+newrun : running
+new res1 at newrun
+new res2 at newrun
+pause "call_1 has a tool/call event; call_2 does not."
+
+# Error results are written for both, in the order the model asked
+res1 -> log : failed "Started, outcome unknown: run again only if repeating is harmless."
+res2 -> log : failed "Never started: safe to run again."
+
+# The turn is closed, and the next request is accepted
+new req at log
+req -> model : done "Every call now has a result with its id, so the provider accepts the history."

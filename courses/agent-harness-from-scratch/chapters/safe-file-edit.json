@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The model read config.ts, then you saved the file in your editor, then the model sends an edit. What happens?",
+      "options": [
+        "The edit is applied to your new version",
+        "The edit is refused because the file's version changed since it was read, and the model is told to re-read",
+        "The model's old copy overwrites your change",
+        "The edit waits until you close the editor"
+      ],
+      "answer": 1,
+      "explanation": "The size or modification time no longer matches the stored version, so the edit is refused as stale instead of working from an outdated view.",
+      "conceptKeys": [
+        "safe-file-edit"
+      ]
+    },
+    {
+      "prompt": "old_string appears twice and replace_all is false. Why refuse instead of replacing the first one?",
+      "options": [
+        "Because replacing text twice is slower",
+        "Because the tool cannot count matches reliably",
+        "Because guessing which occurrence was meant is how the wrong line gets changed",
+        "Because the schema forbids repeated text"
+      ],
+      "answer": 2,
+      "explanation": "With two matches the tool cannot know which one the model meant, so it asks for a more specific old_string or an explicit replace_all.",
+      "conceptKeys": [
+        "safe-file-edit"
+      ]
+    },
+    {
+      "prompt": "Why write to a temporary file and then rename it over the original?",
+      "options": [
+        "A rename happens completely or not at all, so a crash never leaves a half-written file",
+        "Because writeFile cannot overwrite existing files",
+        "So the old version is kept as a backup",
+        "Because renaming is the only way to change a file's modification time"
+      ],
+      "answer": 0,
+      "explanation": "If the program dies while writing the temp file, the original is untouched. The rename then swaps in the finished file in one step.",
+      "conceptKeys": [
+        "safe-file-edit"
+      ]
+    }
+  ],
+  "diagrams": []
+}

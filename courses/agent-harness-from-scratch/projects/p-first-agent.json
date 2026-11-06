@@ -1,0 +1,115 @@
+{
+  "title": "Your first agent in the terminal",
+  "brief": "Build the first working version of minidsh: a terminal program that answers questions by letting a DeepSeek model read files in the current folder. You write the model call, one tool described by a schema, the loop that runs the model's tool calls and sends back their results, a cap on steps per turn, and error results for every way a tool call can fail. When you finish, `npx tsx src/cli.ts \"What does the file named in index.txt say?\"` prints the right answer after reading two files, and a misspelled file name produces a helpful answer instead of a crash.",
+  "starter": [
+    {
+      "path": "package.json",
+      "note": "Contains `\"type\": \"module\"` so top-level await works; no dependencies are needed, tsx runs through npx."
+    },
+    {
+      "path": "src/types.ts",
+      "note": "Message, ToolCall, ToolSchema and Tool, exactly as the lessons define them."
+    },
+    {
+      "path": "src/llm.ts",
+      "note": "complete(messages, schemas) calls https://api.deepseek.com/chat/completions with model deepseek-flash and thinking: { type: 'disabled' } (with tools, thinking mode would require sending reasoning_content back) and returns { message, finish }; toWire converts your messages to the wire format."
+    },
+    {
+      "path": "src/tools.ts",
+      "note": "readFileSchema, readFileTool and runCall, which turns every failure into an `Error:` result."
+    },
+    {
+      "path": "src/loop.ts",
+      "note": "runTurn(history, userText, tools, maxSteps = 8): the agent loop with a step limit."
+    },
+    {
+      "path": "src/cli.ts",
+      "note": "Runs one turn for a question given on the command line, or a chat when none is given."
+    },
+    {
+      "path": "index.txt",
+      "note": "A test file containing only the text notes.txt."
+    },
+    {
+      "path": "notes.txt",
+      "note": "A test file containing: Buy milk. Call Sam."
+    }
+  ],
+  "hints": [
+    "Export DEEPSEEK_API_KEY in your shell before running anything; a 401 status means the key is missing or wrong.",
+    "Print `JSON.stringify(data, null, 2)` once from complete to see the exact shape of a reply with tool_calls before you write the conversion.",
+    "`function.arguments` is a string of JSON, not an object; keep it raw in ToolCall and parse it only in runCall.",
+    "Push the assistant message that holds the tool calls into the history before you push any tool results, and give every call id exactly one result.",
+    "Send progress lines such as `[step 1/8] read_file {...}` to console.error so the answer on standard output stays clean.",
+    "To test the step limit without spending many tokens, call runTurn with maxSteps = 1 on the index.txt question; it needs 3 steps, so it must stop and say so."
+  ],
+  "rubric": [
+    {
+      "criterion": "complete() sends the request with the API key from the environment and reads choices[0].message and usage from the JSON reply",
+      "chapterKey": "model-api-call"
+    },
+    {
+      "criterion": "The history keeps system, user, assistant and tool messages in order and is resent in full on every request",
+      "chapterKey": "stateless-model"
+    },
+    {
+      "criterion": "complete() returns the finish reason, and a cut-off (length) reply is never shown as a complete answer",
+      "chapterKey": "stop-reason"
+    },
+    {
+      "criterion": "read_file is described with a name, a description that tells the model what it returns, and a JSON Schema with a required path",
+      "chapterKey": "tool-schema"
+    },
+    {
+      "criterion": "Tool calls from the reply are converted into ToolCall objects with id, name and raw JSON arguments",
+      "chapterKey": "tool-call"
+    },
+    {
+      "criterion": "Each tool call gets exactly one tool message carrying its call id, placed after the assistant message that requested it",
+      "chapterKey": "tool-result"
+    },
+    {
+      "criterion": "runTurn repeats model request, tool runs and results until a reply has no tool calls",
+      "chapterKey": "agent-loop"
+    },
+    {
+      "criterion": "Each line the user enters starts a new turn on the same history, and steps are numbered in the progress output",
+      "chapterKey": "turn"
+    },
+    {
+      "criterion": "A turn that reaches maxSteps ends with a clear note to the user and a valid history",
+      "chapterKey": "step-limit"
+    },
+    {
+      "criterion": "Unknown tool names, invalid JSON arguments and thrown exceptions each become an Error: result for that call id instead of a crash",
+      "chapterKey": "tool-error-result"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Ask the model one question",
+      "body": "Write src/types.ts with Message and src/llm.ts with complete(messages). Make src/cli.ts send the command-line argument as a user message after a short system prompt, and print the reply text and the finish reason.",
+      "checkCmd": "npx tsx src/cli.ts \"What is the capital of France?\""
+    },
+    {
+      "title": "Offer read_file and catch its tool call",
+      "body": "Add ToolSchema and ToolCall to src/types.ts, readFileSchema to src/tools.ts, and send it in the request's tools list. Convert any tool_calls in the reply into ToolCall objects and print them. Nothing runs yet; you should see one call to read_file with the path notes.txt and finish reason tool_calls.",
+      "checkCmd": "npx tsx src/cli.ts \"What does notes.txt say?\""
+    },
+    {
+      "title": "Run the loop to a final answer",
+      "body": "Add the tool role and toolCallId, toWire, readFileTool and runTurn in src/loop.ts. The loop runs every tool call, adds each result with its call id, and repeats until the reply is plain text. The index.txt question should print two [step n] lines on standard error and an answer that mentions buying milk and calling Sam.",
+      "checkCmd": "npx tsx src/cli.ts \"What does the file named in index.txt say?\""
+    },
+    {
+      "title": "Cap the steps in a turn",
+      "body": "Give runTurn a maxSteps parameter, default 8, and read an optional MAX_STEPS environment variable in src/cli.ts. When the cap is reached, push and return a note such as \"Stopped after 1 steps without a final answer.\" With MAX_STEPS=1 the index.txt question must stop with that note instead of answering.",
+      "checkCmd": "MAX_STEPS=1 npx tsx src/cli.ts \"What does the file named in index.txt say?\""
+    },
+    {
+      "title": "Turn failures into error results",
+      "body": "Add runCall to src/tools.ts and use it in runTurn, so an unknown tool name, invalid JSON arguments and a thrown exception each become an Error: result for that call id. Ask about a file that does not exist: the program must not crash, and the model's answer should say it could not find the file or name the file it found instead.",
+      "checkCmd": "npx tsx src/cli.ts \"What does note.txt say?\""
+    }
+  ]
+}

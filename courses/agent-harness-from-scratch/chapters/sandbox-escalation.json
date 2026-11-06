@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The person approves a danger-full-access escalation for `npm install`. The model then runs `rm -rf dist` with no escalation fields. Under which mode does it run?",
+      "options": [
+        "danger-full-access, because the session was widened",
+        "read-only, as a penalty for escalating",
+        "The person is asked again automatically",
+        "workspace-write, because the wider mode applied to that one call only"
+      ],
+      "answer": 3,
+      "explanation": "The approved mode is returned for one call and stored nowhere. Every later call runs under the session's normal mode.",
+      "conceptKeys": [
+        "sandbox-escalation"
+      ]
+    },
+    {
+      "prompt": "The current mode is workspace-write and the model asks for sandbox_permissions: \"workspace-write\" with a reason. What happens?",
+      "options": [
+        "The call runs under workspace-write with no prompt, because nothing wider was asked for",
+        "The person is asked to approve it",
+        "It is refused as not strictly wider",
+        "The session switches to danger-full-access"
+      ],
+      "answer": 0,
+      "explanation": "Asking for the mode you already have gives nothing away, so it returns the current mode without an approval prompt.",
+      "conceptKeys": [
+        "sandbox-escalation"
+      ]
+    },
+    {
+      "prompt": "Why does a rejected escalation tell the model to \"stop and explain instead of working around it\"?",
+      "options": [
+        "So the model retries with a longer justification",
+        "Because the model might otherwise reach the same goal another way, such as through a file tool, defeating the person's no",
+        "Because rejected calls crash the agent loop",
+        "So the sandbox runner is probed again"
+      ],
+      "answer": 1,
+      "explanation": "A no should mean no. Telling the model to stop and explain keeps it from finding another route to the same refused effect.",
+      "conceptKeys": [
+        "sandbox-escalation"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The model asks for two tools in one reply, with ids `a1` and `b2`. What must your program send back?",
+      "options": [
+        "One `tool` message containing both outputs and no id",
+        "Two `tool` messages, one with `toolCallId: 'a1'` and one with `toolCallId: 'b2'`",
+        "A `user` message listing both outputs",
+        "Only the output of the first request"
+      ],
+      "answer": 1,
+      "explanation": "Every requested id needs exactly one result, and the call id is what pairs each result with its request.",
+      "conceptKeys": [
+        "tool-result"
+      ]
+    },
+    {
+      "prompt": "Your program sends the `tool` message but forgets to push the assistant message that held the request. What is wrong?",
+      "options": [
+        "Nothing, because the model remembers its own request",
+        "The tool output is too long",
+        "The result answers a request that is missing from the history, so the history no longer makes sense",
+        "The model will run the tool again itself"
+      ],
+      "answer": 2,
+      "explanation": "The model is stateless and sees only what you send. A result must follow the assistant message containing its request, or it answers nothing the model can see.",
+      "conceptKeys": [
+        "tool-result"
+      ]
+    },
+    {
+      "prompt": "In the `notes.txt` example, how many model requests does answering the one question take?",
+      "options": [
+        "Two: one that asks for the file, and one that answers using the result",
+        "One, because the tool runs inside the model",
+        "Three: one per message in the history",
+        "Zero, because the program reads the file without the model"
+      ],
+      "answer": 0,
+      "explanation": "The first request returns a tool call. After the result is added, a second request lets the model write its answer.",
+      "conceptKeys": [
+        "tool-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

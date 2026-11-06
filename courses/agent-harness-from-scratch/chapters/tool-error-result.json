@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The model asks for a tool named `read_files`, but only `read_file` exists. What does `runCall` do?",
+      "options": [
+        "Throws an exception that ends the turn",
+        "Runs `read_file` instead, since the names are close",
+        "Returns a result saying no such tool exists and listing the available tools",
+        "Skips the call and sends no result for its id"
+      ],
+      "answer": 2,
+      "explanation": "An unknown name still gets exactly one result for its call id. Listing the available tools gives the model what it needs to correct its next request.",
+      "conceptKeys": [
+        "tool-error-result"
+      ]
+    },
+    {
+      "prompt": "Why is it better to send `Error: ...` as a tool result than to let the exception crash the program?",
+      "options": [
+        "The model can read the error and recover, for example by fixing the path, and the conversation survives",
+        "Exceptions cost more tokens than results",
+        "The provider restarts crashed programs automatically",
+        "A crash would make the model forget the tool schema"
+      ],
+      "answer": 0,
+      "explanation": "A crash loses the conversation and tells the model nothing. An error result keeps the history valid and lets the model choose a better next action.",
+      "conceptKeys": [
+        "tool-error-result"
+      ]
+    },
+    {
+      "prompt": "Why does each failure message begin with the word `Error:`?",
+      "options": [
+        "Because `JSON.parse` needs it",
+        "Because the step limit counts lines that start with it",
+        "Because the provider deletes messages without it",
+        "Because DeepSeek's `tool` message has no separate failure flag, so the text itself must say the request failed"
+      ],
+      "answer": 3,
+      "explanation": "The result's content is the only thing the model sees. Starting with `Error:` makes the failure unmistakable even without a flag field.",
+      "conceptKeys": [
+        "tool-error-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

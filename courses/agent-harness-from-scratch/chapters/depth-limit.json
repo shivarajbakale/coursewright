@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "MAX_DEPTH is 2. An agent at depth 2 calls the subagent tool. What happens?",
+      "options": [
+        "A child starts at depth 3",
+        "The call gets an error result telling it to do the work directly",
+        "The call waits until a slot frees up",
+        "The whole session stops"
+      ],
+      "answer": 1,
+      "explanation": "The check is depth >= MAX_DEPTH, and 2 >= 2 is true, so the tool refuses with an error result the model can read.",
+      "conceptKeys": [
+        "depth-limit"
+      ]
+    },
+    {
+      "prompt": "Why also put a sentence about the limit in the prompt, when the tool already refuses?",
+      "options": [
+        "The tool check only runs in tests",
+        "The model would otherwise not see tool errors",
+        "So the model does not waste a step calling a tool that will refuse",
+        "The prompt sentence raises the limit by one"
+      ],
+      "answer": 2,
+      "explanation": "A refused call still costs a model request. Telling the model in advance lets a well-behaved model do the work directly.",
+      "conceptKeys": [
+        "depth-limit"
+      ]
+    },
+    {
+      "prompt": "Why must a child's depth be saved in its session file?",
+      "options": [
+        "So a child resumed after a restart is not rebuilt at depth 0 and allowed to delegate like the top agent",
+        "So the parent can read it in its derived history",
+        "Because the model needs it to pick a tool",
+        "Because the depth decides the token budget"
+      ],
+      "answer": 0,
+      "explanation": "If depth lived only in memory, a resumed child would start from 0 and the cap would no longer hold.",
+      "conceptKeys": [
+        "depth-limit"
+      ]
+    }
+  ],
+  "diagrams": []
+}

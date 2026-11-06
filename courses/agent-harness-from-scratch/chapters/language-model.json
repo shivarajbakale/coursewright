@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "In the toy predictor trained on \"the cat sat . the cat ran . the dog sat .\", what probability does it give to \"dog\" coming after \"the\"?",
+      "options": [
+        "About 0.67, because \"dog\" is one of two animals",
+        "About 0.33, because \"the\" is followed by \"dog\" 1 time out of 3",
+        "0.5, because there are two possible next words",
+        "1, because \"dog\" always follows \"the\" when it appears"
+      ],
+      "answer": 1,
+      "explanation": "\"the\" appears 3 times: twice before \"cat\" and once before \"dog\". So \"dog\" gets 1 out of 3, about 0.33, and the probabilities 0.67 and 0.33 add up to 1.",
+      "conceptKeys": [
+        "language-model"
+      ]
+    },
+    {
+      "prompt": "You ask a model the same question twice and get two slightly different replies. Why?",
+      "options": [
+        "The model looked the answer up in two different places",
+        "The model changed its learned numbers after the first question",
+        "The model often draws its next piece at random, weighted by the probabilities",
+        "The first reply was cut short by the keyboard"
+      ],
+      "answer": 2,
+      "explanation": "A model does not always take the most likely option. It often picks at random in proportion to the probabilities, so two runs can choose different pieces and drift apart.",
+      "conceptKeys": [
+        "language-model"
+      ]
+    },
+    {
+      "prompt": "A model confidently states a wrong date for a historical event. What best explains this?",
+      "options": [
+        "It predicts likely text rather than checking facts, so a likely-sounding wrong answer comes out fluently",
+        "It found a wrong source while searching the web",
+        "It ran out of probability for the correct answer",
+        "It only looks at the last word of the question"
+      ],
+      "answer": 0,
+      "explanation": "A model writes whatever continuation it scores as likely. It never looks facts up, so when the likely-sounding continuation is wrong it is written in the same confident tone.",
+      "conceptKeys": [
+        "language-model"
+      ]
+    }
+  ],
+  "diagrams": []
+}

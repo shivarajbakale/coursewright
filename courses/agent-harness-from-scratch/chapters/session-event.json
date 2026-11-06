@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the log give each event a sequence number instead of relying on its time to order events?",
+      "options": [
+        "Sequence numbers take fewer bytes to store than timestamps",
+        "Two events can share a timestamp, but no two share a sequence number",
+        "The model needs sequence numbers to understand the conversation",
+        "Timestamps are only recorded for tool events"
+      ],
+      "answer": 1,
+      "explanation": "A clock can give two events the same time, so it cannot settle their order. Sequence numbers go 1, 2, 3 with no gaps, so order is never in doubt and a missing number shows something was lost.",
+      "conceptKeys": [
+        "session-event"
+      ]
+    },
+    {
+      "prompt": "In the example turn, an assistant/message at seq 4 lists call_1. Why is a separate tool/call event also recorded at seq 5?",
+      "options": [
+        "It repeats the request in case seq 4 is lost",
+        "It records that the model has finished its reply",
+        "It records that your program actually started running the tool",
+        "It records the tool's output before the result arrives"
+      ],
+      "answer": 2,
+      "explanation": "Seq 4 says what the model asked for; seq 5 says your program started the tool. If something goes wrong between them, the difference shows whether the tool ever ran.",
+      "conceptKeys": [
+        "session-event"
+      ]
+    },
+    {
+      "prompt": "Code reading a log meets an event type it has never heard of. What is the safe thing to do?",
+      "options": [
+        "Stop with an error rather than continue without it",
+        "Skip the event and carry on with the rest",
+        "Treat it as a user message so nothing is lost",
+        "Delete it from the log so it causes no further trouble"
+      ],
+      "answer": 0,
+      "explanation": "Skipping an unknown fact could silently rebuild a conversation with something missing. Refusing is safer, and deleting would break the append-only rule.",
+      "conceptKeys": [
+        "session-event"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The model replies with a request to run `read_file`. What has happened to the file at that point?",
+      "options": [
+        "The provider has read it and attached the contents",
+        "The model has read it but not yet summarised it",
+        "Nothing; only your program can read it, and it has not done so yet",
+        "The file has been locked until your program answers"
+      ],
+      "answer": 2,
+      "explanation": "A tool call is only a request. The model runs nothing and cannot see your machine, so the file is untouched until your program acts.",
+      "conceptKeys": [
+        "tool-call"
+      ]
+    },
+    {
+      "prompt": "Why should you be careful with `function.arguments` in a tool call?",
+      "options": [
+        "It is a string of JSON the model wrote token by token, so you must parse it and it may be malformed",
+        "It is encrypted with your API key",
+        "It is always an empty object",
+        "It contains the function's source code"
+      ],
+      "answer": 0,
+      "explanation": "The arguments arrive as raw JSON text written by the model. You parse them yourself, and because the model wrote them, they are not guaranteed to be valid.",
+      "conceptKeys": [
+        "tool-call"
+      ]
+    },
+    {
+      "prompt": "Why is `tool_calls` a list rather than a single entry?",
+      "options": [
+        "Because each argument gets its own entry",
+        "Because the provider repeats each request three times for safety",
+        "Because the list holds the tool schemas you sent",
+        "Because the model may ask for several tools in one reply, each with its own id"
+      ],
+      "answer": 3,
+      "explanation": "One reply can contain several requests, for example reading two files. Each has its own id, name and arguments.",
+      "conceptKeys": [
+        "tool-call"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A plugin injected with ['session', 'llm'] is running. The plugin providing llm unloads. What happens?",
+      "options": [
+        "The plugin keeps running with a stale llm",
+        "The plugin is unloaded, and is mounted again once llm is provided again",
+        "The kernel throws because a needed service disappeared",
+        "Only the plugin's llm calls fail; everything else continues"
+      ],
+      "answer": 1,
+      "explanation": "The watcher sees a missing need and unloads the plugin. When llm is provided again, the watcher mounts a fresh copy.",
+      "conceptKeys": [
+        "service-injection"
+      ]
+    },
+    {
+      "prompt": "A plugin declares it needs 'tools', but no plugin ever provides that name. What does the learner see?",
+      "options": [
+        "An error message at startup",
+        "The plugin runs with tools set to undefined",
+        "Nothing: the plugin waits forever without any message",
+        "The kernel creates an empty tools service"
+      ],
+      "answer": 2,
+      "explanation": "inject only starts the plugin when every need exists. A name nobody provides keeps it waiting silently, which is a common trap.",
+      "conceptKeys": [
+        "service-injection"
+      ]
+    },
+    {
+      "prompt": "Why does load order stop mattering once plugins use inject?",
+      "options": [
+        "Because every change to the shelf re-runs the watchers, which start a plugin as soon as its needs appear",
+        "Because the kernel sorts plugins alphabetically before mounting",
+        "Because get() waits until the service exists",
+        "Because provide() refuses to run until all plugins are mounted"
+      ],
+      "answer": 0,
+      "explanation": "provide and its disposer both call changed(), so a waiting plugin is checked again every time the shelf changes, whatever order things were mounted in.",
+      "conceptKeys": [
+        "service-injection"
+      ]
+    }
+  ],
+  "diagrams": []
+}

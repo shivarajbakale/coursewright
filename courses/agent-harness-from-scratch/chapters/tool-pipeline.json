@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why is the tool/call event logged before the pre-execute hook runs?",
+      "options": [
+        "So the request is recorded even if something later crashes or denies it",
+        "Because hooks read the call from the log",
+        "Because the model needs the event before the tool runs",
+        "So the log can be sorted by tool name"
+      ],
+      "answer": 0,
+      "explanation": "Logging first means every request leaves a record, and every path through the pipeline also ends by logging its result.",
+      "conceptKeys": [
+        "tool-pipeline"
+      ]
+    },
+    {
+      "prompt": "No plugin listens on tools/pre-execute. What does the hook return for a call?",
+      "options": [
+        "deny, because nothing approved it",
+        "An error saying no listeners are registered",
+        "allow, because the innermost action returns allow",
+        "undefined, which skips the tool"
+      ],
+      "answer": 2,
+      "explanation": "The waterfall runs the innermost action when there are no listeners, and that action answers allow.",
+      "conceptKeys": [
+        "tool-pipeline"
+      ]
+    },
+    {
+      "prompt": "A plugin wants to change a run_command call's command before it runs. Why does the pipeline not allow this?",
+      "options": [
+        "Because waterfall hooks cannot see arguments",
+        "Because the logged arguments, the ones on screen and the ones executed must be the same",
+        "Because arguments are already validated",
+        "Because commands are read-only strings in TypeScript"
+      ],
+      "answer": 1,
+      "explanation": "If a hook rewrote arguments, the log and the screen would show one command while another actually ran. Hooks may block or replace results instead.",
+      "conceptKeys": [
+        "tool-pipeline"
+      ]
+    }
+  ],
+  "diagrams": []
+}

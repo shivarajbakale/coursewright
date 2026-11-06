@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A plugin puts the current time on the first line of the system prompt. What happens to reuse across steps?",
+      "options": [
+        "Nothing changes, because the provider ignores the system prompt",
+        "Only the time line is reprocessed",
+        "Reuse drops to almost nothing, because the first token differs on every step and everything after it is processed again",
+        "Reuse improves because the provider sees fresh data"
+      ],
+      "answer": 2,
+      "explanation": "Reuse stops at the first differing token. A changing first line means no shared beginning, so the whole request is processed again each step.",
+      "conceptKeys": [
+        "prompt-caching"
+      ]
+    },
+    {
+      "prompt": "Step 2 sent 4,450 tokens. Step 3 sends those same 4,450 tokens followed by 1,150 new ones. Roughly how many of step 3's tokens can be reused?",
+      "options": [
+        "Up to 4,450",
+        "1,150",
+        "All 5,600",
+        "None, because each request is separate"
+      ],
+      "answer": 0,
+      "explanation": "Step 3 begins with the whole of step 2, so up to those 4,450 tokens can be reused. The 1,150 new tokens at the end must be processed.",
+      "conceptKeys": [
+        "prompt-caching"
+      ]
+    },
+    {
+      "prompt": "The system prompt must change in the middle of a session. Which choice keeps the most reuse?",
+      "options": [
+        "Replace the first system message and resend everything",
+        "Add a new system message after the existing history",
+        "Remove all tools so the request is shorter",
+        "Start a new session"
+      ],
+      "answer": 1,
+      "explanation": "Replacing the first message changes the very start of the request. Adding a new system message at the end keeps the earlier history as an unchanged beginning.",
+      "conceptKeys": [
+        "prompt-caching"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A turn's log shows `[step 1] read_file`, `[step 2] read_file`, then `[turn done after 3 step(s)]`. What happened in step 3?",
+      "options": [
+        "A third file was read",
+        "The model's reply had no tool calls, so it was the final answer",
+        "The program waited for the user to type",
+        "The model repeated step 1"
+      ],
+      "answer": 1,
+      "explanation": "A step is one model request plus its tool runs. The third request returned plain text with no tool calls, which ends the turn.",
+      "conceptKeys": [
+        "turn"
+      ]
+    },
+    {
+      "prompt": "Turn two is answered in one step with no tool calls, although turn one needed three. Why?",
+      "options": [
+        "The model remembered the file from the first turn by itself",
+        "The program cached the tool and skipped it",
+        "The second turn was too short to need tools",
+        "The history passed into turn two already held the file's contents from turn one"
+      ],
+      "answer": 3,
+      "explanation": "The history carries over between turns. The model is stateless, but it is sent the earlier tool results, so it can answer without reading again.",
+      "conceptKeys": [
+        "turn"
+      ]
+    },
+    {
+      "prompt": "In `runTurn`, what is the smallest number of steps a turn can have?",
+      "options": [
+        "One, a single model request whose reply is the answer",
+        "Zero, if the answer is already in the history",
+        "Two, one to ask for a tool and one to answer",
+        "Three, as in the index.txt example"
+      ],
+      "answer": 0,
+      "explanation": "`runTurn` always sends at least one model request, so a turn has at least one step. If that first reply has no tool calls, the turn ends there.",
+      "conceptKeys": [
+        "turn"
+      ]
+    }
+  ],
+  "diagrams": []
+}

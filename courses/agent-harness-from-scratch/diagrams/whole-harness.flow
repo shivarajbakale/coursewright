@@ -1,0 +1,54 @@
+title One request through the harness
+
+user     "You"
+inbox    "Inbox" queue
+prompt   "Prompt sections"
+history  "Derived history"
+model    "Model adapter"
+pipeline "Tool pipeline"
+sandbox  "Sandbox"
+child    "Helper agent"
+screen   "Screen"
+logged   "Events logged" counter 0
+
+req at user
+
+# One typed request will visit every part of the harness before it is answered.
+pause "The request: the failing test in src/math.test.ts, fix it."
+
+# The request waits in the inbox, then the idle agent wakes and claims it.
+req -> inbox : queued "A followup starts a new turn because the agent is idle."
+logged +1
+
+# Each step rebuilds the system prompt and the history from the log.
+req -> prompt : running "Sections sorted by order: identity first, then each tool's guidance."
+req -> history "Messages are rebuilt from the event log, growing only at the end."
+
+# The model streams a reply; the screen shows the pieces live.
+req -> model "The adapter turns the provider's stream into chunks and assembles one message."
+new piece at model
+piece -> screen "Stream pieces are shown live but never logged."
+remove piece
+logged +1
+
+# The tool call asks first, then runs inside the fence.
+new call at model
+call -> pipeline : waiting "Running a command is risky, so the person is asked first."
+call : running
+call -> sandbox "Only the project folder can be changed."
+logged +2
+
+# The result is logged and becomes part of the next request.
+call -> history : done "Big output is spilled; old history may be summarized by compaction."
+remove call
+
+# A helper checks other tests; its answer comes back through the inbox.
+new kid at model
+kid -> child : running "The helper has its own log and stops at depth 1."
+kid -> inbox : done "The answer arrives as a steer and wakes the parent's next step."
+remove kid
+logged +1
+
+# Nothing is left to ask for, so the final answer reaches the screen.
+req -> screen : done "The turn ends; every fact is in the log."
+logged +1

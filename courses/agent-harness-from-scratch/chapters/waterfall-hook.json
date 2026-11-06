@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A logging listener on a waterfall hook forgets to call next() and returns undefined. What happens to the real action?",
+      "options": [
+        "It runs anyway after the listener returns",
+        "It never runs, for every caller, because the layers inside the listener are skipped",
+        "The kernel calls next() automatically",
+        "Only the logging is skipped"
+      ],
+      "answer": 1,
+      "explanation": "Not calling next is how a listener decides alone. A logger that forgets it blocks the action and every listener inside it.",
+      "conceptKeys": [
+        "waterfall-hook"
+      ]
+    },
+    {
+      "prompt": "timer is the outer listener and blocker the inner one. A delete_file call is blocked. Does timer print a time?",
+      "options": [
+        "No, because the tool never ran",
+        "No, because blocker throws an error",
+        "Yes, because timer wraps blocker and gets blocker's return value from next()",
+        "Only if the tool runs longer than 30 seconds"
+      ],
+      "answer": 2,
+      "explanation": "timer calls next(), which runs blocker. blocker returns the error text, so next() resolves and timer prints how long that took.",
+      "conceptKeys": [
+        "waterfall-hook"
+      ]
+    },
+    {
+      "prompt": "Why does the waterfall throw when a listener calls next() a second time?",
+      "options": [
+        "Because a second call would run the wrapped action twice",
+        "Because next() can only return a string",
+        "Because listeners may only run once per program",
+        "Because the listener list is emptied after the first call"
+      ],
+      "answer": 0,
+      "explanation": "Each next() runs every inner layer and then the action itself. Allowing two calls would, for example, run a tool twice.",
+      "conceptKeys": [
+        "waterfall-hook"
+      ]
+    }
+  ],
+  "diagrams": []
+}

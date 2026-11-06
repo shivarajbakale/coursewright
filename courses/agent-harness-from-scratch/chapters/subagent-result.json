@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "child-2 finishes while its parent is in the middle of a turn. How does its answer reach the parent's model?",
+      "options": [
+        "It is sent as a followup and waits until the current turn ends",
+        "It is sent as a steer and claimed before the parent's next step",
+        "The parent must call a tool to fetch it",
+        "It replaces the parent's last tool result"
+      ],
+      "answer": 1,
+      "explanation": "deliver checks whether the parent is running. A running parent gets a steer, which joins the very next step of the current turn.",
+      "conceptKeys": [
+        "subagent-result"
+      ]
+    },
+    {
+      "prompt": "Why send a message marked failed when a child crashes, instead of sending nothing?",
+      "options": [
+        "Because the model refuses empty inboxes",
+        "Because the event log requires one message per child",
+        "Because a parent that never hears back may wait forever for that child",
+        "Because failed children are restarted automatically"
+      ],
+      "answer": 2,
+      "explanation": "The parent ended its turn expecting a message. A failure message wakes it and tells it what happened, so it can retry or report.",
+      "conceptKeys": [
+        "subagent-result"
+      ]
+    },
+    {
+      "prompt": "Why deliver the result as an ordinary user message rather than a new special kind of record?",
+      "options": [
+        "It is recorded in the parent's log, so derived history and resume handle it with no new code",
+        "User messages are cheaper in tokens",
+        "The model cannot read tool results",
+        "Special records would be shown to the person"
+      ],
+      "answer": 0,
+      "explanation": "A user message flows through the inbox, the event log and the derived history like anything the person types, so nothing new is needed to replay it.",
+      "conceptKeys": [
+        "subagent-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The workspace is /work/app. Why does minidsh not use `target.startsWith(root)` to decide if a path is writable?",
+      "options": [
+        "It is too slow for long paths",
+        "It would allow /work/app-secrets/key, which only shares the same starting letters",
+        "It fails for files that do not exist yet",
+        "It cannot handle the /tmp folder"
+      ],
+      "answer": 1,
+      "explanation": "'/work/app-secrets/key' starts with '/work/app' as text but lies outside it. Computing the relative path gives '../app-secrets/key', which climbs out and is refused.",
+      "conceptKeys": [
+        "write-roots"
+      ]
+    },
+    {
+      "prompt": "On a Mac you put '/tmp' in the list without resolving it. What happens when a command writes /tmp/out.txt?",
+      "options": [
+        "The write is allowed, because the spelling matches",
+        "The write goes to the working folder instead",
+        "The write is refused, because the kernel compares the real name /private/tmp",
+        "The sandbox switches to read-only"
+      ],
+      "answer": 2,
+      "explanation": "/tmp is a link to /private/tmp, and the enforcement compares resolved paths. A grant spelled /tmp matches nothing, which is why every root is resolved first.",
+      "conceptKeys": [
+        "write-roots"
+      ]
+    },
+    {
+      "prompt": "Why must the write and edit tools check the same list as shell commands?",
+      "options": [
+        "They run inside the harness's own process, which the kernel fence does not cover",
+        "The model is not allowed to call them otherwise",
+        "The list is needed to find the file to edit",
+        "It makes edits atomic"
+      ],
+      "answer": 0,
+      "explanation": "The kernel fence applies to separate programs the harness starts. File tools run in-process, so without the same check the model could write by another route what the shell refused.",
+      "conceptKeys": [
+        "write-roots"
+      ]
+    }
+  ],
+  "diagrams": []
+}

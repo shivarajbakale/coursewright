@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why are text-delta chunks announced but never written to the event log?",
+      "options": [
+        "The log cannot store text",
+        "The finished assistant/message event records the full text, so the deltas are only for showing progress",
+        "Deltas are too private to record",
+        "The model needs the deltas in its next request"
+      ],
+      "answer": 1,
+      "explanation": "The assembled assistant/message is the fact. Deltas are commentary for screens, so a missed one loses nothing.",
+      "conceptKeys": [
+        "live-event-stream"
+      ]
+    },
+    {
+      "prompt": "A browser tab opens while the agent is mid-turn. How does it show the right state?",
+      "options": [
+        "It waits for the next turn to start",
+        "It replays all the deltas it missed",
+        "It reads the log so far as a snapshot, then follows events with a higher sequence number",
+        "It asks the model to repeat its last answer"
+      ],
+      "answer": 2,
+      "explanation": "The log holds every fact. The seq acts as a cursor, so the tab reads up to the newest seq and then listens for later ones.",
+      "conceptKeys": [
+        "live-event-stream"
+      ]
+    },
+    {
+      "prompt": "What is gained by announcing on event hooks instead of printing inside the loop?",
+      "options": [
+        "New screens can be added as plugins without editing the loop",
+        "The model replies faster",
+        "Events no longer need sequence numbers",
+        "Only one screen can watch at a time, which avoids conflicts"
+      ],
+      "answer": 0,
+      "explanation": "The core only emits; each screen subscribes. Adding a terminal, a page or another program means adding a listener, not changing the core.",
+      "conceptKeys": [
+        "live-event-stream"
+      ]
+    }
+  ],
+  "diagrams": []
+}

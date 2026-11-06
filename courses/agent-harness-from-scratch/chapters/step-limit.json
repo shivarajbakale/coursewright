@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A confused model reads the same 500-token file at every step. About how many tokens of that file are sent in total over 8 steps?",
+      "options": [
+        "About 4,000, one copy per step",
+        "About 3,500, seven copies",
+        "About 14,000, because each request resends every copy so far",
+        "About 500, because the model remembers the first copy"
+      ],
+      "answer": 2,
+      "explanation": "Step 1 sends 0 copies and step 8 sends 7. Adding 0 + 1 + ... + 7 gives 28 copies, and 28 times 500 is about 14,000 tokens.",
+      "conceptKeys": [
+        "step-limit"
+      ]
+    },
+    {
+      "prompt": "Why does `runTurn` return a note like \"Stopped after 8 steps\" instead of throwing an exception or returning nothing?",
+      "options": [
+        "So the provider knows to charge less",
+        "So the model can finish the answer on its own later",
+        "Because throwing an exception would restart the turn",
+        "So the user learns the turn did not finish and can rephrase or ask to continue"
+      ],
+      "answer": 3,
+      "explanation": "The limit bounds the damage but does not fix the confusion. Reporting the stop plainly lets the person decide what to do next, and keeps the history usable.",
+      "conceptKeys": [
+        "step-limit"
+      ]
+    },
+    {
+      "prompt": "You set `maxSteps = 2`. What problem does that cause?",
+      "options": [
+        "Honest tasks that need more rounds, like reading index.txt and then notes.txt, are stopped before they finish",
+        "Confused models can now loop forever",
+        "The context window shrinks to two messages",
+        "The model can no longer request tools at all"
+      ],
+      "answer": 0,
+      "explanation": "A limit cannot tell a runaway from a real multi-step task. The index.txt question needs 3 steps, so a cap of 2 cuts it off.",
+      "conceptKeys": [
+        "step-limit"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The agent is in step 2 of a turn when you send a steer. What happens to it?",
+      "options": [
+        "It waits until the turn ends and then starts a new turn",
+        "It is claimed before the next model request in the same turn and logged as a user message",
+        "It is sent straight to the model without being logged",
+        "It cancels the current step and restarts the turn"
+      ],
+      "answer": 1,
+      "explanation": "A steer goes to the next-step tray, which is claimed before every later step. Like every claimed message it is appended as a user/message event, so the model sees it in the next request of the same turn.",
+      "conceptKeys": [
+        "agent-inbox"
+      ]
+    },
+    {
+      "prompt": "The model answers in plain text, but a steer arrived while that last request was streaming. What should the turn do?",
+      "options": [
+        "End the turn and drop the steer",
+        "End the turn and leave the steer for the next turn's request",
+        "Take one more step so the model can read the steer",
+        "Turn the steer into a followup automatically"
+      ],
+      "answer": 2,
+      "explanation": "A turn may only end when the model answered in plain text and the next-step tray is empty. A waiting steer means one more step.",
+      "conceptKeys": [
+        "agent-inbox"
+      ]
+    },
+    {
+      "prompt": "Why does inject not wake the agent?",
+      "options": [
+        "It is meant to ride along with whatever request happens next, not to start work on its own",
+        "Injected messages are never logged",
+        "Inject only works while the agent is idle",
+        "Injected messages go to the next-turn tray"
+      ],
+      "answer": 0,
+      "explanation": "Inject adds to the next-step tray without calling wake. The note lands in the next request that happens for some other reason.",
+      "conceptKeys": [
+        "agent-inbox"
+      ]
+    }
+  ],
+  "diagrams": []
+}

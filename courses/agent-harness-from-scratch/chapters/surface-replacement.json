@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "After compaction, the surface is 0, 1, 74, 58 ... 71. Where are events 2 to 57?",
+      "options": [
+        "Deleted from the log to save space",
+        "Still in the log, hidden from the model by the replace instruction at seq 74",
+        "Moved to the end of the surface",
+        "Written into the system prompt"
+      ],
+      "answer": 1,
+      "explanation": "Nothing is deleted. deriveSurface reads seq 74's replace instruction and shows it in place of 2 to 57, while the log keeps every event.",
+      "conceptKeys": [
+        "surface-replacement"
+      ]
+    },
+    {
+      "prompt": "The process crashes right after compaction/start is written. What does the log show on resume?",
+      "options": [
+        "A finished compaction with no summary",
+        "Nothing unusual, because compaction/start is not saved",
+        "A start with no matching end, so you can tell compaction never finished",
+        "The summary, because it was written first"
+      ],
+      "answer": 2,
+      "explanation": "The lock is released last. A start without an end marks an unfinished attempt instead of falsely claiming success.",
+      "conceptKeys": [
+        "surface-replacement"
+      ]
+    },
+    {
+      "prompt": "Why does deriveSurface find startSeq and endSeq by position on the current surface instead of treating them as a numeric range?",
+      "options": [
+        "After an earlier replace, some events inside the range are already hidden, so the range is a span of what is visible",
+        "Because sequence numbers can repeat",
+        "Because positions are faster to compare than numbers",
+        "Because compaction records are counted in the range"
+      ],
+      "answer": 0,
+      "explanation": "An older summary may already stand in for some events. The replace covers whatever is visible between the two ends.",
+      "conceptKeys": [
+        "surface-replacement"
+      ]
+    }
+  ],
+  "diagrams": []
+}

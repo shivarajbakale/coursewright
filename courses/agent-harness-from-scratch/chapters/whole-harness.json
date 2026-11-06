@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "prompt": "In the trace, why is the assistant message holding the tool call logged before the tool runs?",
+      "options": [
+        "So the log records the exact message the tool follows, even if the tool crashes",
+        "So the browser can show it faster",
+        "Because the sandbox reads the log to find the command",
+        "Because compaction needs it first"
+      ],
+      "answer": 0,
+      "explanation": "The assembled assistant/message is appended before dispatch, so any crash later still leaves a log that shows what the model asked for.",
+      "conceptKeys": [
+        "whole-harness"
+      ]
+    },
+    {
+      "prompt": "Compaction runs at step 10. What happens to the events it summarizes?",
+      "options": [
+        "They are deleted from the JSONL file",
+        "They stay in the log but are hidden from the model's view, replaced by a summary",
+        "They are moved to the helper agent",
+        "They are sent to the browser and then dropped"
+      ],
+      "answer": 1,
+      "explanation": "Compaction swaps a span of the model-visible history for a summary. The log keeps the original events.",
+      "conceptKeys": [
+        "whole-harness"
+      ]
+    },
+    {
+      "prompt": "What changes to run the same task from a script instead of a browser?",
+      "options": [
+        "The agent loop is rewritten for scripts",
+        "The event log format",
+        "The config rows that choose which plugins load",
+        "The tool pipeline order"
+      ],
+      "answer": 2,
+      "explanation": "Every part is a plugin, so a different front end is a different set of config rows, as the headless profile shows.",
+      "conceptKeys": [
+        "whole-harness"
+      ]
+    }
+  ],
+  "diagrams": [],
+  "diagramRequest": {
+    "title": "One request through the harness",
+    "show": "One request moves from the person through the inbox, prompt sections and derived history, the model adapter, the tool pipeline with approval, and the sandbox; the tool result goes back to history; a helper agent's answer returns to the inbox; the screen receives live pieces and the final answer. A counter shows events logged.",
+    "shape": "process"
+  }
+}

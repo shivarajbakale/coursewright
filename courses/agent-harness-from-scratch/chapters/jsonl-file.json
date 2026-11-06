@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does a JSONL log survive a crash better than one JSON array rewritten after every event?",
+      "options": [
+        "JSONL files are compressed, so writes finish sooner",
+        "A crash can only damage the unfinished last line; earlier lines are never touched",
+        "JSON.parse reads JSONL files faster than arrays",
+        "JSONL files are written by the operating system, not your program"
+      ],
+      "answer": 1,
+      "explanation": "Appending only adds bytes at the end, so finished lines stay intact. Rewriting a whole array means a crash mid-write can leave a file that is not valid JSON at all.",
+      "conceptKeys": [
+        "jsonl-file"
+      ]
+    },
+    {
+      "prompt": "minidsh calls fsync once per batch instead of once per event. What does it trade off?",
+      "options": [
+        "It risks corrupting earlier lines in exchange for speed",
+        "It skips writing some events to save disk space",
+        "It saves time, but a crash can lose the whole unfinished batch rather than one event",
+        "It makes the file unreadable until the batch is complete"
+      ],
+      "answer": 2,
+      "explanation": "fsync is slow, so one per batch is cheaper. Events in a batch whose fsync never finished were never confirmed as saved, so losing them breaks no promise.",
+      "conceptKeys": [
+        "jsonl-file"
+      ]
+    },
+    {
+      "prompt": "loadEvents finds bytes after the last newline. Why does it truncate the file instead of only ignoring them?",
+      "options": [
+        "So the next appended line is not glued onto the broken bytes",
+        "To reclaim the disk space those bytes use",
+        "Because the header line must be the last line in the file",
+        "Because fsync fails on files with a torn tail"
+      ],
+      "answer": 0,
+      "explanation": "The next append adds bytes at the end. If the torn bytes stayed, the new event would be joined to them on one line, and that line would never parse.",
+      "conceptKeys": [
+        "jsonl-file"
+      ]
+    }
+  ],
+  "diagrams": []
+}

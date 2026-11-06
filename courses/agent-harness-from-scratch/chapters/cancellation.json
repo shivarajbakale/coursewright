@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "You press Ctrl+C after the reply \"Let me check the fi\" has streamed. What does the step record?",
+      "options": [
+        "Nothing, so the model never knows the reply started",
+        "An assistant/attempt, which the model never sees",
+        "An assistant/message with \"Let me check the fi\", marked interrupted",
+        "The full reply, after waiting for the stream to finish"
+      ],
+      "answer": 2,
+      "explanation": "Text the person already saw is kept as an interrupted assistant message. Derived history then includes it, so the model sees what the person saw.",
+      "conceptKeys": [
+        "cancellation"
+      ]
+    },
+    {
+      "prompt": "A stream fails with a rate-limit error at the same moment the person pressed Ctrl+C. Why does the step check signal.aborted before the retry logic?",
+      "options": [
+        "A stop the person asked for must never be retried",
+        "Rate-limit errors are never retried anyway",
+        "The signal must be reset before the next attempt",
+        "Retrying would duplicate the tool calls"
+      ],
+      "answer": 0,
+      "explanation": "The person wants the work to stop. Checking the signal first means an abort ends the turn instead of starting another attempt.",
+      "conceptKeys": [
+        "cancellation"
+      ]
+    },
+    {
+      "prompt": "The model asked for call_1 and call_2. call_1 is running when the person cancels; call_2 has not started. What results end up in the log?",
+      "options": [
+        "Only call_1 gets a result; call_2 is removed from the message",
+        "call_1 gets an error result from the stopped tool, and call_2 gets a synthetic 'aborted before it started' result",
+        "No results; the turn is marked aborted instead",
+        "Both get success results so the history stays valid"
+      ],
+      "answer": 1,
+      "explanation": "Every tool call needs a matching result for the next request to be valid. The stopped tool reports its own error, and the unstarted call gets a synthetic error, as an orphaned tool call would.",
+      "conceptKeys": [
+        "cancellation"
+      ]
+    }
+  ],
+  "diagrams": []
+}

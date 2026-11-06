@@ -1,0 +1,92 @@
+{
+  "title": "Safe tools for minidsh",
+  "brief": "Build minidsh's tool system on the plugin kernel, in src/tools.ts and a few small plugins. A 'tools' registry service holds every tool and gives the model only schemas. Each call is parsed and validated against its schema. Every call goes through one fixed pipeline: log tool/call, tools/pre-execute, validate, tools/execute, tools/post-execute, log tool/result. On top of the pipeline add a y/n prompt for risky tools where only an exact y proceeds, a batch runner that runs concurrency-safe calls together while keeping results in order, a post-execute listener that saves oversized results to a file, and an edit tool that replaces one exact match, only after a read, with a version check and an atomic write. Every failure must reach the model as a tool error result paired with its call id.",
+  "starter": [
+    {
+      "path": "src/tools.ts",
+      "note": "ToolRegistry, parseArgs, checkArgs, runToolCall and runBatch."
+    },
+    {
+      "path": "src/approval.ts",
+      "note": "askPerson(question, policy, signal) returning 'allowed-once' | 'rejected' | 'cancelled' | 'unavailable', and the approvals plugin."
+    },
+    {
+      "path": "src/spill.ts",
+      "note": "The outputSpill plugin, a tools/post-execute listener writing to .minidsh/spill/<call id>.txt."
+    },
+    {
+      "path": "src/edit.ts",
+      "note": "read_file and edit tools sharing a map of path to version."
+    },
+    {
+      "path": "test/tools.test.ts",
+      "note": "Checks run with npx tsx that feed hand-written ToolCall objects through runBatch with a fake session."
+    }
+  ],
+  "hints": [
+    "Keep runToolCall's last line, the tool/result append, reachable from every path: deny, unknown tool, bad JSON, bad arguments, thrown error.",
+    "Never let a hook change call.arguments. If a plugin wants different behaviour, it denies or replaces the result.",
+    "Treat isConcurrencySafe as safe only when it returns exactly true; a missing method or undefined means the call runs alone.",
+    "Write each batch result into results[index], so finishing order cannot change the order the model sees.",
+    "For spill, test with a 50,000-character string: with keep 2000 the note should say 46000 characters omitted.",
+    "In the edit tool, use text.replace(old, () => replacement) so a dollar sign in the new text is not treated as a pattern.",
+    "Test approval with the policy set to never first; it should reject without touching the terminal."
+  ],
+  "rubric": [
+    {
+      "criterion": "Tools register into a 'tools' service with disposers, and only name, description and parameters reach the request",
+      "chapterKey": "tool-registry"
+    },
+    {
+      "criterion": "Empty arguments become {}, broken JSON and schema mismatches become specific error results, and the tool never runs on bad input",
+      "chapterKey": "argument-validation"
+    },
+    {
+      "criterion": "Every call follows the fixed sequence with pre, execute and post waterfall hooks, logged at both ends, and hooks cannot rewrite arguments",
+      "chapterKey": "tool-pipeline"
+    },
+    {
+      "criterion": "Risky calls ask the person; only an exact y proceeds, once, and no terminal or a never policy means denial",
+      "chapterKey": "approval"
+    },
+    {
+      "criterion": "Consecutive concurrency-safe calls run together up to a limit, unsafe calls act as barriers, and results keep the model's order",
+      "chapterKey": "parallel-tool-calls"
+    },
+    {
+      "criterion": "Results over the limit are saved to a file named by call id and replaced by head, tail, path and a hint",
+      "chapterKey": "output-spill"
+    },
+    {
+      "criterion": "Edits require a prior read and an unchanged version, refuse zero or ambiguous matches, keep line endings and write through a temp file and rename",
+      "chapterKey": "safe-file-edit"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Registry and validation",
+      "body": "Provide the ToolRegistry as a 'tools' service and register read_file and current_time from plugins. Feed in a call to an unknown tool, a call with broken JSON and a call missing a required field; each must return a specific Error: result with the right toolCallId, and none may run the tool.",
+      "checkCmd": "npx tsx test/tools.test.ts validation"
+    },
+    {
+      "title": "The pipeline and a timeout",
+      "body": "Write runToolCall with the six fixed steps and move the agent loop to call it. Add a timeout plugin on tools/execute and a tool that sleeps 2 seconds; with ms set to 500 the result must be the timeout error, and the session must hold both tool/call and tool/result events.",
+      "checkCmd": "npx tsx test/tools.test.ts pipeline"
+    },
+    {
+      "title": "Asking the person",
+      "body": "Add askPerson and the approvals plugin with run_command marked risky. Run minidsh in a terminal and ask it to delete a folder: answer n and check the model explains instead of retrying another way. Then run it with stdin piped from a file and check the call is denied as unavailable.",
+      "checkCmd": "npx tsx src/main.ts \"delete the build folder\""
+    },
+    {
+      "title": "Batches and spill",
+      "body": "Write runBatch and the outputSpill plugin. A batch of read, read, edit, read must run the first two together and the last after the edit, with results in the original order. A command printing 50,000 characters must come back as head, note and tail, with the full text saved under .minidsh/spill.",
+      "checkCmd": "npx tsx test/tools.test.ts batch-and-spill"
+    },
+    {
+      "title": "The safe edit tool",
+      "body": "Write read_file and edit sharing a version map. Check that an edit before reading is refused, an ambiguous edit is refused with the match count, a file changed after reading is refused as stale, and a successful edit keeps CRLF line endings. Then ask minidsh to change a port number in a real file.",
+      "checkCmd": "npx tsx src/main.ts \"change the port in config.ts from 3000 to 8080\""
+    }
+  ]
+}

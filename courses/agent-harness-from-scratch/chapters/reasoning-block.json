@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Your program prints a final answer for the user. Which field of the assembled message should it print?",
+      "options": [
+        "reasoning, because it explains the answer",
+        "content, because reasoning is working-out and not the answer",
+        "Both joined together, reasoning first",
+        "Whichever field is longer"
+      ],
+      "answer": 1,
+      "explanation": "Reasoning is the model's rough work, like margin notes on an exam. The answer is in content, so anything that reads the answer reads content only.",
+      "conceptKeys": [
+        "reasoning-block"
+      ]
+    },
+    {
+      "prompt": "Some providers reject old reasoning in a request; others need it sent back. How does minidsh handle both?",
+      "options": [
+        "It never logs reasoning, so the question never comes up",
+        "It always sends reasoning back and ignores errors",
+        "It logs reasoning always, and each adapter decides whether its request includes it",
+        "It deletes reasoning from the log after each turn"
+      ],
+      "answer": 2,
+      "explanation": "The log keeps the fact either way. The provider-specific rule about sending it back lives in that provider's adapter, so changing providers changes only the adapter.",
+      "conceptKeys": [
+        "reasoning-block"
+      ]
+    },
+    {
+      "prompt": "Why is reasoning streamed as its own chunk type instead of as text-delta chunks?",
+      "options": [
+        "So it can be shown and logged apart from the answer and never mistaken for it",
+        "Because reasoning is in a different language",
+        "Because reasoning arrives after the answer",
+        "So it does not count toward the token usage"
+      ],
+      "answer": 0,
+      "explanation": "A separate chunk type lets every later stage keep it apart: a dim colour on screen, its own field in the message, and answer-reading code that never sees it.",
+      "conceptKeys": [
+        "reasoning-block"
+      ]
+    }
+  ],
+  "diagrams": []
+}

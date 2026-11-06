@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The provider answers 401 because the API key is wrong. What should the retry logic do?",
+      "options": [
+        "Retry 5 times with backoff, then give up",
+        "Retry once immediately, then give up",
+        "Fail at once, because a wrong key fails the same way every time",
+        "Retry until the provider sends a Retry-After header"
+      ],
+      "answer": 2,
+      "explanation": "AUTH is not in the retryable set. Waiting cannot fix a wrong key, so retrying only wastes about 15 seconds before failing anyway.",
+      "conceptKeys": [
+        "retry-backoff"
+      ]
+    },
+    {
+      "prompt": "With an initial delay of 500 ms doubling each time and a 10,000 ms cap, about how long is the wait before the fourth retry?",
+      "options": [
+        "2000 ms",
+        "4000 ms",
+        "8000 ms",
+        "10,000 ms"
+      ],
+      "answer": 1,
+      "explanation": "The waits are 500 times 2 to the power (retry minus 1): 500, 1000, 2000, then 4000 ms for the fourth retry, give or take 10% jitter.",
+      "conceptKeys": [
+        "retry-backoff"
+      ]
+    },
+    {
+      "prompt": "Why add jitter, a small random amount, to each wait?",
+      "options": [
+        "So clients that failed together do not all retry at the same moment",
+        "So the model gets a different answer each time",
+        "So the total wait never exceeds the cap",
+        "So the provider can tell retries apart from new requests"
+      ],
+      "answer": 0,
+      "explanation": "If many clients fail at once and wait exactly the same time, they all retry together and overload the provider again. A random spread separates them.",
+      "conceptKeys": [
+        "retry-backoff"
+      ]
+    }
+  ],
+  "diagrams": []
+}

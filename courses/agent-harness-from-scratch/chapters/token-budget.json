@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The window is 128,000 tokens, maxOutput is 8,000 and headroom is 16,000, with a ratio of 0.8. What is the threshold?",
+      "options": [
+        "104,000",
+        "128,000",
+        "102,400",
+        "120,000"
+      ],
+      "answer": 2,
+      "explanation": "128,000 x 0.8 is 102,400 and 128,000 - 8,000 - 16,000 is 104,000. The threshold is the smaller of the two, 102,400.",
+      "conceptKeys": [
+        "token-budget"
+      ]
+    },
+    {
+      "prompt": "Why does measure use the provider's exact usage for the last request and estimate only what was added since?",
+      "options": [
+        "The exact count exists only after a request, so newer messages must be estimated",
+        "Estimates are always more accurate than usage",
+        "The provider charges extra for counting tokens",
+        "Usage counts only the system prompt"
+      ],
+      "answer": 0,
+      "explanation": "The provider reports exact tokens for a request it has already processed. Messages added after it have not been sent yet, so their size is estimated, about four characters per token.",
+      "conceptKeys": [
+        "token-budget"
+      ]
+    },
+    {
+      "prompt": "measure is 102,900 and the window is 128,000. Why act now when 25,100 tokens are still free?",
+      "options": [
+        "Because the provider rejects any request above 100,000 tokens",
+        "Because the threshold reserves room for the reply and for the work of shrinking history, and estimates can be wrong",
+        "Because reuse of the prefix stops above the threshold",
+        "Because the system prompt must be resent"
+      ],
+      "answer": 1,
+      "explanation": "The free space is the reserve. Acting at the threshold leaves room for the reply and for later work instead of failing mid-task.",
+      "conceptKeys": [
+        "token-budget"
+      ]
+    }
+  ],
+  "diagrams": []
+}

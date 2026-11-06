@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The base row is { id: 'timeout', config: { ms: 30000, log: true } } and a patch sends { id: 'timeout', config: { ms: 120000 } }. What config does the row end with?",
+      "options": [
+        "{ ms: 120000, log: true }",
+        "{ ms: 30000, log: true }",
+        "{ ms: 120000 }",
+        "Two rows, one with each config"
+      ],
+      "answer": 2,
+      "explanation": "A patch replaces the whole config of the matching row, with no merge, so log: true is lost unless the patch repeats it.",
+      "conceptKeys": [
+        "config-rows"
+      ]
+    },
+    {
+      "prompt": "Why does each row need a stable id?",
+      "options": [
+        "So the loader can tell editing a row apart from removing one and adding another",
+        "So rows load in alphabetical order",
+        "Because plugin functions cannot be mounted without a name",
+        "So two rows may share the same plugin"
+      ],
+      "answer": 0,
+      "explanation": "Patches and reloads target rows by id. Without it, a changed row looks like a deletion plus an insertion.",
+      "conceptKeys": [
+        "config-rows"
+      ]
+    },
+    {
+      "prompt": "A patch contains a row whose id is not in the base. What does applyPatch do with it?",
+      "options": [
+        "Ignores it as a typo",
+        "Throws an error",
+        "Replaces the first row in the list",
+        "Appends it as a new row"
+      ],
+      "answer": 3,
+      "explanation": "A known id changes that row; an unknown id is an insertion, which is how patches add plugins.",
+      "conceptKeys": [
+        "config-rows"
+      ]
+    }
+  ],
+  "diagrams": []
+}

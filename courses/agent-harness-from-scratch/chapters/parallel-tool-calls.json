@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A reply holds read a.ts, read b.ts, edit a.ts, read a.ts. When does the last read start?",
+      "options": [
+        "At the same time as the first two reads",
+        "After the edit finishes, because the edit is a barrier",
+        "Before the edit, because reads go first",
+        "In random order"
+      ],
+      "answer": 1,
+      "explanation": "The edit is not concurrency-safe, so it runs alone and nothing after it starts until it is done. The last read therefore sees the edited file.",
+      "conceptKeys": [
+        "parallel-tool-calls"
+      ]
+    },
+    {
+      "prompt": "A tool's isConcurrencySafe returns undefined because the author forgot a return statement. How is the call run?",
+      "options": [
+        "Alone, as a barrier, because only exactly true counts as safe",
+        "In parallel, because undefined is not false",
+        "It is rejected with an error",
+        "In parallel, but only with other tools of the same name"
+      ],
+      "answer": 0,
+      "explanation": "The check is === true. Anything else is treated as unsafe, which costs some time but never risks a clash.",
+      "conceptKeys": [
+        "parallel-tool-calls"
+      ]
+    },
+    {
+      "prompt": "In a group, read b.ts finishes before read a.ts. In what order are the results returned?",
+      "options": [
+        "b.ts first, because it finished first",
+        "Alphabetical by file name",
+        "In the order the model asked: a.ts then b.ts",
+        "Whichever order the event log stored them"
+      ],
+      "answer": 2,
+      "explanation": "Each result is written into its own slot by index, so the returned list matches the model's order regardless of finishing order.",
+      "conceptKeys": [
+        "parallel-tool-calls"
+      ]
+    }
+  ],
+  "diagrams": []
+}

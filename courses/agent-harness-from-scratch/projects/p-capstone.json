@@ -1,0 +1,99 @@
+{
+  "title": "Finish minidsh end to end",
+  "brief": "Bring every part of minidsh together. Give the agent an inbox and a subagent tool with a depth limit, run one task from the command line until the whole tree of agents is idle, serve a small web gateway that takes prompts over HTTP and streams progress over one WebSocket, and finish by tracing one real request through every part of your own code, naming the DeepSeek Harness package that plays the same role.",
+  "starter": [
+    {
+      "path": "src/agents.ts",
+      "note": "Inbox with followup, steer and inject; Agent with wake, whenIdle, onIdle, depth and children; deliver(); subagentTool()."
+    },
+    {
+      "path": "src/loop.ts",
+      "note": "Turn function: claim next-turn at the start, next-step before each later step; emit agent/assistant-stream for every chunk."
+    },
+    {
+      "path": "src/session.ts",
+      "note": "append() emits session/event after each event; the child's depth is saved in its session header."
+    },
+    {
+      "path": "src/cli.ts",
+      "note": "Headless runner: npx tsx src/cli.ts \"task\" waits for the whole tree, prints the final text to stdout and exits 0 or 1."
+    },
+    {
+      "path": "src/server.ts",
+      "note": "POST /prompt and a WebSocket at /events that sends a snapshot, then live events and deltas; listens on 127.0.0.1:3000."
+    },
+    {
+      "path": "WALKTHROUGH.md",
+      "note": "Your trace of one request through every part, with the matching DeepSeek Harness package for each."
+    }
+  ],
+  "hints": [
+    "A turn may only end when the model answered in plain text and the next-step queue is empty.",
+    "Deliver a child's answer as a steer if the parent is running and a followup if it is idle; send a failed message too, never nothing.",
+    "Check depth before creating the child: refuse when parent.depth >= MAX_DEPTH, and add a prompt sentence at the limit so the model does not try.",
+    "In the headless loop, wait for idle, then wait for busy descendants, and break only when a pass waited for nobody and the top agent is still idle.",
+    "Send the snapshot and register both listeners in the same synchronous block, and remove the listeners with their disposers when the socket closes.",
+    "Keep live text on stderr in the CLI so stdout holds only the final answer."
+  ],
+  "rubric": [
+    {
+      "criterion": "Followup starts a new turn, steer joins the next step, and every claimed message is logged as user/message",
+      "chapterKey": "agent-inbox"
+    },
+    {
+      "criterion": "The subagent tool returns at once and the child runs with its own JSONL log and approval set to never",
+      "chapterKey": "subagent"
+    },
+    {
+      "criterion": "A finished or failed child delivers a tagged user message to its direct parent and wakes it",
+      "chapterKey": "subagent-result"
+    },
+    {
+      "criterion": "Depth is parent plus one, saved in the session, and a call at the maximum gets an error result",
+      "chapterKey": "depth-limit"
+    },
+    {
+      "criterion": "Recorded events and stream chunks are announced on event hooks, and the terminal output comes from listeners only",
+      "chapterKey": "live-event-stream"
+    },
+    {
+      "criterion": "The CLI waits for every agent in the tree, prints only the final text to stdout and exits 0 only on a completed turn",
+      "chapterKey": "headless-runner"
+    },
+    {
+      "criterion": "POST /prompt answers 202 and the WebSocket sends a snapshot after the given seq, then live events and deltas",
+      "chapterKey": "web-gateway"
+    },
+    {
+      "criterion": "The walkthrough follows one request through inbox, prompt sections, derived history, adapter, assembler, tool pipeline, approval, sandbox, event log, compaction, subagents and live stream, each with its DeepSeek Harness package",
+      "chapterKey": "whole-harness"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Subagent tool with a depth limit",
+      "body": "Add subagentTool to src/agents.ts. It creates a child Agent with its own session file, depth parent.depth + 1 and approval never, drops the brief in its inbox and returns \"Started child-N\" at once. Wire onIdle so the child's final text reaches the parent through deliver(). With MAX_DEPTH = 1, ask the agent to delegate a review and confirm that a second level is refused.",
+      "checkCmd": "npx tsx src/cli.ts \"Use one subagent to count the lines in package.json, then report the number\" && ls sessions/child-1.jsonl"
+    },
+    {
+      "title": "Headless runner that waits for the whole tree",
+      "body": "Write src/cli.ts: follow up with argv[2], loop on whenIdle and waitForTree until a pass finds nothing busy, flush the log, print the final text to stdout and exit 0 only if the last turn completed. Stream text deltas to stderr.",
+      "checkCmd": "npx tsx src/cli.ts \"Start two subagents: one summarizes README.md, one lists the files in src. Combine their answers.\" 2>/dev/null; echo \"exit $?\""
+    },
+    {
+      "title": "Web gateway with snapshot then live events",
+      "body": "Write src/server.ts with node:http and the ws package. POST /prompt with {\"text\": ...} sends a followup and answers 202. A WebSocket at /events?after=N sends one snapshot frame of the events after N, then an event frame for each new session event and a delta frame for each stream chunk. Listen on 127.0.0.1:3000.",
+      "checkCmd": "npx tsx src/server.ts & sleep 2; curl -s -o /dev/null -w '%{http_code}\\n' -X POST localhost:3000/prompt -d '{\"text\":\"what is 2+2\"}'"
+    },
+    {
+      "title": "Watch progress in the browser or a script",
+      "body": "Connect to the WebSocket, send a prompt over HTTP, and confirm you see the snapshot first, then the user/message event, delta frames and the assistant/message. Disconnect and reconnect with ?after set to the last seq you saw, and confirm no event repeats.",
+      "checkCmd": "npx wscat -c 'ws://127.0.0.1:3000/events?after=0'"
+    },
+    {
+      "title": "Trace one request through every part",
+      "body": "Run one real request that makes the agent run a command and start a helper. In WALKTHROUGH.md, list in order the inbox, prompt sections, derived history, adapter, assembler, tool pipeline, approval, sandbox, event log, compaction, subagents and live stream: for each, the seq numbers it produced or the function in your code that handled it, and the DeepSeek Harness package that does the same job.",
+      "checkCmd": "grep -c 'packages/' WALKTHROUGH.md"
+    }
+  ]
+}

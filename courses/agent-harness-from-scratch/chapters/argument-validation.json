@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The model sends {\"path\":\"a.ts\",\"limit\":\"ten\"} to read_file, whose schema says limit is an integer. What happens?",
+      "options": [
+        "The tool runs and ignores limit",
+        "The tool runs and crashes when it uses limit",
+        "The tool does not run; the model gets an error result saying limit should be integer, got string",
+        "The program converts \"ten\" to 10"
+      ],
+      "answer": 2,
+      "explanation": "checkArgs compares each field's type with the schema before execute is called and returns one clear sentence as the error result.",
+      "conceptKeys": [
+        "argument-validation"
+      ]
+    },
+    {
+      "prompt": "Why does the not-valid-JSON error quote the start of the raw arguments?",
+      "options": [
+        "So the model can see what it actually sent and correct it",
+        "Because the error must be at least 200 characters",
+        "So the program can retry parsing later",
+        "Because the schema requires it"
+      ],
+      "answer": 0,
+      "explanation": "Showing the broken text lets the model spot its own mistake, such as a cut-off string, on the next step.",
+      "conceptKeys": [
+        "argument-validation"
+      ]
+    },
+    {
+      "prompt": "Which check must stay inside the edit tool instead of the schema validator?",
+      "options": [
+        "That file_path is present",
+        "That old_string is a string",
+        "That no unknown fields were sent",
+        "That old_string is not empty and differs from new_string"
+      ],
+      "answer": 3,
+      "explanation": "The schema only states fields and types. Rules that compare values, such as old_string differing from new_string, are checked by the tool itself.",
+      "conceptKeys": [
+        "argument-validation"
+      ]
+    }
+  ],
+  "diagrams": []
+}

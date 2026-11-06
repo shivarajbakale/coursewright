@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The parent starts a helper to review a 3,000-line file. What ends up in the parent's own event log?",
+      "options": [
+        "The whole file plus the helper's answer",
+        "Every tool call the helper makes",
+        "Only the subagent tool call and a short result saying the helper started",
+        "Nothing, because helpers are invisible to the parent"
+      ],
+      "answer": 2,
+      "explanation": "The child records its reading and tool calls in its own log. The parent's log gains only the tool/call and the tool/result \"Started child-1.\"",
+      "conceptKeys": [
+        "subagent"
+      ]
+    },
+    {
+      "prompt": "Why does the subagent tool return at once instead of waiting for the child's final answer?",
+      "options": [
+        "Waiting would break the event log format",
+        "So the parent can start several helpers in one reply and they run side by side",
+        "Because children are not allowed to finish",
+        "Because the model cannot read long tool results"
+      ],
+      "answer": 1,
+      "explanation": "A waiting tool blocks the parent's turn, so helpers would run one after another. Returning at once lets several run at the same time.",
+      "conceptKeys": [
+        "subagent"
+      ]
+    },
+    {
+      "prompt": "A fresh child is started with the brief \"fix the bug we discussed\". What goes wrong?",
+      "options": [
+        "Nothing, it reads the parent's history",
+        "The child knows only the brief, so it does not know which bug",
+        "The child asks the person which bug and waits",
+        "The tool rejects briefs under 100 characters"
+      ],
+      "answer": 1,
+      "explanation": "A fresh child starts with an empty log and only the brief. The brief must be complete; only a forked child would carry the parent's history.",
+      "conceptKeys": [
+        "subagent"
+      ]
+    }
+  ],
+  "diagrams": []
+}

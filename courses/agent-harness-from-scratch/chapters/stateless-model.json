@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "In the terminal chat, how many messages does the program send with the user's third question?",
+      "options": [
+        "3",
+        "4",
+        "6",
+        "7"
+      ],
+      "answer": 2,
+      "explanation": "The list starts with the system message, and each exchange adds a user and an assistant message. At the third question it holds the system message, two finished exchanges and the new question: 1 + 4 + 1 = 6.",
+      "conceptKeys": [
+        "stateless-model"
+      ]
+    },
+    {
+      "prompt": "You remove the line that pushes the assistant reply into `history`. What goes wrong?",
+      "options": [
+        "The provider rejects the request for missing a role",
+        "The model no longer sees its own earlier answers, so it can contradict or repeat them",
+        "The model remembers its answers anyway, so nothing changes",
+        "The context window shrinks by half"
+      ],
+      "answer": 1,
+      "explanation": "The model keeps nothing between requests. If your program does not send its earlier replies, they are gone for the model, and it answers as if it never said them.",
+      "conceptKeys": [
+        "stateless-model"
+      ]
+    },
+    {
+      "prompt": "Why does each request in a long chat cost more tokens than the one before?",
+      "options": [
+        "Because every request resends the whole conversation so far",
+        "Because the model writes longer replies as it gets tired",
+        "Because the provider charges a fee per earlier request",
+        "Because the system prompt is copied once per message"
+      ],
+      "answer": 0,
+      "explanation": "A stateless model needs the full history every time, so each request includes everything before it plus the new message. With about 20 tokens per message, requests grow from about 40 to 80 to 120 tokens.",
+      "conceptKeys": [
+        "stateless-model"
+      ]
+    }
+  ],
+  "diagrams": []
+}

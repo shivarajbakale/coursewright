@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "prompt": "After a crash, the log holds an assistant message with a tool call but no tool result. What goes wrong if you only append turn/end and carry on?",
+      "options": [
+        "Nothing; the model ignores calls from earlier turns",
+        "The provider rejects the next request because the call has no matching result",
+        "The tool runs again automatically on the next request",
+        "The JSONL file can no longer be loaded"
+      ],
+      "answer": 1,
+      "explanation": "Derived history still contains the assistant message, and providers require every tool call to be answered by a result with the same id. The session cannot continue until each call has one.",
+      "conceptKeys": [
+        "orphaned-tool-call"
+      ]
+    },
+    {
+      "prompt": "call_1 has a tool/call event in the log; call_2 does not. Which synthetic results should they get?",
+      "options": [
+        "Both get 'never started', since neither has a result",
+        "Both get 'outcome unknown', to be safe",
+        "call_1 gets 'outcome unknown'; call_2 gets 'never started'",
+        "call_1 gets a success result; call_2 gets 'never started'"
+      ],
+      "answer": 2,
+      "explanation": "A recorded tool/call means the tool started, so whether it finished is unknown. No tool/call means it never started, so running it again is safe.",
+      "conceptKeys": [
+        "orphaned-tool-call"
+      ]
+    },
+    {
+      "prompt": "Why does the 'outcome unknown' result tell the model to run the tool again only if it is idempotent?",
+      "options": [
+        "Repeating a tool that may already have acted, such as sending an email, could do it twice",
+        "Idempotent tools cannot fail, so repeating them always succeeds",
+        "The provider rejects repeated calls to tools that are not idempotent",
+        "Only idempotent tools produce a tool/call event"
+      ],
+      "answer": 0,
+      "explanation": "An idempotent tool has the same effect whether it runs once or twice. A tool that may have already sent an email or charged a card should be checked first, not repeated blindly.",
+      "conceptKeys": [
+        "orphaned-tool-call"
+      ]
+    }
+  ],
+  "diagrams": [],
+  "diagramRequest": {
+    "title": "A crash mid-step and the resume that repairs it",
+    "show": "The loop appends events 1-5 to the JSONL file, the process is killed after tool/call for call_1, and on restart resume reads the file, finds call_1 started and call_2 not started, appends two synthetic error results, step/end and turn/end interrupted, and the next request to the model is accepted.",
+    "shape": "process"
+  }
+}

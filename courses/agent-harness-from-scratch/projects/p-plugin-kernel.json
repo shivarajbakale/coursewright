@@ -1,0 +1,95 @@
+{
+  "title": "A plugin kernel for minidsh",
+  "brief": "Write a plugin kernel of about 150 lines in src/plugins.ts, then rebuild minidsh on top of it. The kernel offers ctx.plugin(fn, config), ctx.effect(fn), ctx.provide(name, value), ctx.get(name), ctx.inject(needs, fn), ctx.on(event, fn), ctx.emit, ctx.serial and ctx.waterfall, plus createScope for per-agent registrations. Every registration returns a disposer, and unloading a plugin must leave nothing behind. When the kernel works, move the agent loop and one tool onto it: the event log becomes a 'session' service, the model client an 'llm' service, the loop a plugin that injects both, and current_time a tool plugin. The goal is a main.ts that is only a list of config rows, where removing a row removes a feature and nothing else changes.",
+  "starter": [
+    {
+      "path": "src/plugins.ts",
+      "note": "The kernel: Context class with root, parent, scope, disposers, services, watchers and listeners; createScope at the bottom."
+    },
+    {
+      "path": "src/config.ts",
+      "note": "Row type, applyPatch(rows, patch) and mount(app, rows, catalog)."
+    },
+    {
+      "path": "src/main.ts",
+      "note": "Builds the catalog of plugins, applies an optional patch file given with --patch, and mounts the rows."
+    },
+    {
+      "path": "src/loop.ts",
+      "note": "Your existing agent loop, wrapped as a plugin that injects 'session' and 'llm' and announces agent/turn-end with serial."
+    },
+    {
+      "path": "test/kernel.test.ts",
+      "note": "Small checks run with npx tsx: disposal order, double-dispose, injection restart, waterfall veto, scoped listeners."
+    }
+  ],
+  "hints": [
+    "Write dispose() to walk a copy of the disposer list in reverse; the once-guard inside effect() removes entries as they run, so iterating the live array skips some.",
+    "Mounting a child is an effect on the parent: plugin() should be effect(() => { const child = new Context(this); fn(child, config); return () => child.dispose() }).",
+    "Make the child inherit its parent's scope in the constructor (this.scope = parent?.scope), so plugins mounted inside an agent's scope are tagged too.",
+    "provide() and its disposer must both call changed(); otherwise injected plugins never start, or never stop.",
+    "In waterfall, pop the last argument as the innermost action before passing the rest to listeners, and throw if a listener calls next twice.",
+    "A plugin that never starts is usually waiting on a service name nobody provides. Print the needs list of every waiting inject when debugging."
+  ],
+  "rubric": [
+    {
+      "criterion": "Plugins are plain functions taking (ctx, config); main.ts adds features only by mounting them",
+      "chapterKey": "plugin"
+    },
+    {
+      "criterion": "Every registration returns an idempotent disposer, and disposers run in reverse order on unload",
+      "chapterKey": "disposer"
+    },
+    {
+      "criterion": "provide refuses a taken name and its entry is removed when the providing plugin unloads",
+      "chapterKey": "service"
+    },
+    {
+      "criterion": "inject starts a plugin only while all needed services exist, and restarts it when a lost service returns",
+      "chapterKey": "service-injection"
+    },
+    {
+      "criterion": "emit isolates listener errors; serial awaits each listener in order",
+      "chapterKey": "event-hook"
+    },
+    {
+      "criterion": "waterfall passes (...args, next), supports veto by not calling next, and rejects a second next call",
+      "chapterKey": "waterfall-hook"
+    },
+    {
+      "criterion": "The app is a list of rows with ids; patches replace a row's whole config or insert new rows",
+      "chapterKey": "config-rows"
+    },
+    {
+      "criterion": "Listeners registered through a scope run only for that agent plus global code, and vanish when the scope is disposed",
+      "chapterKey": "agent-scope"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Plugins, effects and disposers",
+      "body": "Write Context with effect, plugin and dispose. Mount a heartbeat plugin that prints every 1,000 ms and unload it at 3,500 ms. It should print three lines and then the process should exit on its own, proving no timer leaked.",
+      "checkCmd": "npx tsx test/kernel.test.ts disposers"
+    },
+    {
+      "title": "Services and injection",
+      "body": "Add provide, get, changed and inject. Inject a greeter that needs 'session' before mounting the memory log, then unload and remount the log. The greeter must start, stop and start again, appending one event each time it starts.",
+      "checkCmd": "npx tsx test/kernel.test.ts services"
+    },
+    {
+      "title": "Event and waterfall hooks",
+      "body": "Add on, emit, serial and waterfall. Register a timer listener and a blocker listener on tools/execute. A read_file call must reach the inner action and be timed; a delete_file call must return the blocker's error without running the inner action.",
+      "checkCmd": "npx tsx test/kernel.test.ts hooks"
+    },
+    {
+      "title": "Config rows and scopes",
+      "body": "Write applyPatch and mount, and createScope. A patch file that replaces one row's config and inserts another must produce the expected rows. A listener registered through one scope must not fire for another scope, and must be gone after its scope is disposed.",
+      "checkCmd": "npx tsx test/kernel.test.ts rows-and-scopes"
+    },
+    {
+      "title": "The agent on the kernel",
+      "body": "Turn the event log into a 'session' service, the model client into an 'llm' service, the agent loop into a plugin that injects both, and current_time into a tool plugin. main.ts becomes a list of rows. Ask a question that needs the tool; then disable the tool's row with a patch and see the model answer without it.",
+      "checkCmd": "npx tsx src/main.ts \"what time is it?\""
+    }
+  ]
+}

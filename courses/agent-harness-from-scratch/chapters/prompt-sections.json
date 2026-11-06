@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The edit tool plugin is unloaded. What removes its advice from the next system prompt?",
+      "options": [
+        "The model ignores advice for tools it no longer has",
+        "The disposer returned by register, which the plugin's effect runs on unload",
+        "The next section with a higher order number overwrites it",
+        "Nothing; the text stays until the session restarts"
+      ],
+      "answer": 1,
+      "explanation": "register returns a function that deletes the section. Handing it to ctx.effect means it runs when the plugin unloads, so the next render no longer includes it.",
+      "conceptKeys": [
+        "prompt-sections"
+      ]
+    },
+    {
+      "prompt": "Two sections both have order 1000, named 'tool:grep' and 'tool:bash'. In what order are they rendered?",
+      "options": [
+        "In the order they were registered",
+        "In random order each render",
+        "'tool:bash' first, because ties are broken by name",
+        "Only the later one, because the order collides"
+      ],
+      "answer": 2,
+      "explanation": "render sorts by order, then by name. 'tool:bash' comes before 'tool:grep' alphabetically, and the result is the same on every run.",
+      "conceptKeys": [
+        "prompt-sections"
+      ]
+    },
+    {
+      "prompt": "Why are order numbers like 1000 and 1300 spaced apart instead of 1, 2, 3?",
+      "options": [
+        "So a new section can take a slot between existing ones without renumbering the rest",
+        "Because the model reads larger numbers first",
+        "To limit each section to 300 characters",
+        "Because negative numbers are not allowed"
+      ],
+      "answer": 0,
+      "explanation": "Gaps let a new tool claim order 1100 between bash and edit without changing any other plugin.",
+      "conceptKeys": [
+        "prompt-sections"
+      ]
+    }
+  ],
+  "diagrams": []
+}

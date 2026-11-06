@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "You add a system message saying \"Answer in at most three words\" before the same user question. What changes?",
+      "options": [
+        "The model now remembers this rule for every future request",
+        "The provider cuts the reply after three tokens",
+        "The model usually answers more briefly, because the system message frames how it replies",
+        "Nothing, because system messages are only read by the provider"
+      ],
+      "answer": 2,
+      "explanation": "The system prompt is your instruction about how to behave, placed first so it frames the rest. The model has learned to follow it, so the answer becomes short, though this is a habit and not a hard limit.",
+      "conceptKeys": [
+        "message-roles"
+      ]
+    },
+    {
+      "prompt": "Which role does the provider give to the reply the model writes?",
+      "options": [
+        "`assistant`",
+        "`system`",
+        "`user`",
+        "`model`"
+      ],
+      "answer": 0,
+      "explanation": "Replies come back labelled `assistant`. `user` is for the person and `system` is for your instructions.",
+      "conceptKeys": [
+        "message-roles"
+      ]
+    },
+    {
+      "prompt": "Why is a system prompt not a guarantee that the model obeys your rules?",
+      "options": [
+        "Because the provider deletes system messages from long requests",
+        "Because the messages become one run of tokens, and following the system message is a learned habit of a next-token predictor",
+        "Because only the last message in the list is read",
+        "Because system prompts are limited to three words"
+      ],
+      "answer": 1,
+      "explanation": "The provider joins the labelled messages into one token sequence. The model was trained to treat the system part as rules, which makes it likely, not certain, that it complies.",
+      "conceptKeys": [
+        "message-roles"
+      ]
+    }
+  ],
+  "diagrams": []
+}

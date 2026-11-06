@@ -1,0 +1,6 @@
+{
+  "topic": "Building an LLM agent harness like DeepSeek Harness",
+  "goal": "Understand every part of an agent harness modelled on DeepSeek Harness (dsh) and build a working one end to end: model calls, tool calling, the agent loop, an event-sourced session log, provider adapters, a plugin system, safe tools with approvals and a sandbox, context management, subagents, and a terminal and web front end.",
+  "pace": "one to two months; owner asked for end to end from absolute basics",
+  "answers": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Two mounted servers, `tracker` and `wiki`, both offer a tool named `search`. What does the model see?",
+      "options": [
+        "One `search` tool, and the client picks a server at random",
+        "An error, because names must be unique across servers",
+        "Two tools, mcp__tracker__search and mcp__wiki__search",
+        "Only the first server's tool"
+      ],
+      "answer": 2,
+      "explanation": "Each tool is registered with a server prefix, so equal names from different servers stay distinct and show where a call goes.",
+      "conceptKeys": [
+        "mcp-client"
+      ]
+    },
+    {
+      "prompt": "Your sandbox runs in workspace-write. Does it stop an MCP server you started from writing to your home folder?",
+      "options": [
+        "No; the fence wraps commands your shell tool runs, not a server program you started yourself",
+        "Yes; every child program of the harness is fenced automatically",
+        "Yes, because MCP servers can only read files",
+        "Only if the server's tools are approved first"
+      ],
+      "answer": 0,
+      "explanation": "The fence applies to commands the shell tool confines. A server is its own program with your permissions, so adding one is a trust decision.",
+      "conceptKeys": [
+        "mcp-client"
+      ]
+    },
+    {
+      "prompt": "A server answers a call with isError: true. What does the mounted tool do?",
+      "options": [
+        "Returns the text as a normal result",
+        "Retries the call until it succeeds",
+        "Unmounts the whole server",
+        "Throws, so the tool pipeline turns it into a tool error result for the model"
+      ],
+      "answer": 3,
+      "explanation": "Throwing lets the existing pipeline mark the result as an error, so the model can read what went wrong and recover, as with any tool.",
+      "conceptKeys": [
+        "mcp-client"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A log ends with turn/end for turn 3. What does resuming need to do before the next question?",
+      "options": [
+        "Append step/end and turn/end with reason interrupted",
+        "Load the events and continue numbering; no closing events are needed",
+        "Delete turn 3 so the next question starts fresh",
+        "Ask the model to summarize turn 3 first"
+      ],
+      "answer": 1,
+      "explanation": "A log that ends with turn/end has no open turn, so closeOpenTurn returns nothing. The next question becomes turn 4 and derived history includes everything before it.",
+      "conceptKeys": [
+        "session-resume"
+      ]
+    },
+    {
+      "prompt": "A log's last event is step/start (seq 8) for step 2 of turn 1. What does closeOpenTurn append?",
+      "options": [
+        "Only turn/end at seq 9",
+        "turn/end at seq 9, then step/end at seq 10",
+        "step/end at seq 9, then turn/end at seq 10 with reason interrupted",
+        "Nothing, because the step has not produced a message yet"
+      ],
+      "answer": 2,
+      "explanation": "Both the step and the turn are open. The step closes first, then the turn, continuing from seq 8, and the turn's reason records that it did not finish normally.",
+      "conceptKeys": [
+        "session-resume"
+      ]
+    },
+    {
+      "prompt": "Why does resume append closing events instead of editing the old run's events to look finished?",
+      "options": [
+        "Editing would break the append-only rule and hide that the turn was cut short",
+        "Editing a JSONL file is not possible in Node",
+        "The model requires every turn to end with reason interrupted",
+        "Closing events make the old run's lost reply reappear"
+      ],
+      "answer": 0,
+      "explanation": "Recorded facts are never changed. Like a secretary adding a note rather than rewriting the minutes, new events state honestly that the turn ended without finishing.",
+      "conceptKeys": [
+        "session-resume"
+      ]
+    }
+  ],
+  "diagrams": []
+}

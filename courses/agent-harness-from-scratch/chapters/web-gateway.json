@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does POST /prompt answer 202 at once instead of waiting for the model's reply?",
+      "options": [
+        "HTTP cannot carry long text",
+        "The prompt goes into the inbox, and all progress, including the answer, arrives on the WebSocket",
+        "The server rejects slow requests",
+        "202 makes the model reply faster"
+      ],
+      "answer": 1,
+      "explanation": "The POST only hands the prompt to the agent as a followup. The answer is just more events, which the socket already delivers.",
+      "conceptKeys": [
+        "web-gateway"
+      ]
+    },
+    {
+      "prompt": "The page held events up to seq 14 when its socket closed. What should it receive after reconnecting with after=14?",
+      "options": [
+        "Only events with seq greater than 14, then new ones as they come",
+        "The whole log again from seq 1",
+        "Only the deltas it missed",
+        "Nothing until the next prompt"
+      ],
+      "answer": 0,
+      "explanation": "The snapshot filters to events after the cursor, so the page fills the gap and then follows live.",
+      "conceptKeys": [
+        "web-gateway"
+      ]
+    },
+    {
+      "prompt": "Why does the server listen on 127.0.0.1 only?",
+      "options": [
+        "WebSockets only work locally",
+        "It makes snapshots smaller",
+        "The ws package requires it",
+        "Anyone who can reach /prompt can make the agent run commands"
+      ],
+      "answer": 3,
+      "explanation": "The gateway is a remote control for an agent that runs commands, so it should be reachable only from your own machine.",
+      "conceptKeys": [
+        "web-gateway"
+      ]
+    }
+  ],
+  "diagrams": []
+}

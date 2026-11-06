@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A listener is registered through research.ctx. Which announcements run it?",
+      "options": [
+        "Every announcement from any agent",
+        "Announcements made through research's context only",
+        "Only announcements made through the root context",
+        "None, until it is moved to the root"
+      ],
+      "answer": 1,
+      "explanation": "The listener carries the research tag. A dispatch through research's context admits untagged listeners and research-tagged ones; other scopes skip it.",
+      "conceptKeys": [
+        "agent-scope"
+      ]
+    },
+    {
+      "prompt": "After research.dispose(), why is its listener gone?",
+      "options": [
+        "The root clears every list when any scope closes",
+        "emit checks whether the scope still exists",
+        "Registering the listener was an effect on the scope's context, and disposing that context ran its disposers",
+        "Tagged listeners expire after one call"
+      ],
+      "answer": 2,
+      "explanation": "on() is an effect recorded on the scope's own context. Disposing that context runs the disposers, which remove the entry.",
+      "conceptKeys": [
+        "agent-scope"
+      ]
+    },
+    {
+      "prompt": "Which statement about agent scopes is accurate?",
+      "options": [
+        "Scopes decide visibility and cleanup but are not a security boundary",
+        "Scopes stop an agent from reading any shared service",
+        "Scopes run each agent in a separate process",
+        "Scoped listeners always run before global ones"
+      ],
+      "answer": 0,
+      "explanation": "A scope controls which registrations an agent sees and removes them with it. Code inside a scope can still reach the shared shelf.",
+      "conceptKeys": [
+        "agent-scope"
+      ]
+    }
+  ],
+  "diagrams": []
+}

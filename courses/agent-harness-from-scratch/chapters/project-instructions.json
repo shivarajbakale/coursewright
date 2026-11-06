@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Someone edits AGENTS.md halfway through a session, then you restart and resume. What does the model see for the original instructions?",
+      "options": [
+        "The new file, because the loader reads it again on resume",
+        "Nothing, because instructions are not saved",
+        "Both versions merged together",
+        "The text recorded in the log at the start, because resume replays what the model actually saw"
+      ],
+      "answer": 3,
+      "explanation": "The instructions were recorded as an event. On resume the loop finds that event and does not add a second copy, so the replayed history matches what happened.",
+      "conceptKeys": [
+        "project-instructions"
+      ]
+    },
+    {
+      "prompt": "Why does minidsh add AGENTS.md as a user-role message instead of a prompt section?",
+      "options": [
+        "The model cannot read system messages longer than 1,000 bytes",
+        "The file is content from the repository, possibly written by a stranger, so it should not carry the harness's own authority",
+        "User messages are cheaper than system messages",
+        "Prompt sections cannot contain Markdown"
+      ],
+      "answer": 1,
+      "explanation": "The system prompt states the harness's own rules. A repository file is input from whoever owns the repo, so it arrives as a recorded message instead.",
+      "conceptKeys": [
+        "project-instructions"
+      ]
+    },
+    {
+      "prompt": "AGENTS.md is 40,000 bytes and maxBytes is 32,000. What does loadProjectInstructions return?",
+      "options": [
+        "The first 32,000 bytes followed by a [truncated] marker",
+        "Nothing, because the file is too large",
+        "The whole file, because limits apply only to tool results",
+        "The last 32,000 bytes"
+      ],
+      "answer": 0,
+      "explanation": "The loader keeps as many bytes as fit in the budget and marks the cut, so a huge file cannot fill the context window.",
+      "conceptKeys": [
+        "project-instructions"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Your call returns HTTP status 401 and `res.ok` is false. What is the most likely cause?",
+      "options": [
+        "The question was too short for the model",
+        "The model was busy writing another answer",
+        "The context window was full",
+        "The API key was missing or wrong, so the provider did not accept the request"
+      ],
+      "answer": 3,
+      "explanation": "The API key identifies you to the provider. Without a valid key in the `Authorization` header, the provider refuses the request before the model sees it.",
+      "conceptKeys": [
+        "model-api-call"
+      ]
+    },
+    {
+      "prompt": "A reply reports `prompt_tokens: 11` and `completion_tokens: 8`. What do these numbers measure?",
+      "options": [
+        "11 tokens you sent and 8 tokens the model wrote, 19 in total",
+        "11 characters you sent and 8 words the model wrote",
+        "11 requests made today and 8 remaining",
+        "11 possible answers, of which the model returned 8"
+      ],
+      "answer": 0,
+      "explanation": "`usage` counts tokens: `prompt_tokens` for your input and `completion_tokens` for the reply. Their sum, 19, is in `total_tokens`, and it is what you are billed for.",
+      "conceptKeys": [
+        "model-api-call"
+      ]
+    },
+    {
+      "prompt": "Why should the API key live in an environment variable instead of in your source code?",
+      "options": [
+        "Because `fetch` can only read headers from environment variables",
+        "Because the key is a secret that bills your account, and code is often shared or committed",
+        "Because the model reads environment variables to find the key",
+        "Because keys in code expire after one request"
+      ],
+      "answer": 1,
+      "explanation": "The key tells the provider whom to bill. Code ends up in version control and in other people's hands, so keeping the key outside it keeps the secret safe.",
+      "conceptKeys": [
+        "model-api-call"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why can the runner not exit the first time the top agent becomes idle?",
+      "options": [
+        "The log is not written until the second idle",
+        "Helpers may still be running, and their answers will wake the top agent for another turn",
+        "The model always needs two turns",
+        "Standard output is not ready yet"
+      ],
+      "answer": 1,
+      "explanation": "The top agent may end its turn while children work. Each child's answer arrives as a followup and starts a new turn, so the runner must keep checking.",
+      "conceptKeys": [
+        "headless-runner"
+      ]
+    },
+    {
+      "prompt": "When does the loop in src/cli.ts break?",
+      "options": [
+        "When the top agent first finishes a turn",
+        "After a fixed number of turns",
+        "When a pass waits for no descendants and the top agent is not running",
+        "When standard error is empty"
+      ],
+      "answer": 2,
+      "explanation": "waitForTree returns false only if no descendant was busy. With the top agent idle too, nothing can wake anything, so the work is done.",
+      "conceptKeys": [
+        "headless-runner"
+      ]
+    },
+    {
+      "prompt": "Why does the headless runner set approval to never?",
+      "options": [
+        "No person is there to answer, so risky calls are refused instead of hanging on a question",
+        "It makes every tool call allowed",
+        "Approval would print to standard output",
+        "Children cannot start otherwise"
+      ],
+      "answer": 0,
+      "explanation": "Anything but a clear yes means no. With nobody to ask, never refuses at once rather than waiting forever.",
+      "conceptKeys": [
+        "headless-runner"
+      ]
+    }
+  ],
+  "diagrams": []
+}

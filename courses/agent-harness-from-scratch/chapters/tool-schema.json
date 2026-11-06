@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A schema lists `required: ['path']`. The model asks for `read_file` with arguments `{}`. What is true?",
+      "options": [
+        "The provider will refuse to send such a request to your program",
+        "The arguments break the schema, and your program has to notice because the schema does not enforce itself",
+        "The model will automatically fill in a default path",
+        "The request is valid, because `required` only applies to strings"
+      ],
+      "answer": 1,
+      "explanation": "The schema is a description the model reads as text, not a guard. A missing required argument can still arrive, so your program must check it.",
+      "conceptKeys": [
+        "tool-schema"
+      ]
+    },
+    {
+      "prompt": "Why does the wording of a tool's `description` matter so much?",
+      "options": [
+        "It is shown to the user in an error message",
+        "The provider uses it to run the function",
+        "The model reads it to decide when to use the tool and how to fill in the arguments",
+        "It sets the tool's maximum running time"
+      ],
+      "answer": 2,
+      "explanation": "Schemas become part of the model's input. The description is the model's only explanation of the tool, so a vague one leads to wrong or missed requests.",
+      "conceptKeys": [
+        "tool-schema"
+      ]
+    },
+    {
+      "prompt": "You add ten tool schemas to every request. What does that cost you?",
+      "options": [
+        "Tokens in every request, and room in the context window",
+        "Nothing, because schemas are sent once and remembered",
+        "Only a single charge when the tools are first added",
+        "Ten extra HTTP requests per question"
+      ],
+      "answer": 0,
+      "explanation": "The model is stateless and schemas are turned into input tokens, so they are sent, counted and paid for on every request.",
+      "conceptKeys": [
+        "tool-schema"
+      ]
+    }
+  ],
+  "diagrams": []
+}

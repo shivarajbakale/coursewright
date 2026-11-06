@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The finish reason is max-tokens and the reply holds some text and one tool call. What does the assembler return?",
+      "options": [
+        "The text and the tool call, with its arguments as received",
+        "The text only; the tool call is dropped",
+        "Nothing, because the reply was cut off",
+        "The tool call only, since text is less important"
+      ],
+      "answer": 1,
+      "explanation": "A reply cut off by the output limit may have a tool call whose arguments end mid-JSON. Running it is unsafe, so the assembler keeps the text and drops every tool call.",
+      "conceptKeys": [
+        "message-assembler"
+      ]
+    },
+    {
+      "prompt": "Pieces of two tool calls arrive interleaved: index 0, index 1, index 0. How does the assembler keep them apart?",
+      "options": [
+        "It assumes each piece continues the call before it",
+        "It waits for the finish chunk and then sorts by arguments",
+        "It keys each partial call by the piece's index",
+        "It parses each piece as JSON and merges the objects"
+      ],
+      "answer": 2,
+      "explanation": "Each tool-call-delta carries an index. The assembler keeps one partial call per index and appends each piece's arguments to the right one.",
+      "conceptKeys": [
+        "message-assembler"
+      ]
+    },
+    {
+      "prompt": "Why does the loop append the assembled assistant message to the log before running its tool calls?",
+      "options": [
+        "So the log records the exact message the tools follow",
+        "Because tools read their arguments from the log file",
+        "Because the provider requires it before tools can run",
+        "So the tool calls can be edited before they run"
+      ],
+      "answer": 0,
+      "explanation": "Appending first means the log always holds the message that led to each tool call. If anything goes wrong while tools run, the request behind them is already recorded.",
+      "conceptKeys": [
+        "message-assembler"
+      ]
+    }
+  ],
+  "diagrams": []
+}

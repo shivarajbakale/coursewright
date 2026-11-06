@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A bug in your agent wrote the wrong text into a recorded assistant message. With an event log, what is the right fix?",
+      "options": [
+        "Find the bad fact and overwrite its text in place",
+        "Append a new fact that corrects or supersedes the bad one",
+        "Delete the bad fact and every fact recorded after it",
+        "Keep a second, corrected copy of the messages array beside the log"
+      ],
+      "answer": 1,
+      "explanation": "An append-only log never changes or removes a recorded fact. Like a bank adding a correcting line, you add a new fact, so the history of the mistake stays visible.",
+      "conceptKeys": [
+        "event-log"
+      ]
+    },
+    {
+      "prompt": "Why does keeping one list of facts avoid the problem of a messages array plus a separate debug log?",
+      "options": [
+        "The list of facts takes less memory than an array",
+        "The model reads facts faster than messages",
+        "With only one record there is nothing for it to disagree with",
+        "Facts are frozen, so the model cannot change them"
+      ],
+      "answer": 2,
+      "explanation": "Two records of the same conversation can drift apart when a bug updates one and not the other. When the log is the only record and everything else is computed from it, they cannot diverge.",
+      "conceptKeys": [
+        "event-log"
+      ]
+    },
+    {
+      "prompt": "A later feature wants the model to see a shorter version of a long conversation. How does it do that without breaking the append-only rule?",
+      "options": [
+        "It appends a new fact saying which shorter version to use from now on",
+        "It removes the oldest facts from the start of the list",
+        "It edits the oldest facts to contain shorter text",
+        "It starts a new empty log and copies only recent facts"
+      ],
+      "answer": 0,
+      "explanation": "Old facts stay where they are. A new fact at the end says what to use from here on, so the full history is still there for anyone who needs it.",
+      "conceptKeys": [
+        "event-log"
+      ]
+    }
+  ],
+  "diagrams": []
+}

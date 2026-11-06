@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "bwrap cannot start inside your container. Under workspace-write, what does a fail-closed `confine` do with `rm -rf build`?",
+      "options": [
+        "Runs it without the fence and prints a warning",
+        "Throws SANDBOX_UNAVAILABLE so the command never runs, and the model reads why",
+        "Switches the policy to read-only and runs it",
+        "Retries bwrap until it starts"
+      ],
+      "answer": 1,
+      "explanation": "With no working runner the fence cannot be built, so a confined command must not run. The error becomes a tool error result the model can read.",
+      "conceptKeys": [
+        "fail-closed"
+      ]
+    },
+    {
+      "prompt": "A confined command exits with status 1 and stderr `cp: /etc/hosts: Operation not permitted`. What happened?",
+      "options": [
+        "The runner is broken, so the sandbox is unavailable",
+        "The command failed for an ordinary reason such as a bad flag",
+        "The probe must be run again",
+        "The fence worked and refused a write outside the roots"
+      ],
+      "answer": 3,
+      "explanation": "No runner error line appears, and the text matches the denial message. The sandbox did its job; it is not a broken fence.",
+      "conceptKeys": [
+        "fail-closed"
+      ]
+    },
+    {
+      "prompt": "Why does the probe run `true` under the real read-only profile instead of only checking that the runner program exists?",
+      "options": [
+        "A runner can exist but still fail to start or have its rules refused, and only a real run shows that",
+        "Running `true` is faster than looking up a file",
+        "The kernel needs a warm-up command first",
+        "It writes a test file to prove writes work"
+      ],
+      "answer": 0,
+      "explanation": "Inside some containers bwrap is installed but cannot start. Exit 0 from `true` under the real profile proves the runner starts and the kernel accepts the rules.",
+      "conceptKeys": [
+        "fail-closed"
+      ]
+    }
+  ],
+  "diagrams": []
+}

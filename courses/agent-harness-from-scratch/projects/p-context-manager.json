@@ -1,0 +1,95 @@
+{
+  "title": "Context manager for minidsh",
+  "brief": "Give minidsh control over what its model sees. You will build the system prompt from ordered sections that plugins register, record a repository's AGENTS.md as a user message once per session, count tokens against a threshold, compact old history into the fixed eight-section summary and record it as a replace instruction so the log keeps every event, offer skills through a catalog and a loader tool, and mount one MCP server's tools beside your own. When you finish, a long session stays inside the context window, the request beginning stays stable for prompt caching, and nothing in the event log is ever deleted.",
+  "starter": [
+    {
+      "path": "src/context.ts",
+      "note": "New. SystemPrompt registry, loadProjectInstructions, estimateTokens, measure, threshold, chooseCut, the summary instruction, discoverSkills and the skill tool."
+    },
+    {
+      "path": "src/session.ts",
+      "note": "Add the surfaceOp field to message events and deriveSurface; derived history maps the surface instead of every event. Add the compaction/start, compaction/summary and compaction/end event types."
+    },
+    {
+      "path": "src/loop.ts",
+      "note": "Render the prompt sections into a system/message event, record instructions and the skill catalog before the first step, and check the budget before each step and after a too-long error."
+    },
+    {
+      "path": "src/llm.ts",
+      "note": "Pass usage.prompt_tokens, completion_tokens and prompt_cache_hit_tokens through the usage chunk."
+    },
+    {
+      "path": "src/mcp.ts",
+      "note": "New. mountMcpServer using @modelcontextprotocol/sdk, returning a disposer."
+    }
+  ],
+  "hints": [
+    "Make every register call return a disposer and hand it to ctx.effect, so unloading a plugin removes its section, tools or server connection.",
+    "Write a test that calls sharedPrefix on consecutive requests; it should equal the previous request's length on every step that does not compact.",
+    "To force compaction while testing, set a tiny context window such as 4,000 tokens through config instead of writing a huge conversation.",
+    "chooseCut must never leave a tool result at the start of the kept part; test it with a history that ends in an assistant message with two tool calls and two results.",
+    "Write compaction/start first and compaction/end last; on resume, a start without an end means the attempt never finished.",
+    "Run the MCP server with npx so you do not need to install it: for example the reference filesystem server, @modelcontextprotocol/server-filesystem, given one folder."
+  ],
+  "rubric": [
+    {
+      "criterion": "The system prompt is rendered from named sections sorted by order then name, and a section disappears when its plugin unloads",
+      "chapterKey": "prompt-sections"
+    },
+    {
+      "criterion": "AGENTS.md and CLAUDE.md are read once, trimmed to a byte budget and recorded as a user/message with a source tag, and resume does not add a second copy",
+      "chapterKey": "project-instructions"
+    },
+    {
+      "criterion": "Consecutive requests share their whole previous request as a prefix; no timestamp or working folder appears in the system prompt",
+      "chapterKey": "prompt-caching"
+    },
+    {
+      "criterion": "The budget combines the last exact usage with an estimate of newer messages and uses min(window x ratio, window - maxOutput - headroom) as the threshold",
+      "chapterKey": "token-budget"
+    },
+    {
+      "criterion": "Compaction keeps the fixed beginning and the newest messages, never splits a tool call from its result, and asks for the eight-section template, merging any earlier <compacted-summary>",
+      "chapterKey": "compaction"
+    },
+    {
+      "criterion": "The summary is logged as a user/message with surfaceOp replace between compaction/start and compaction/end, and deriveSurface hides the replaced range without deleting events",
+      "chapterKey": "surface-replacement"
+    },
+    {
+      "criterion": "Skills are discovered from SKILL.md frontmatter, offered as a name-and-description catalog, and loaded only through the skill tool",
+      "chapterKey": "skill"
+    },
+    {
+      "criterion": "One MCP server's tools are registered as mcp__<server>__<name>, calls are forwarded with the raw name and abort signal, and isError replies become tool error results",
+      "chapterKey": "mcp-client"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Prompt sections and project instructions",
+      "body": "Build the SystemPrompt registry and move your existing system prompt into an identity section at order -1000 and tool sections beside each tool. Load AGENTS.md and CLAUDE.md before the first step and record them as one user/message with source 'project-instructions'. Write tests for sort order, the disposer, the byte budget, and that a resumed session does not record the instructions twice.",
+      "checkCmd": "npx tsx --test src/context.test.ts"
+    },
+    {
+      "title": "Stable prefix and token budget",
+      "body": "Pass prompt_cache_hit_tokens through the usage chunk and print it after each step. Add measure and threshold, and log the measured tokens and threshold before every step. Ask a question that needs several tool calls and check that cache hits grow from step 2 onward.",
+      "checkCmd": "npx tsx src/cli.ts \"read package.json and tsconfig.json, then tell me the build command\""
+    },
+    {
+      "title": "Compaction logged as a surface replacement",
+      "body": "Add chooseCut, the summary call with the eight-section template, and the four-event transaction. Change derived history to map deriveSurface(events). With a 4,000-token window, run a task that reads several files, then inspect the log: it must contain compaction/summary and a user/message whose surfaceOp is replace, and the older events must still be there.",
+      "checkCmd": "MINIDSH_CONTEXT_WINDOW=4000 npx tsx src/cli.ts \"read every file in src and describe each in one line\""
+    },
+    {
+      "title": "Skills",
+      "body": "Create .agents/skills/release-notes/SKILL.md with name and description frontmatter. Record the catalog before the first step and register the skill tool. Ask for release notes and check the log shows a skill tool call followed by the work.",
+      "checkCmd": "npx tsx src/cli.ts \"write release notes for the last three commits\""
+    },
+    {
+      "title": "One MCP server",
+      "body": "Mount the reference filesystem server on a scratch folder with mountMcpServer when the session starts, and unmount it when the session ends. Ask a question only that server can answer and check the log shows a tool call named mcp__fs__ followed by the server's tool name.",
+      "checkCmd": "npx tsx src/cli.ts \"use the fs server to list the files in the scratch folder\""
+    }
+  ]
+}

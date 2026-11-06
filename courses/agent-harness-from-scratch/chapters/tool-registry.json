@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does schemas() copy only name, description and parameters?",
+      "options": [
+        "Because the model is only allowed three fields per tool",
+        "Because host-only parts such as the execute function must not go into the JSON request",
+        "Because execute is too long to send",
+        "Because the registry stores nothing else"
+      ],
+      "answer": 1,
+      "explanation": "The request is JSON for the model. Functions and other host-only fields stay in the program; the model only needs the schema to ask for a call.",
+      "conceptKeys": [
+        "tool-registry"
+      ]
+    },
+    {
+      "prompt": "The model calls current_tme, a name that is not registered. What does the loop send back?",
+      "options": [
+        "Nothing; it skips the call",
+        "It crashes with an exception",
+        "It runs the closest matching tool",
+        "A tool error result saying the tool is unknown, paired with the call's id"
+      ],
+      "answer": 3,
+      "explanation": "get returns undefined, so the loop returns an error result. Every call still gets a result, and the model can correct the name.",
+      "conceptKeys": [
+        "tool-registry"
+      ]
+    },
+    {
+      "prompt": "A plugin registers a tool with ctx.effect(() => tools.register(tool)) and later unloads. What happens to the tool?",
+      "options": [
+        "It is removed from the registry, because register's disposer runs with the plugin's other disposers",
+        "It stays until the program restarts",
+        "It is marked disabled but still sent to the model",
+        "It moves to the root plugin"
+      ],
+      "answer": 0,
+      "explanation": "register returns a disposer that deletes the name. Wrapping it in an effect ties that disposer to the plugin's unload.",
+      "conceptKeys": [
+        "tool-registry"
+      ]
+    }
+  ],
+  "diagrams": []
+}

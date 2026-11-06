@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The loop must not start the next turn until a listener has finished writing a file. Which announcement should it use?",
+      "options": [
+        "emit, because it is faster",
+        "serial, because it waits for each listener to finish before returning",
+        "emit, then a fixed delay",
+        "Either; they behave the same for async listeners"
+      ],
+      "answer": 1,
+      "explanation": "emit calls listeners and returns at once without waiting. serial awaits each listener, so when it returns every one has finished.",
+      "conceptKeys": [
+        "event-hook"
+      ]
+    },
+    {
+      "prompt": "With the emit in this lesson, the first of three listeners throws. What happens to the other two?",
+      "options": [
+        "They still run, because each call is wrapped in its own try and catch",
+        "They are skipped because emit stops at the first error",
+        "The error is passed to them as an argument",
+        "The whole program exits"
+      ],
+      "answer": 0,
+      "explanation": "emit catches and logs each listener's error separately, so one failure cannot stop later listeners from running.",
+      "conceptKeys": [
+        "event-hook"
+      ]
+    },
+    {
+      "prompt": "Why does unloading stepCounter stop the printing without any change to the agent loop?",
+      "options": [
+        "The loop checks which plugins are loaded before announcing",
+        "serial skips listeners older than one turn",
+        "Registering the listener was an effect, so its disposer removed it from the list",
+        "The loop has to be restarted after any plugin unloads"
+      ],
+      "answer": 2,
+      "explanation": "on() is built on effect(), and its disposer filters the listener out. The loop keeps announcing; there is simply no one listening.",
+      "conceptKeys": [
+        "event-hook"
+      ]
+    }
+  ],
+  "diagrams": []
+}

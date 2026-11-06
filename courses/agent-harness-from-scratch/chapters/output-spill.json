@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "With maxInline 8000 and keep 2000, a command prints 50,000 characters. How many characters does the omitted-note report?",
+      "options": [
+        "42,000",
+        "48,000",
+        "46,000",
+        "50,000"
+      ],
+      "answer": 2,
+      "explanation": "The first 2,000 and last 2,000 characters are kept, so 50,000 minus 4,000 leaves 46,000 omitted.",
+      "conceptKeys": [
+        "output-spill"
+      ]
+    },
+    {
+      "prompt": "Why does the listener keep both the start and the end of the output?",
+      "options": [
+        "The start usually says what the output is, and the end usually holds the error or summary",
+        "Because the model cannot read the middle of any file",
+        "To make the result exactly 4,000 characters for every tool",
+        "Because the event log only stores the first and last lines"
+      ],
+      "answer": 0,
+      "explanation": "The head identifies the output and the tail tends to contain the failure or result, so together they are the most useful small slice.",
+      "conceptKeys": [
+        "output-spill"
+      ]
+    },
+    {
+      "prompt": "Why is the spill file named after the call's id?",
+      "options": [
+        "So the model can guess the name without being told",
+        "Because ids are shorter than tool names",
+        "So the file is deleted when the turn ends",
+        "So two large results never overwrite each other and each can be found again"
+      ],
+      "answer": 3,
+      "explanation": "Every call has a unique id, so each saved output gets its own file that matches the call in the log.",
+      "conceptKeys": [
+        "output-spill"
+      ]
+    }
+  ],
+  "diagrams": []
+}

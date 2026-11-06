@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A model has a 1,000-token window. Your request is about 700 tokens. What is the longest answer it can write?",
+      "options": [
+        "1,000 tokens, because the answer has its own window",
+        "1,700 tokens, the input plus a full window",
+        "700 tokens, the same size as the input",
+        "About 300 tokens, because input and answer share the window"
+      ],
+      "answer": 3,
+      "explanation": "Input and output share one window. 1,000 minus 700 leaves about 300 tokens for the reply; past that, the answer is cut off.",
+      "conceptKeys": [
+        "context-window"
+      ]
+    },
+    {
+      "prompt": "You send a 4,200-character request to a model with a 1,000-token window. What happens?",
+      "options": [
+        "The model reads the first 1,000 tokens and ignores the rest",
+        "The provider rejects the request, because about 1,050 tokens is more than the whole window",
+        "The model replies with an empty answer but accepts the request",
+        "The window grows to fit the request"
+      ],
+      "answer": 1,
+      "explanation": "At about 4 characters per token, 4,200 characters is about 1,050 tokens, 50 more than the window. A request that does not fit is refused as a whole.",
+      "conceptKeys": [
+        "context-window"
+      ]
+    },
+    {
+      "prompt": "Your program read a file earlier, but that text was not included in this request. What does the model know about the file?",
+      "options": [
+        "Nothing, because the model only sees what is inside this request",
+        "Everything, because it stores files it has seen",
+        "Only the file name",
+        "Its first 1,000 tokens"
+      ],
+      "answer": 0,
+      "explanation": "The window is the model's whole working space for one request. A fact outside it does not exist for the model.",
+      "conceptKeys": [
+        "context-window"
+      ]
+    }
+  ],
+  "diagrams": []
+}

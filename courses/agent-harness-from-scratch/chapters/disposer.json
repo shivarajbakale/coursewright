@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the host run a plugin's disposers in reverse order?",
+      "options": [
+        "Because arrays are faster to read backwards",
+        "Because later setup steps often depend on earlier ones, so they must be undone first",
+        "Because the first disposer always throws",
+        "Because effects are registered in random order"
+      ],
+      "answer": 1,
+      "explanation": "Undoing the last thing first means nothing is torn down while something set up after it still relies on it.",
+      "conceptKeys": [
+        "disposer"
+      ]
+    },
+    {
+      "prompt": "A plugin mounts a child plugin with ctx.plugin. What happens to the child when the parent unloads?",
+      "options": [
+        "It keeps running until the program exits",
+        "It must be unloaded by hand first, or the parent throws",
+        "It unloads too, because mounting it was an effect on the parent",
+        "It is moved to the root context"
+      ],
+      "answer": 2,
+      "explanation": "plugin() is built on effect(), so the child's dispose is one of the parent's disposers and runs when the parent unloads.",
+      "conceptKeys": [
+        "disposer"
+      ]
+    },
+    {
+      "prompt": "A plugin starts an interval but returns no disposer for it. The plugin is reloaded three times. How many intervals are running afterwards?",
+      "options": [
+        "One",
+        "Three",
+        "Zero",
+        "Four"
+      ],
+      "answer": 3,
+      "explanation": "The first load plus three reloads each start an interval, and none are ever cleared, so four run at once. This leak is why every registration needs a disposer.",
+      "conceptKeys": [
+        "disposer"
+      ]
+    }
+  ],
+  "diagrams": []
+}

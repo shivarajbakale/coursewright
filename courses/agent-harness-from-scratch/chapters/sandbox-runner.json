@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why can't `canWrite` inside your Node code stop `bash -c 'rm -rf ~/old'` by itself?",
+      "options": [
+        "canWrite only works on macOS",
+        "Once bash runs as a separate program, your Node code cannot see the writes it makes",
+        "canWrite refuses every path under read-only",
+        "bash ignores the working folder"
+      ],
+      "answer": 1,
+      "explanation": "The shell is a separate program. Only the kernel sees its writes, so the rules must be handed to the operating system through a runner before the command starts.",
+      "conceptKeys": [
+        "sandbox-runner"
+      ]
+    },
+    {
+      "prompt": "The Seatbelt profile denies all file writes but then allows `/dev/null`. Why?",
+      "options": [
+        "Shells constantly send unwanted output to /dev/null, and refusing it would break ordinary commands",
+        "It is where the profile is stored",
+        "Seatbelt requires at least one allowed path",
+        "It lets the model read secret files"
+      ],
+      "answer": 0,
+      "explanation": "Commands like `cmd 2>/dev/null` write to /dev/null all the time. It is a harmless sink, so even read-only mode allows it.",
+      "conceptKeys": [
+        "sandbox-runner"
+      ]
+    },
+    {
+      "prompt": "What does the `--` in `['bwrap', ...rules, '--', 'bash', '-c', cmd]` do?",
+      "options": [
+        "It comments out the rest of the line",
+        "It tells bwrap to run in the background",
+        "It marks the end of the runner's own options, so everything after is the command to run",
+        "It separates read-only folders from writable ones"
+      ],
+      "answer": 2,
+      "explanation": "The runner reads its own options up to `--`. Everything after is the original argument list, started inside the rules.",
+      "conceptKeys": [
+        "sandbox-runner"
+      ]
+    }
+  ],
+  "diagrams": []
+}

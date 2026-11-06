@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The newest 19,200 tokens would start with a tool result whose matching call lies just before the cut. What does chooseCut do?",
+      "options": [
+        "Moves the cut forward past the tool result, so the call and its result are summarized together",
+        "Keeps the tool result and drops its call",
+        "Moves the cut back to include the call, ignoring the retain budget",
+        "Deletes the tool result from the log"
+      ],
+      "answer": 0,
+      "explanation": "A kept history must never start with a result whose request is gone. chooseCut advances the cut past tool messages, so call and result stay together.",
+      "conceptKeys": [
+        "compaction"
+      ]
+    },
+    {
+      "prompt": "Why does the summary request send the history unchanged and put the instruction as the last user message?",
+      "options": [
+        "Because the model cannot read system messages",
+        "So the request begins exactly like earlier ones and the provider can reuse its work for that prefix",
+        "So the summary includes the instruction text",
+        "Because the template must come before the history"
+      ],
+      "answer": 1,
+      "explanation": "Reuse stops at the first differing token. Replaying the same history and adding the instruction at the end keeps the beginning identical.",
+      "conceptKeys": [
+        "compaction"
+      ]
+    },
+    {
+      "prompt": "A session is compacted a second time. What should happen to the first summary?",
+      "options": [
+        "It is copied forward unchanged above the new one",
+        "It is deleted without being read",
+        "It is merged into a single new summary, keeping facts that are still true",
+        "It becomes the system prompt"
+      ],
+      "answer": 2,
+      "explanation": "The old summary sits inside the summarized range, marked by <compacted-summary> tags. The instruction asks the model to merge it, so summaries do not pile up.",
+      "conceptKeys": [
+        "compaction"
+      ]
+    }
+  ],
+  "diagrams": []
+}

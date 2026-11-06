@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "prompt": "When does `runAgent` stop?",
+      "options": [
+        "After exactly two tool runs",
+        "When the model's reply contains no tool calls, only text",
+        "When the history reaches 5 messages",
+        "When the provider returns `[DONE]`"
+      ],
+      "answer": 1,
+      "explanation": "The loop's only exit is a reply without tool calls. That plain-text reply is the answer, so the model decides when the work is finished.",
+      "conceptKeys": [
+        "agent-loop"
+      ]
+    },
+    {
+      "prompt": "In the `index.txt` example, how many messages does the third model request send?",
+      "options": [
+        "1",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": 3,
+      "explanation": "The question, then a request and a result for `index.txt`, then a request and a result for `notes.txt`: 1 + 2 + 2 = 5 messages, all resent because the model is stateless.",
+      "conceptKeys": [
+        "agent-loop"
+      ]
+    },
+    {
+      "prompt": "Why can't you write this as a fixed sequence: ask, run one tool, ask again?",
+      "options": [
+        "Because the model cannot handle more than one tool",
+        "Because tool results must be sent in a separate HTTP request",
+        "Because you cannot know in advance how many actions the model will need; each one depends on what it learned",
+        "Because a fixed sequence would use more tokens than a loop"
+      ],
+      "answer": 2,
+      "explanation": "The model only knew to read `notes.txt` after reading `index.txt`. The number of rounds depends on the results, so the program must repeat until the model answers.",
+      "conceptKeys": [
+        "agent-loop"
+      ]
+    }
+  ],
+  "diagrams": [],
+  "diagramRequest": {
+    "title": "One question, three rounds",
+    "show": "Actors: the user, your program (the loop), the model, and the read_file tool. The user asks about index.txt; the model asks to read index.txt; the program runs it and sends the result back; the model asks for notes.txt; the program runs it; the model answers in plain text and the loop returns it to the user. History grows 1, 3, 5 messages.",
+    "shape": "process"
+  }
+}
