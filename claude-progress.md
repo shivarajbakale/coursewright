@@ -5,7 +5,7 @@
 - Repository root: this project
 - Standard startup path: `./init.sh`
 - Standard verification path: `make check` (install + type-check + lint + test)
-- Current highest-priority unfinished feature: none open; next: phone reader Phase 2 (end-of-chapter quiz, Flowmovie/Mermaid diagrams), then Phase 3 tutor sheet (sheets size to content); design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS; flaky ui-probe M3 on desktop Sources (2 of 3 full make check runs); later per-module skip quiz, later-name leaks in lessons
+- Current highest-priority unfinished feature: none open; next: phone reader Phase 3 tutor sheet (sheets size to content; render [n] citations as chapter links; 'Ask why' on a wrong quiz answer), then Phase 4 PWA; design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS; flaky ui-probe M3 on desktop Sources (2 of 3 full make check runs); later per-module skip quiz, later-name leaks in lessons
 - Current blocker: none
 
 ## Session Log
@@ -26,6 +26,9 @@
   code), reading settings (size, theme dark/light/sepia, serif/sans, spacing; localStorage), own History-API
   router under /m. Progress: started on first open, finished at the end, each sent once (the server
   overwrites finishedAt on every call). Node 26's global localStorage hides jsdom's: tests stub it.
+- Phase 2 (reader-pwa-rich): diagrams (rows that open on phones, open from 700 px; Flowmovie mounted in a
+  plain child div because react-native-web rewrites a View's classes; Mermaid lazy) and a one-at-a-time quiz
+  that writes answers into the cached chapter. vite.mobile.config.ts serves the shared public/ under /m/.
 
 ### Session 011 — Coding agents can write courses (2026-11-06)
 

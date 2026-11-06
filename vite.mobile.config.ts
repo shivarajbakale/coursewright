@@ -11,6 +11,8 @@ import base from './vite.config';
 export default defineConfig({
   root: path.resolve(import.meta.dirname, 'mobile'),
   base: '/m/',
+  // The shared public folder: the vendored Flowmovie player and the app icons, served under /m/.
+  publicDir: path.resolve(import.meta.dirname, 'public'),
   plugins: [react()],
   resolve: {
     alias: {

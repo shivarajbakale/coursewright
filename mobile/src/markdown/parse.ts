@@ -35,6 +35,12 @@ export function parseChapter(markdown: string): Block[] {
   return blocks;
 }
 
+/** One line of inline markdown (a quiz prompt, an answer): `code`, **bold**, *italic*, links. */
+export function parseInline(text: string): Inline[] {
+  const block = md.parseInline(text, {})[0];
+  return inlines(block);
+}
+
 function parseBlocks(tokens: Token[]): Block[] {
   const out: Block[] = [];
   let i = 0;

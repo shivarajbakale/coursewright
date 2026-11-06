@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseChapter } from './parse';
+import { parseChapter, parseInline } from './parse';
 
 const chapter = `# Reasoning block: the model's working-out kept apart
 
@@ -77,5 +77,14 @@ describe('parseChapter', () => {
     expect(t.rows[0].map((c) => c[0].text)).toEqual(['read-only', 'none']);
     const last = blocks[8];
     expect(last.kind === 'paragraph' && last.inlines[0].text).toBe('<script>alert(1)</script>');
+  });
+});
+
+describe('parseInline', () => {
+  it('turns a quiz line into runs without the markdown marks', () => {
+    const runs = parseInline('When does `runAgent` stop, **exactly**?');
+    expect(runs.map((r) => r.text).join('')).toBe('When does runAgent stop, exactly?');
+    expect(runs.find((r) => r.text === 'runAgent')?.code).toBe(true);
+    expect(runs.find((r) => r.text === 'exactly')?.bold).toBe(true);
   });
 });

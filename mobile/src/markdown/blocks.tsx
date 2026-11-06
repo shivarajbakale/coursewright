@@ -128,7 +128,7 @@ function KeyIdea({ block, look }: { block: Extract<Block, { kind: 'quote' }>; lo
   );
 }
 
-function Runs({ inlines, look }: { inlines: Inline[]; look: Look }) {
+export function Runs({ inlines, look }: { inlines: Inline[]; look: Look }) {
   const p = look.palette;
   return (
     <>

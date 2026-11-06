@@ -20,6 +20,8 @@ import { Outline } from '../components/Outline';
 import { shortTitle, type Layout } from '../courseMath';
 import { Message, Skeleton } from '../components/States';
 import { Icon, IconButton, SettingsButton, TopBar } from '../components/TopBar';
+import { Diagrams } from '../diagrams/Diagrams';
+import { Quiz } from '../quiz/Quiz';
 import { Bar } from './LibraryScreen';
 
 /** Within this many pixels of the bottom counts as having read to the end. */
@@ -63,7 +65,7 @@ export function ChapterScreen({ courseId, chapterId, layout }: { courseId: strin
           />
         </View>
       ) : (
-        <Reading key={chapter.data.id} chapter={chapter.data} courseId={courseId} onOutline={openOutline} />
+        <Reading key={chapter.data.id} chapter={chapter.data} courseId={courseId} layout={layout} onOutline={openOutline} />
       )}
 
       {drawer && course.data ? (
@@ -95,7 +97,7 @@ export function ChapterScreen({ courseId, chapterId, layout }: { courseId: strin
   );
 }
 
-function Reading({ chapter, courseId, onOutline }: { chapter: Chapter; courseId: string; onOutline: () => void }) {
+function Reading({ chapter, courseId, layout, onOutline }: { chapter: Chapter; courseId: string; layout: Layout; onOutline: () => void }) {
   const p = usePalette();
   const { size, typeface, spacing } = useSettings();
   const progress = useChapterProgress(chapter.id, courseId);
@@ -178,6 +180,12 @@ function Reading({ chapter, courseId, onOutline }: { chapter: Chapter; courseId:
             <Message title="This chapter is still being written." body="Pick another from the outline." action="Open outline" onAction={onOutline} />
           )}
         </View>
+        {chapter.diagrams.length || chapter.questions.length ? (
+          <View style={styles.extras}>
+            <Diagrams diagrams={chapter.diagrams} startOpen={layout !== 'narrow'} />
+            <Quiz chapterId={chapter.id} questions={chapter.questions} />
+          </View>
+        ) : null}
         <End chapter={chapter} courseId={courseId} />
       </ScrollView>
     </>
@@ -220,7 +228,8 @@ const styles = StyleSheet.create({
   header: { gap: space.sm, marginBottom: space.xs },
   module: { fontFamily: font.ui, fontSize: 13, lineHeight: 18 },
   title: { fontFamily: font.reading, fontWeight: '600', letterSpacing: -0.3 },
-  end: { marginTop: 48, gap: space.md },
+  extras: { marginTop: 40, gap: space.xl },
+  end: { marginTop: 40, gap: space.md },
   next: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, minHeight: 72 },
   nextLabel: { fontFamily: font.ui, fontSize: 13, fontWeight: '500' },
   nextTitle: { fontFamily: font.reading, fontSize: 19, fontWeight: '600', lineHeight: 25 },

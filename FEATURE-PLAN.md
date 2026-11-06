@@ -1,30 +1,29 @@
 <!-- feature-plan:v1 — generated, do not hand-edit.
-     Regenerate with: node scripts/feature-plan.mjs reader-pwa-read.feature-plan.json -->
+     Regenerate with: node scripts/feature-plan.mjs reader-pwa-rich.feature-plan.json -->
 
-# Phone and iPad reader: library, outline, chapter reader, reading settings
+# Phone and iPad reader: chapter diagrams and the end-of-chapter quiz
 
-`reader-pwa-read` · 3 surfaces
+`reader-pwa-rich` · 1 surface
 
 ## Problem
 
-Courses can only be read on the desktop web app, whose sidebar, panels and notes do not fit a phone. The owner wants to read a course on an iPhone or iPad the way they read a book: large, calm text, one tap to resume where they stopped, and nothing else on screen. The Phase 0 spike proved the stack (react-native-web at /m/, the shared API layer, the tutor stream); this phase builds the reading itself from the approved design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS.
+The reader shows a chapter's text but drops its diagrams (the 'Your map so far' concept map on every lesson, and Flowmovie movies such as the agent loop) and its 2-3 check questions. Without them a chapter on the phone teaches less than the same chapter on the desktop, and there is no way to check yourself before moving on. Design: the 'End-of-chapter quiz' screen on https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS.
 
 ## Not in this feature
 
-- The tutor sheet, paragraph asking and docked tutor pane: Phase 3. The spike's tutor box is removed from the library screen.
-- End-of-chapter quizzes and Flowmovie/Mermaid diagrams: Phase 2. A chapter's diagrams and questions are not shown yet.
-- Offline reading, install manifest and service worker: Phase 4.
-- Notes, sources, creating courses and projects: never in the reader.
+- Asking the tutor about a wrong answer: Phase 3 adds an 'Ask why' button that opens the tutor sheet.
+- Drawing or editing diagrams: the reader only plays what the course already has.
+- Offline diagrams: the Flowmovie player and Mermaid load from the server; Phase 4 caches them.
 
 ## Surfaces
 
-### Library · `/m/`
+### Chapter: diagrams and Check yourself · `/m/courses/:courseId/chapters/:chapterId (below the text)`
 
-Archetype: `list` — Pick up reading where you left off, or open another course.
+Archetype: `detail` — See the chapter's diagrams, then check you understood it, before moving on.
 
-**Peak** — one tap on Resume opens the exact chapter they stopped in, scrolled to where they were
+**Peak** — choosing an answer and seeing at once whether it was right, with the one-line reason
 
-**End** — the course list with each course's progress, and the continue card showing what is next
+**End** — the last question answered, the score for the chapter, and the Next chapter button right below it
 
 **Desktop @1440**
 
@@ -32,35 +31,31 @@ Archetype: `list` — Pick up reading where you left off, or open another course
 ┌────────────────────────────────────────────────────────────────────────────┐
 │ ▨ Acme      ⌕ Search…                                       ⌘K   ◐   ⬤     │
 ├───────────────┬────────────────────────────────────────────────────────────┤
-│ Library ◀     │ Library                                         [ Resume ] │
+│ Library       │ Chapter: diagrams and Check yourself      [ Next chapter ] │
 │ Course        │                                                            │
 │ Chapter       │ ┌────────────────────────────────────────────────────────┐ │
-│ Reading       │ │ Continue reading                                       │ │
-│               │ │ Reasoning block: the model's working-out…              │ │
+│ Reading       │ │ Diagrams                                               │ │
+│ Chapter: diag…│ │ Movie · The agent loop    Diagram · Your map so far    │ │
 │               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ Course                         Build an agent harness… │ │
-│               │ │ Where                                 Chapter 25 of 65 │ │
-│               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ [Resume →]                                             │ │
-│               │ └────────────────────────────────────────────────────────┘ │
-│               │ ┌────────────────────────────────────────────────────────┐ │
-│               │ │ Continue reading                                       │ │
-│               │ │ Reasoning block: the model's working-out…              │ │
-│               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ Course                         Build an agent harness… │ │
-│               │ │ Where                                 Chapter 25 of 65 │ │
-│               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ [Resume →]                                             │ │
+│               │ │ Phone (<700)            a row per diagram; tap to open │ │
+│               │ │ iPad (>=700)                       open from the start │ │
+│               │ │ Movie                     Flowmovie player, scrubbable │ │
+│               │ │ Diagram                       Mermaid, themed to match │ │
 │               │ └────────────────────────────────────────────────────────┘ │
 │               │                                                            │
 │               │ ┌────────────────────────────────────────────────────────┐ │
-│               │ │ All courses                                            │ │
-│               │ ├────────────────────────────────────────────────────────┤ │
-│               │ │ 37%  Build an agent harness…     ›                     │ │
-│               │ │ 0%   Distributed Systems: Raft   ›                     │ │
-│               │ │ 7%   Long-running coding agents  ›                     │ │
+│               │ │ Check yourself                                   ▬ ▬ ▭ │ │
+│               │ │ Question 2 of 3                                        │ │
+│               │ │ ────────────────────────────────────────────────────── │ │
+│               │ │ ○                             It never logs reasoning… │ │
+│               │ │ ●                          It logs reasoning always… ✓ │ │
+│               │ │ Right               The log keeps the fact either way… │ │
+│               │ │ ────────────────────────────────────────────────────── │ │
+│               │ │ [Next question]                                        │ │
 │               │ └────────────────────────────────────────────────────────┘ │
 │               │                                                            │
+│               │ ────────────────────────────────────────────────────────── │
+│               │                                           [ Next chapter ] │
 └───────────────┴────────────────────────────────────────────────────────────┘
 ```
 
@@ -68,15 +63,15 @@ Archetype: `list` — Pick up reading where you left off, or open another course
 
 ```
 ┌──────────────────────────┐
-│ ☰  Library           ⌕   │
+│ ☰  Chapter: diagrams…⌕   │
 ├──────────────────────────┤
 │ ┌──────────────────────┐ │
-│ │ Course  Build an ag… │ │
-│ │ Where   Chapter 25 … │ │
-│ │ ──────────────────── │ │
-│ │ [Resume →]           │ │
+│ │ Phone (<700)  a row… │ │
+│ │ iPad (>=700)  open … │ │
+│ │ Movie         Flowm… │ │
+│ │ Diagram       Merma… │ │
 │ └──────────────────────┘ │
-│        [ Resume ]        │
+│     [ Next chapter ]     │
 └──────────────────────────┘
 ```
 
@@ -85,179 +80,33 @@ Archetype: `list` — Pick up reading where you left off, or open another course
 ```
         loading                     empty                      error
 ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ No courses yet. Make │   │ ⚠                    │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ one in the desktop   │   │ Couldn't reach your  │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ app; it appears here │   │ server. Check that   │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ when it is ready.    │   │ Tailscale is on,     │
-│                      │   │                      │   │ then try again. [Try │
-│                      │   │ [ Resume ]           │   │ again]               │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ A chapter with no    │   │ ⚠                    │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ diagrams and no      │   │ A movie that can't   │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ questions shows      │   │ load says 'This      │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ neither section;     │   │ movie can't play     │
+│                      │   │ Next chapter follows │   │ right now' with Try  │
+│                      │   │ the text as now.     │   │ again; a diagram     │
+│                      │   │                      │   │ with a syntax slip   │
+│                      │   │ [ Next chapter ]     │   │ shows its source     │
+│                      │   │                      │   │ text in a code box.  │
+│                      │   │                      │   │ A failed answer save │
+│                      │   │                      │   │ says 'Couldn't save  │
+│                      │   │                      │   │ your answer' and     │
+│                      │   │                      │   │ keeps the choice so  │
+│                      │   │                      │   │ a retry is one tap.  │
 │                      │   │                      │   │                      │
 │                      │   │                      │   │ [ Try again ]        │
 └──────────────────────┘   └──────────────────────┘   └──────────────────────┘
  Skeleton mirrors rows       one CTA, 3 lines max      retry, never raw text
 ```
 
-Success: Continue card for the most recently opened ready course, then every ready course with its progress. Courses still building show 'Building…' and do not open.
+Success: Diagrams play in place. Questions go one at a time: choose, see Right or Not quite with the explanation and the right answer marked, then Next question. After the last: 'You got 2 of 3 right' and a Try again link. Answers already given show as answered when you come back.
 
 Held to:
 
-- B8 — exactly one <h1>, and it names the collection
-- B8 — a collection region (<table>, <ul>, <ol> or role=list) is present
-- B8 — a filter or scope control, pinned above the rows rather than inside them
-- B8 — one primary action, outside the scroll region
-
-### Course and chapter · `/m/courses/:courseId and /m/courses/:courseId/chapters/:chapterId`
-
-Archetype: `list-detail` — Read one chapter, and move through the course without losing your place. Under 1024 px the outline is its own screen (phone) or a drawer (iPad portrait); from 1024 px it sits beside the chapter.
-
-**Peak** — the chapter opens straight into large serif text at a comfortable measure, with nothing competing with it
-
-**End** — the last paragraph read, the next chapter's title one tap away, and the chapter marked read in the outline
-
-**Desktop @1440**
-
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│ ▨ Acme      ⌕ Search…                                       ⌘K   ◐   ⬤     │
-├───────────────┬────────────────────────────────────────────────────────────┤
-│ Library       │ Course and chapter                        [ Next chapter ] │
-│ Course        │                                                            │
-│ Chapter       │ ┌──────────────────┐ ┌───────────────────────────────────┐ │
-│ Reading       │ │ 24 of 65 read    │ │ Reasoning block: the model's work…│ │
-│ Course and ch…│ ├──────────────────┤ │ Talking to any model provider · a…│ │
-│               │ │ ✓  1 · How a la… │ │ ───────────────────────────────── │ │
-│               │ │ ▾  4 · Talking … │ │ Body      serif 18 px (20 on iPa… │ │
-│               │ │ ✓    24 Model a… │ │ Code      mono 13 px, scrolls si… │ │
-│               │ │ ●    25 Reasoni… │ │ Key idea             callout card │ │
-│               │ │      26 Retry w… │ │ ───────────────────────────────── │ │
-│               │ └──────────────────┘ │ [‹ Previous]  [Next chapter ›]    │ │
-│               │                      └───────────────────────────────────┘ │
-└───────────────┴────────────────────────────────────────────────────────────┘
-```
-
-**Mobile @390** — design intent; the probe measures 1280 / 1440 / 1920 only.
-
-```
-┌──────────────────────────┐         ┌──────────────────────────┐
-│ ☰  Course and chapter⌕   │         │ ‹ Back  Reasoning block… │
-├──────────────────────────┤         ├──────────────────────────┤
-│ ┌──────────────────────┐ │    ──▶  │ ┌──────────────────────┐ │
-│ │ 24 of 65 read        │ │         │ │ Reasoning block: the…│ │
-│ ├──────────────────────┤ │         │ │ Talking to any model…│ │
-│ │ ✓  1 · How a langua… │ │         │ │ ──────────────────── │ │
-│ │ ▾  4 · Talking to a… │ │         │ │ Body      serif 18 … │ │
-│ │ ✓    24 Model adapt… │ │         │ │ Code      mono 13 p… │ │
-│ │ ●    25 Reasoning b… │ │         │ │ Key idea  callout c… │ │
-│ │      26 Retry with … │ │         │ │ ──────────────────── │ │
-│ └──────────────────────┘ │         │ │ [‹ Previous]  [Next… │ │
-│     [ Next chapter ]     │         │ └──────────────────────┘ │
-└──────────────────────────┘         └──────────────────────────┘
-```
-
-**States**
-
-```
-        loading                     empty                      error
-┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ This chapter is      │   │ ⚠                    │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ still being written. │   │ Couldn't load this   │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ Pick another from    │   │ chapter. [Try again] │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ the outline. [Open   │   │ [Back to the         │
-│                      │   │ outline]             │   │ outline]             │
-│                      │   │                      │   │                      │
-│                      │   │ [ Next chapter ]     │   │ [ Try again ]        │
-└──────────────────────┘   └──────────────────────┘   └──────────────────────┘
- Skeleton mirrors rows       one CTA, 3 lines max      retry, never raw text
-```
-
-Success: Markdown rendered as React Native blocks: headings, paragraphs, lists, inline code, fenced code, block quotes (a 'Key idea' quote becomes a callout), tables scroll sideways. Reading progress bar follows scroll. Opening marks the chapter started; reaching the end marks it read.
-
-Held to:
-
-- B1 — two or more top-level panels sharing a top edge
-- B2 — no panel scrolls; PageShell owns the single scroll region
-
-### Reading settings · `/m/settings`
-
-Archetype: `settings` — Make the text comfortable. Every change applies at once and is remembered on this device.
-
-**Peak** — dragging the size slider and seeing the sample paragraph change size live
-
-**End** — Done returns to the same chapter at the same place, now in the chosen size and theme
-
-**Desktop @1440**
-
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│ ▨ Acme      ⌕ Search…                                       ⌘K   ◐   ⬤     │
-├───────────────┬────────────────────────────────────────────────────────────┤
-│ Library       │ Reading settings                                           │
-│ Course        │                                                            │
-│ Chapter       │ ┌──────────────┐ ┌───────────────────────────────────────┐ │
-│ Reading       │ │ > Text       │ │ Text                                  │ │
-│ Reading setti…│ │   Theme and …│ │ Sample paragraph in the current setti…│ │
-│               │ └──────────────┘ │ ───────────────────────────────────── │ │
-│               │                  │ Size                A ——●—— A   19 px │ │
-│               │                  │ Typeface                 [Serif] Sans │ │
-│               │                  │ Spacing          Tight [Normal] Loose │ │
-│               │                  └───────────────────────────────────────┘ │
-└───────────────┴────────────────────────────────────────────────────────────┘
-```
-
-**Mobile @390** — design intent; the probe measures 1280 / 1440 / 1920 only.
-
-```
-┌──────────────────────────┐
-│ ☰  Reading settings  ⌕   │
-├──────────────────────────┤
-│ ┌──────────────────────┐ │
-│ │ Size      A ——●—— A… │ │
-│ │ Typeface  [Serif] S… │ │
-│ │ Spacing   Tight [No… │ │
-│ └──────────────────────┘ │
-└──────────────────────────┘
-```
-
-**States**
-
-```
-        loading                     empty                      error
-┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ First visit: size    │   │ ⚠                    │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ starts from the      │   │ If the browser       │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ device's text-size   │   │ refuses storage      │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ setting, theme Dark, │   │ (private mode),      │
-│                      │   │ Serif, Normal        │   │ settings still apply │
-│                      │   │ spacing.             │   │ for this visit and a │
-│                      │   │                      │   │ line says they won't │
-│                      │   │                      │   │ be remembered.       │
-│                      │   │                      │   │                      │
-│                      │   │                      │   │ [ Try again ]        │
-└──────────────────────┘   └──────────────────────┘   └──────────────────────┘
- Skeleton mirrors rows       one CTA, 3 lines max      retry, never raw text
-```
-
-Success: Each control applies on change; no Save button.
-
-Held to:
-
-- B6 — a section rail: a <nav>, role=navigation, or a tab strip
-- B6 — one vertical scroll region, and it is the content column
-- B6 — no switch inside a form with a submit; a switch applies on change
-
-## Overlays
-
-```
-      drawer · outline-drawer
-┌────────────────────────────────┐
-│ Outline (iPad portrait, 700…   │
-│ ────────────────────────────── │
-│ Module 4  [ ▾ 3/6         ]    │
-│ 25        [ Reasoning blo…]    │
-│ ────────────────────────────── │
-│                      [ Close ] │
-└────────────────────────────────┘
-```
+- B5 — exactly one <h1>, and it names the subject
+- B5 — content in at least two declared sections (data-section)
+- B5 — the primary action is pinned outside the scroll region
 
 ## Components
 
@@ -268,81 +117,49 @@ the choices between families live in
 
 | Surface | Control | Why this one | Not |
 | --- | --- | --- | --- |
-| library | `ScrollView + mapped Pressable rows` | a handful of courses; every row renders at once, so a virtualised list buys nothing and complicates scroll restoration | `FlatList` |
-| library | `Continue card from lastOpenedChapterId` | the peak of this screen is resuming; the server already records the last opened chapter per course | `a 'recent' section built from local history (wrong on a second device)` |
-| reader | `markdown-it tokens rendered by our own React Native blocks (mobile/src/markdown/)` | we control typography, the Key idea callout and code scrolling exactly, with no native-only dependencies; markdown-it already ships in the tree | `react-native-markdown-display (pulls native-only packages and its own styling model)` |
-| reader | `Layout chosen by useWindowDimensions width (<700, 700-1023, >=1024)` | iPad Split View and Slide Over change the window, not the device; the width is the only honest signal | `user-agent or device detection` |
-| reader | `Hand-written router over the History API (mobile/src/router.ts, four routes)` | four routes, no nested layouts, back button and deep links are all it needs; avoids a second router package in the bundle | `TanStack Router (its code-based tree and devtools are built around the desktop shell) and React Navigation (native-first, heavy on web)` |
-| reader | `Scroll position saved per chapter on this device` | the peak of resuming is landing on the paragraph, not the top of the chapter | `server-side scroll position (no endpoint, and it would fight across devices)` |
-| settings | `Segmented buttons (aria-pressed) and a range input` | three or two mutually exclusive options read faster as visible choices than behind a menu, and each applies on change | `Select menus` |
-| settings | `Zustand store persisted to localStorage, wrapped in try/catch` | settings are per device and synchronous, and zustand is already a dependency | `a server endpoint (no reason for a phone's font size to follow you to the desktop)` |
-
-## Data model
-
-- **ReaderSettings**
-  - `size`: number — 16-26 px; first value from the device text size
-  - `theme`: 'dark' | 'light' | 'sepia'
-  - `typeface`: 'serif' | 'sans'
-  - `spacing`: 'tight' | 'normal' | 'loose' — line height 1.45 / 1.6 / 1.8
-  - _relations:_ stored on this device only
-- **ScrollMark**
-  - `chapterId`: string
-  - `ratio`: number — 0-1 of the chapter height, so a size change still lands near the same paragraph
-  - _relations:_ one per chapter, this device only
+| chapter-end | `One question at a time with step marks` | the approved design; one question on a phone screen keeps the choices large and the explanation next to them | `all questions in one long list (the desktop layout)` |
+| chapter-end | `Answer rows as radio buttons (role radio, aria-checked) in a radiogroup` | exactly one choice per question, read correctly by VoiceOver; each row is at least 56 px tall | `plain buttons with no selected state` |
+| chapter-end | `Diagram rows that open in place (aria-expanded) on phones, open by default from 700 px` | players are heavy and tall; on a phone they load only when asked so scrolling the text stays smooth | `a full-screen diagram viewer (one more screen to leave and come back from)` |
+| chapter-end | `The vendored Flowmovie player and Mermaid, loaded lazily into a View's DOM node` | react-native-web renders real DOM, so the same players the web app uses run unchanged; nothing loads until a diagram opens | `a WebView or iframe (not available on the web, and iframes are slower and harder to size)` |
 
 ## API endpoints
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| GET | `/api/courses` | no | library rows and the continue card (existing, MSW handler exists) |
-| GET | `/api/courses/:id` | no | outline: modules and chapters with done marks (existing) |
-| GET | `/api/chapters/:id` | no | chapter markdown, prev/next (existing) |
-| POST | `/api/chapters/:id/progress` | no | started on open, finished at the end (existing) |
+| GET | `/api/chapters/:id` | no | diagrams and questions with the last attempt (existing) |
+| POST | `/api/questions/:id/attempts` | no | record an answer; returns correct, answer, explanation (existing, MSW handler exists) |
+| GET | `/m/vendor/flowmovie/flowmovie.js` | no | the player, served from the shared public folder under /m |
 
 ## Integration points
 
 ```
-  mobile/src/queries.ts      ──▶  courseService, chapterService   (same services and MSW handlers as the web app)
-  chapter progress mutation  ──▶  invalidates reader course + courses keys   (outline ticks and library % update without a reload)
-  deploy/nginx.conf          ──▶  /m/ falls back to /m/index.html   (already done in Phase 0, so deep links work)
-  mobile/src/theme.ts        ──▶  three palettes keyed by theme   (every screen reads colours from the active palette)
+  vite.mobile.config.ts  ──▶  publicDir ../public   (the reader serves the same vendored player and icons under /m/)
+  attempt mutation       ──▶  updates the chapter query's question in place   (no chapter refetch, so the reading position does not jump)
+  theme palette          ──▶  Mermaid theme (dark → dark, light and sepia → neutral)   (diagram redraws when the reading theme changes)
 ```
 
 ## Blast radius
 
 ```
-new (14)
-  ├── mobile/src/router.ts
-  ├── mobile/src/settings.ts
-  ├── mobile/src/scrollMarks.ts
-  ├── mobile/src/markdown/blocks.tsx
-  ├── mobile/src/markdown/parse.ts
-  ├── mobile/src/screens/LibraryScreen.tsx
-  ├── mobile/src/screens/CourseScreen.tsx
-  ├── mobile/src/screens/ChapterScreen.tsx
-  ├── mobile/src/screens/SettingsScreen.tsx
-  ├── mobile/src/components/Outline.tsx
-  ├── mobile/src/components/TopBar.tsx
-  ├── mobile/src/components/States.tsx
-  ├── mobile/src/reader.test.tsx
-  └── mobile/src/markdown/parse.test.ts
+new (5)
+  ├── mobile/src/diagrams/FlowMovie.tsx
+  ├── mobile/src/diagrams/Mermaid.tsx
+  ├── mobile/src/diagrams/Diagrams.tsx
+  ├── mobile/src/quiz/Quiz.tsx
+  └── mobile/src/quiz/quiz.test.tsx
 
-changed (6)
-  ├── mobile/src/App.tsx
+changed (3)
+  ├── mobile/src/screens/ChapterScreen.tsx
   ├── mobile/src/queries.ts
-  ├── mobile/src/theme.ts
-  ├── mobile/src/react-native.d.ts
-  ├── mobile/src/App.test.tsx
-  └── package.json (markdown-it as a direct dependency)
+  └── vite.mobile.config.ts
 ```
 
 ## Verification plan
 
 - [ ] `npm run type-check`
 - [ ] `npm run lint`
-- [ ] `vitest run mobile`
-- [ ] `Playwright WebKit against the Mac mini at 390x844, 320x1000, 590x820, 820x1180, 1180x820, 1366x1024: library, resume, outline, chapter, settings; no horizontal overflow`
-- [ ] `Render every chapter of the 65-lesson harness course without a page error`
+- [ ] `vitest run mobile (quiz: one at a time, right and wrong, score, resume answered; diagrams: open on tap, source shown on a syntax error)`
+- [ ] `Playwright WebKit against the Mac mini at 390x844 and 820x1180: a chapter with a Flowmovie and the map diagram plays both; answering the quiz on a seed chapter (writes intercepted)`
 - [ ] `make check`
 - [ ] `ux-prepass` — all seven boxes, `npm run ui-lint` green is the evidence for item 7
 

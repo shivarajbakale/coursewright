@@ -4,7 +4,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { chapterService, courseService } from '@/api/services/coursewrightService';
-import type { CourseDetail } from '@/api/types';
+import type { Chapter, CourseDetail } from '@/api/types';
 
 export const readerKeys = {
   courses: ['reader', 'courses'] as const,
@@ -50,4 +50,25 @@ export function chapterNumber(course: CourseDetail | undefined, chapterId: strin
   const all = course.modules.flatMap((m) => m.chapters);
   const i = all.findIndex((c) => c.id === chapterId);
   return i < 0 ? null : { n: i + 1, total: all.length };
+}
+
+/**
+ * Save an answer. The result goes straight into the cached chapter's question, so the chapter is
+ * not refetched and the reading position does not move.
+ */
+export function useAnswer(chapterId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ questionId, chosen }: { questionId: string; chosen: number }) => chapterService.attempt(questionId, chosen),
+    onSuccess: (result, { questionId, chosen }) => {
+      qc.setQueryData<Chapter>(readerKeys.chapter(chapterId), (ch) =>
+        ch
+          ? {
+              ...ch,
+              questions: ch.questions.map((q) => (q.id === questionId ? { ...q, lastAttempt: { chosen, correct: result.correct } } : q)),
+            }
+          : ch,
+      );
+    },
+  });
 }

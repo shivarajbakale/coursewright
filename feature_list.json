@@ -363,6 +363,28 @@
         "npm run build:mobile: 544.47 kB, 185.66 kB gzipped (the tutor client is not loaded until Phase 3)",
         "make check: exit 0 on the third run (349 + 153 tests). Two earlier full runs failed ui-probe M3 on the desktop 'Sources' page (reveal box grows 55 px while data arrives); it passed in 5 standalone ui-probe runs and the baseline without this change passed; no file under src/ changed. Recorded as a flaky probe to look at separately."
       ]
+    },
+    {
+      "id": "reader-pwa-rich",
+      "priority": 18,
+      "area": "Phone and iPad reader",
+      "title": "Chapter diagrams and the end-of-chapter quiz in the phone and iPad reader",
+      "user_visible_behavior": "Below a chapter's text the reader shows its diagrams (Flowmovie movies and Mermaid diagrams, including 'Your map so far'): on phones each is a row that opens in place, on iPads they are open. Then 'Check yourself' asks the chapter's questions one at a time: choose an answer, see Right or Not quite with the explanation, move on; after the last, the score. Answers are saved and shown as answered on return.",
+      "status": "passing",
+      "plan": "reader-pwa-rich.feature-plan.json",
+      "verification": [
+        "tsc, eslint, vitest for mobile/",
+        "Playwright WebKit against the Mac mini at 390x844 and 820x1180 on 'Agent loop' (a Flowmovie and the map diagram), writes intercepted",
+        "make check"
+      ],
+      "evidence": [
+        "npx vitest run mobile: 16 passed (new: quiz one at a time, wrong choice and right answer marked, Next question, score, Try again; answered questions shown on return; diagrams closed on phones and open on tap; a broken Mermaid source shown as text; quiz lines parsed as inline markdown)",
+        "WebKit 26.6 against http://coursewright:8080, chapter 'Agent loop: ask the model, run its requests, ask again' (diagrams: flow 'One question, three rounds', mermaid 'Your map so far'; 3 questions), at 390x844 and 820x1180: movie player loaded and drew in the dark theme, map rendered 1 SVG with no syntax error, quiz answered [0, 3, 2] gave 'You got 2 of 3 right.', horizontal overflow 0 px, no page errors; progress and answer writes intercepted, last-opened chapter restored",
+        "Fixed during verification: the Flowmovie player styles its mount node and react-native-web rewrote that node's classes on re-render (text went black on dark); the player now mounts in a plain child div. Quiz prompts showed raw backticks; prompts, answers and explanations now render inline markdown.",
+        "Known limit: at 390 px the vendored player's own transport row is tight (time label touches Play); it is the player's layout, not the reader's.",
+        "npm run build:mobile: index 557.18 kB / 189.33 kB gzipped; mermaid loads as a separate chunk only when a diagram opens; dist/m/vendor/flowmovie present",
+        "make check: exit 0 (354 + 153 tests)"
+      ]
     }
   ]
 }
