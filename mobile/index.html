@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0B0D10" />
+    <!-- Desktops go to the full app before the reader loads (public/app-switch.js). -->
+    <script src="/app-switch.js"></script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,9 +13,29 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" />
     <title>Coursewright Reader</title>
     <style>
-      html, body, #root { height: 100%; margin: 0; background: #0B0D10; }
-      #root { display: flex; flex-direction: column; }
-      body { overflow: hidden; }
+      html, body { height: 100%; margin: 0; background: #0B0D10; }
+      /* The visible screen on iOS (100dvh shrinks with Safari's toolbars, so bottom controls stay on screen),
+         inset from the notch and rounded corners. The bottom inset is left to the sheet and buttons. */
+      #root {
+        height: 100%;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+      }
+      body { overflow: hidden; overscroll-behavior: none; }
+      /* The text-size slider in the reading theme's colours (WebKit draws a pale track by default). */
+      .cw-range { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+      .cw-range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--fill) var(--pct), var(--track) var(--pct)); }
+      .cw-range::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--fill) var(--pct), var(--track) var(--pct)); }
+      .cw-range::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%; background: var(--thumb); box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+      .cw-range::-moz-range-thumb { width: 26px; height: 26px; border: 0; border-radius: 50%; background: var(--thumb); }
+      /* The Flowmovie player in the reader's colours: the app's lime for its primary button, not amber,
+         and without the speed menu and time readout that crowd its toolbar on narrow screens. */
+      .cw-flow.fm-player, .cw-flow .fm-player { --fm-accent: #C6F24E; --fm-accent-ink: #0B0D10; --fm-accent-soft: rgba(198, 242, 78, .13); --fm-font: Geist, system-ui, sans-serif; }
+      .cw-flow .fm-speed { display: none; }
+      @container fm-player (max-width: 720px) { .cw-flow .fm-time { display: none; } }
     </style>
   </head>
   <body>

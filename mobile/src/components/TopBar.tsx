@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { usePalette } from '../settings';
-import { font, space, touch } from '../theme';
+import { font, readingWidth, space, touch } from '../theme';
 
 const ICONS = {
   back: 'M15 6l-6 6 6 6',
@@ -56,9 +56,10 @@ export function SettingsButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-export function TopBar({ left, center, right }: { left?: ReactNode; center?: ReactNode; right?: ReactNode }) {
+/** A screen's top bar, as wide as the reading column so its buttons sit over the content, not in far corners. */
+export function TopBar({ left, center, right, wide = false }: { left?: ReactNode; center?: ReactNode; right?: ReactNode; wide?: boolean }) {
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, !wide && styles.column]}>
       <View style={styles.side}>{left}</View>
       <View style={styles.center}>{center}</View>
       <View style={[styles.side, styles.end]}>{right}</View>
@@ -68,6 +69,7 @@ export function TopBar({ left, center, right }: { left?: ReactNode; center?: Rea
 
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.sm, paddingTop: space.sm, minHeight: 56 },
+  column: { width: '100%', maxWidth: readingWidth + space.sm * 2, alignSelf: 'center' },
   side: { minWidth: touch * 2, flexDirection: 'row', alignItems: 'center' },
   end: { justifyContent: 'flex-end' },
   center: { flex: 1, alignItems: 'center' },

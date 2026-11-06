@@ -56,3 +56,19 @@ Append-only. New entries go at the top. Each entry should answer:
   a query hook over a service in `src/api/services`. `mobile/src/react-native.d.ts` types only what the
   app uses (react-native-web ships Flow types); extend it rather than adding `@types/react-native-web`,
   which installs all of React Native.
+
+## 2026-11-07 — Each screen is sent to its app before either app loads
+
+- **What:** `public/app-switch.js`, a plain script in the head of both `index.html` files, sends
+  phones and iPads from the full app to the reader (`/` to `/m/`, a course or chapter to the same
+  page) and desktops from `/m/` to the full app. Pages only the full app has stay put. `?app=reader`,
+  `?app=full` and `?app=auto` set or clear a choice for this visit (sessionStorage), so opening the
+  full app once from a phone does not stick; the dev ports 5173/5174 are skipped.
+- **Why:** the owner asked that each screen type land on the right app. iPadOS Safari reports itself
+  as a Mac, so the test is the user agent plus `maxTouchPoints`, not width alone (a narrow desktop
+  window must stay on the full app).
+- **Rejected:** redirecting in nginx (it cannot see an iPad behind the Mac user agent); redirecting
+  inside each React app (the wrong app's bundle would download and paint first).
+- **Constraint:** keep the script dependency-free and tiny; its rules are tested in
+  `mobile/src/appSwitch.test.ts`. The reader also needs `uid()` rather than `crypto.randomUUID`,
+  which plain-http pages (http://coursewright:8080) do not have.

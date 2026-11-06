@@ -10,6 +10,7 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import { CopilotKitCore } from '@copilotkit/core';
 import { buildTranscript, type Item, type LooseMessage } from './transcript';
 import { loadThread, saveThread, type Thread } from './threads';
+import { uid } from '../uid';
 
 export const TUTOR_AGENT = 'tutor';
 
@@ -119,7 +120,7 @@ export function useTutor({ courseId, chapterId, courseTitle, chapterTitle, selec
     error,
     ask: (text, about = null) => {
       if (!agent || agent.isRunning || !text.trim() || !thread.current) return;
-      const id = crypto.randomUUID();
+      const id = uid();
       if (about) thread.current.about[id] = about;
       agent.addMessage({ id, role: 'user', content: text.trim() });
       run();

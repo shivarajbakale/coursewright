@@ -9,6 +9,9 @@ type TutorUi = {
   expanded: boolean;
   /** The paragraph the next question is about, if one was tapped. */
   selection: string | null;
+  /** The floating Ask button steps aside while you scroll down through the text. */
+  askHidden: boolean;
+  setAskHidden: (hidden: boolean) => void;
   /** A question to send as soon as the tutor is ready (quick prompt from elsewhere, Ask why). */
   pending: string | null;
   openTutor: (opts?: { ask?: string; selection?: string | null }) => void;
@@ -22,6 +25,10 @@ export const useTutorUi = create<TutorUi>((set, get) => ({
   open: false,
   expanded: false,
   selection: null,
+  askHidden: false,
+  setAskHidden: (hidden) => {
+    if (get().askHidden !== hidden) set({ askHidden: hidden });
+  },
   pending: null,
   openTutor: (opts) =>
     set((s) => ({

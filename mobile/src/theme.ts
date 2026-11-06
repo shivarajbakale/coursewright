@@ -22,6 +22,8 @@ export type Palette = {
   onAccent: string;
   /** Accent used as text or a thin line on this ground (lime is unreadable on white). */
   accentInk: string;
+  /** Progress fills: lime on dark, olive on light grounds where lime vanishes. */
+  meter: string;
   /** A soft tint behind the current chapter and Key idea callouts. */
   tint: string;
   codeGround: string;
@@ -42,6 +44,7 @@ export const palettes: Record<ThemeName, Palette> = {
     accent: '#C6F24E',
     onAccent: '#0B0D10',
     accentInk: '#C6F24E',
+    meter: '#C6F24E',
     tint: '#1E2614',
     codeGround: '#171A20',
     danger: '#FF8A80',
@@ -59,6 +62,7 @@ export const palettes: Record<ThemeName, Palette> = {
     accent: '#C6F24E',
     onAccent: '#14161A',
     accentInk: '#465C00',
+    meter: '#556E00',
     tint: '#F2F9DF',
     codeGround: '#F5F6F7',
     danger: '#B42318',
@@ -76,6 +80,7 @@ export const palettes: Record<ThemeName, Palette> = {
     accent: '#556E00',
     onAccent: '#F8FDE8',
     accentInk: '#465C00',
+    meter: '#556E00',
     tint: '#E4E3C6',
     codeGround: '#EAE0CE',
     danger: '#9A2B16',
@@ -98,3 +103,8 @@ export const touch = 44;
 export const breakpoint = { wide: 700, split: 1024 } as const;
 /** Longest comfortable line for the chapter text. */
 export const readingWidth = 680;
+
+/** The reading column for a text size: about 66 characters a line plus the side gutters. */
+export function measure(size: number): number {
+  return Math.round(size * 33) + 44;
+}

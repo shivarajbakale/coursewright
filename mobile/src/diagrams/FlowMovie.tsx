@@ -58,6 +58,7 @@ export function FlowMovie({ source }: { source: string }) {
         // classes on every render, so the player gets a plain child div that React never touches.
         el.innerHTML = '';
         const mount = document.createElement('div');
+        mount.className = 'cw-flow';
         el.appendChild(mount);
         player = fm.renderFlowmovie(mount, source, { camera: 'auto' });
         setState('ready');

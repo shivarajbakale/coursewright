@@ -13,7 +13,7 @@ import { chapterNumber, useChapter, useChapterProgress, useCourse } from '../que
 import { href, navigate } from '../router';
 import { lineHeights, usePalette, useSettings } from '../settings';
 import { getMark, setMark } from '../scrollMarks';
-import { font, radius, readingWidth, space } from '../theme';
+import { font, measure, radius, readingWidth, space } from '../theme';
 import { Blocks, type Look } from '../markdown/blocks';
 import { parseChapter } from '../markdown/parse';
 import { Outline } from '../components/Outline';
@@ -24,6 +24,7 @@ import { Diagrams } from '../diagrams/Diagrams';
 import { Quiz } from '../quiz/Quiz';
 import { Bar } from './LibraryScreen';
 import { useTutorUi } from '../tutor/store';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import type { Hit } from '../tutor/transcript';
 
 // The tutor (and the CopilotKit client under it) downloads the first time it opens.
@@ -50,8 +51,8 @@ export function ChapterScreen({
   const ui = useTutorUi();
   const split = layout === 'split';
 
-  const openOutline = () =>
-    layout === 'narrow' ? navigate(href({ name: 'course', courseId })) : setDrawer(true);
+  // The outline slides in over the chapter at every size below the split view, so you never lose your place.
+  const openOutline = () => setDrawer(true);
   const openSource = (hit: Hit) => {
     if (!hit.chapterId) return;
     if (!split) ui.close();
@@ -77,17 +78,48 @@ export function ChapterScreen({
   }, [ui]);
 
   const tutor = ui.open ? (
-    <Suspense fallback={null}>
-      <TutorPanel
-        courseId={courseId}
-        chapterId={chapterId}
-        courseTitle={course.data?.title ?? ''}
-        chapterTitle={chapter.data?.title ?? ''}
-        label={where ? `Chapter ${where.n}` : 'This chapter'}
-        mode={split ? 'pane' : 'sheet'}
-        onOpenSource={openSource}
-      />
-    </Suspense>
+    <ErrorBoundary
+      fallback={reset => (
+        <View
+          style={
+            split
+              ? [
+                  styles.tutorFail,
+                  styles.tutorFailPane,
+                  { backgroundColor: p.surface, borderLeftColor: p.border },
+                ]
+              : [
+                  styles.tutorFail,
+                  styles.tutorFailSheet,
+                  { backgroundColor: p.surface, borderColor: p.borderStrong },
+                ]
+          }
+        >
+          <Message
+            tone="error"
+            title="The tutor couldn't open."
+            body="Reading still works. Try again, or close the tutor."
+            action="Try again"
+            onAction={reset}
+          />
+          <Pressable role="button" onPress={ui.close} style={styles.tutorFailClose}>
+            <Text style={[styles.pickedText, { color: p.muted }]}>Close</Text>
+          </Pressable>
+        </View>
+      )}
+    >
+      <Suspense fallback={null}>
+        <TutorPanel
+          courseId={courseId}
+          chapterId={chapterId}
+          courseTitle={course.data?.title ?? ''}
+          chapterTitle={chapter.data?.title ?? ''}
+          label={where ? `Chapter ${where.n}` : 'This chapter'}
+          mode={split ? 'pane' : 'sheet'}
+          onOpenSource={openSource}
+        />
+      </Suspense>
+    </ErrorBoundary>
   ) : null;
 
   return (
@@ -193,8 +225,13 @@ export function ChapterScreen({
 function AskButton() {
   const p = usePalette();
   const ui = useTutorUi();
+  const hidden = ui.askHidden && !ui.selection;
   return (
-    <View style={styles.ask} pointerEvents="box-none">
+    <View
+      style={[styles.ask, hidden && styles.askHidden]}
+      pointerEvents={hidden ? 'none' : 'box-none'}
+      aria-hidden={hidden}
+    >
       {ui.selection ? (
         <View style={[styles.picked, { backgroundColor: p.surface, borderColor: p.borderStrong }]}>
           <Pressable role="button" onPress={() => ui.openTutor()} style={styles.pickedMain}>
@@ -273,9 +310,14 @@ function Reading({
     progress.mutate(true);
   };
 
+  const lastY = useRef(0);
   const track = (y: number, content: number, view: number) => {
     viewport.current = view;
     const room = content - view;
+    // The Ask button steps aside while you read down, and comes back when you scroll up or reach the end.
+    if (y > lastY.current + 6 && y > 80 && room - y > END_SLACK) ui.setAskHidden(true);
+    else if (y < lastY.current - 6 || room - y <= END_SLACK) ui.setAskHidden(false);
+    lastY.current = y;
     const ratio = room > 0 ? Math.min(1, Math.max(0, y / room)) : 1;
     setRead(ratio * 100);
     const now = Date.now();
@@ -307,7 +349,11 @@ function Reading({
       <ScrollView
         ref={scroller}
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.column, layout !== 'split' && styles.roomForAsk]}
+        contentContainerStyle={[
+          styles.column,
+          { maxWidth: measure(size) },
+          layout !== 'split' && styles.roomForAsk,
+        ]}
         scrollEventThrottle={64}
         onScroll={onScroll}
         onLayout={e => (viewport.current = e.nativeEvent.layout.height)}
@@ -355,14 +401,29 @@ function Reading({
             />
           </View>
         ) : null}
-        <End chapter={chapter} courseId={courseId} />
+        <End
+          chapter={chapter}
+          courseId={courseId}
+          quizDone={chapter.questions.every(q => q.lastAttempt)}
+        />
       </ScrollView>
     </>
   );
 }
 
-function End({ chapter, courseId }: { chapter: Chapter; courseId: string }) {
+/** While the chapter's questions are unanswered, Next chapter steps back so it does not outshout them. */
+function End({
+  chapter,
+  courseId,
+  quizDone,
+}: {
+  chapter: Chapter;
+  courseId: string;
+  quizDone: boolean;
+}) {
   const p = usePalette();
+  const fill = quizDone ? p.accent : p.surface;
+  const ink = quizDone ? p.onAccent : p.text;
   const go = (id: string) => navigate(href({ name: 'chapter', courseId, chapterId: id }));
   return (
     <View style={styles.end} role="navigation" aria-label="Chapters">
@@ -372,17 +433,17 @@ function End({ chapter, courseId }: { chapter: Chapter; courseId: string }) {
           onPress={() => go(chapter.next!.id)}
           style={({ pressed, hovered }) => [
             styles.next,
-            { backgroundColor: p.accent },
+            { backgroundColor: fill, borderColor: quizDone ? fill : p.borderStrong },
             (pressed || hovered) && { opacity: 0.88 },
           ]}
         >
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[styles.nextLabel, { color: p.onAccent }]}>Next chapter</Text>
-            <Text style={[styles.nextTitle, { color: p.onAccent }]}>
-              {shortTitle(chapter.next.title)}
+            <Text style={[styles.nextLabel, { color: quizDone ? ink : p.muted }]}>
+              Next chapter
             </Text>
+            <Text style={[styles.nextTitle, { color: ink }]}>{shortTitle(chapter.next.title)}</Text>
           </View>
-          <Icon name="arrowRight" size={22} color={p.onAccent} stroke={2.2} />
+          <Icon name="arrowRight" size={22} color={quizDone ? ink : p.muted} stroke={2.2} />
         </Pressable>
       ) : (
         <Message
@@ -430,6 +491,7 @@ const styles = StyleSheet.create({
     padding: space.lg,
     borderRadius: radius.lg,
     minHeight: 72,
+    borderWidth: 1,
   },
   nextLabel: { fontFamily: font.ui, fontSize: 13, fontWeight: '500' },
   nextTitle: { fontFamily: font.reading, fontSize: 19, fontWeight: '600', lineHeight: 25 },
@@ -444,17 +506,39 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   prevText: { fontFamily: font.ui, fontSize: 14, flexShrink: 1 },
+  tutorFail: { gap: space.sm, padding: space.lg },
+  tutorFailSheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 20,
+    borderTopWidth: 1,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingBottom: 28,
+  },
+  tutorFailPane: { width: 360, borderLeftWidth: 1, justifyContent: 'center' },
+  tutorFailClose: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: space.sm,
+  },
   // The floating Ask button (and the paragraph chip above it) must never cover the Next chapter button.
   roomForAsk: { paddingBottom: 150 },
   drawerWrap: { zIndex: 30 },
   ask: {
     position: 'absolute',
     right: space.xl,
-    bottom: 28,
+    bottom: 'calc(28px + env(safe-area-inset-bottom))',
     alignItems: 'flex-end',
     gap: space.sm,
     zIndex: 10,
+    transitionProperty: 'opacity, transform',
+    transitionDuration: '180ms',
   },
+  askHidden: { opacity: 0, transform: [{ translateY: 24 }] },
   fab: {
     height: 56,
     paddingLeft: 18,

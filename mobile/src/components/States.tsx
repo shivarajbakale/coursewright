@@ -48,6 +48,18 @@ export function Message({
   );
 }
 
+/** The last resort when a screen fails to draw: say so and offer a reload, never a blank page. */
+export function CrashScreen() {
+  const p = usePalette();
+  return (
+    <View style={{ flex: 1, backgroundColor: p.ground, justifyContent: 'center', padding: space.lg }}>
+      <View style={{ width: '100%', maxWidth: 520, alignSelf: 'center' }}>
+        <Message tone="error" title="Something went wrong on this screen." body="Your reading position is saved. Reloading usually fixes it." action="Reload" onAction={() => window.location.reload()} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   box: { borderWidth: 1, borderRadius: radius.lg, padding: space.xl, gap: space.sm },
   title: { fontFamily: font.ui, fontSize: 16, fontWeight: '600', lineHeight: 22 },

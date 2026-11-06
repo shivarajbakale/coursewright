@@ -23,15 +23,20 @@ export const lineHeights: Record<Spacing, number> = { tight: 1.45, normal: 1.6, 
 
 const KEY = 'cw-reader-settings';
 
-/** The first size follows the device's text-size setting: 18 px when the browser default is 16. */
+/**
+ * The first size follows the device's text-size setting: 18 px on a phone and 20 px on an iPad when
+ * the browser default is 16, since an iPad is read from further away.
+ */
 export function defaultSize(): number {
   let root = 16;
+  let wide = false;
   try {
     root = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    wide = window.innerWidth >= 700;
   } catch {
     // no document (tests without a DOM); keep 16
   }
-  return clamp(Math.round(root * 1.125));
+  return clamp(Math.round(root * (wide ? 1.25 : 1.125)));
 }
 
 export function clamp(size: number): number {

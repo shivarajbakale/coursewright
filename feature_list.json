@@ -403,6 +403,28 @@
         "build: app 190.67 kB gz; TutorPanel 154.44 kB gz loaded on first open (plan guessed ~90 KB)",
         "make check: tests 364 + 153 passed; doc-lint prelude trimmed (sessions 008-010 to docs/history)"
       ]
+    },
+    {
+      "id": "reader-pwa-polish",
+      "priority": 20,
+      "area": "Phone and iPad reader",
+      "title": "Reader polish: sticky bars, a design-review round, and the right app for each screen",
+      "user_visible_behavior": "Headers, the reading progress bar, the tutor's header and composer, and the iPad sidebar header stay in place while content scrolls; the reader fills the real visible screen on iOS (dynamic viewport) and respects the notch and home indicator. Phones and iPads opening the desktop app are sent to the matching reader page (/ to /m/, a course or chapter to the same course or chapter), and desktops opening /m/ are sent to the desktop app; ?app=reader or ?app=full overrides for the visit, ?app=auto resets. Findings from one design-review round are fixed.",
+      "status": "passing",
+      "plan": "none: owner-directed fixes to the planned reader screens (no new surface); the app switch has no UI beyond a link in Reading settings",
+      "verification": [
+        "vitest mobile",
+        "WebKit against the built apps (local nginx stand-in, Mac mini API): redirects, tutor without crypto.randomUUID, bars while scrolling",
+        "ui-evaluator design round on 35 screens, fixes recaptured",
+        "make check"
+      ],
+      "evidence": [
+        "Blank screen on Ask tutor reproduced on http://coursewright:8080 (WebKit: 'crypto.randomUUID is not a function', body empty); https was fine. Fixed with uid() + a randomUUID polyfill, and error boundaries (tutor and app root) so a failure shows a message, never a blank page; tutor then opened with randomUUID removed",
+        "app switch: iPhone /courses/:id/chapters/:c -> /m/ same chapter; iPad (Mac UA + touch) / -> /m/; desktop /m/courses/:id -> /courses/:id; phone /new stays; ?app=full sticks for the visit, ?app=auto -> /m/ (8 unit tests)",
+        "Sticky: scrolling content moved library brand/settings, course back/Aa, chapter outline/Aa/Ask, settings Done, iPad sidebar Library link and tutor button by 0 px (settings 1 px rounding)",
+        "Design round (ui-evaluator, 6/12 revise) fixed: Ask button hides while scrolling down; code blocks show a scroll hint; reading column ~66 characters and 20 px default on iPad; Next chapter quiet until the quiz is answered; outline drawer on phones; top bars over the content column; settings slider themed, plain copy; inline code no longer slabs; sidebar titles fit two lines; light-theme progress uses olive; twin course titles show their date; movie player lime, no speed menu or time readout on narrow screens. Not fixable here: the vendored player's canvas text size and drag dots",
+        "vitest mobile 36 passed; make check exit 0 (374 + 153)"
+      ]
     }
   ]
 }

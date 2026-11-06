@@ -213,7 +213,8 @@ const styles = StyleSheet.create({
   bodySheet: { flexGrow: 0, flexShrink: 1 },
   bodyPane: { flex: 1 },
   empty: { fontFamily: font.ui, fontSize: 15, lineHeight: 21, paddingVertical: space.sm },
-  footer: { gap: 10, paddingTop: space.md, paddingBottom: space.xl },
+  // Clear of the iPhone home indicator: the root leaves the bottom inset to the sheet.
+  footer: { gap: 10, paddingTop: space.md, paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderWidth: 1, borderRadius: radius.sm, paddingLeft: space.md },
   chipText: { flex: 1, fontFamily: font.ui, fontSize: 13 },
   chipX: { width: touch, height: 36, alignItems: 'center', justifyContent: 'center' },

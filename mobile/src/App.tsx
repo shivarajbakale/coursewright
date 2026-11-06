@@ -47,16 +47,31 @@ export function App() {
         layout === 'split' ? (
           <View style={styles.split}>
             <Sidebar courseId={route.courseId} chapterId={route.chapterId} />
-            <ChapterScreen key={route.chapterId} courseId={route.courseId} chapterId={route.chapterId} layout="split" />
+            <ChapterScreen
+              key={route.chapterId}
+              courseId={route.courseId}
+              chapterId={route.chapterId}
+              layout="split"
+            />
           </View>
         ) : (
-          <ChapterScreen key={route.chapterId} courseId={route.courseId} chapterId={route.chapterId} layout={layout} />
+          <ChapterScreen
+            key={route.chapterId}
+            courseId={route.courseId}
+            chapterId={route.chapterId}
+            layout={layout}
+          />
         );
       break;
     default:
       screen = (
         <View style={styles.missing}>
-          <Message title="There's nothing at this address." body="It may be an old link." action="Go to your courses" onAction={() => navigate(href({ name: 'library' }), { replace: true })} />
+          <Message
+            title="There's nothing at this address."
+            body="It may be an old link."
+            action="Go to your courses"
+            onAction={() => navigate(href({ name: 'library' }), { replace: true })}
+          />
         </View>
       );
   }
@@ -68,16 +83,32 @@ function Sidebar({ courseId, chapterId }: { courseId: string; chapterId: string 
   const p = usePalette();
   const course = useCourse(courseId);
   return (
-    <View role="navigation" aria-label="Course outline" style={[styles.sidebar, { borderRightColor: p.border }]}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.sidebarBody}>
-        <Text role="link" onPress={() => navigate(href({ name: 'library' }))} style={[styles.library, { color: p.muted }]}>
+    <View
+      role="navigation"
+      aria-label="Course outline"
+      style={[styles.sidebar, { borderRightColor: p.border }]}
+    >
+      {/* The way back and the course title stay put; only the outline scrolls. */}
+      <View style={[styles.sidebarHead, { borderBottomColor: p.border }]}>
+        <Text
+          role="link"
+          onPress={() => navigate(href({ name: 'library' }))}
+          style={[styles.library, { color: p.muted }]}
+        >
           ‹ Library
         </Text>
         {course.data ? (
-          <>
-            <Text style={[styles.courseTitle, { color: p.text }]}>{course.data.title}</Text>
-            <Outline course={course.data} currentId={chapterId} onOpen={(id) => navigate(href({ name: 'chapter', courseId, chapterId: id }))} />
-          </>
+          <Text style={[styles.courseTitle, { color: p.text }]}>{course.data.title}</Text>
+        ) : null}
+      </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.sidebarBody}>
+        {course.data ? (
+          <Outline
+            compact
+            course={course.data}
+            currentId={chapterId}
+            onOpen={id => navigate(href({ name: 'chapter', courseId, chapterId: id }))}
+          />
         ) : null}
       </ScrollView>
     </View>
@@ -85,11 +116,31 @@ function Sidebar({ courseId, chapterId }: { courseId: string; chapterId: string 
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, minHeight: '100%' },
+  root: { flex: 1, minHeight: 0 },
   split: { flex: 1, flexDirection: 'row' },
-  sidebar: { width: 300, borderRightWidth: 1 },
-  sidebarBody: { padding: space.md, paddingTop: space.lg, gap: space.lg },
+  sidebar: { width: 320, borderRightWidth: 1 },
+  sidebarHead: {
+    paddingHorizontal: space.md,
+    paddingTop: space.md,
+    paddingBottom: space.md,
+    gap: space.xs,
+    borderBottomWidth: 1,
+  },
+  sidebarBody: { padding: space.md, gap: space.lg },
   library: { fontFamily: font.ui, fontSize: 14, paddingHorizontal: space.sm, paddingVertical: 10 },
-  courseTitle: { fontFamily: font.reading, fontSize: 18, lineHeight: 24, fontWeight: '600', paddingHorizontal: space.sm },
-  missing: { flex: 1, padding: space.lg, justifyContent: 'center', maxWidth: 520, width: '100%', alignSelf: 'center' },
+  courseTitle: {
+    fontFamily: font.reading,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '600',
+    paddingHorizontal: space.sm,
+  },
+  missing: {
+    flex: 1,
+    padding: space.lg,
+    justifyContent: 'center',
+    maxWidth: 520,
+    width: '100%',
+    alignSelf: 'center',
+  },
 });

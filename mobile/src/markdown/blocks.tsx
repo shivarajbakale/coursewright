@@ -2,6 +2,7 @@
  * Renders the parsed chapter with React Native components, in the reader's current settings.
  * Code and tables scroll sideways inside their own box and never wrap or widen the page.
  */
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Style } from 'react-native';
 import { font, radius, space, type Palette } from '../theme';
@@ -88,15 +89,7 @@ function BlockView({ block, look }: { block: Block; look: Look }) {
         </View>
       );
     case 'code':
-      return (
-        <View style={[styles.box, { backgroundColor: p.codeGround, borderColor: p.border }]}>
-          <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.codeScroll}>
-            <Text style={[styles.code, { color: p.body }]} aria-label={block.lang ? `${block.lang} code` : 'code'}>
-              {block.text}
-            </Text>
-          </ScrollView>
-        </View>
-      );
+      return <CodeBlock text={block.text} lang={block.lang} palette={p} />;
     case 'quote':
       if (block.keyIdea) return <KeyIdea block={block} look={look} />;
       return (
@@ -136,6 +129,39 @@ function BlockView({ block, look }: { block: Block; look: Look }) {
   }
 }
 
+/**
+ * Code keeps its lines (it never wraps) and scrolls sideways. A line that runs past the edge would
+ * look complete, so while more is hidden to the right the edge fades and a "scroll" hint shows.
+ */
+function CodeBlock({ text, lang, palette: p }: { text: string; lang: string; palette: Palette }) {
+  const [box, setBox] = useState(0);
+  const [content, setContent] = useState(0);
+  const [x, setX] = useState(0);
+  const more = content - box - x > 4;
+  return (
+    <View style={[styles.box, { backgroundColor: p.codeGround, borderColor: p.border }]}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator
+        contentContainerStyle={styles.codeScroll}
+        onLayout={(e) => setBox(e.nativeEvent.layout.width)}
+        onContentSizeChange={(w) => setContent(w)}
+        scrollEventThrottle={32}
+        onScroll={(e) => setX(e.nativeEvent.contentOffset.x)}
+      >
+        <Text style={[styles.code, { color: p.body }]} aria-label={lang ? `${lang} code` : 'code'}>
+          {text}
+        </Text>
+      </ScrollView>
+      {more ? (
+        <View pointerEvents="none" aria-hidden style={[styles.fade, { backgroundImage: `linear-gradient(to right, transparent, ${p.codeGround} 70%)` }]}>
+          <Text style={[styles.more, { color: p.muted }]}>scroll ›</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 /** `> **Key idea:** ...` becomes a labelled callout; the label replaces the bold lead-in. */
 function KeyIdea({ block, look }: { block: Extract<Block, { kind: 'quote' }>; look: Look }) {
   const p = look.palette;
@@ -163,7 +189,8 @@ export function Runs({ inlines, look }: { inlines: Inline[]; look: Look }) {
         const style: Style = {};
         if (r.bold) style.fontWeight = '600';
         if (r.italic) style.fontStyle = 'italic';
-        if (r.code) Object.assign(style, { fontFamily: font.mono, fontSize: Math.round(look.size * 0.84), backgroundColor: p.raised, color: p.text, borderRadius: 5, paddingHorizontal: 4 });
+        // No side padding: a padded chip that wraps across lines breaks into slabs and pokes past the text edge.
+        if (r.code) Object.assign(style, { fontFamily: font.mono, fontSize: Math.round(look.size * 0.84), backgroundColor: p.raised, color: p.text, borderRadius: 3 });
         if (r.cite !== undefined) {
           const n = r.cite;
           return (
@@ -201,7 +228,9 @@ const styles = StyleSheet.create({
   item: { flexDirection: 'row', gap: space.sm },
   marker: { minWidth: 18, textAlign: 'right' },
   itemBody: { flex: 1, minWidth: 0, gap: space.sm },
-  box: { borderWidth: 1, borderRadius: radius.md, overflow: 'hidden' },
+  box: { borderWidth: 1, borderRadius: radius.md, overflow: 'hidden', position: 'relative' },
+  fade: { position: 'absolute', top: 0, right: 0, bottom: 0, width: 72, alignItems: 'flex-end', justifyContent: 'flex-end', paddingRight: 8, paddingBottom: 6 },
+  more: { fontFamily: font.ui, fontSize: 11 },
   codeScroll: { paddingVertical: 14, paddingHorizontal: 16 },
   code: { fontFamily: font.mono, fontSize: 13, lineHeight: 21, whiteSpace: 'pre' },
   quote: { borderLeftWidth: 3, paddingLeft: space.lg, gap: space.sm },
