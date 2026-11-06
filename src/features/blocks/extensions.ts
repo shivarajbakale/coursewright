@@ -1,8 +1,8 @@
 /**
  * Coursewright's blocks for kit's block editor (@shivarajbakale/blocks):
  *
- * - **flow**: a Flowmovie movie or a Mermaid diagram (slash menu "Diagram"),
- *   markdown as a ```flow / ```mermaid fence.
+ * - **flow**: a Flowmovie movie, a Mermaid diagram or an Inkling drawing (slash
+ *   menu "Diagram"), markdown as a ```flow / ```mermaid / ```inkling fence.
  * - **quizCard**: a question with options (slash menu "Quiz card"), markdown
  *   as a ```quiz fence of JSON.
  * - **chapter mentions**: "@" finds chapters across the user's courses;
@@ -87,8 +87,8 @@ type EditorOptionsPart = Pick<BlockEditorOptions, 'extensions' | 'widgets' | 'me
 const flowWidget = defineWidget<DiagramProps>({
   label: 'Diagram',
   icon: createElement(Workflow, { size: 18 }),
-  keywords: ['mermaid', 'flow', 'flowmovie', 'chart', 'diagram', 'sequence'],
-  description: 'A Mermaid diagram or a Flowmovie movie',
+  keywords: ['mermaid', 'flow', 'flowmovie', 'inkling', 'sketch', 'chart', 'diagram', 'sequence'],
+  description: 'A Mermaid diagram, a Flowmovie movie or an Inkling drawing',
   group: 'Coursewright',
   create: () => ({ kind: 'mermaid', source: SAMPLE_MERMAID, editing: true }),
   render: (props, api) =>
@@ -137,7 +137,7 @@ export function widgetBlockMarkdown(b: Pick<Block, 'props'>): string {
   return widgetMarkdown(kind, props);
 }
 
-/** ```mermaid / ```flow become a diagram; ```quiz with valid JSON a quiz card. Other fences stay code. */
+/** ```mermaid / ```flow / ```inkling become a diagram; ```quiz with valid JSON a quiz card. Other fences stay code. */
 export const readFences: MarkdownBlockRule = (tokens, i) => {
   const t = tokens[i];
   if (t.type !== 'fence') return null;

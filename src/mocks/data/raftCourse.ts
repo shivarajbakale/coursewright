@@ -164,6 +164,20 @@ A term is a logical clock. Every message carries the sender's term. A server tha
 
 Each server votes for at most one candidate per term, first come first served, so two candidates can't both collect a majority.
 
+\`\`\`inkling
+title "Winning a vote"
+layout sequence
+c: person "Candidate"
+a: box "Server A"
+b: box "Server B"
+c -> a : "RequestVote, term 4"
+a --> c : "yes"
+c -> b : "RequestVote, term 4"
+b --> c : "yes"
+c -> c : "majority: leader"
+steps auto
+\`\`\`
+
 ## Randomised timeouts
 
 If every follower timed out at the same instant, they'd all stand at once and split the vote forever. Raft picks each timeout at random (say 150–300 ms), so usually one server times out first and wins before anyone else stands.

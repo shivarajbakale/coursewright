@@ -5,7 +5,7 @@
 - Repository root: this project
 - Standard startup path: `./init.sh`
 - Standard verification path: `make check` (install + type-check + lint + test)
-- Current highest-priority unfinished feature: none open; next: phone reader Phase 4 PWA (install manifest, offline chapters, safe areas, update toast), then Phase 5 ship; design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS; flaky ui-probe M3 on desktop Sources (2 of 3 full make check runs); later per-module skip quiz, later-name leaks in lessons
+- Current highest-priority unfinished feature: none open; in progress: inkling-explainers (plan inkling-explainers.feature-plan.json; harness course backfill first); then reader Phase 4 PWA; design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS; flaky ui-probe M3 on desktop Sources (2 of 3 full make check runs); later per-module skip quiz, later-name leaks in lessons
 - Current blocker: none
 
 ## Session Log
@@ -33,16 +33,4 @@
   citations link to the latest search's hit; one conversation per chapter in localStorage. The picked paragraph
   is cleared only after the run ends (the run reads context after an await); titles go in the context too.
 
-### Session 011 — Coding agents can write courses (2026-11-06)
-
-- Owner: wants Claude Code, Codex or any agent to write a course. The course folder the builder already
-  writes is the contract; `agent/app/authoring.py` checks it (errors block import, teaching rules from
-  pedagogy.py are warnings) and imports it under seed_key `authored:<slug>`, adding the map diagram.
-- Ways in: `make course-check|course-import|course-schema` (app/cli.py), POST /api/courses/import, the
-  `write-course` skill + docs/authoring-courses.md, and the `coursewright` MCP server
-  (agent/app/mcp_server.py, mcp 2.x, stdio, registered in .mcp.json): rules as tools, resources and a prompt;
-  save tools check each piece.
-- The check found real prerequisite-order errors in the Raft seed (2) and the Rust course (1); not fixed.
-- A 14-lesson Bloom filter draft from a test agent sits outside the repo; owner deferred course writing.
-
-Earlier sessions: [docs/history/sessions-008-010.md](docs/history/sessions-008-010.md), [docs/history/sessions-001-007.md](docs/history/sessions-001-007.md).
+Earlier sessions: [docs/history/sessions-008-011.md](docs/history/sessions-008-011.md), [docs/history/sessions-001-007.md](docs/history/sessions-001-007.md).

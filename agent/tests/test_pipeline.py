@@ -106,6 +106,9 @@ class FakeModel:
         if name == "VerifyOut":
             wrong = any(f"# {t}" in user for t in self.wrong)
             return pipeline.VerifyOut(issues=["'2 + 2 = 5' should be 4"] if wrong else []), usage
+        if name == "ExplainersOut":
+            src = 'title "Bits remember"\nlayout cycle\na: circle "Set"\nb: circle "Check"\ncycle a, b\nsteps auto'
+            return schema.model_validate({"explainers": [{"after": WORDS[:60], "idea": "a loop", "source": src}]}), usage
         if name == "OutlineChatOut":
             return pipeline.OutlineChatOut(outline=CourseOutline.model_validate(outline_data(True)),
                                            reply="Added 2.2 Deletes: why removing an item is hard, 4 lessons now."), usage
@@ -158,7 +161,8 @@ def test_build_runs_every_stage_in_order_and_counts_tokens_per_stage(fake):
     assert names.count("ChapterOut") == 3 and names.count("ReaderOut") == 3  # every lesson read by a newcomer
     assert names.count("movie") == 1 and names.count("ProjectSpec") == 2 and names.count("VerifyOut") == 3
     stages = out["usage"]["stages"]
-    assert set(stages) == {"research", "curriculum", "chapters", "reader", "verify", "diagrams", "projects"}
+    assert set(stages) == {"research", "curriculum", "chapters", "reader", "verify", "explainers", "diagrams", "projects"}
+    assert names.count("ExplainersOut") == 3  # one call per lesson, each drawing passed the checker first time
     assert out["usage"]["inputTokens"] == sum(s["inputTokens"] for s in stages.values())
     with db() as conn:
         assert jload(store.get_job(conn, job["id"])["usage"])["stages"] == stages  # kept on the job as it goes
@@ -171,6 +175,9 @@ def test_build_runs_every_stage_in_order_and_counts_tokens_per_stage(fake):
             (cid, "Your map so far"),
         ).fetchone()[0]
         assert maps == 3  # every lesson ends with the map of what you have so far, drawn by code
+        for (md,) in conn.execute("SELECT markdown FROM chapters WHERE course_id=?", (cid,)):
+            # the explainer sits right after the paragraph it pictures, before the key idea
+            assert md.index("```inkling\ntitle \"Bits remember\"") < md.index("> **Key idea:**")
         assert conn.execute(
             "SELECT COUNT(*) FROM diagrams d JOIN chapters c ON c.id=d.chapter_id WHERE c.course_id=?", (cid,)
         ).fetchone()[0] == 4

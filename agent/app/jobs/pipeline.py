@@ -23,6 +23,8 @@ Write phase:
                easier. Every lesson gets a "Your map so far" diagram drawn by code.
     verify     per lesson, one call works through its numbers, code and answer keys; a lesson with a mistake
                is revised from its draft
+    explainers per lesson, one Inkling drawing (sometimes two) of its idea, its layout chosen from the idea,
+               placed as an ```inkling fence after the paragraph it pictures (app/jobs/explainers.py)
     diagrams   movies for at most a quarter of the lessons, when the writer asked for one
     projects   one call per module
 
@@ -43,7 +45,7 @@ from typing import Awaitable, Callable, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
 
-from app import config
+from app import config, inkling
 from app.agents import llm
 from app.jobs import pedagogy, store
 from app.materialise import (
@@ -1109,6 +1111,45 @@ class Run:
                              CHAPTER_CONCURRENCY, self.check_cancel)
         await self.emit("chapters", f"Checked {tally['checked']} chapters, corrected {tally['fixed']}", {})
 
+    async def explain_chapter(self, outline: CourseOutline, ch: ChapterSpec, layouts, tally: dict) -> None:
+        from app.jobs import explainers
+
+        path = self.course / "chapters" / f"{ch.key}.md"
+        marker = self.course / "chapters" / f"{ch.key}.explained"
+        if marker.exists() or not path.exists() or inkling.fences(path.read_text()):
+            return
+
+        async def call(system: str, user: str):
+            return await self.call("explainers", system=system, user=user, schema=explainers.ExplainersOut,
+                                   max_tokens=6000)
+
+        new, used = await explainers.explain(call, course=outline.title, title=ch.title, markdown=path.read_text(),
+                                             layouts=layouts)
+        if new:
+            path.write_text(new)
+            layouts.update(used)
+            tally["added"] += 1
+        marker.write_text(json.dumps({"layouts": used}))
+
+    async def explainers(self, outline: CourseOutline) -> None:
+        """One Inkling explainer per lesson, sometimes two, placed after the paragraph each pictures."""
+        from collections import Counter
+
+        chapters = [ch for m in outline.modules for ch in m.chapters]
+        todo = [ch for ch in chapters if not (self.course / "chapters" / f"{ch.key}.explained").exists()]
+        if not todo:
+            return
+        layouts: Counter = Counter()
+        for ch in chapters:
+            p = self.course / "chapters" / f"{ch.key}.md"
+            if p.exists():
+                layouts.update(f.layout for f in inkling.fences(p.read_text()))
+        await self.emit("chapters", f"Drawing explainers for {len(todo)} chapters", {})
+        tally = {"added": 0}
+        await gather_limited([lambda ch=ch: self.explain_chapter(outline, ch, layouts, tally) for ch in todo],
+                             CHAPTER_CONCURRENCY, self.check_cancel)
+        await self.emit("chapters", f"Drew explainers for {tally['added']} chapters", {"layouts": dict(layouts)})
+
     async def optional(self, what: str, coro) -> None:
         """A polishing stage that fails (a provider error, an answer that won't validate) is logged and
         skipped: the course is complete without it. Cancelling still cancels."""
@@ -1129,6 +1170,9 @@ class Run:
         await self.check_cancel()
         if self.ledger.total < budget:
             await self.optional("the accuracy check", self.verify(outline, notes))
+        await self.check_cancel()
+        if self.ledger.total < budget:
+            await self.optional("the explainers", self.explainers(outline))
         await self.check_cancel()
         if self.ledger.total < budget:
             await self.optional("the diagrams", self.diagrams(outline))

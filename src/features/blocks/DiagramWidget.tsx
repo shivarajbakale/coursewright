@@ -4,8 +4,9 @@ import { Button, Group, Paper, SegmentedControl, Stack, Text, Textarea } from '@
 import { Code2, Trash2 } from 'lucide-react';
 import type { WidgetApi } from '@shivarajbakale/blocks';
 import { FlowPlayer } from '@/components/diagrams/FlowPlayer';
+import { InklingDiagram } from '@/components/diagrams/InklingDiagram';
 import { MermaidDiagram } from '@/components/diagrams/MermaidDiagram';
-import { SAMPLE_FLOW, SAMPLE_MERMAID, type DiagramKind, type DiagramProps } from './model';
+import { SAMPLE_FLOW, SAMPLE_INKLING, SAMPLE_MERMAID, type DiagramKind, type DiagramProps } from './model';
 
 function Diagram({ kind, source }: { kind: DiagramKind; source: string }) {
   if (!source.trim()) {
@@ -15,11 +16,13 @@ function Diagram({ kind, source }: { kind: DiagramKind; source: string }) {
       </Text>
     );
   }
-  return kind === 'flow' ? <FlowPlayer source={source} /> : <MermaidDiagram source={source} />;
+  if (kind === 'flow') return <FlowPlayer source={source} />;
+  if (kind === 'inkling') return <InklingDiagram source={source} />;
+  return <MermaidDiagram source={source} />;
 }
 
 /**
- * A Flowmovie movie or a Mermaid diagram inside a note. Read-only pages only
+ * A Flowmovie movie, a Mermaid diagram or an Inkling drawing inside a note or a chapter. Read-only pages only
  * show it; an editable page adds "Edit source", which opens the source under a
  * live preview. The preview follows the textarea after a pause, so a diagram
  * half-typed does not flash an error on every key.
@@ -32,8 +35,9 @@ export function DiagramWidget({ props, api }: { props: DiagramProps; api: Widget
   const setKind = (kind: string) => {
     const next = kind as DiagramKind;
     // A sample is only swapped in when the source is still the other sample (or empty).
-    const pristine = !draft.trim() || draft === SAMPLE_MERMAID || draft === SAMPLE_FLOW;
-    const source = pristine ? (next === 'flow' ? SAMPLE_FLOW : SAMPLE_MERMAID) : draft;
+    const samples: Record<DiagramKind, string> = { flow: SAMPLE_FLOW, mermaid: SAMPLE_MERMAID, inkling: SAMPLE_INKLING };
+    const pristine = !draft.trim() || Object.values(samples).includes(draft);
+    const source = pristine ? samples[next] : draft;
     setDraft(source);
     api.update({ kind: next, source });
   };
@@ -50,6 +54,7 @@ export function DiagramWidget({ props, api }: { props: DiagramProps; api: Widget
               data={[
                 { value: 'mermaid', label: 'Mermaid' },
                 { value: 'flow', label: 'Flowmovie' },
+                { value: 'inkling', label: 'Inkling' },
               ]}
               aria-label="Diagram type"
             />
@@ -71,7 +76,7 @@ export function DiagramWidget({ props, api }: { props: DiagramProps; api: Widget
 
         {editing ? (
           <Textarea
-            aria-label={props.kind === 'flow' ? 'Flowmovie source' : 'Mermaid source'}
+            aria-label={{ flow: 'Flowmovie source', mermaid: 'Mermaid source', inkling: 'Inkling source' }[props.kind]}
             value={draft}
             onChange={(e) => setDraft(e.currentTarget.value)}
             onBlur={() => draft !== props.source && api.update({ source: draft })}

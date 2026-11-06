@@ -1,4 +1,4 @@
-# Sessions 008-010
+# Sessions 008-011
 
 Moved out of claude-progress.md to keep the session prelude within its doc-lint budget.
 
@@ -36,3 +36,15 @@ Moved out of claude-progress.md to keep the session prelude within its doc-lint 
   passes 334 tests, builds and serves.
 - Commit emails rewritten to the owner's chosen public address before the first push; gitleaks clean
   (seed-key false positives only). Local branch backup/pre-email-rewrite keeps the old history; not pushed.
+
+### Session 011 — Coding agents can write courses (2026-11-06)
+
+- Owner: wants Claude Code, Codex or any agent to write a course. The course folder the builder already
+  writes is the contract; `agent/app/authoring.py` checks it (errors block import, teaching rules from
+  pedagogy.py are warnings) and imports it under seed_key `authored:<slug>`, adding the map diagram.
+- Ways in: `make course-check|course-import|course-schema` (app/cli.py), POST /api/courses/import, the
+  `write-course` skill + docs/authoring-courses.md, and the `coursewright` MCP server
+  (agent/app/mcp_server.py, mcp 2.x, stdio, registered in .mcp.json): rules as tools, resources and a prompt;
+  save tools check each piece.
+- The check found real prerequisite-order errors in the Raft seed (2) and the Rust course (1); not fixed.
+- A 14-lesson Bloom filter draft from a test agent sits outside the repo; owner deferred course writing.

@@ -66,6 +66,9 @@ def _sections(md: str) -> list[tuple[str, str | None, str]]:
 
 
 def chunk_markdown(md: str) -> list[Chunk]:
+    from app.inkling import strip_fences
+
+    md = strip_fences(md)  # the tutor searches the words; an explainer's source is drawing syntax
     out: list[Chunk] = []
     for heading, anchor, body in _sections(md):
         # Fold tiny heading-only sections (e.g. an h1 title) into the next one by keeping them small chunks.

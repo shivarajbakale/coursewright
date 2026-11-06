@@ -3,14 +3,14 @@
  * writes as markdown. Pure: no React, no editor, so the markdown round-trips
  * are unit-testable on their own.
  *
- * - A diagram is a fenced code block whose language is `mermaid` or `flow`.
+ * - A diagram is a fenced code block whose language is `mermaid`, `flow` or `inkling`.
  * - A quiz card is a fenced code block whose language is `quiz`, holding JSON.
  * - A chapter mention is a link to `/courses/<courseId>/chapters/<chapterId>`.
  */
 
 // ── Diagrams ─────────────────────────────────────────────────────────────────
 
-export type DiagramKind = 'flow' | 'mermaid';
+export type DiagramKind = 'flow' | 'mermaid' | 'inkling';
 
 export interface DiagramProps {
   kind: DiagramKind;
@@ -23,7 +23,10 @@ export const SAMPLE_MERMAID = 'flowchart LR\n  A[Follower] -->|timeout| B[Candid
 export const SAMPLE_FLOW =
   'title A request\n\nc "Client"\ns "Server"\n\nc -> s\n\n# The client asks the server.\nnew r at c\nr -> s  "request"\n\n# The server answers.\nr -> c  "response"\nremove r\n';
 
-export const isDiagramKind = (v: unknown): v is DiagramKind => v === 'flow' || v === 'mermaid';
+export const SAMPLE_INKLING =
+  'title "A request"\n\nyou: person "You"\nserver: box "Server"\n\nyou -> server : "asks"\nserver --> you : "answers"\n\nstep 1: you, server "You ask the server"\nstep 2: server "It answers"\n';
+
+export const isDiagramKind = (v: unknown): v is DiagramKind => v === 'flow' || v === 'mermaid' || v === 'inkling';
 
 export function toDiagramProps(raw: Record<string, unknown> | null | undefined): DiagramProps {
   return {

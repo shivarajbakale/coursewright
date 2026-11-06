@@ -120,6 +120,31 @@ def resume_course(course_id: str):
         return ok({"course": get_course_summary(conn, course_id), "jobId": c["job_id"]})
 
 
+class AddExplainers(BaseModel):
+    chapterIds: list[str] | None = None
+    # Draw again for chapters that already have explainers.
+    redo: bool = False
+
+
+@router.post("/courses/{course_id}/explainers", status_code=202)
+def add_explainers(course_id: str, body: AddExplainers | None = None):
+    """Start a job that adds Inkling explainers to an existing course's chapters (app/jobs/explainers.py)."""
+    body = body or AddExplainers()
+    with db() as conn:
+        c = row(conn, "SELECT id, status FROM courses WHERE id=?", (course_id,))
+        if not c:
+            raise not_found("Course not found")
+        if c["status"] != "ready":
+            raise HTTPException(status_code=409, detail="Add explainers once the course is built")
+        running = row(conn, "SELECT id FROM jobs WHERE kind='explainers' AND course_id=? AND status IN ('queued','running')",
+                      (course_id,))
+        if running:
+            return ok({"jobId": running["id"], "started": False})
+        job_id = store.create_job(conn, "explainers", {"courseId": course_id, **body.model_dump(exclude_none=True)},
+                                  course_id=course_id)
+    return ok({"jobId": job_id, "started": True})
+
+
 @router.get("/courses/{course_id}")
 def get_course(course_id: str):
     with db() as conn:

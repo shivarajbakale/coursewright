@@ -20,6 +20,9 @@ const ICONS = {
   arrowRight: 'M5 12h14M13 6l6 6-6 6',
   arrowLeft: 'M19 12H5M11 6l-6 6 6 6',
   sliders: 'M4 7h10M18 7h2M4 17h4M12 17h8',
+  play: 'M8 5.5v13l10-6.5z',
+  pause: 'M9 5v14M15 5v14',
+  replay: 'M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4',
 } as const;
 
 export type IconName = keyof typeof ICONS;

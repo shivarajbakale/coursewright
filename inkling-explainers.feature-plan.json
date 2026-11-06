@@ -1,0 +1,103 @@
+{
+  "feature": {
+    "id": "inkling-explainers",
+    "title": "Inkling explainers inside every chapter",
+    "problem": "Chapters explain each idea in words, with at most one movie and the code-drawn 'Your map so far'. The owner wants every chapter to carry a hand-drawn explainer made with Inkling (~/Projects/inkling, their own library: text in, a hand-made drawing out that draws itself step by step), placed inline where it helps, chosen to fit the idea (sequence for a protocol, cycle for a loop, compare for two approaches, timeline, stack, mind map, flow) and never one fixed template. New courses get them from the builder and from agents writing through the MCP; the harness course gets them now as a trial before the other five.",
+    "nonGoals": [
+      "Backfilling the other five courses: after the owner has looked at the harness course.",
+      "Replacing 'Your map so far' (kept as it is) or Flowmovie movies.",
+      "Editing explainers in the app; they are written by the builder or an authoring agent."
+    ]
+  },
+  "nav": ["Library", "Course", "Chapter", "Reading"],
+  "surfaces": [
+    {
+      "id": "chapter-desktop",
+      "name": "Chapter (desktop app)",
+      "route": "/courses/:courseId/chapters/:chapterId",
+      "archetype": "detail",
+      "moments": {
+        "peak": "reaching the explainer right after the paragraph it pictures, and watching it draw the idea step by step",
+        "end": "the drawing finished in place, its caption saying the idea in one line, and the text carrying on below it"
+      },
+      "purpose": "Read the chapter with its explainer where it helps, not in a section at the end.",
+      "panels": [
+        { "id": "text", "kind": "detail", "title": "Chapter text", "subtitle": "split at each ```inkling block", "fields": [{ "label": "Before", "value": "markdown" }, { "label": "Explainer", "value": "Inkling card: title, drawing, play bar" }, { "label": "After", "value": "markdown" }] },
+        { "id": "explainer", "kind": "detail", "title": "Explainer card", "fields": [{ "label": "Paper", "value": "chalkboard (dark) / notebook (light)" }, { "label": "Play", "value": "draws on first view; step through with the bar" }, { "label": "Alt", "value": "the diagram's title and step captions" }] }
+      ],
+      "states": {
+        "loading": "A box the drawing's height with its title, while the Inkling module loads (about 36 KB gzipped, only on chapters that have one).",
+        "empty": "A chapter with no explainer renders as today.",
+        "error": "An explainer that fails to parse shows its title and 'This drawing has a mistake, so here is its text' with the source; the chapter still reads.",
+        "success": "The drawing appears inline, draws itself the first time it scrolls into view (not under reduced motion), and the play bar steps through it."
+      }
+    },
+    {
+      "id": "chapter-reader",
+      "name": "Chapter (phone and iPad reader)",
+      "route": "/m/courses/:courseId/chapters/:chapterId",
+      "archetype": "detail",
+      "moments": {
+        "peak": "the explainer drawing itself right under the paragraph it pictures, sized to the phone",
+        "end": "the finished drawing, then the text carrying on"
+      },
+      "purpose": "Same explainer, inline, in the reading theme.",
+      "panels": [
+        { "id": "text", "kind": "detail", "title": "Chapter blocks", "fields": [{ "label": "Block", "value": "inkling fence → Explainer" }] },
+        { "id": "explainer", "kind": "detail", "title": "Explainer", "fields": [{ "label": "Paper", "value": "chalkboard / notebook / napkin by theme" }, { "label": "Width", "value": "the reading column; scales down, never scrolls sideways" }] }
+      ],
+      "states": {
+        "loading": "A box with the title while Inkling loads.",
+        "empty": "No explainer: unchanged.",
+        "error": "The source as text with a one-line note.",
+        "success": "Draws on first view, step bar under it."
+      }
+    }
+  ],
+  "components": [
+    { "surface": "chapter-desktop", "control": "```inkling fences inside the chapter markdown", "why": "inline placement with no new schema: the text carries the drawing at the right spot, the builder, the MCP and authors all write the same thing, and the reader and desktop split on it", "rejected": "a separate diagrams row with an anchor (two sources of truth for one position)" },
+    { "surface": "chapter-desktop", "control": "Vendored Inkling build (vendor/inkling via npm run vendor), loaded lazily", "why": "the owner's own library, self-contained (rough.js and dagre bundled); lazy so chapters without one pay nothing", "rejected": "a git dependency (Docker builds need it offline) and the CDN (private tailnet)" },
+    { "surface": "chapter-desktop", "control": "Paper chosen by the app's theme, overriding the source", "why": "one look per reading theme; the builder writes content, not styling", "rejected": "letting each explainer pick its own paper" },
+    { "surface": "chapter-reader", "control": "The reader's markdown parser emits an 'inkling' block for the fence", "why": "same pattern as code blocks; the reader already owns its block renderer", "rejected": "rendering fences as code" }
+  ],
+  "endpoints": [
+    { "method": "POST", "path": "/api/courses/:id/explainers", "auth": false, "purpose": "start a background job that adds explainers to an existing course (the harness course now); returns jobId, progress like a build" },
+    { "method": "GET", "path": "/api/jobs/:id", "auth": false, "purpose": "progress of that job (existing)" }
+  ],
+  "integration": [
+    { "from": "agent/app/inkling.py", "to": "node agent/vendor/inkling/bin/inkling.mjs check", "note": "the same Node path Flowmovie's check uses" },
+    { "from": "pipeline 'explainers' stage", "to": "after chapters are written: one model call per chapter picks 1-2 spots and writes the source; checked; up to 2 revisions; inserted as fences", "note": "new builds" },
+    { "from": "authoring.check_folder + MCP", "to": "check every ```inkling fence; get_rules('inkling'); check_inkling tool", "note": "agents writing courses" },
+    { "from": "rag/chunk.py", "to": "drop inkling fences from indexed text, keep the title", "note": "the tutor searches words, not diagram syntax" },
+    { "from": "pedagogy rules", "to": "explainer guidance: pick the layout from the idea, label in the course's words, 3-6 steps, captions say the idea", "note": "the 'no set structure' requirement" }
+  ],
+  "blastRadius": {
+    "new": [
+      "vendor/inkling/ (vendored build)",
+      "agent/vendor/inkling/ (Node checker)",
+      "agent/app/inkling.py",
+      "agent/app/jobs/explainers.py",
+      "agent/app/prompts/explainer.md",
+      "agent/tests/test_inkling.py",
+      "src/components/diagrams/InklingDiagram.tsx",
+      "mobile/src/diagrams/Inkling.tsx"
+    ],
+    "changed": [
+      "agent/app/jobs/pipeline.py (explainers stage)",
+      "agent/app/api/courses.py (POST /courses/:id/explainers)",
+      "agent/app/authoring.py, agent/app/mcp_server.py, docs/authoring-courses.md, .claude/skills/write-course",
+      "agent/app/rag/chunk.py",
+      "src/pages/Chapter/ChapterPage.tsx (split markdown at fences)",
+      "src/api/services, src/hooks, src/mocks (explainers job)",
+      "mobile/src/markdown/parse.ts, mobile/src/markdown/blocks.tsx",
+      "courses/agent-harness-from-scratch (fences added to lessons)"
+    ]
+  },
+  "verification": [
+    "agent pytest (checker, fence insertion, job, MCP tools)",
+    "vitest (fence split on desktop, reader block, error fallback)",
+    "make check",
+    "Backfill job on the Mac mini for the harness course: 65 chapters, every explainer passes the checker, layouts vary",
+    "WebKit: desktop chapter and reader at phone and iPad sizes show explainers inline, drawn, no overflow"
+  ]
+}

@@ -21,6 +21,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ValidationError
 
+from app import inkling
 from app.materialise import (
     ChapterExtras,
     CourseOutline,
@@ -109,6 +110,23 @@ def _diagram_issue(kind: str, source: str, flow: bool) -> str | None:
     return None
 
 
+def _explainer_issues(report: Report, rel: str, md: str, node: bool) -> None:
+    """Inkling explainers (```inkling fences): a source that doesn't parse is an error; the house rules
+    (a title, steps, at most two, readable on a phone) are warnings."""
+    found = inkling.fences(md)
+    if len(found) > inkling.MAX_PER_LESSON:
+        report.warn(rel, f"{len(found)} Inkling explainers; a lesson has at most {inkling.MAX_PER_LESSON}.")
+    results = inkling.check_many([f.source for f in found]) if node and found else [None] * len(found)
+    for i, (f, r) in enumerate(zip(found, results), 1):
+        name = f"explainer {i}" + (f' ("{f.title}")' if f.title else "")
+        for p in inkling.source_problems(f.source):
+            report.warn(rel, f"{name}: {p}")
+        for e in (r or {}).get("errors", []):
+            report.error(rel, f"{name} line {e['line']}: {e['message']}")
+        for w in (r or {}).get("warnings", []):
+            report.warn(rel, f"{name} line {w['line']}: {w['message']}")
+
+
 def check_folder(folder: Path, *, flow: bool = True) -> Report:
     """Everything wrong with a course folder. `flow=False` skips compiling Flowmovie diagrams (they need node)."""
     from app import flowmovie
@@ -180,6 +198,8 @@ def check_folder(folder: Path, *, flow: bool = True) -> Report:
             report.error(md_rel, "missing: every lesson in outline.json needs its markdown file")
             continue
         md = md_path.read_text().strip()
+        _explainer_issues(report, md_rel, md, flow)
+        md = inkling.strip_fences(md, keep_title=False)  # the prose checks read the words, not the drawings
         if len(md) < 50:
             report.error(md_rel, "empty or nearly empty")
             continue

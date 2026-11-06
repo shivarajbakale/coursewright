@@ -22,10 +22,11 @@ POLL_SECONDS = 0.5
 
 
 def _handlers() -> dict[str, Callable[[dict], Awaitable[dict | None]]]:
-    from app.jobs import build_course, ingest_jobs, review_project
+    from app.jobs import build_course, explainers, ingest_jobs, review_project
 
     return {
         "build_course": build_course.run,
+        "explainers": explainers.run,
         "ingest": ingest_jobs.run_ingest,
         "reindex": ingest_jobs.run_reindex,
         "review_project": review_project.run,

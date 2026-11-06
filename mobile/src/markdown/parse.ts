@@ -24,6 +24,8 @@ export type Block =
   | { kind: 'paragraph'; inlines: Inline[] }
   | { kind: 'list'; ordered: boolean; start: number; items: Block[][] }
   | { kind: 'code'; lang: string; text: string }
+  /** An Inkling explainer: an ```inkling fence, drawn where it sits. */
+  | { kind: 'inkling'; source: string }
   | { kind: 'quote'; keyIdea: boolean; blocks: Block[] }
   | { kind: 'table'; header: Inline[][]; rows: Inline[][][] }
   | { kind: 'rule' };
@@ -102,7 +104,9 @@ function parseBlocks(tokens: Token[]): Block[] {
       }
       case 'fence':
       case 'code_block': {
-        out.push({ kind: 'code', lang: t.info.trim().split(/\s+/)[0] ?? '', text: t.content.replace(/\n$/, '') });
+        const lang = t.info.trim().split(/\s+/)[0] ?? '';
+        const text = t.content.replace(/\n$/, '');
+        out.push(t.type === 'fence' && lang.toLowerCase() === 'inkling' ? { kind: 'inkling', source: text } : { kind: 'code', lang, text });
         i += 1;
         break;
       }

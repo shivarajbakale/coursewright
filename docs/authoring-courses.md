@@ -53,11 +53,12 @@ gives a machine-readable report, and `--strict` fails on warnings as well as err
 `agent/app/mcp_server.py` serves the same rules, checks and import as an MCP server, so an agent can
 write a course without reading this repo.
 
-- **Rules:** `get_guide`, `get_rules(stage)` (course_format, curriculum, writer, quiz, diagrammer) and
+- **Rules:** `get_guide`, `get_rules(stage)` (course_format, curriculum, writer, quiz, diagrammer, explainer) and
   `get_schema`. The same text is also available as `coursewright://guide` and `coursewright://rules/<stage>`
   resources, plus a `write-course` prompt that walks through the whole process.
 - **Writing:** `start_course`, `save_outline`, `save_lesson`, `save_diagram`, `save_project`,
-  `read_course`, `list_courses`, `check_diagram`. Each save checks what it wrote and returns its problems.
+  `read_course`, `list_courses`, `check_diagram`, `check_inkling`. Each save checks what it wrote and returns
+  its problems.
   A save that doesn't match the schema, or a diagram that doesn't compile, is refused.
 - **Finishing:** `check_course`, `import_course` (pass `server` or set `CW_SERVER` to send the course to a
   running instance).
@@ -136,15 +137,45 @@ An edge `{"from": A, "to": B}` means A is a prerequisite of B. `colour` is a Man
 On import, every lesson also gets the "Your map so far" diagram the builder draws, made from the
 concepts and edges.
 
+## Explainers
+
+Every lesson carries one Inkling explainer, sometimes two: a hand-drawn drawing that draws itself step by
+step, written as an ```` ```inkling ```` fence in the lesson's markdown right after the paragraph it
+pictures. Both apps draw it where it sits, on the reader's theme paper. Pick the layout from the idea
+(`sequence` for who sends what, `cycle` for a loop, `stack` for layers, `compare` for two approaches,
+`timeline`, `mindmap`, or the default `flow`), so a course does not repeat one template. The rules and the
+language are [explainer.md](../agent/app/prompts/explainer.md) (`get_rules("explainer")`).
+
+````md
+The loop is simple: the model thinks, asks for a tool, reads what came back, and thinks again.
+
+```inkling
+title "The agent loop"
+layout cycle
+center "until done"
+think: circle "Think"
+act: circle "Run a tool"
+read: circle "Read the result"
+cycle think, act, read
+step 1: think "The model decides what to do"
+step 2: act "The harness runs the tool it asked for"
+step 3: read "The result goes back to the model"
+```
+````
+
+The builder adds them on its own (the explainers stage), and `POST /api/courses/:id/explainers` adds them
+to a course that has none. The tutor's index leaves the drawing's source out and keeps its title.
+
 ## What the check reports
 
 **Errors** stop the import: a missing or unreadable file, a broken reference (an edge, a concept key, a
-project), a duplicate key, a quiz answer out of range, a diagram that doesn't compile, or a lesson that
-comes before a lesson it depends on.
+project), a duplicate key, a quiz answer out of range, a diagram or an explainer that doesn't compile,
+or a lesson that comes before a lesson it depends on.
 
 **Warnings** are the teaching rules the builder applies ([pedagogy.py](../agent/app/jobs/pedagogy.py)):
 titles shaped `<concept>: <what it is in plain words>`, one concept per lesson, 250-800 words of prose,
 no sentence that assumes the learner already knows the field, no name a later lesson teaches, no
-reference to a later lesson, 2-3 questions per lesson, and no file the outline doesn't list.
+reference to a later lesson, 2-3 questions per lesson, explainers with a title and steps (at most two,
+narrow enough for a phone), and no file the outline doesn't list. The prose checks skip the explainers.
 
-Flowmovie diagrams compile with `node`; without it they are skipped with a warning.
+Flowmovie diagrams and Inkling explainers compile with `node`; without it they are skipped with a warning.

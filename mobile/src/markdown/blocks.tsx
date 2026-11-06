@@ -7,6 +7,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Style } from 'react-native';
 import { font, radius, space, type Palette } from '../theme';
 import { plainText, type Block, type Inline } from './parse';
+import { Inkling } from '../diagrams/Inkling';
 
 export type Look = {
   size: number;
@@ -90,6 +91,8 @@ function BlockView({ block, look }: { block: Block; look: Look }) {
       );
     case 'code':
       return <CodeBlock text={block.text} lang={block.lang} palette={p} />;
+    case 'inkling':
+      return <Inkling source={block.source} />;
     case 'quote':
       if (block.keyIdea) return <KeyIdea block={block} look={look} />;
       return (

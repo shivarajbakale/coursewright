@@ -38,8 +38,10 @@ RULES = {
     "writer": "Writing one lesson: shape, length, the key idea, 'What you have now'.",
     "quiz": "Writing check-yourself questions.",
     "diagrammer": "Choosing and writing a diagram: Flowmovie (.flow) for motion, Mermaid (.mmd) for structure.",
+    "explainer": "Writing a lesson's Inkling explainers: the hand-drawn ```inkling drawing after the paragraph it "
+                 "pictures, its layout chosen from the idea, and the language.",
 }
-Stage = Literal["course_format", "curriculum", "writer", "quiz", "diagrammer"]
+Stage = Literal["course_format", "curriculum", "writer", "quiz", "diagrammer", "explainer"]
 
 WORKFLOW = """Write a Coursewright course in this order. Every save tool checks what it saved and returns the
 problems; fix errors before moving on, and fix warnings unless you can say why one is wrong for this lesson.
@@ -48,8 +50,10 @@ problems; fix errors before moving on, and fix warnings unless you can say why o
 2. start_course with the topic, goal and pace agreed with the user.
 3. save_outline. Then show the user the modules and lesson titles in order and WAIT for their approval;
    reshape and save again if they ask.
-4. For each lesson in order: get_rules("writer") and get_rules("quiz") once, then save_lesson with the
-   markdown and 2-3 questions. A lesson may only use what earlier lessons taught.
+4. For each lesson in order: get_rules("writer"), get_rules("quiz") and get_rules("explainer") once, then
+   save_lesson with the markdown and 2-3 questions. A lesson may only use what earlier lessons taught. Every
+   lesson carries one Inkling explainer (sometimes two) as an ```inkling fence right after the paragraph it
+   pictures, its layout picked from the idea; check_inkling checks a drawing before you put it in.
 5. Only where a moving picture shows what words cannot: get_rules("diagrammer"), then save_diagram.
 6. save_project for each module that names a projectKey.
 7. check_course until it reports 0 errors.
@@ -282,6 +286,17 @@ def save_project(slug: str, key: str, project: dict[str, Any]) -> dict[str, Any]
 def check_diagram(kind: Literal["flow", "mermaid"], source: str) -> dict[str, Any]:
     problem = authoring._diagram_issue(kind, source, True)
     return {"ok": problem is None, "problem": problem}
+
+
+@mcp.tool(description="Check an Inkling explainer's source (the body of an ```inkling fence, without the fence) "
+          "without saving it. Returns the parse errors and warnings with line numbers, and the house rules it misses.")
+def check_inkling(source: str) -> dict[str, Any]:
+    from app import inkling
+
+    result = inkling.check(source)
+    rules = inkling.source_problems(source)
+    return {"ok": result["ok"] and not rules, "errors": result["errors"], "warnings": result["warnings"],
+            "rules": rules, "layout": inkling.layout(source)}
 
 
 # ---- check and import ----------------------------------------------------------------------------------

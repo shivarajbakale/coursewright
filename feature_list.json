@@ -425,6 +425,17 @@
         "Design round (ui-evaluator, 6/12 revise) fixed: Ask button hides while scrolling down; code blocks show a scroll hint; reading column ~66 characters and 20 px default on iPad; Next chapter quiet until the quiz is answered; outline drawer on phones; top bars over the content column; settings slider themed, plain copy; inline code no longer slabs; sidebar titles fit two lines; light-theme progress uses olive; twin course titles show their date; movie player lime, no speed menu or time readout on narrow screens. Not fixable here: the vendored player's canvas text size and drag dots",
         "vitest mobile 36 passed; make check exit 0 (374 + 153)"
       ]
+    },
+    {
+      "id": "inkling-explainers",
+      "priority": 21,
+      "area": "Course content",
+      "title": "Every chapter carries Inkling explainers, inline, chosen to fit its idea",
+      "user_visible_behavior": "Chapters show 1-2 hand-drawn Inkling explainers inline (```inkling fences in the lesson), in the desktop app and the phone/iPad reader, drawn step by step on first view, paper matched to the theme. The builder adds them to new courses, the MCP and folder check validate them, and POST /api/courses/:id/explainers adds them to an existing course (the harness course first).",
+      "status": "in_progress",
+      "plan": "inkling-explainers.feature-plan.json",
+      "verification": [],
+      "evidence": []
     }
   ]
 }
