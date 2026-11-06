@@ -80,6 +80,13 @@ def changed_keys(before: CourseOutline, after: CourseOutline) -> list[str]:
     ]
 
 
+def outline_reply_tokens(outline) -> int:
+    """Output tokens for an outline-chat reply: about the outline's JSON size in tokens (4 characters each),
+    doubled for the change and the reasoning, at least 8000 and at most 32000."""
+    size = len(outline.model_dump_json(by_alias=True)) // 4
+    return max(8000, min(32000, size * 2 + 4000))
+
+
 @router.get("/courses/{course_id}/plan")
 def get_plan(course_id: str):
     c, p = _load(course_id)
@@ -107,15 +114,17 @@ async def chat(course_id: str, body: ChatIn):
     )
     system = config.prompt("outline_chat") + "\n\n" + config.prompt("curriculum") + "\n\n" + config.prompt("course_format")
     tokens = 0
+    # The reply is the whole outline again, plus room to think: a long course needs far more than 8000.
+    budget = outline_reply_tokens(before)
     try:
-        out, usage = await llm.parse(system=system, user=user, schema=pipeline.OutlineChatOut, max_tokens=8000)
+        out, usage = await llm.parse(system=system, user=user, schema=pipeline.OutlineChatOut, max_tokens=budget)
         tokens += usage.get("inputTokens", 0) + usage.get("outputTokens", 0)
         # Only problems this change introduced send it back: a question leaves the outline as it was.
         known = set(pipeline.outline_problems(before))
         problems = [x for x in pipeline.outline_problems(out.outline) if x not in known]
         if problems:
             retry = user + "\n\nYour previous outline had these problems. Fix every one:\n" + "\n".join(f"- {x}" for x in problems)
-            out, usage = await llm.parse(system=system, user=retry, schema=pipeline.OutlineChatOut, max_tokens=8000)
+            out, usage = await llm.parse(system=system, user=retry, schema=pipeline.OutlineChatOut, max_tokens=budget)
             tokens += usage.get("inputTokens", 0) + usage.get("outputTokens", 0)
     except llm.MissingKey:
         raise
