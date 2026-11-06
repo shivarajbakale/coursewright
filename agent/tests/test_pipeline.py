@@ -21,16 +21,16 @@ WORDS = " ".join(["Each step follows from the one before it, so you can check it
 # The fake curriculum: three concepts, one lesson each, in two modules. `to_outline` turns it into the
 # outline below (`outline_data`), which the outline-review tests reshape.
 LESSONS = [
-    ("hashing", "Hashing", "turning items into numbers", "Items to numbers", []),
-    ("bits", "Bit arrays", "a row of yes or no answers", "Remembering with bits", ["hashing"]),
-    ("tuning", "Filter size", "choosing how big to make it", "How big to make it", ["bits"]),
+    ("hashing", "Hashing", "turning items into numbers", "Items to numbers", [], ["hash function"]),
+    ("bits", "Bit arrays", "a row of yes or no answers", "Remembering with bits", ["hashing"], []),
+    ("tuning", "Filter size", "choosing how big to make it", "How big to make it", ["bits"], []),
 ]
 
 
 def curriculum() -> "pipeline.CurriculumOut":
     def lesson(row):
-        key, name, plain, summary, pre = row
-        return {"key": key, "name": name, "plain": plain, "summary": summary, "prerequisites": pre}
+        key, name, plain, summary, pre, terms = row
+        return {"key": key, "name": name, "plain": plain, "summary": summary, "prerequisites": pre, "terms": terms}
 
     return pipeline.CurriculumOut.model_validate({
         "title": "Bloom filters", "summary": "Fast set membership, from zero.", "colour": "teal",
@@ -90,7 +90,8 @@ class FakeModel:
             clearer = user.count("Clearer now.") + 1 if "fix these problems" in user and not self.stubborn else 0
             body = WORDS + " Clearer now." * clearer
             return pipeline.ChapterOut(
-                markdown=lesson_markdown(title, body), defines=[{"term": concept, "meaning": "it"}], uses=[],
+                markdown=lesson_markdown(title, body), uses=[],
+                defines=[{"term": concept, "meaning": "it"}] + ([{"term": "hash function"}] if concept == "Hashing" else []),
                 questions=[q, q], diagramRequest=req if "hashing" in title.lower() else None,
             ), usage
         if name == "ReaderOut":
@@ -177,14 +178,26 @@ def test_build_runs_every_stage_in_order_and_counts_tokens_per_stage(fake):
         assert jload(rubric)[0]["chapterId"] is None  # an unknown chapter key is dropped, not fatal
 
 
-def test_lessons_are_written_after_the_lessons_they_build_on_and_see_their_terms(fake):
-    _, job = _build({"topic": "Bloom filters"}, "Ordered course")
+def test_lessons_know_the_planned_terms_of_earlier_lessons_without_waiting_for_them(fake):
+    _, job = _build({"topic": "Bloom filters"}, "Parallel course")
     asyncio.run(build_course.run(job))
-    prompts = fake.users["ChapterOut"]
-    assert [re.search(r'Write lesson \[([^\]]+)\]', u).group(1) for u in prompts] == ["c01-hashing", "c02-bits", "c03-tuning"]
-    assert "(none: this is the first lesson)" in prompts[0]
-    assert f"- {T1} (explained: Hashing)" in prompts[1]
-    assert "The previous lesson" in prompts[1] and "## What you have now" in prompts[1]
+    prompts = {re.search(r'Write lesson \[([^\]]+)\]', u).group(1): u for u in fake.users["ChapterOut"]}
+    assert "Terms the learner knows from earlier lessons: (none: this is the first lesson)" in prompts["c01-hashing"]
+    assert "It also explains these supporting terms (later lessons rely on them): hash function" in prompts["c01-hashing"]
+    assert "Terms the learner knows from earlier lessons: Hashing, hash function" in prompts["c02-bits"]
+    assert f"It builds on these earlier lessons:\n- {T1}: Items to numbers" in prompts["c02-bits"]
+    # Only what the lesson needs: no outline, and the next lesson by what it answers, never by its name.
+    assert "Filter size" not in prompts["c02-bits"]
+    assert "The next lesson answers: choosing how big to make it" in prompts["c02-bits"]
+    assert "Bit arrays" not in prompts["c01-hashing"]
+
+
+def test_a_lesson_must_explain_its_planned_terms():
+    title = "Bit arrays: a row of yes or no answers"
+    text = " ".join(pipeline.chapter_problems(_lesson(), title, _ctx(planned=["bit mask"])))
+    assert "Explain bit mask" in text
+    assert pipeline.chapter_problems(_lesson(defines=[{"term": "Bit array"}, {"term": "bit mask"}]), title,
+                                     _ctx(planned=["bit mask"])) == []
 
 
 def test_the_learners_level_never_reaches_the_curriculum_or_a_lesson(fake):
@@ -221,11 +234,13 @@ def test_a_lesson_a_newcomer_gets_stuck_in_is_revised_with_the_quotes_and_read_a
     assert "Clearer now." in md and _status(cid) == "ready"
 
 
-def test_revisions_go_two_rounds_while_they_help_and_stop_when_they_dont(fake):
+def test_revisions_go_on_while_they_help_and_stop_when_they_dont(fake, monkeypatch):
+    assert pipeline.READ_ROUNDS == 1  # one revision by default: clarity against cost
+    monkeypatch.setattr(pipeline, "READ_ROUNDS", 2)
     fake.stuck, fake.gradual = {T2}, True
     _, job = _build({"topic": "Bloom filters"}, "Gradual course")
     out = asyncio.run(build_course.run(job))
-    assert out["usage"]["stages"]["revisions"]["calls"] == pipeline.READ_ROUNDS == 2
+    assert out["usage"]["stages"]["revisions"]["calls"] == 2
 
     fake.gradual, fake.stubborn = False, True
     cid, job = _build({"topic": "Bloom filters"}, "Stubborn course")
@@ -271,6 +286,9 @@ def test_curriculum_checks_catch_what_a_model_gets_wrong():
     cur["modules"][1]["lessons"][0]["prerequisites"] = []
     assert "1 lessons list no prerequisites (Filter size)" in " ".join(
         pipeline.curriculum_problems(pipeline.CurriculumOut.model_validate(cur)))
+    cur = curriculum().model_dump()
+    cur["modules"][0]["lessons"][0]["terms"] = ["Filter size"]
+    assert "a later lesson's concept" in " ".join(pipeline.curriculum_problems(pipeline.CurriculumOut.model_validate(cur)))
     # A title naming a concept a later lesson teaches is caught too.
     cur = curriculum().model_dump()
     cur["modules"][0]["lessons"][0]["plain"] = "the first step of a filter size estimate"
@@ -305,16 +323,6 @@ def test_outline_checks_catch_what_a_model_gets_wrong():
     repaired = pipeline.repair_outline(CourseOutline.model_validate(outline_data() | {"concepts": outline_data()["concepts"] + [{"key": "d", "name": "Orphan", "summary": ""}]}))
     assert pipeline.outline_problems(repaired) == []
     assert "d" not in {c.key for c in repaired.concepts}
-
-
-def test_depth_waves_write_independent_lessons_together():
-    data = outline_data()
-    data["edges"] = [{"from": "hashing", "to": "bits"}, {"from": "hashing", "to": "tuning"}]  # tuning no longer needs bits
-    waves = pipeline.depth_waves(CourseOutline.model_validate(data))
-    assert [[ch.key for ch in w] for w in waves] == [["c01-hashing"], ["c02-bits", "c03-tuning"]]
-    data["edges"] = []  # nothing recorded: reading order, never all at once
-    waves = pipeline.depth_waves(CourseOutline.model_validate(data))
-    assert [[ch.key for ch in w] for w in waves] == [["c01-hashing"], ["c02-bits"], ["c03-tuning"]]
 
 
 def _ctx(**kw):
@@ -448,3 +456,29 @@ def test_a_revision_that_fails_keeps_the_draft(fake, monkeypatch):
     cid, job = _build({"topic": "Bloom filters"}, "Failed revision")
     asyncio.run(build_course.run(job))
     assert _status(cid) == "ready"
+
+
+def test_a_lesson_gets_the_research_notes_that_concern_it():
+    notes = ("## Core ideas\n- Hashing maps an item to a number.\n- A bit array is a row of yes or no bits.\n"
+             "- The false positive rate grows as the bit array fills.\n\n## Good examples\n- Spell checkers.")
+    picked = pedagogy.relevant_notes(notes, "Bit arrays: a row of yes or no answers")
+    assert "row of yes or no bits" in picked and "Hashing maps" not in picked and "Spell" not in picked
+    assert pedagogy.relevant_notes(notes, "zebra") == ""
+
+
+def test_indexing_a_lesson_makes_no_model_call(monkeypatch):
+    from app.rag import ingest
+
+    calls = []
+
+    async def text(**kw):
+        calls.append(kw)
+        return "context"
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.setattr("app.agents.llm.text", text)
+    meta = {"mpos": 1, "cpos": 2, "module_title": "Foundations", "course_title": "Bloom filters"}
+    where = asyncio.run(ingest._contextualise("chapter", "Bit arrays", meta, "Intro", "chunk", "doc", True))
+    assert where.startswith("From chapter 1.2 Bit arrays") and calls == []
+    asyncio.run(ingest._contextualise("url", "A page", {}, "", "chunk", "doc", True))
+    assert len(calls) == 1  # a source whose structure we don't know still gets its sentence

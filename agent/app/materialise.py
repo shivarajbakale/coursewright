@@ -37,6 +37,7 @@ class ConceptSpec(Strict):
     key: str = Field(pattern=KEY)
     name: str = Field(min_length=1)
     summary: str = ""
+    terms: list[str] = []  # the supporting terms its lesson explains, planned so later lessons can rely on them
 
 
 class EdgeSpec(Strict):

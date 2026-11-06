@@ -46,6 +46,10 @@ For each lesson:
 - `summary`: one plain sentence saying what the lesson teaches.
 - `prerequisites`: keys of the earlier lessons it builds on directly. Every lesson after the first has at
   least one; these draw the learner's map of how the ideas connect.
+- `terms`: 0-3 small supporting terms this lesson also explains in a sentence because later lessons use
+  them ("probability" in the lesson on next-word prediction). Never another lesson's concept. Plan them
+  now: every lesson is written at the same time, so this list is how a lesson knows what the learner
+  already knows.
 
 Module `title`: plain words for what it covers, at most 8 words, no colon. Module `summary`: one plain
 sentence. Set `project` true on modules that end in a hands-on project (most modules, unless the

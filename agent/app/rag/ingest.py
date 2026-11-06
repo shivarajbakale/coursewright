@@ -127,7 +127,9 @@ async def _contextualise(kind: str, title: str, meta: dict, heading: str, text: 
         where = f"From your note '{title}'" + (f", section {heading}." if heading and heading != title else ".")
     else:
         where = f"From '{title}'" + (f", section {heading}." if heading else ".")
-    if llm and config.anthropic_key() and os.environ.get("CW_CONTEXTUALISE", "1") == "1":
+    # A lesson's place (module, lesson, section) is the context; a model call per chunk is for sources whose
+    # structure we don't know (a PDF, a web page, a note).
+    if kind != "chapter" and llm and config.anthropic_key() and os.environ.get("CW_CONTEXTUALISE", "1") == "1":
         try:
             from app.agents.llm import text as llm_text
 

@@ -13,12 +13,14 @@ Plan phase (one job):
                (api/plans.py); approving it queues a writing job on the same folder
 
 Write phase:
-    chapters   lessons in dependency waves (a lesson after every lesson it builds on, independent ones four at
-               a time). Each sees the lessons already read and the terms they explained, never the learner's
-               level. Checked in code (length, one key idea, a wrap-up, no term before it is taught, no name a
-               later lesson teaches), one retry; then a beginner reader who knows only the earlier lessons
-               marks where they get stuck and answers the questions blind; a lesson with sticking points is
-               revised once. Every lesson gets a "Your map so far" diagram drawn by code.
+    chapters   every lesson side by side, eight at a time. The plan fixed each lesson's concept and supporting
+               terms, so a lesson knows the terms the learner has met before any earlier lesson is written; it
+               never sees the learner's level or the whole outline, only a context pack (what it builds on,
+               the known terms, the research notes that concern it). Checked in code (length, one key idea, a
+               wrap-up, no term before it is taught, no name a later lesson teaches, its planned terms
+               explained), one retry; then a beginner reader marks where a newcomer gets stuck and answers
+               the questions blind; a lesson with sticking points is revised once and kept only if it reads
+               easier. Every lesson gets a "Your map so far" diagram drawn by code.
     verify     per lesson, one call works through its numbers, code and answer keys; a lesson with a mistake
                is revised from its draft
     diagrams   movies for at most a quarter of the lessons, when the writer asked for one
@@ -35,7 +37,7 @@ import json
 import logging
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Awaitable, Callable, TypeVar
 
@@ -65,9 +67,9 @@ MIN_CHAPTERS = 12
 CHAPTER_WORDS = (250, 800)  # the prompt asks for 350-650; outside this a lesson is sent back once
 MAX_DEFINES = 4  # the lesson's concept and at most three small supporting terms
 MAX_FIXES = 8
-CHAPTER_CONCURRENCY = 4
+CHAPTER_CONCURRENCY = 8  # lessons no longer wait for each other: their terms are fixed in the plan
 WRAP_UP = "## What you have now"
-READ_ROUNDS = 2  # revisions after the beginner reader, each read again
+READ_ROUNDS = 1  # revisions after the beginner reader, each read again
 BANNED = re.compile(r"\b(simply|obviously|trivially)\b|\bit is easy to see\b", re.I)
 KEY_IDEA = "> **Key idea:**"
 NOT_AN_ISSUE = re.compile(r"\bno (error|issue|mistake)s?\b|\b(is|are|looks) (correct|fine)\.?$|— correct\b", re.I)
@@ -119,6 +121,7 @@ class LessonPlan(BaseModel):
     plain: str = Field(description="What it is, in at most 9 everyday words, lower case")
     summary: str = ""
     prerequisites: list[str] = []
+    terms: list[str] = Field(default=[], description="0-3 small supporting terms this lesson also explains")
 
 
 class ModulePlan(BaseModel):
@@ -323,6 +326,12 @@ def curriculum_problems(cur: CurriculumOut, pace: str = "") -> list[str]:
                 )
         title = pedagogy.lesson_title(ls.name, ls.plain)
         problems += pedagogy.title_problems(title, ls.name) + pedagogy.concept_name_problems(ls.name)
+        if len(ls.terms) > 3:
+            problems.append(f'Lesson "{ls.name}" plans {len(ls.terms)} supporting terms; at most 3.')
+        for t in ls.terms:
+            j = next((j for j, x in enumerate(lessons) if pedagogy._norm(x.name) == pedagogy._norm(t)), None)
+            if j is not None and j > i:
+                problems.append(f'Lesson "{ls.name}" plans to explain "{t}", which is a later lesson\'s concept.')
         later = [later_names[_slug(x.key)] for x in lessons[i + 1:] if _slug(x.key) != _slug(ls.key)]
         # A title is held to every later name, not only the distinctive ones: "Next token prediction" before
         # "Tokens" is a lesson that needs a later one.
@@ -365,7 +374,8 @@ def to_outline(cur: CurriculumOut, topic: str = "", projects: bool = True) -> Co
         if k in keys:
             continue
         keys[k] = k
-        concepts.append({"key": k, "name": ls.name.strip(), "summary": ls.summary.strip()})
+        terms = [t.strip() for t in ls.terms if t.strip() and pedagogy._norm(t) != pedagogy._norm(ls.name)][:3]
+        concepts.append({"key": k, "name": ls.name.strip(), "summary": ls.summary.strip(), "terms": terms})
     order = {c["key"]: i for i, c in enumerate(concepts)}
     edges, seen_edges = [], set()
     for ls in lessons:
@@ -399,27 +409,6 @@ def to_outline(cur: CurriculumOut, topic: str = "", projects: bool = True) -> Co
         "title": cur.title.strip(), "topic": topic, "summary": cur.summary.strip(), "colour": colour, "icon": "",
         "concepts": concepts, "edges": edges, "modules": modules,
     })
-
-
-def depth_waves(outline: CourseOutline) -> list[list[ChapterSpec]]:
-    """Chapters grouped so each group depends only on groups before it: a lesson is written after every
-    lesson it builds on, and lessons that don't depend on each other are written side by side."""
-    chapters = [ch for m in outline.modules for ch in m.chapters]
-    taught = _taught_at(outline)
-    prereqs: dict[int, set[int]] = {i: set() for i in range(len(chapters))}
-    for e in outline.edges:
-        if e.from_ in taught and e.to in taught and taught[e.from_] < taught[e.to]:
-            prereqs[taught[e.to]].add(taught[e.from_])
-    for i in range(1, len(chapters)):
-        if not prereqs[i]:  # nothing recorded: assume it builds on the lesson before it (reading order)
-            prereqs[i].add(i - 1)
-    depth: dict[int, int] = {}
-    for i in range(len(chapters)):  # chapters are in teaching order, so prerequisites have a depth already
-        depth[i] = 1 + max((depth[j] for j in prereqs[i]), default=-1)
-    waves: dict[int, list[ChapterSpec]] = {}
-    for i, ch in enumerate(chapters):
-        waves.setdefault(depth[i], []).append(ch)
-    return [waves[d] for d in sorted(waves)]
 
 
 def word_count(markdown: str) -> int:
@@ -461,6 +450,7 @@ class LessonContext:
     glossary: pedagogy.Glossary
     later: list[str]
     vocabulary: list[str]
+    planned: list[str] = field(default_factory=list)  # supporting terms the plan gave this lesson
 
 
 def chapter_problems(out: ChapterOut, title: str, ctx: LessonContext | None = None) -> list[str]:
@@ -495,6 +485,12 @@ def chapter_problems(out: ChapterOut, title: str, ctx: LessonContext | None = No
     if not any(pedagogy._norm(ctx.concept) in pedagogy._norm(t) or pedagogy._norm(t) in pedagogy._norm(ctx.concept)
                for t in defined):
         problems.append(f'`defines` must start with the lesson\'s own concept, "{ctx.concept}".')
+    missing = [t for t in ctx.planned if not pedagogy.Glossary.of(defined).knows(t) and not pedagogy.mentions(md, t)]
+    if missing:
+        problems.append(
+            f"Explain {', '.join(missing)} in a sentence and add {'it' if len(missing) == 1 else 'them'} to `defines`: "
+            "the plan gives this lesson that job and later lessons rely on it."
+        )
     if len(defined) > MAX_DEFINES:
         problems.append(
             f"The lesson explains {len(defined)} new terms ({', '.join(defined)}); one concept per lesson means "
@@ -745,15 +741,13 @@ class Run:
     def context(self, outline: CourseOutline, ch: ChapterSpec) -> LessonContext:
         chapters = [c for m in outline.modules for c in m.chapters]
         i = chapters.index(ch)
-        names = {c.key: c.name for c in outline.concepts}
-        glossary: list[str] = []
-        for c in chapters[:i]:
-            glossary += [names.get(k, k) for k in c.conceptKeys]
-            glossary += [d.get("term", "") for d in self.terms(c.key).get("defines", [])]
+        concepts = {c.key: c for c in outline.concepts}
+        names = {k: c.name for k, c in concepts.items()}
         own = names.get(ch.conceptKeys[0], ch.title.split(":")[0]) if ch.conceptKeys else ch.title.split(":")[0]
         later = [names.get(k, k) for c in chapters[i + 1:] for k in c.conceptKeys if names.get(k, k) != own]
-        return LessonContext(concept=own, glossary=pedagogy.Glossary.of(glossary), later=later,
-                             vocabulary=self.vocabulary(outline))
+        planned = [t for k in ch.conceptKeys if k in concepts for t in concepts[k].terms]
+        return LessonContext(concept=own, glossary=pedagogy.Glossary.of(self.known_terms(outline, ch)), later=later,
+                             vocabulary=self.vocabulary(outline), planned=planned)
 
     def problems(self, outline: CourseOutline, ch: ChapterSpec, out: ChapterOut) -> list[str]:
         return chapter_problems(tidy(out, ch.title), ch.title, self.context(outline, ch))
@@ -778,14 +772,55 @@ class Run:
         source = pedagogy.map_so_far(lessons, edges, chapters.index(ch))
         return DiagramSpec(kind="mermaid", title="Your map so far", source=source)
 
+    def known_terms(self, outline: CourseOutline, ch: ChapterSpec) -> list[str]:
+        """Every term the learner has met before this lesson: earlier concepts and the supporting terms the plan
+        gave their lessons (fixed before any lesson is written, so lessons can be written side by side), plus
+        anything a written lesson also defined."""
+        chapters = [c for m in outline.modules for c in m.chapters]
+        names = {c.key: c.name for c in outline.concepts}
+        seen: dict[str, str] = {}
+        planned = {c.key: c.terms for c in outline.concepts}
+        for c in chapters[: chapters.index(ch)]:
+            written = [d.get("term", "") for d in self.terms(c.key).get("defines", [])]
+            for t in [names.get(k, k) for k in c.conceptKeys] + [t for k in c.conceptKeys for t in planned.get(k, [])] + written:
+                if t.strip():
+                    seen.setdefault(pedagogy._norm(t), t.strip())
+        return list(seen.values())
+
+    def builds_on(self, outline: CourseOutline, ch: ChapterSpec, limit: int = 6) -> list[ChapterSpec]:
+        """The earlier lessons this one rests on: its prerequisites, then theirs, nearest first."""
+        chapters = [c for m in outline.modules for c in m.chapters]
+        by_concept = {k: c for c in chapters for k in c.conceptKeys}
+        pre: dict[str, list[str]] = {}
+        for e in outline.edges:
+            pre.setdefault(e.to, []).append(e.from_)
+        out: list[ChapterSpec] = []
+        frontier = list(ch.conceptKeys)
+        while frontier and len(out) < limit:
+            nxt = []
+            for k in frontier:
+                for p in pre.get(k, []):
+                    c = by_concept.get(p)
+                    if c and c not in out and c is not ch and len(out) < limit:
+                        out.append(c)
+                        nxt.append(p)
+            frontier = nxt
+        return out
+
     def chapter_prompt(self, outline: CourseOutline, ch: ChapterSpec, notes: str) -> str:
+        """What one lesson needs and nothing else: its concept, the lessons it builds on, the terms the learner
+        knows, the notes that concern it, how the previous lesson ended and what the next one answers. Never
+        the whole outline: later lessons' names are exactly what a lesson must not use."""
         chapters = [c for m in outline.modules for c in m.chapters]
         i = chapters.index(ch)
         concepts = {c.key: c for c in outline.concepts}
-        read = []
-        for c in chapters[:i]:
-            defined = [d.get("term", "") for d in self.terms(c.key).get("defines", [])]
-            read.append(f"- {c.title}" + (f" (explained: {', '.join(t for t in defined if t)})" if defined else ""))
+        module = next(m for m in outline.modules if ch in m.chapters)
+        own = "\n".join(f"- {concepts[k].name} [{k}]: {concepts[k].summary}" for k in ch.conceptKeys if k in concepts)
+        query = " ".join([ch.title, ch.summary] + [concepts[k].summary for k in ch.conceptKeys if k in concepts])
+        picked = pedagogy.relevant_notes(notes, query) or "(none specific to this lesson)"
+        base = "\n".join(f"- {c.title}: {c.summary}" for c in self.builds_on(outline, ch)) or "(nothing: it starts from the floor)"
+        recent = "\n".join(f"- {c.title}" for c in chapters[max(0, i - 3): i])
+        terms = self.known_terms(outline, ch)
         prev = ""
         if i:
             p = self.course / "chapters" / f"{chapters[i - 1].key}.md"
@@ -794,24 +829,34 @@ class Run:
                 at = text.find(WRAP_UP)
                 prev = (text[at:] if at >= 0 else text[-800:]).strip()[:1200]
             prev = f"The previous lesson, \"{chapters[i - 1].title}\", ended:\n{prev or chapters[i - 1].summary}"
-        own = "\n".join(f"- {concepts[k].name} [{k}]: {concepts[k].summary}" for k in ch.conceptKeys if k in concepts)
+        nxt = ""
+        if i + 1 < len(chapters):  # what it answers, without its name: a later name must not leak in
+            after = chapters[i + 1].title.partition(":")
+            nxt = f"The next lesson answers: {after[2].strip() or chapters[i + 1].summary}"
+        support = [t for k in ch.conceptKeys if k in concepts for t in concepts[k].terms]
         floor = self.workdir / "research" / "floor.txt"
         return (
             f"{brief_text(self.brief, level=False)}\n"
             + (f"Floor: {floor.read_text().strip()}\n" if floor.exists() else "")
-            + f"\nResearch notes:\n{notes}\n\nOutline:\n{outline_text(outline)}\n\n"
-            f"Lessons the learner has already read:\n{chr(10).join(read) or '(none: this is the first lesson)'}\n\n"
+            + f"Course: {outline.title}. Module: {module.title}.\n\n"
+            f"Research notes for this lesson:\n{picked}\n\n"
+            f"It builds on these earlier lessons:\n{base}\n\n"
+            + (f"The lessons just before it:\n{recent}\n\n" if recent else "")
+            + f"Terms the learner knows from earlier lessons: {', '.join(terms) if terms else '(none: this is the first lesson)'}\n\n"
             + (f"{prev}\n\n" if prev else "")
+            + (f"{nxt}\n\n" if nxt else "")
             + f"Write lesson [{ch.key}] \"{ch.title}\": {ch.summary}\nIts one concept:\n{own or '(see the summary)'}"
+            + (f"\nIt also explains these supporting terms (later lessons rely on them): {', '.join(support)}" if support else "")
         )
 
     async def read_lesson(self, outline: CourseOutline, ch: ChapterSpec, out: ChapterOut) -> ReaderOut | None:
         """The beginner reader: a learner who knows only the earlier lessons reads this one."""
         chapters = [c for m in outline.modules for c in m.chapters]
-        before = []
-        for c in chapters[: chapters.index(ch)]:
-            defined = [d.get("term", "") for d in self.terms(c.key).get("defines", [])]
-            before.append(f"- {c.title}" + (f" (explained: {', '.join(t for t in defined if t)})" if defined else ""))
+        i = chapters.index(ch)
+        terms = self.known_terms(outline, ch)
+        before = [f"- {c.title}" for c in chapters[max(0, i - 3): i]]
+        if terms:
+            before.append(f"Terms those lessons and the ones before them explained: {', '.join(terms)}")
         try:
             return await self.call(
                 "reader", system=config.prompt("beginner"),
@@ -905,19 +950,17 @@ class Run:
         return None
 
     async def chapters(self, outline: CourseOutline, notes: str) -> None:
-        """Lessons in dependency waves: every lesson is written after the lessons it builds on, so it sees
-        the terms they explained; lessons in one wave don't depend on each other and run side by side."""
+        """Every lesson side by side, CHAPTER_CONCURRENCY at a time in reading order. A lesson doesn't wait for
+        the ones it builds on: the terms they explain are fixed in the plan, so it knows what the learner
+        knows before any of them is written."""
         chapters = [ch for m in outline.modules for ch in m.chapters]
-        todo = {ch.key for ch in chapters if not self.chapter_done(ch.key)}
+        todo = [ch for ch in chapters if not self.chapter_done(ch.key)]
         counter = {"done": len(chapters) - len(todo), "total": len(chapters)}
         if not todo:
             return
         await self.emit("chapters", f"Writing {len(todo)} lessons", {"done": counter["done"], "total": counter["total"]})
-        for wave in depth_waves(outline):
-            batch = [ch for ch in wave if ch.key in todo]
-            if batch:
-                await gather_limited([lambda ch=ch: self.write_chapter(outline, ch, notes, counter) for ch in batch],
-                                     CHAPTER_CONCURRENCY, self.check_cancel)
+        await gather_limited([lambda ch=ch: self.write_chapter(outline, ch, notes, counter) for ch in todo],
+                             CHAPTER_CONCURRENCY, self.check_cancel)
 
     def diagram_requests(self, outline: CourseOutline) -> list[tuple[ChapterSpec, DiagramRequest]]:
         """The lessons that asked for a movie, at most a quarter of the course (every lesson has its map)."""

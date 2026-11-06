@@ -216,3 +216,43 @@ def map_so_far(lessons: list[tuple[str, str]], edges: list[tuple[str, str]], upt
     lines.append(f"  classDef new stroke-width:3px")
     lines.append(f"  class {ids[here]} new")
     return "\n".join(lines) + "\n"
+
+
+# ---- context a lesson needs, not the whole course ---------------------------------------------------
+
+_STOP = set("the a an and or of to in on for is are be it this that with as by from at what how why when "
+            "you your can its their they them which into one each more than not no".split())
+
+
+def _keywords(text: str) -> list[str]:
+    return [w for w in _norm(text).split() if w not in _STOP and len(w) > 2]
+
+
+def relevant_notes(notes: str, query: str, words: int = 350) -> str:
+    """The research-note lines closest to one lesson's concept (keyword overlap weighted by rarity), in their
+    original order, up to about `words` words: a lesson reads what concerns it, not all the notes."""
+    import math
+
+    units = [u.strip() for u in re.split(r"\n(?=\s*[-*]\s|\s*\d+\.\s)|\n\s*\n", notes) if u.strip()]
+    units = [u for u in units if not re.fullmatch(r"#+ .*", u)]
+    if not units:
+        return ""
+    docs = [set(_keywords(u)) for u in units]
+    df: dict[str, int] = {}
+    for d in docs:
+        for w in d:
+            df[w] = df.get(w, 0) + 1
+    q = set(_keywords(query))
+    scored = []
+    for i, d in enumerate(docs):
+        s = sum(math.log(1 + len(units) / df[w]) for w in q & d)
+        if s > 0:
+            scored.append((s, i))
+    keep, total = set(), 0
+    for _, i in sorted(scored, reverse=True):
+        n = len(units[i].split())
+        if total + n > words and keep:
+            continue
+        keep.add(i)
+        total += n
+    return "\n".join(units[i] for i in sorted(keep))
