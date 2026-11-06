@@ -52,6 +52,9 @@ export interface Explainer {
   destroy(): void;
 }
 
+/** Below this scale a drawing's writing is too small; try it top to bottom. */
+const MIN_SCALE = 0.6;
+
 /** How long a drawing waits for its fonts. Tests set it to 0 (jsdom never loads a stylesheet). */
 export const fontWait = { ms: 2500 };
 
@@ -82,7 +85,21 @@ export async function mountExplainer(
   // The handwriting fonts come from Google Fonts. Wait for them a moment (text is measured with them), but
   // never forever: a blocked or slow font still gets a drawing, in the fallback hand.
   await Promise.race([ink.loadHands(), new Promise((r) => setTimeout(r, fontWait.ms))]);
-  const diagram: Diagram = ink.mount(stage, source, { paper, ...(paper === 'chalkboard' ? { pen: 'chalk' } : {}) });
+  const look = { paper, ...(paper === 'chalkboard' ? { pen: 'chalk' } : {}) };
+  let diagram: Diagram = ink.mount(stage, source, look);
+  // A wide drawing in a narrow column shrinks until its writing is too small to read (a mind map on a
+  // phone). Most layouts can also run top to bottom; when that reads larger here, use it instead.
+  const room = host.clientWidth;
+  const width = (d: Diagram) => Number(d.svg.getAttribute('width')) || room;
+  if (room > 0 && room / width(diagram) < MIN_SCALE) {
+    const taller = document.createElement('div');
+    const down = ink.mount(taller, source, { ...look, direction: 'down' });
+    if (width(down) < width(diagram) * 0.85) {
+      diagram.destroy();
+      stage.replaceChildren(...taller.childNodes);
+      diagram = down;
+    } else down.destroy();
+  }
   const svg = diagram.svg;
   // Fit the column, and never taller than most of the screen: a tall sequence would otherwise push its
   // own controls out of view. Scaled from the drawing's own size, so it stays crisp and never widens the page.

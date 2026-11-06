@@ -28,6 +28,20 @@ describe('Inkling explainers', () => {
     expect(host.innerHTML).toBe('');
   });
 
+  it('turns a wide drawing top to bottom when the column is too narrow to read it', async () => {
+    const wide = 'title "Wide"\na -> b -> c -> d -> e -> f\nsteps auto';
+    const ratio = async (room: number) => {
+      const host = document.createElement('div');
+      Object.defineProperty(host, 'clientWidth', { value: room });
+      const c = await mountExplainer(host, wide, 'notebook', () => {});
+      const [w, h] = (host.querySelector('svg') as SVGElement).style.aspectRatio.split(' / ').map(Number);
+      c.destroy();
+      return w / h;
+    };
+    expect(await ratio(2000)).toBeGreaterThan(1.5); // room to spare: left to right, as written
+    expect(await ratio(300)).toBeLessThan(1); // a phone: top to bottom
+  });
+
   it('refuses a source with a mistake, with the first error', async () => {
     await expect(mountExplainer(document.createElement('div'), 'layout spiral', 'notebook', () => {})).rejects.toThrow(/No layout called "spiral"/);
   });
