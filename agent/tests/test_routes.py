@@ -188,3 +188,12 @@ def test_cancel_queued_job(client):
 def test_tutor_endpoint_without_key(client):
     r = client.post("/agents/tutor", json={})
     assert r.status_code == 503 and r.json() == {"message": "ANTHROPIC_API_KEY is not set"}
+
+
+def test_a_prefetched_chapter_does_not_become_the_last_opened(client, course):
+    chs = [c for m in course["modules"] for c in m["chapters"]]
+    first, other = chs[0]["id"], chs[-1]["id"]
+    client.get(f"/api/chapters/{first}")
+    client.get(f"/api/chapters/{other}", headers={"X-CW-Prefetch": "1"})
+    detail = client.get(f"/api/courses/{course['id']}").json()["data"]
+    assert detail["lastOpenedChapterId"] == first

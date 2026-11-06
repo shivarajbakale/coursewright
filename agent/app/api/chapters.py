@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 from pydantic import BaseModel
 
 from app.api.common import chapter_out, not_found, ok
@@ -10,12 +10,15 @@ router = APIRouter()
 
 
 @router.get("/chapters/{chapter_id}")
-def get_chapter(chapter_id: str):
+def get_chapter(chapter_id: str, x_cw_prefetch: str | None = Header(default=None)):
+    """A chapter. Opening it makes it the course's last opened chapter, except for a prefetch (the reader
+    saving a course for offline sends `X-CW-Prefetch: 1`), which must not move the Continue card."""
     with db() as conn:
         ch = chapter_out(conn, chapter_id)
         if not ch:
             raise not_found("Chapter not found")
-        conn.execute("UPDATE courses SET last_opened_chapter_id=? WHERE id=?", (chapter_id, ch["courseId"]))
+        if not x_cw_prefetch:
+            conn.execute("UPDATE courses SET last_opened_chapter_id=? WHERE id=?", (chapter_id, ch["courseId"]))
     return ok(ch)
 
 

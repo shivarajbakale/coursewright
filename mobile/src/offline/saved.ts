@@ -80,7 +80,8 @@ export async function saveCourse(
     while (queue.length && !signal?.aborted) {
       const id = queue.shift()!;
       try {
-        const res = await fetch(chapterUrl(id), { signal });
+        // The header keeps the server from treating a prefetch as opening the chapter (the Continue card).
+        const res = await fetch(chapterUrl(id), { signal, headers: { 'X-CW-Prefetch': '1' } });
         if (!res.ok) throw new Error(String(res.status));
         bytes += (await res.text()).length;
         saved.push(id);
