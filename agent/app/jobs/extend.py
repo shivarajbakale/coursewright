@@ -53,14 +53,15 @@ class ExtensionOut(BaseModel):
     modules: list[ModulePlan]
 
 
-def existing_plan(outline: CourseOutline) -> list[ModulePlan]:
-    """The course as it is, in the curriculum's shape, so the new part is checked against it."""
+def existing_plan(outline: CourseOutline, modules: list | None = None) -> list[ModulePlan]:
+    """The course as it is (or `modules` of it), in the curriculum's shape, so the new part is checked
+    against it."""
     names = {c.key: c for c in outline.concepts}
     prereqs: dict[str, list[str]] = {}
     for e in outline.edges:
         prereqs.setdefault(e.to, []).append(e.from_)
-    modules = []
-    for m in outline.modules:
+    out = []
+    for m in outline.modules if modules is None else modules:
         lessons = []
         for ch in m.chapters:
             key = ch.conceptKeys[0] if ch.conceptKeys else _slug(ch.key)
@@ -68,8 +69,8 @@ def existing_plan(outline: CourseOutline) -> list[ModulePlan]:
             plain = ch.title.split(":", 1)[1].strip() if ":" in ch.title else ""
             lessons.append(LessonPlan(key=key, name=c.name if c else ch.title, plain=plain, summary=ch.summary or "",
                                       prerequisites=prereqs.get(key, []), terms=(c.terms if c else [])[: MAX_DEFINES - 1]))
-        modules.append(ModulePlan(title=m.title, summary=m.summary, project=bool(m.projectKey), lessons=lessons))
-    return modules
+        out.append(ModulePlan(title=m.title, summary=m.summary, project=bool(m.projectKey), lessons=lessons))
+    return out
 
 
 def extension_problems(outline: CourseOutline, ext: ExtensionOut) -> list[str]:
@@ -164,3 +165,55 @@ async def plan_extension(run: Run, outline: CourseOutline, request: str) -> Cour
     await run.emit("outline", f"Planned {len(merged.modules) - len(outline.modules)} new modules, {added} lessons",
                    {"modules": [m.title for m in merged.modules[len(outline.modules):]], "review": True})
     return merged
+
+
+# ---- reshaping a pending extension ----------------------------------------------------------------------
+
+
+class ExtensionChatOut(BaseModel):
+    extension: ExtensionOut
+    reply: str = Field(description="One plain line saying what changed")
+
+
+def base_outline(outline: CourseOutline, modules: int) -> CourseOutline:
+    """The course before the extension: its first `modules` modules, their concepts and edges."""
+    data = outline.model_dump(by_alias=True)
+    data["modules"] = data["modules"][:modules]
+    keys = {k for m in data["modules"] for ch in m["chapters"] for k in ch["conceptKeys"]}
+    data["concepts"] = [c for c in data["concepts"] if c["key"] in keys]
+    data["edges"] = [e for e in data["edges"] if e["from"] in keys and e["to"] in keys]
+    return CourseOutline.model_validate(data)
+
+
+def pending_base(workdir) -> int | None:
+    """How many modules the course had before a pending extension, or None when there is none."""
+    f = workdir / "extend.json"
+    try:
+        return int(json.loads(f.read_text())["from"]) if f.exists() else None
+    except (ValueError, KeyError, json.JSONDecodeError):
+        return None
+
+
+async def reshape(outline: CourseOutline, modules: int, message: str, history: str) -> tuple[CourseOutline, str, int]:
+    """The outline chat for an extension: the model sees the whole course but answers with the new modules
+    only, so a long course still fits in one reply and the existing lessons cannot change."""
+    from app.agents import llm
+
+    base = base_outline(outline, modules)
+    current = ExtensionOut(summary=outline.summary, modules=existing_plan(outline, outline.modules[modules:]))
+    system = config.prompt("outline_chat") + "\n\n" + config.prompt("curriculum") + "\n\n" + rules()
+    taught = "\n".join(f"- {c.key}: {c.name}" for c in base.concepts)
+    user = (f"{EXTEND_RULES}\n\nThe course before the extension (unchangeable):\n{outline_text(base)}\n\n"
+            f"Concept keys it teaches:\n{taught}\n\nThe planned extension (JSON), which you change:\n"
+            f"{current.model_dump_json()}\n\n" + (f"Earlier in this conversation:\n{history}\n\n" if history else "")
+            + f"The learner asks: {message}\n\nAnswer with the whole extension after the change, and one line saying what changed.")
+    tokens = 0
+    out, usage = await llm.parse(system=system, user=user, schema=ExtensionChatOut, max_tokens=20000)
+    tokens += usage.get("inputTokens", 0) + usage.get("outputTokens", 0)
+    known = set(extension_problems(base, current))
+    problems = [p for p in extension_problems(base, out.extension) if p not in known]
+    if problems:
+        retry = user + "\n\nYour previous answer had these problems. Fix every one:\n" + "\n".join(f"- {p}" for p in problems)
+        out, usage = await llm.parse(system=system, user=retry, schema=ExtensionChatOut, max_tokens=20000)
+        tokens += usage.get("inputTokens", 0) + usage.get("outputTokens", 0)
+    return merge(base, out.extension), out.reply.strip(), tokens

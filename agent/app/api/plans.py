@@ -115,6 +115,19 @@ async def chat(course_id: str, body: ChatIn):
     )
     system = config.prompt("outline_chat") + "\n\n" + config.prompt("curriculum") + "\n\n" + config.prompt("course_format")
     tokens = 0
+    from app.jobs import extend
+
+    base_modules = extend.pending_base(config.jobs_dir() / p["workdir"])
+    if base_modules is not None:
+        # An extension waiting for approval: only its new modules change (app/jobs/extend.py).
+        try:
+            after, reply, tokens = await extend.reshape(before, base_modules, body.message.strip(), history)
+        except llm.MissingKey:
+            raise
+        except Exception as e:  # noqa: BLE001 - the outline stays as it was
+            log.warning("extension chat failed for %s: %s", course_id, e)
+            raise HTTPException(status_code=502, detail="The change couldn't be made, so the outline is unchanged. Try again.") from e
+        return await _reply(course_id, p, before, after, reply, tokens, body.message, messages, limit=False)
     # The reply is the whole outline again, plus room to think: a long course needs far more than 8000.
     budget = outline_reply_tokens(before)
     try:
@@ -133,15 +146,19 @@ async def chat(course_id: str, body: ChatIn):
         log.warning("outline chat failed for %s: %s", course_id, e)
         raise HTTPException(status_code=502, detail="The change couldn't be made, so the outline is unchanged. Try again.") from e
     after = pipeline.repair_outline(out.outline)
+    return await _reply(course_id, p, before, after, out.reply.strip(), tokens, body.message, messages)
+
+
+async def _reply(course_id: str, p: dict, before, after, reply: str, tokens: int, message: str, messages: list,
+                 limit: bool = True):
     changed = changed_keys(before, after)
-    reply = out.reply.strip()
     count = sum(len(m.chapters) for m in after.modules)
-    if count > pipeline.MAX_CHAPTERS:
+    if limit and count > pipeline.MAX_CHAPTERS:
         # The model's own count can be wrong; the reply says what is true.
         reply += f" The outline has {count} chapters, over the limit of {pipeline.MAX_CHAPTERS}: ask me to merge or drop some."
     at = now()
     messages += [
-        {"role": "user", "text": body.message.strip(), "at": at},
+        {"role": "user", "text": message.strip(), "at": at},
         {"role": "agent", "text": reply, "at": at, "changed": changed, "tokens": tokens},
     ]
     await asyncio.to_thread(_save, course_id, after, messages, p["workdir"])

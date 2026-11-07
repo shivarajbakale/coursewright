@@ -541,6 +541,11 @@ def test_extending_a_finished_course_appends_modules_and_keeps_what_exists(clien
     base = fake.parse
 
     async def parse(*, system, user, schema, **kw):
+        if schema.__name__ == "ExtensionChatOut":
+            fake.calls.append("ExtensionChatOut")
+            assert "The course before the extension (unchangeable)" in user
+            changed = {**ext, "modules": [{**ext["modules"][0], "title": "Filters that can forget"}]}
+            return schema.model_validate({"extension": changed, "reply": "Renamed the module."}), {"inputTokens": 10, "outputTokens": 5}
         if schema.__name__ == "ExtensionOut":
             fake.calls.append("ExtensionOut")
             return schema.model_validate(ext), {"inputTokens": 1000, "outputTokens": 100}
@@ -563,6 +568,11 @@ def test_extending_a_finished_course_appends_modules_and_keeps_what_exists(clien
     plan = client.get(f"/api/courses/{cid}/plan").json()["data"]
     assert [m["title"] for m in plan["outline"]["modules"]][-1] == "Filters that forget"
     assert client.post(f"/api/courses/{cid}/extend", json={"request": "Again, before approving"}).status_code == 409
+    # Reshaping an extension edits only the new modules, so a long course still fits in one reply.
+    chat = client.post(f"/api/courses/{cid}/plan/chat", json={"message": "Rename the new module"}).json()["data"]
+    assert chat["reply"] == "Renamed the module."
+    assert [m["title"] for m in chat["outline"]["modules"]][:2] == [m["title"] for m in plan["outline"]["modules"]][:2]
+    ext["modules"][0]["title"] = "Filters that can forget"
 
     approved = client.post(f"/api/courses/{cid}/plan/approve").json()["data"]
     assert approved["course"]["status"] == "ready"
@@ -574,5 +584,5 @@ def test_extending_a_finished_course_appends_modules_and_keeps_what_exists(clien
         after = {r["title"]: r["id"] for r in conn.execute("SELECT id, title FROM chapters WHERE course_id=?", (cid,))}
         modules = [r[0] for r in conn.execute("SELECT title FROM modules WHERE course_id=? ORDER BY position", (cid,))]
     assert {t: after[t] for t in before} == before  # nothing that existed was rewritten
-    assert len(after) == len(before) + 2 and modules[-1] == "Filters that forget"
+    assert len(after) == len(before) + 2 and modules[-1] == "Filters that can forget"
     assert fake.calls.count("ChapterOut") == 3 + 2  # only the new lessons were written
