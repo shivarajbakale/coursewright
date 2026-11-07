@@ -30,7 +30,7 @@ everything later is built from lessons before it.
   in words.
 - Say why, not only what: why the design is this way, what would break if it were different.
 - Use short sentences and plain grammar. One idea per sentence; split anything over about 25 words.
-- An analogy is welcome when it is accurate; say where it is not true.
+- An analogy is welcome when it is accurate; name one concrete way it differs from the field.
 - Never write "simply", "obviously", "clearly", "just", "trivially" or "it is easy to see": if it were
   obvious, it would not need saying, and a learner who doesn't see it feels lost.
 

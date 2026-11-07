@@ -364,7 +364,9 @@
         "Calibration on 461 live lessons, flags read by hand: 'stops holding' 296 times, traced to writer.md's own wording (fixed); adjectives such as 'is missing' and labelled list items excluded; a repeated-example check dropped for false flags (it could not tell steps that explain code output from steps that repeat it)",
         "Baseline on live lessons: key idea over 25 words in 376/461, closing section over 4 sentences in 152, paragraph over 6 sentences in 154, figurative or wordy phrases in 142, non-simple verbs in 82; lessons sent back by the prose checks 182 -> 436 (all new kinds soft)",
         "make prose-report: quant 12.3 words per sentence, 2.2 verb flags and 3.1 plain-word flags per 100 sentences; course-check on both local courses still 0 errors",
-        "Not yet run: a fresh build to measure how far the new prompt moves these numbers"
+        "A/B on 8 Rust lessons (MiniMax-M3, local .env), per 100 sentences, old prompt / new prompt / new full loop: over 25 words 9.6 / 5.7 / 2.7; non-simple verbs 3.2 / 1.9 / 2.2; figurative or wordy 3.2 / 0.5 / 0.5; long key idea 1.7 / 0.3 / 0.0; words per sentence 14.4 / 13.0 / 12.2; lessons still flagged after the loop 4 of 8",
+        "First new prompt quoted bad phrases as 'before' examples: drafts copied one word for word and turned 'say where it is not true' into a stock phrase (5 times in 8 lessons). Prompt now shows only good examples and asks for 'one concrete difference in your own words': 0 copies in the rerun",
+        "The full loop cost 79 calls for 8 lessons (16 draft, 48 reader, 15 revision)"
       ]
     }
   ]

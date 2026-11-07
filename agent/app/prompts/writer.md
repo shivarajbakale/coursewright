@@ -13,7 +13,7 @@ Return:
   1. `# <the lesson title>` exactly as given.
   2. Open with the question the learner now has, picking up where the previous lesson ended, or for the
      first lesson a concrete everyday situation. One short paragraph.
-  3. The idea in everyday words, with a picture from ordinary life. Say where the picture is not true for this field.
+  3. The idea in everyday words, with a picture from ordinary life. Then name one concrete difference between the picture and the field, in your own words.
   4. The smallest real example: tiny numbers, a few lines of code, or a short trace, walked through step
      by step. Keep every number consistent; recompute it before you write it.
   5. Name it: now give the term and its precise meaning in one or two sentences, one line
@@ -25,26 +25,23 @@ Return:
   - One idea per sentence. Split a sentence of more than 25 words.
   - Use the simple present or past: "they wait", not "they are waiting"; "it made", not "it has made".
   - Use each word in its literal meaning. The everyday comparison is the only figurative part of a lesson.
-    No idioms ("money changes hands"), no phrasal verbs ("hand over", "lay out", "find out", "end up"):
-    write the plain verb ("give", "put", "learn", "become").
+    No idioms and no phrasal verbs: write one plain verb ("give", "put", "learn", "become").
   - After you define a term, use that term every time. Do not change to a synonym.
   - Each numbered step starts with one instruction of at most 20 words. An explanation goes after it.
   - At most 6 sentences in a paragraph. The key-idea line is at most 25 words.
   - Show a worked example once. When code runs it, the steps explain what the output means. Do not walk
     through the same calculation in the steps and then again in the code.
   - Delete words that carry nothing: "actually", "really", "note that", "in order to" (write "to").
-  Before and after:
-  - "That picture holds in one important way." becomes "The car-boot sale is like a market in one way."
-  - "a trade happens at the price of the person who was already waiting" becomes "a trade happens at the
-    price of the person who came first".
-  - "Sellers lay out what they have, and money changes hands." becomes "Sellers put their items on a
-    table. A buyer pays, and the seller gives the item."
+  Write like this:
+  - "The car-boot sale is like a market in one way: a price exists only when a buyer and a seller agree."
+  - "A trade happens at the price of the person who came first."
+  - "Sellers put their items on a table. A buyer pays, and the seller gives the item."
   - Say cause and effect out loud: "X happens. Because of this, Y happens." Never leave the link to infer.
   - Steps that happen in order go in a numbered list, not inside a paragraph.
   - Give the number, the condition or the name instead of a vague word ("some", "various", "many",
     "things", "usually"). If a fact is approximate, say how approximate.
   - Map every comparison from everyday life: say what each part stands for in the field, and where the
-    comparison is not true. A comparison the reader must decode confuses more than it helps.
+    comparison differs from the field. A comparison the reader must decode confuses more than it helps.
   - When you work out a number, write each step, and say what the result means with the right sign: a
     growth factor below 1 is a loss. A count taken from a percentage must be a whole number of things.
 - `defines`: the terms this lesson explains, each `{term, meaning}` with a one-line meaning. The first is
