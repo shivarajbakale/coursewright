@@ -766,9 +766,11 @@ class Run:
     def vocabulary(self, outline: CourseOutline) -> list[str]:
         p = self.workdir / "research" / "refs.json"
         try:
-            terms = json.loads(p.read_text()).get("terms", []) if p.exists() else []
+            data = json.loads(p.read_text()) if p.exists() else {}
         except json.JSONDecodeError:
-            terms = []
+            data = {}
+        # Jobs from before the research stage named its terms wrote refs.json as a bare list of references.
+        terms = data.get("terms", []) if isinstance(data, dict) else []
         return [str(t) for t in terms] + [c.name for c in outline.concepts]
 
     def context(self, outline: CourseOutline, ch: ChapterSpec) -> LessonContext:

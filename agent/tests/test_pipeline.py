@@ -608,3 +608,16 @@ def test_a_course_reports_where_its_extension_stands(client):
     assert extension_state(r("ready", 'j|queued|{"append": true}'))["status"] == "writing"
     assert extension_state(r("ready", 'j|failed|{"append": true}'))["status"] == "failed"
     assert extension_state(r("ready", 'j|done|{"append": true}')) is None  # written: nothing in progress
+
+
+def test_vocabulary_reads_a_job_written_before_research_named_its_terms(tmp_path):
+    import json
+    from types import SimpleNamespace
+
+    run = pipeline.Run(None, tmp_path, {}, pipeline.Ledger(None), emit=lambda *a: None)
+    refs = tmp_path / "research" / "refs.json"
+    outline = SimpleNamespace(concepts=[SimpleNamespace(name="ownership")])
+    refs.write_text(json.dumps([{"title": "The Rust Book", "url": "https://doc.rust-lang.org/book/"}]))
+    assert run.vocabulary(outline) == ["ownership"]
+    refs.write_text(json.dumps({"terms": ["move"], "refs": []}))
+    assert run.vocabulary(outline) == ["move", "ownership"]
