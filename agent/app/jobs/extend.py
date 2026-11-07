@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 
 from pydantic import BaseModel, Field
 
@@ -121,8 +122,11 @@ def merge(outline: CourseOutline, ext: ExtensionOut) -> CourseOutline:
                 "key": f"m{mi}", "title": m.title.strip().rstrip("."), "summary": m.summary.strip(), "chapters": chapters,
                 "projectKey": f"p{mi}-{_slug(m.title, 30)}" if m.project else None,
             })
-    if ext.summary.strip():
-        data["summary"] = ext.summary.strip()
+    # The summary describes the whole course; one written about "the extension" would replace the course's
+    # own description with a note about its newest part, so it is ignored.
+    summary = ext.summary.strip()
+    if summary and not re.search(r"\b(this|the) (extension|addition)\b", summary, re.I):
+        data["summary"] = summary
     return CourseOutline.model_validate(data)
 
 

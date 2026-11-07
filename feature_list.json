@@ -298,10 +298,16 @@
       "area": "Course content",
       "title": "Extend a course from its page",
       "user_visible_behavior": "Extend a course from its page.",
-      "status": "in_progress",
+      "status": "passing",
       "plan": "course-extend-ui.feature-plan.json",
-      "verification": [],
-      "evidence": []
+      "verification": [
+        "vitest",
+        "make check",
+        "WebKit live: menu + dialog"
+      ],
+      "evidence": [
+        "Live: Course options → Extend this course opens the dialog; empty request blocked; Cancel sends nothing"
+      ]
     }
   ]
 }
