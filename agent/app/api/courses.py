@@ -181,6 +181,32 @@ def add_explainers(course_id: str, body: AddExplainers | None = None):
     return ok({"jobId": job_id, "started": True})
 
 
+class CheckAccuracy(BaseModel):
+    chapterIds: list[str] | None = None
+    # Save corrections that pass every gate; by default they are only proposed (see app/jobs/accuracy.py).
+    apply: bool = False
+
+
+@router.post("/courses/{course_id}/accuracy", status_code=202)
+def check_accuracy(course_id: str, body: CheckAccuracy | None = None):
+    """Start a job that checks a built course's lessons for mistakes again and corrects only what is wrong
+    (app/jobs/accuracy.py). One at a time per course; the output lists every change, before and after."""
+    body = body or CheckAccuracy()
+    with db() as conn:
+        c = row(conn, "SELECT id, status FROM courses WHERE id=?", (course_id,))
+        if not c:
+            raise not_found("Course not found")
+        if c["status"] != "ready":
+            raise HTTPException(status_code=409, detail="Check a course once it is built")
+        running = row(conn, "SELECT id FROM jobs WHERE kind='accuracy' AND course_id=? AND status IN ('queued','running')",
+                      (course_id,))
+        if running:
+            return ok({"jobId": running["id"], "started": False})
+        job_id = store.create_job(conn, "accuracy", {"courseId": course_id, **body.model_dump(exclude_none=True)},
+                                  course_id=course_id)
+    return ok({"jobId": job_id, "started": True})
+
+
 @router.get("/courses/{course_id}")
 def get_course(course_id: str):
     with db() as conn:

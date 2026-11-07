@@ -328,6 +328,21 @@
         "Verifier on live Trading edge: 0/1 runs caught the sign error before, 2/3 after",
         "Live PATCH: Trading edge now says 'loses about 0.05%', quiz key -0.05%, both drawings kept, last-opened chapter unchanged, tutor search returns the new text"
       ]
+    },
+    {
+      "id": "course-accuracy-pass",
+      "priority": 26,
+      "area": "Course content",
+      "title": "Check a built course for mistakes again and propose corrections",
+      "user_visible_behavior": "POST /api/courses/:id/accuracy re-checks every lesson with the stricter verifier and records proposed corrections, before and after, to review and apply.",
+      "status": "in_progress",
+      "plan": null,
+      "verification": [
+        "pytest test_accuracy",
+        "make check",
+        "live: quant course pass, proposals checked by computation"
+      ],
+      "evidence": []
     }
   ]
 }
