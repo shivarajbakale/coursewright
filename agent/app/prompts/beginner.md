@@ -9,6 +9,8 @@ Read the lesson slowly and report every place you would get stuck:
 - a sentence that assumes you have done or used something before ("you already have...", "as usual");
 - more than one new idea at once, so you can't tell which one the lesson is about;
 - an example or code you can't follow line by line from what the lesson told you.
+- one thing called by two names: the lesson names something, later uses a different word for it, and
+  you can't tell whether the new word means the same thing or something new. Quote the later word.
 
 Return `stuck`: one entry per place, each with `quote` (the exact words from the lesson) and `why` (what
 you don't know or can't see, in a few words). Report only real sticking points, not style. An empty list
