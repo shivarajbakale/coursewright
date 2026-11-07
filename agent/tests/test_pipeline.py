@@ -586,3 +586,18 @@ def test_extending_a_finished_course_appends_modules_and_keeps_what_exists(clien
     assert {t: after[t] for t in before} == before  # nothing that existed was rewritten
     assert len(after) == len(before) + 2 and modules[-1] == "Filters that can forget"
     assert fake.calls.count("ChapterOut") == 3 + 2  # only the new lessons were written
+
+
+def test_a_course_reports_where_its_extension_stands(client):
+    from app.api.common import extension_state
+
+    def r(status, last, pending=0):
+        return {"status": status, "last_build": last, "plan_pending": pending}
+
+    assert extension_state(r("ready", None)) is None
+    assert extension_state(r("ready", 'j|done|{"brief": {}}')) is None  # the original build
+    assert extension_state(r("ready", 'j|running|{"extend": "add X"}'))["status"] == "planning"
+    assert extension_state(r("ready", 'j|done|{"extend": "add X"}', 1)) == {"status": "review", "jobId": "j", "request": "add X"}
+    assert extension_state(r("ready", 'j|queued|{"append": true}'))["status"] == "writing"
+    assert extension_state(r("ready", 'j|failed|{"append": true}'))["status"] == "failed"
+    assert extension_state(r("ready", 'j|done|{"append": true}')) is None  # written: nothing in progress

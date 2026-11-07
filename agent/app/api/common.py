@@ -33,6 +33,9 @@ SELECT c.*,
   (SELECT COUNT(*) FROM chapters ch WHERE ch.course_id=c.id) AS chapter_count,
   (SELECT COUNT(*) FROM projects p WHERE p.course_id=c.id) AS project_count,
   (SELECT cp.approved_at IS NULL FROM course_plans cp WHERE cp.course_id=c.id) AS plan_pending,
+  (SELECT COUNT(*) FROM course_plans cp WHERE cp.course_id=c.id) AS has_plan,
+  (SELECT j.id || '|' || j.status || '|' || j.input FROM jobs j WHERE j.course_id=c.id AND j.kind='build_course'
+     ORDER BY j.created_at DESC LIMIT 1) AS last_build,
   (SELECT COUNT(*) FROM chapters ch JOIN progress pr ON pr.chapter_id=ch.id
      WHERE ch.course_id=c.id AND pr.finished_at IS NOT NULL) AS chapters_done
 FROM courses c
@@ -40,6 +43,7 @@ FROM courses c
 
 
 def course_summary(r: sqlite3.Row) -> dict:
+    ext = extension_state(r)
     return {
         "id": r["id"],
         "title": r["title"],
@@ -52,11 +56,34 @@ def course_summary(r: sqlite3.Row) -> dict:
         "chapterCount": r["chapter_count"],
         "projectCount": r["project_count"],
         "chaptersDone": r["chapters_done"],
-        "jobId": r["job_id"] if r["status"] in ("planning", "building", "failed") else None,
+        "jobId": ext["jobId"] if ext else (r["job_id"] if r["status"] in ("planning", "building", "failed") else None),
         "lastOpenedChapterId": r["last_opened_chapter_id"],
-        # The build stopped at the outline and waits for you to review it.
-        "outlineReady": r["status"] == "planning" and bool(r["plan_pending"]),
+        # The build stopped at the outline and waits for you to review it (a new course's, or an extension's).
+        "outlineReady": (r["status"] == "planning" and bool(r["plan_pending"])) or bool(ext and ext["status"] == "review"),
+        "extension": ext,
+        # Made by the builder, so it has a plan to grow from; nothing is in progress.
+        "extendable": r["status"] == "ready" and bool(r["has_plan"]) and not (ext and ext["status"] != "failed"),
     }
+
+
+def extension_state(r: sqlite3.Row) -> dict | None:
+    """Where a finished course's extension stands: planning, review, writing or failed; None when there is
+    none. Read from the course's latest build job (app/jobs/extend.py)."""
+    if r["status"] != "ready" or not r["last_build"]:
+        return None
+    job_id, status, raw = r["last_build"].split("|", 2)
+    inp = jload(raw, {})
+    if not (inp.get("extend") or inp.get("append")):
+        return None
+    if status in ("failed", "cancelled"):
+        state = "failed"
+    elif status in ("queued", "running"):
+        state = "writing" if inp.get("append") else "planning"
+    elif inp.get("extend") and r["plan_pending"]:
+        state = "review"
+    else:
+        return None
+    return {"status": state, "jobId": job_id, "request": inp.get("extend") or ""}
 
 
 def list_courses(conn: sqlite3.Connection) -> list[dict]:

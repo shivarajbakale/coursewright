@@ -298,7 +298,7 @@
       "area": "Course content",
       "title": "Extend a course from its page",
       "user_visible_behavior": "Extend a course from its page.",
-      "status": "not_started",
+      "status": "in_progress",
       "plan": "course-extend-ui.feature-plan.json",
       "verification": [],
       "evidence": []

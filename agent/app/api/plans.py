@@ -51,7 +51,17 @@ def plan_out(c: dict, p: dict) -> dict:
         "messages": jload(p["messages"], []),
         "estimate": {"tokens": pipeline.estimate_tokens(outline)},
         "approvedAt": p["approved_at"],
+        # An extension waiting for approval: how many modules the course had before it (they can't change).
+        "extensionFrom": _extension_from(p),
     }
+
+
+def _extension_from(p: dict) -> int | None:
+    if p["approved_at"]:
+        return None
+    from app.jobs import extend
+
+    return extend.pending_base(config.jobs_dir() / p["workdir"])
 
 
 def _pending(c: dict, p: dict) -> None:

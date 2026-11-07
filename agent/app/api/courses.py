@@ -108,7 +108,10 @@ def resume_course(course_id: str):
         c = row(conn, "SELECT id, job_id, status FROM courses WHERE id=?", (course_id,))
     if not c:
         raise not_found("Course not found")
-    if c["status"] == "ready" or not c["job_id"]:
+    with db() as conn:
+        summary = get_course_summary(conn, course_id)
+    stopped_extension = bool(summary and summary["extension"] and summary["extension"]["status"] == "failed")
+    if (c["status"] == "ready" and not stopped_extension) or not c["job_id"]:
         raise HTTPException(status_code=409, detail="This course has no stopped build to continue")
     if not store.resume(c["job_id"]):
         raise HTTPException(status_code=409, detail="The build is still running")
@@ -116,7 +119,8 @@ def resume_course(course_id: str):
 
     store.emit(c["job_id"], last_stage(c["job_id"]), "Continuing the build where it stopped", {"resumed": True})
     with db() as conn:
-        conn.execute("UPDATE courses SET status='building' WHERE id=?", (course_id,))
+        if not stopped_extension:  # a finished course stays readable while its extension continues
+            conn.execute("UPDATE courses SET status='building' WHERE id=?", (course_id,))
         return ok({"course": get_course_summary(conn, course_id), "jobId": c["job_id"]})
 
 
