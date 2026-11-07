@@ -573,6 +573,11 @@ def test_extending_a_finished_course_appends_modules_and_keeps_what_exists(clien
     assert chat["reply"] == "Renamed the module."
     assert [m["title"] for m in chat["outline"]["modules"]][:2] == [m["title"] for m in plan["outline"]["modules"]][:2]
     ext["modules"][0]["title"] = "Filters that can forget"
+    assert chat["extensionFrom"] == 2
+    old_key = chat["outline"]["modules"][0]["chapters"][0]["key"]
+    assert client.post(f"/api/courses/{cid}/plan/remove", json={"chapterKey": old_key}).status_code == 409
+    detail = client.get(f"/api/courses/{cid}").json()["data"]
+    assert detail["extension"]["status"] == "review" and detail["outlineReady"] and not detail["extendable"]
 
     approved = client.post(f"/api/courses/{cid}/plan/approve").json()["data"]
     assert approved["course"]["status"] == "ready"

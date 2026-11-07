@@ -64,6 +64,8 @@ export const courseService = {
   remove: (id: string) => del<{ ok: true }>(`/courses/${id}`),
   /** Continue a stopped build: the same job runs again and keeps every file it already wrote. */
   resume: (id: string) => post<{ course: CourseSummary; jobId: string }>(`/courses/${id}/resume`, {}),
+  /** Plan new modules after a finished course's last one; they wait for review like a new outline. */
+  extend: (id: string, request: string) => post<{ jobId: string }>(`/courses/${id}/extend`, { request }),
 };
 
 /** The outline review: a build that stopped after its outline, waiting for you. */

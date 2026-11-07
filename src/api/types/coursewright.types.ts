@@ -15,6 +15,10 @@ export interface CourseSummary {
   jobId: string | null;       // the build job while status is planning/building
   lastOpenedChapterId: string | null;
   outlineReady: boolean;      // the build stopped at its outline and waits for you to review it
+  /** A finished course growing new modules: planning, waiting for review, being written, or stopped. */
+  extension: CourseExtension | null;
+  /** Made by the builder and nothing in progress, so it can be extended. */
+  extendable: boolean;
 }
 
 export interface CourseBrief {
@@ -34,9 +38,13 @@ export interface PlanOutline {
   modules: PlanModule[];
 }
 export interface PlanMessage { role: 'user' | 'agent'; text: string; at: string; changed?: string[] }
+export interface CourseExtension { status: 'planning' | 'review' | 'writing' | 'failed'; jobId: string; request: string }
+
 export interface CoursePlan {
   courseId: string; status: CourseStatus; outline: PlanOutline; messages: PlanMessage[];
   estimate: { tokens: number }; approvedAt: string | null;
+  /** An extension under review: how many modules the course had before it (those can't change). */
+  extensionFrom?: number | null;
 }
 export interface PlanChatResult extends CoursePlan { reply: string; changed: string[] }
 

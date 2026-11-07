@@ -194,6 +194,9 @@ def remove(course_id: str, body: RemoveIn):
             detail="A module keeps at least one chapter. To drop the whole module, ask for it in the chat.",
         )
     data = outline.model_dump(by_alias=True)
+    base = _extension_from(p)
+    if base is not None and any(ch["key"] == body.chapterKey for m in data["modules"][:base] for ch in m["chapters"]):
+        raise HTTPException(status_code=409, detail="That chapter is already in the course; an extension only adds modules")
     for m in data["modules"]:
         m["chapters"] = [ch for ch in m["chapters"] if ch["key"] != body.chapterKey]
     after = pipeline.repair_outline(CourseOutline.model_validate(data))

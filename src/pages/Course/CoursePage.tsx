@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   Badge,
   Button,
   Grid,
@@ -13,7 +14,21 @@ import {
   Title,
 } from '@mantine/core';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowRight, Circle, CircleCheck, Hammer, Maximize2, MessagesSquare, MoreHorizontal, Target, Trash2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { cwKeys } from '@/hooks/useCoursewright';
+import {
+  ArrowRight,
+  Circle,
+  CircleCheck,
+  Hammer,
+  Layers,
+  Maximize2,
+  MessagesSquare,
+  MoreHorizontal,
+  PlusSquare,
+  Target,
+  Trash2,
+} from 'lucide-react';
 import { modals } from '@mantine/modals';
 import { PageShell } from '@/components/page-shell';
 import { ChapterNumber } from '@/components/chapter-number';
@@ -23,7 +38,8 @@ import { ErrorState } from '@/components/state-panel';
 import { MermaidDiagram } from '@/components/diagrams/MermaidDiagram';
 import { useCourse, useDeleteCourse } from '@/hooks/useCoursewright';
 import { useTutor } from '@/copilot/tutorStore';
-import type { CourseDetail } from '@/api/types';
+import type { CourseDetail, CourseExtension } from '@/api/types';
+import { ExtendCourseModal } from './ExtendCourseModal';
 
 /** Mermaid flowchart of the concept graph: prerequisites point at what they unlock. */
 function conceptMermaid(course: CourseDetail): string {
@@ -31,13 +47,15 @@ function conceptMermaid(course: CourseDetail): string {
   const lines = ['flowchart LR'];
   course.concepts.forEach((c, i) => lines.push(`  c${i}["${safe(c.name)}"]`));
   const index = new Map(course.concepts.map((c, i) => [c.id, i]));
-  course.edges.forEach((e) => {
+  course.edges.forEach(e => {
     const a = index.get(e.from);
     const b = index.get(e.to);
     if (a !== undefined && b !== undefined) lines.push(`  c${a} --> c${b}`);
   });
-  const weak = new Set(course.weakSpots.map((w) => w.conceptId));
-  course.concepts.forEach((c, i) => weak.has(c.id) && lines.push(`  style c${i} stroke-width:3px,stroke-dasharray:4`));
+  const weak = new Set(course.weakSpots.map(w => w.conceptId));
+  course.concepts.forEach(
+    (c, i) => weak.has(c.id) && lines.push(`  style c${i} stroke-width:3px,stroke-dasharray:4`)
+  );
   return lines.join('\n');
 }
 
@@ -50,7 +68,8 @@ export function CoursePage() {
   const course = useCourse(courseId);
   const navigate = useNavigate();
   const remove = useDeleteCourse();
-  const setContext = useTutor((s) => s.setContext);
+  const [extending, setExtending] = useState(false);
+  const setContext = useTutor(s => s.setContext);
 
   useEffect(() => {
     setContext({ courseId, chapterId: null, noteId: null, selection: null });
@@ -96,14 +115,16 @@ export function CoursePage() {
   }
 
   const pct = Math.round((c.chaptersDone / Math.max(1, c.chapterCount)) * 100);
-  const allChapters = c.modules.flatMap((m) => m.chapters);
-  const nextChapter = allChapters.find((ch) => !ch.done) ?? allChapters[0];
+  const allChapters = c.modules.flatMap(m => m.chapters);
+  const nextChapter = allChapters.find(ch => !ch.done) ?? allChapters[0];
 
   const confirmDelete = () =>
     modals.openConfirmModal({
       title: `Delete “${c.title}”?`,
       children: (
-        <Text size="sm">Its chapters, projects, progress and index are removed. Your notes stay.</Text>
+        <Text size="sm">
+          Its chapters, projects, progress and index are removed. Your notes stay.
+        </Text>
       ),
       labels: { confirm: 'Delete course', cancel: 'Keep it' },
       confirmProps: { color: 'red' },
@@ -138,6 +159,14 @@ export function CoursePage() {
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
+              {c.extendable && (
+                <Menu.Item
+                  leftSection={<PlusSquare size={14} />}
+                  onClick={() => setExtending(true)}
+                >
+                  Extend this course
+                </Menu.Item>
+              )}
               <Menu.Item color="red" leftSection={<Trash2 size={14} />} onClick={confirmDelete}>
                 Delete course
               </Menu.Item>
@@ -156,7 +185,7 @@ export function CoursePage() {
           <Text size="sm" c="dimmed">
             {c.moduleCount} modules · {c.projectCount} projects
           </Text>
-          {[c.brief.level, c.brief.goal, c.brief.pace].filter(Boolean).map((b) => (
+          {[c.brief.level, c.brief.goal, c.brief.pace].filter(Boolean).map(b => (
             <Badge key={b} variant="default" size="sm" tt="none" fw={500}>
               {b}
             </Badge>
@@ -164,6 +193,13 @@ export function CoursePage() {
         </Group>
       }
     >
+      <ExtendCourseModal
+        courseId={courseId}
+        title={c.title}
+        opened={extending}
+        onClose={() => setExtending(false)}
+      />
+      {c.extension && <ExtensionBanner courseId={courseId} extension={c.extension} />}
       <Reveal>
         <Grid gap="xl">
           <Grid.Col span={{ base: 12, lg: 8 }}>
@@ -171,8 +207,8 @@ export function CoursePage() {
               <Title order={2} size="h4">
                 Outline
               </Title>
-              {c.modules.map((m) => {
-                const done = m.chapters.filter((ch) => ch.done).length;
+              {c.modules.map(m => {
+                const done = m.chapters.filter(ch => ch.done).length;
                 return (
                   <Stack key={m.id} gap={4}>
                     <Group justify="space-between" wrap="nowrap" gap="md" px="xs">
@@ -189,7 +225,7 @@ export function CoursePage() {
                       </Text>
                     </Group>
                     <Stack gap={0}>
-                      {m.chapters.map((ch) => (
+                      {m.chapters.map(ch => (
                         <NavLinkLink
                           key={ch.id}
                           to="/courses/$courseId/chapters/$chapterId"
@@ -255,7 +291,7 @@ export function CoursePage() {
                   </Text>
                 ) : (
                   <>
-                    {c.weakSpots.map((w) => (
+                    {c.weakSpots.map(w => (
                       <Group key={w.conceptId} justify="space-between" wrap="nowrap">
                         <Text size="sm">{w.name}</Text>
                         <Text size="sm" c="red">
@@ -271,7 +307,7 @@ export function CoursePage() {
                         useTutor
                           .getState()
                           .ask(
-                            `Drill me on my weak spots in this course: ${c.weakSpots.map((w) => w.name).join(', ')}. One question at a time, and explain my mistakes.`,
+                            `Drill me on my weak spots in this course: ${c.weakSpots.map(w => w.name).join(', ')}. One question at a time, and explain my mistakes.`,
                             { courseId }
                           )
                       }
@@ -283,7 +319,12 @@ export function CoursePage() {
               </Stack>
 
               {graph && (
-                <Stack gap="xs" component="section" data-section="concept-map" aria-label="Concept map">
+                <Stack
+                  gap="xs"
+                  component="section"
+                  data-section="concept-map"
+                  aria-label="Concept map"
+                >
                   <Group justify="space-between">
                     <Title order={2} size="h5">
                       Concept map
@@ -299,8 +340,8 @@ export function CoursePage() {
                           children: (
                             <Stack gap="xs">
                               <Text size="sm" c="dimmed">
-                                Arrows point from what you need first to what it unlocks. Dashed outline: a weak
-                                spot.
+                                Arrows point from what you need first to what it unlocks. Dashed
+                                outline: a weak spot.
                               </Text>
                               <MermaidDiagram source={graph} />
                             </Stack>
@@ -319,5 +360,68 @@ export function CoursePage() {
         </Grid>
       </Reveal>
     </PageShell>
+  );
+}
+
+const EXTENSION_COPY: Record<
+  CourseExtension['status'],
+  { text: string; action: string; color: string }
+> = {
+  planning: {
+    text: 'Planning new modules on top of this course…',
+    action: 'See progress',
+    color: 'blue',
+  },
+  review: {
+    text: 'New modules are ready for you to review.',
+    action: 'Review them',
+    color: 'lime',
+  },
+  writing: {
+    text: 'Writing the new modules. You can keep reading.',
+    action: 'See progress',
+    color: 'blue',
+  },
+  failed: {
+    text: 'Extending this course stopped before it finished.',
+    action: 'See what happened',
+    color: 'red',
+  },
+};
+
+/** Where this course's extension stands, while one is in progress; it refreshes until it is done. */
+function ExtensionBanner({
+  courseId,
+  extension,
+}: {
+  courseId: string;
+  extension: CourseExtension;
+}) {
+  const qc = useQueryClient();
+  const moving = extension.status === 'planning' || extension.status === 'writing';
+  useEffect(() => {
+    if (!moving) return;
+    const t = setInterval(
+      () => void qc.invalidateQueries({ queryKey: cwKeys.course(courseId) }),
+      15000
+    );
+    return () => clearInterval(t);
+  }, [moving, courseId, qc]);
+  const copy = EXTENSION_COPY[extension.status];
+  return (
+    <Alert color={copy.color} variant="light" icon={<Layers size={16} />} mb="lg" role="status">
+      <Group justify="space-between" gap="sm" wrap="wrap">
+        <Text size="sm">{copy.text}</Text>
+        <ButtonLink
+          to="/courses/$courseId/building"
+          params={{ courseId }}
+          size="xs"
+          variant="light"
+          color={copy.color}
+        >
+          {copy.action}
+        </ButtonLink>
+      </Group>
+    </Alert>
   );
 }

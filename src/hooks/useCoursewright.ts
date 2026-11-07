@@ -86,6 +86,18 @@ export function useDeleteCourse() {
   });
 }
 
+/** Ask a finished course for more: plans new modules on top of it. */
+export function useExtendCourse(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (request: string) => courseService.extend(id, request),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: cwKeys.courses });
+      qc.invalidateQueries({ queryKey: cwKeys.course(id) });
+    },
+  });
+}
+
 /** Continue a stopped build where it left off. */
 export function useResumeCourse() {
   const qc = useQueryClient();

@@ -18,13 +18,24 @@ import {
 import { ArrowRight, Send, TriangleAlert, X } from 'lucide-react';
 import { ChapterNumber } from '@/components/chapter-number';
 import { ErrorState } from '@/components/state-panel';
-import { useApprovePlan, usePlan, usePlanChat, useRemovePlanChapter } from '@/hooks/useCoursewright';
+import {
+  useApprovePlan,
+  usePlan,
+  usePlanChat,
+  useRemovePlanChapter,
+} from '@/hooks/useCoursewright';
 import type { CoursePlan, PlanChapter } from '@/api/types';
 
-const EXAMPLES = ['add a chapter on chunking before 1.3', 'merge 2.1 and 2.2', 'drop the deployment module'];
+const EXAMPLES = [
+  'add a chapter on chunking before 1.3',
+  'merge 2.1 and 2.2',
+  'drop the deployment module',
+];
 
 function tokens(n: number): string {
-  return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : `${Math.max(1, Math.round(n / 1000))}k`;
+  return n >= 1_000_000
+    ? `${(n / 1_000_000).toFixed(1)}M`
+    : `${Math.max(1, Math.round(n / 1000))}k`;
 }
 
 /**
@@ -61,12 +72,14 @@ export function OutlineReview({ courseId }: { courseId: string }) {
     );
   }
 
+  const extending = plan.data.extensionFrom != null;
+
   const send = (message: string) => {
     const text = message.trim();
     if (!text || chat.isPending) return;
     setFailed(null);
     chat.mutate(text, {
-      onSuccess: (res) => {
+      onSuccess: res => {
         setDraft('');
         setChanged(res.changed);
       },
@@ -81,17 +94,24 @@ export function OutlineReview({ courseId }: { courseId: string }) {
           plan={plan.data}
           changed={changed}
           removing={remove.isPending ? remove.variables : null}
-          onRemove={(key) => remove.mutate(key, { onSuccess: () => setChanged([]) })}
+          onRemove={key => remove.mutate(key, { onSuccess: () => setChanged([]) })}
           footer={
             <Stack gap="xs">
               {approve.isError && (
-                <Alert color="red" variant="light" icon={<TriangleAlert size={16} />} title="Writing didn’t start">
+                <Alert
+                  color="red"
+                  variant="light"
+                  icon={<TriangleAlert size={16} />}
+                  title="Writing didn’t start"
+                >
                   {(approve.error as { message?: string }).message ?? 'Try again in a moment.'}
                 </Alert>
               )}
               <Group justify="space-between">
                 <Text size="sm" c="dimmed" style={{ flex: '1 1 220px' }}>
-                  Nothing is written until you start. You can still leave and come back.
+                  {extending
+                    ? 'Only the new modules are written. The course stays readable meanwhile.'
+                    : 'Nothing is written until you start. You can still leave and come back.'}
                 </Text>
                 <Button
                   rightSection={<ArrowRight size={16} />}
@@ -100,7 +120,11 @@ export function OutlineReview({ courseId }: { courseId: string }) {
                   onClick={() => approve.mutate()}
                   style={{ flexShrink: 0 }}
                 >
-                  {approve.isError ? 'Try again' : 'Write this course'}
+                  {approve.isError
+                    ? 'Try again'
+                    : extending
+                      ? 'Write these modules'
+                      : 'Write this course'}
                 </Button>
               </Group>
             </Stack>
@@ -135,7 +159,10 @@ function OutlineCard({
   footer: React.ReactNode;
 }) {
   const { outline } = plan;
-  const chapters = outline.modules.reduce((n, m) => n + m.chapters.length, 0);
+  // An extension: the modules before `from` are already in the course and cannot change here.
+  const from = plan.extensionFrom ?? 0;
+  const fresh = outline.modules.slice(from);
+  const chapters = fresh.reduce((n, m) => n + m.chapters.length, 0);
   return (
     <Card withBorder radius="lg" p="lg">
       <Stack gap="md">
@@ -144,32 +171,43 @@ function OutlineCard({
             Outline
           </Text>
           <Text size="sm" c="dimmed" style={{ flexShrink: 0 }}>
-            {outline.modules.length} modules · {chapters} chapters · about {tokens(plan.estimate.tokens)} tokens to write
+            {from
+              ? `${fresh.length} new modules · ${chapters} new chapters`
+              : `${outline.modules.length} modules · ${chapters} chapters · about ${tokens(plan.estimate.tokens)} tokens to write`}
           </Text>
         </Group>
         <ScrollArea.Autosize mah={460} offsetScrollbars>
           <Stack gap="md">
-            {outline.modules.map((m, mi) => (
-              <Stack key={m.key} gap={4}>
-                <Group gap="xs" wrap="nowrap">
+            {outline.modules.map((m, mi) =>
+              mi < from ? (
+                <Group key={m.key} gap="xs" wrap="nowrap" data-existing-module>
                   <ChapterNumber value={String(mi + 1)} />
-                  <Text fw={600} size="sm" style={{ minWidth: 0 }}>
-                    {m.title}
+                  <Text size="sm" c="dimmed" style={{ minWidth: 0 }} truncate>
+                    {m.title} · {m.chapters.length} chapters · already in the course
                   </Text>
                 </Group>
-                {m.chapters.map((ch, ci) => (
-                  <ChapterRow
-                    key={ch.key}
-                    number={`${mi + 1}.${ci + 1}`}
-                    chapter={ch}
-                    changed={changed.includes(ch.key)}
-                    lastInModule={m.chapters.length === 1}
-                    removing={removing === ch.key}
-                    onRemove={() => onRemove(ch.key)}
-                  />
-                ))}
-              </Stack>
-            ))}
+              ) : (
+                <Stack key={m.key} gap={4}>
+                  <Group gap="xs" wrap="nowrap">
+                    <ChapterNumber value={String(mi + 1)} />
+                    <Text fw={600} size="sm" style={{ minWidth: 0 }}>
+                      {m.title}
+                    </Text>
+                  </Group>
+                  {m.chapters.map((ch, ci) => (
+                    <ChapterRow
+                      key={ch.key}
+                      number={`${mi + 1}.${ci + 1}`}
+                      chapter={ch}
+                      changed={changed.includes(ch.key)}
+                      lastInModule={m.chapters.length === 1}
+                      removing={removing === ch.key}
+                      onRemove={() => onRemove(ch.key)}
+                    />
+                  ))}
+                </Stack>
+              )
+            )}
           </Stack>
         </ScrollArea.Autosize>
         {footer}
@@ -272,8 +310,14 @@ function ChatCard({
                 <Text size="sm" c="dimmed">
                   Add, remove, merge or reorder chapters in your own words. For example:
                 </Text>
-                {EXAMPLES.map((e) => (
-                  <Button key={e} variant="subtle" size="compact-sm" justify="flex-start" onClick={() => setDraft(e)}>
+                {EXAMPLES.map(e => (
+                  <Button
+                    key={e}
+                    variant="subtle"
+                    size="compact-sm"
+                    justify="flex-start"
+                    onClick={() => setDraft(e)}
+                  >
                     {e}
                   </Button>
                 ))}
@@ -294,7 +338,12 @@ function ChatCard({
               </>
             )}
             {failed && !pending && (
-              <Alert color="red" variant="light" icon={<TriangleAlert size={16} />} title="That change didn’t go through">
+              <Alert
+                color="red"
+                variant="light"
+                icon={<TriangleAlert size={16} />}
+                title="That change didn’t go through"
+              >
                 <Stack gap="xs" align="flex-start">
                   <Text size="sm">The outline is unchanged.</Text>
                   <Button size="xs" variant="default" onClick={() => onSend(failed)}>
@@ -313,8 +362,8 @@ function ChatCard({
             minRows={1}
             maxRows={4}
             value={draft}
-            onChange={(e) => setDraft(e.currentTarget.value)}
-            onKeyDown={(e) => {
+            onChange={e => setDraft(e.currentTarget.value)}
+            onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 onSend(draft);
@@ -339,7 +388,13 @@ function ChatCard({
 
 function Message({ role, text }: { role: 'user' | 'agent'; text: string }) {
   return (
-    <Paper p="xs" px="sm" radius="md" withBorder={role === 'agent'} bg={role === 'user' ? 'var(--mantine-color-default-hover)' : undefined}>
+    <Paper
+      p="xs"
+      px="sm"
+      radius="md"
+      withBorder={role === 'agent'}
+      bg={role === 'user' ? 'var(--mantine-color-default-hover)' : undefined}
+    >
       <Text size="xs" c="dimmed" fw={600}>
         {role === 'user' ? 'You' : 'Coursewright'}
       </Text>

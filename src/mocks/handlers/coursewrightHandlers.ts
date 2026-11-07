@@ -289,6 +289,8 @@ export const coursewrightHandlers = [
       jobId,
       lastOpenedChapterId: null,
       outlineReady: false,
+      extension: null,
+      extendable: false,
     };
     extraCourses.unshift(course);
     const phase: Phase = brief.reviewOutline === false ? 'all' : 'plan';
@@ -359,6 +361,14 @@ export const coursewrightHandlers = [
     jobs.set(jobId, { courseId: c.id, topic: c.topic, startedAt: Date.now(), cancelled: false, phase: 'write' });
     Object.assign(c, { status: 'building', outlineReady: false, jobId });
     return ok({ course: c, jobId });
+  }),
+
+  // Extending a finished course: the mock accepts the request; the plan itself is the agent's.
+  http.post('/api/courses/:id/extend', async ({ request }) => {
+    const body = (await request.json()) as { request?: string };
+    if (!body.request || body.request.trim().length < 10)
+      return HttpResponse.json({ message: 'Say a little more about what to add' }, { status: 422 });
+    return HttpResponse.json({ data: { jobId: uid() } }, { status: 202 });
   }),
 
   http.delete('/api/courses/:id', ({ params }) => {

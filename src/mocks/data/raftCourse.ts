@@ -404,6 +404,8 @@ export function raftSummary(): CourseSummary {
     jobId: null,
     lastOpenedChapterId: 'ch-2-2',
     outlineReady: false,
+    extension: null,
+    extendable: true,
   };
 }
 
@@ -470,6 +472,8 @@ export function buildingSummary(): CourseSummary {
     jobId: BUILDING_JOB_ID,
     lastOpenedChapterId: null,
     outlineReady: false,
+    extension: null,
+    extendable: false,
   };
 }
 
