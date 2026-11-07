@@ -24,6 +24,19 @@ def get_job(job_id: str):
     return ok(store.job_out(r))
 
 
+@router.get("/jobs/{job_id}/output")
+def get_job_output(job_id: str):
+    """What a finished job returned: an accuracy pass's proposed corrections (before and after), a build's
+    usage. Empty while it runs."""
+    from app.db import jload
+
+    with db() as conn:
+        r = store.get_job(conn, job_id)
+    if not r:
+        raise not_found("Job not found")
+    return ok({"status": r["status"], "output": jload(r["output"], {})})
+
+
 @router.post("/jobs/{job_id}/cancel")
 def cancel_job(job_id: str):
     with db() as conn:

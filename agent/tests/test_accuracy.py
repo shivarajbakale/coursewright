@@ -63,6 +63,10 @@ def test_a_wrong_lesson_is_corrected_and_a_right_one_left_alone(client, course, 
             fixed = row(conn, "SELECT prompt, answer FROM questions WHERE id=?", (q["id"],))
         assert fixed["prompt"] == "Fixed?" and fixed["answer"] == 2
         assert client.post("/api/courses/nope/accuracy").status_code == 404
+        store.finish(job_id, "done", output=out)
+        got = client.get(f"/api/jobs/{job_id}/output").json()["data"]
+        assert got["status"] == "done" and got["output"]["corrected"] == 1
+        assert client.get("/api/jobs/nope/output").status_code == 404
     finally:
         _restore(saved)
 
