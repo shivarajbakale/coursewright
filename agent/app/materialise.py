@@ -227,6 +227,90 @@ def _reading_minutes(md: str, declared: int) -> int:
     return max(1, round(words / 220)) if declared <= 0 else declared
 
 
+def _insert_module_body(conn: sqlite3.Connection, parsed: ParsedCourse, course_id: str, mid: str, m, chapter_ids: dict,
+                        concept_ids: dict) -> None:
+    """A module's chapters (with their concepts, questions and diagrams) and its project."""
+    for cpos, ch in enumerate(m.chapters, start=1):
+        chid = chapter_ids[ch.key]
+        md = parsed.chapters[ch.key]
+        conn.execute(
+            """INSERT INTO chapters(id, module_id, course_id, position, title, markdown, reading_minutes)
+               VALUES (?,?,?,?,?,?,?)""",
+            (chid, mid, course_id, cpos, ch.title, md, _reading_minutes(md, ch.readingMinutes)),
+        )
+        for ck in ch.conceptKeys:
+            conn.execute(
+                "INSERT OR IGNORE INTO chapter_concepts(chapter_id, concept_id) VALUES (?,?)",
+                (chid, concept_ids[ck]),
+            )
+        ex = parsed.extras.get(ch.key) or ChapterExtras()
+        for qpos, q in enumerate(ex.questions):
+            conn.execute(
+                """INSERT INTO questions(id, chapter_id, position, prompt, options, answer, explanation, concept_ids)
+                   VALUES (?,?,?,?,?,?,?,?)""",
+                (
+                    new_id(), chid, qpos, q.prompt, jdump(q.options), q.answer, q.explanation,
+                    jdump([concept_ids[k] for k in q.conceptKeys if k in concept_ids]),
+                ),
+            )
+        for dpos, d in enumerate(ex.diagrams):
+            conn.execute(
+                "INSERT INTO diagrams(id, chapter_id, position, kind, title, source, checked_at) VALUES (?,?,?,?,?,?,?)",
+                (new_id(), chid, dpos, d.kind, d.title, d.source, now()),
+            )
+    if m.projectKey:
+        p = parsed.projects[m.projectKey]
+        pid = new_id()
+        conn.execute(
+            """INSERT INTO projects(id, module_id, course_id, title, brief, starter, hints, rubric)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (
+                pid, mid, course_id, p.title, p.brief, jdump([s.model_dump() for s in p.starter]),
+                jdump(p.hints),
+                jdump(
+                    [
+                        {"criterion": r.criterion, "chapterId": chapter_ids.get(r.chapterKey) if r.chapterKey else None}
+                        for r in p.rubric
+                    ]
+                ),
+            ),
+        )
+        for mspos, ms in enumerate(p.milestones, start=1):
+            conn.execute(
+                "INSERT INTO milestones(id, project_id, position, title, body, check_cmd) VALUES (?,?,?,?,?,?)",
+                (new_id(), pid, mspos, ms.title, ms.body, ms.checkCmd),
+            )
+
+
+def _append_modules(conn: sqlite3.Connection, parsed: ParsedCourse, course_id: str) -> str:
+    o = parsed.outline
+    with tx(conn):
+        have = conn.execute("SELECT COUNT(*) FROM modules WHERE course_id=?", (course_id,)).fetchone()[0]
+        if have > len(o.modules):
+            raise MaterialiseError(f"the course has {have} modules but the extended outline only {len(o.modules)}")
+        conn.execute("UPDATE courses SET summary=?, status='ready' WHERE id=?", (o.summary, course_id))
+        concept_ids = {r["name"]: r["id"] for r in conn.execute("SELECT id, name FROM concepts WHERE course_id=?", (course_id,))}
+        by_key: dict[str, str] = {}
+        for c in o.concepts:
+            if c.name not in concept_ids:
+                concept_ids[c.name] = new_id()
+                conn.execute("INSERT INTO concepts(id, course_id, name, summary) VALUES (?,?,?,?)",
+                             (concept_ids[c.name], course_id, c.name, c.summary))
+            by_key[c.key] = concept_ids[c.name]
+        for e in o.edges:
+            if e.from_ in by_key and e.to in by_key:
+                conn.execute("INSERT OR IGNORE INTO concept_edges(from_id, to_id, kind) VALUES (?,?, 'prereq')",
+                             (by_key[e.from_], by_key[e.to]))
+        new_modules = o.modules[have:]
+        chapter_ids = {ch.key: new_id() for m in new_modules for ch in m.chapters}
+        for mpos, m in enumerate(new_modules, start=have + 1):
+            mid = new_id()
+            conn.execute("INSERT INTO modules(id, course_id, position, title, summary) VALUES (?,?,?,?,?)",
+                         (mid, course_id, mpos, m.title, m.summary))
+            _insert_module_body(conn, parsed, course_id, mid, m, chapter_ids, by_key)
+    return course_id
+
+
 def write_course(
     conn: sqlite3.Connection,
     parsed: ParsedCourse,
@@ -235,9 +319,15 @@ def write_course(
     brief: dict | None = None,
     seed_key: str | None = None,
     job_id: str | None = None,
+    append: bool = False,
 ) -> str:
-    """Insert (or fill an existing planning row) in one transaction. Returns the course id."""
+    """Insert (or fill an existing planning row) in one transaction. Returns the course id.
+
+    `append` (an extended course): the modules beyond the ones the course has are added after them, and
+    nothing that exists is touched, so its chapters keep their ids, progress, notes and index."""
     o = parsed.outline
+    if append and course_id:
+        return _append_modules(conn, parsed, course_id)
     with tx(conn):
         if course_id:
             conn.execute(
@@ -277,56 +367,7 @@ def write_course(
                 "INSERT INTO modules(id, course_id, position, title, summary) VALUES (?,?,?,?,?)",
                 (mid, course_id, mpos, m.title, m.summary),
             )
-            for cpos, ch in enumerate(m.chapters, start=1):
-                chid = chapter_ids[ch.key]
-                md = parsed.chapters[ch.key]
-                conn.execute(
-                    """INSERT INTO chapters(id, module_id, course_id, position, title, markdown, reading_minutes)
-                       VALUES (?,?,?,?,?,?,?)""",
-                    (chid, mid, course_id, cpos, ch.title, md, _reading_minutes(md, ch.readingMinutes)),
-                )
-                for ck in ch.conceptKeys:
-                    conn.execute(
-                        "INSERT OR IGNORE INTO chapter_concepts(chapter_id, concept_id) VALUES (?,?)",
-                        (chid, concept_ids[ck]),
-                    )
-                ex = parsed.extras.get(ch.key) or ChapterExtras()
-                for qpos, q in enumerate(ex.questions):
-                    conn.execute(
-                        """INSERT INTO questions(id, chapter_id, position, prompt, options, answer, explanation, concept_ids)
-                           VALUES (?,?,?,?,?,?,?,?)""",
-                        (
-                            new_id(), chid, qpos, q.prompt, jdump(q.options), q.answer, q.explanation,
-                            jdump([concept_ids[k] for k in q.conceptKeys if k in concept_ids]),
-                        ),
-                    )
-                for dpos, d in enumerate(ex.diagrams):
-                    conn.execute(
-                        "INSERT INTO diagrams(id, chapter_id, position, kind, title, source, checked_at) VALUES (?,?,?,?,?,?,?)",
-                        (new_id(), chid, dpos, d.kind, d.title, d.source, now()),
-                    )
-            if m.projectKey:
-                p = parsed.projects[m.projectKey]
-                pid = new_id()
-                conn.execute(
-                    """INSERT INTO projects(id, module_id, course_id, title, brief, starter, hints, rubric)
-                       VALUES (?,?,?,?,?,?,?,?)""",
-                    (
-                        pid, mid, course_id, p.title, p.brief, jdump([s.model_dump() for s in p.starter]),
-                        jdump(p.hints),
-                        jdump(
-                            [
-                                {"criterion": r.criterion, "chapterId": chapter_ids.get(r.chapterKey) if r.chapterKey else None}
-                                for r in p.rubric
-                            ]
-                        ),
-                    ),
-                )
-                for mspos, ms in enumerate(p.milestones, start=1):
-                    conn.execute(
-                        "INSERT INTO milestones(id, project_id, position, title, body, check_cmd) VALUES (?,?,?,?,?,?)",
-                        (new_id(), pid, mspos, ms.title, ms.body, ms.checkCmd),
-                    )
+            _insert_module_body(conn, parsed, course_id, mid, m, chapter_ids, concept_ids)
     return course_id
 
 

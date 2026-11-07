@@ -181,10 +181,14 @@ def approve(course_id: str):
     outline = _outline(p)
     pipeline.save_outline(config.jobs_dir() / p["workdir"], outline)
     brief = jload(c["brief"], {})
+    # A finished course being extended stays 'ready' (readable) while its new modules are written, and the
+    # new modules are appended to it rather than replacing it.
+    append = c["status"] == "ready"
     with db() as conn, tx(conn):
         conn.execute("UPDATE course_plans SET approved_at=?, updated_at=? WHERE course_id=?", (now(), now(), course_id))
-        job_id = store.create_job(conn, "build_course", {"brief": brief, "workdir": p["workdir"]}, course_id=course_id)
-        conn.execute("UPDATE courses SET status='building', job_id=? WHERE id=?", (job_id, course_id))
+        job_id = store.create_job(conn, "build_course", {"brief": brief, "workdir": p["workdir"], "append": append},
+                                  course_id=course_id)
+        conn.execute("UPDATE courses SET status=?, job_id=? WHERE id=?", ("ready" if append else "building", job_id, course_id))
     store.emit(
         job_id, "chapters", "Writing the course from your outline",
         {"modules": [m.title for m in outline.modules], "done": 0, "total": sum(len(m.chapters) for m in outline.modules)},

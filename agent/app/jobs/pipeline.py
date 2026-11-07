@@ -983,8 +983,15 @@ class Run:
                 ex = None
             if ex and ex.diagramRequest:
                 asked.append((ch, ex.diagramRequest))
-        keep = asked[: math.ceil(len(chapters) / 4)]
-        for ch, _ in asked[len(keep):]:  # beyond the cap: no request left that nothing will draw
+        cap = math.ceil(len(chapters) / 4)
+        d = self.course / "diagrams"
+        drawn = [a for a in asked if (d / f"{a[0].key}.flow").exists() or (d / f"{a[0].key}.mmd").exists()]
+        rest = [a for a in asked if a not in drawn]
+        room = max(0, cap - len(drawn))
+        # Spread across the course rather than the first lessons that asked (which put every movie in module 1).
+        picked = [rest[round(i * len(rest) / room)] for i in range(room)] if 0 < room < len(rest) else rest[:room]
+        keep = drawn + picked
+        for ch, _ in [a for a in asked if a not in keep]:  # beyond the cap: no request left that nothing will draw
             side = self.course / "chapters" / f"{ch.key}.json"
             ex = _load_json(side, ChapterExtras)
             side.write_text(ex.model_copy(update={"diagramRequest": None}).model_dump_json(indent=2, exclude_none=True))

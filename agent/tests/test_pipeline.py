@@ -523,3 +523,56 @@ def test_a_rate_limit_waits_and_retries_instead_of_failing(monkeypatch):
     monkeypatch.setattr(llm.asyncio, "sleep", no_sleep)
     out, _ = asyncio.run(llm.parse(system="s", user="u", schema=pipeline.ResearchOut))
     assert out.notes == "n" and waits == [20, 40] and not replies
+
+
+def test_extending_a_finished_course_appends_modules_and_keeps_what_exists(client, fake, monkeypatch):
+    from app.jobs import extend
+
+    monkeypatch.setattr(extend, "NEW_LESSONS", (1, 70))
+    ext = {
+        "summary": "Fast set membership, from zero to filters that forget.",
+        "modules": [{"title": "Filters that forget", "lessons": [
+            {"key": "counting", "name": "Counting filter", "plain": "bit slots that count instead",
+             "summary": "Counts per slot", "prerequisites": ["bits"], "terms": []},
+            {"key": "removal", "name": "Removal", "plain": "taking an item back out",
+             "summary": "Removing items", "prerequisites": ["counting"], "terms": []},
+        ]}],
+    }
+    base = fake.parse
+
+    async def parse(*, system, user, schema, **kw):
+        if schema.__name__ == "ExtensionOut":
+            fake.calls.append("ExtensionOut")
+            return schema.model_validate(ext), {"inputTokens": 1000, "outputTokens": 100}
+        return await base(system=system, user=user, schema=schema, **kw)
+
+    monkeypatch.setattr(llm, "parse", parse)
+    cid, job = _build({"topic": "Bloom filters"}, "Extended course")
+    asyncio.run(build_course.run(job))
+    store.finish(job["id"], "done")  # what the worker does after a job
+    with db() as conn:
+        before = {r["title"]: r["id"] for r in conn.execute("SELECT id, title FROM chapters WHERE course_id=?", (cid,))}
+
+    r = client.post(f"/api/courses/{cid}/extend", json={"request": "Teach filters that can forget items"})
+    assert r.status_code == 202, r.text
+    with db() as conn:
+        plan_job = dict(store.get_job(conn, r.json()["data"]["jobId"]))
+    out = asyncio.run(build_course.run(plan_job))
+    store.finish(plan_job["id"], "done")
+    assert out["phase"] == "extend-plan" and _status(cid) == "ready"  # still readable while the plan waits
+    plan = client.get(f"/api/courses/{cid}/plan").json()["data"]
+    assert [m["title"] for m in plan["outline"]["modules"]][-1] == "Filters that forget"
+    assert client.post(f"/api/courses/{cid}/extend", json={"request": "Again, before approving"}).status_code == 409
+
+    approved = client.post(f"/api/courses/{cid}/plan/approve").json()["data"]
+    assert approved["course"]["status"] == "ready"
+    with db() as conn:
+        write_job = dict(store.get_job(conn, approved["jobId"]))
+    assert jload(write_job["input"])["append"] is True
+    asyncio.run(build_course.run(write_job))
+    with db() as conn:
+        after = {r["title"]: r["id"] for r in conn.execute("SELECT id, title FROM chapters WHERE course_id=?", (cid,))}
+        modules = [r[0] for r in conn.execute("SELECT title FROM modules WHERE course_id=? ORDER BY position", (cid,))]
+    assert {t: after[t] for t in before} == before  # nothing that existed was rewritten
+    assert len(after) == len(before) + 2 and modules[-1] == "Filters that forget"
+    assert fake.calls.count("ChapterOut") == 3 + 2  # only the new lessons were written

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.api.common import course_detail, get_course_summary, list_courses, not_found, ok
-from app.db import db, jdump, new_id, now, row, rows, set_meta, tx
+from app.db import db, jdump, jload, new_id, now, row, rows, set_meta, tx
 from app.jobs import store
 from app.rag.chunk import slugify
 from app.rag.ingest import delete_source
@@ -118,6 +118,38 @@ def resume_course(course_id: str):
     with db() as conn:
         conn.execute("UPDATE courses SET status='building' WHERE id=?", (course_id,))
         return ok({"course": get_course_summary(conn, course_id), "jobId": c["job_id"]})
+
+
+class ExtendCourse(BaseModel):
+    request: str = Field(min_length=10, description="What the new modules should teach")
+
+
+@router.post("/courses/{course_id}/extend", status_code=202)
+def extend_course(course_id: str, body: ExtendCourse):
+    """Plan new modules after a finished course's last one (app/jobs/extend.py). The plan then waits for
+    approval at /courses/:id/plan; the course stays readable throughout."""
+    with db() as conn:
+        c = row(conn, "SELECT id, status, brief, job_id FROM courses WHERE id=?", (course_id,))
+        if not c:
+            raise not_found("Course not found")
+        if c["status"] != "ready":
+            raise HTTPException(status_code=409, detail="Extend a course once it is built")
+        plan = row(conn, "SELECT workdir, approved_at FROM course_plans WHERE course_id=?", (course_id,))
+        if not plan:
+            raise HTTPException(status_code=409, detail="This course was not made by the builder, so it has no plan to extend")
+        busy = row(conn, "SELECT id FROM jobs WHERE course_id=? AND kind='build_course' AND status IN ('queued','running')", (course_id,))
+        if busy:
+            raise HTTPException(status_code=409, detail="This course is already being planned or written")
+        if plan["approved_at"] is None:
+            raise HTTPException(status_code=409, detail="An extension is waiting for approval: approve or reshape it first")
+    from app import config
+
+    (config.jobs_dir() / plan["workdir"] / "extend.json").unlink(missing_ok=True)
+    with db() as conn, tx(conn):
+        job_id = store.create_job(conn, "build_course", {"brief": jload(c["brief"], {}), "workdir": plan["workdir"],
+                                                          "extend": body.request.strip()}, course_id=course_id)
+        conn.execute("UPDATE courses SET job_id=? WHERE id=?", (job_id, course_id))
+    return ok({"jobId": job_id})
 
 
 class AddExplainers(BaseModel):

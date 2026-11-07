@@ -48,6 +48,15 @@ def _record_plan(course_id: str, workdir: str, outline, approved: bool) -> None:
         )
 
 
+def _reopen_plan(course_id: str, outline) -> None:
+    """The extended outline waits for approval; the course stays 'ready' and readable meanwhile."""
+    with db() as conn:
+        conn.execute(
+            "UPDATE course_plans SET outline=?, messages='[]', approved_at=NULL, updated_at=? WHERE course_id=?",
+            (outline.model_dump_json(by_alias=True), now(), course_id),
+        )
+
+
 def _set_status(course_id: str, status: str) -> None:
     with db() as conn:
         conn.execute("UPDATE courses SET status=? WHERE id=? AND status!='ready'", (status, course_id))
@@ -75,6 +84,16 @@ async def run(job: dict) -> dict:
     p = pipeline.Run(job_id, workdir, brief, ledger)
 
     plan = await asyncio.to_thread(_plan_row, course_id)
+    if inp.get("extend") and not (workdir / "extend.json").exists():
+        # Extending a finished course: plan only the new modules, then wait for approval (app/jobs/extend.py).
+        from app.jobs import extend
+
+        current = p.outline()
+        if current is None:
+            raise RuntimeError("This course has no outline on disk to extend")
+        merged = await extend.plan_extension(p, current, inp["extend"])
+        await asyncio.to_thread(_reopen_plan, course_id, merged)
+        return {"courseId": course_id, "phase": "extend-plan", "usage": ledger.usage()}
     if plan is None or not (workdir / "course" / "outline.json").exists():
         outline = await p.plan()
         review = bool(brief.get("reviewOutline"))
@@ -89,11 +108,11 @@ async def run(job: dict) -> dict:
     if outline is None:
         raise RuntimeError("The course outline is missing. Start a new course.")
     await p.write(outline)
-    await _finish(job_id, course_id, workdir, p)
+    await _finish(job_id, course_id, workdir, p, append=bool(inp.get("append")))
     return {"courseId": course_id, "phase": "write", "usage": ledger.usage()}
 
 
-async def _finish(job_id: str, course_id: str, job_dir, progress: "pipeline.Run") -> None:
+async def _finish(job_id: str, course_id: str, job_dir, progress: "pipeline.Run", append: bool = False) -> None:
     await asyncio.to_thread(store.check_cancel, job_id)
 
     rejected = await asyncio.to_thread(validate_course_diagrams, job_dir / "course")
@@ -110,7 +129,7 @@ async def _finish(job_id: str, course_id: str, job_dir, progress: "pipeline.Run"
             c = row(conn, "SELECT brief FROM courses WHERE id=?", (course_id,))
             if not c:
                 raise store.Cancelled()  # course deleted mid-build
-            write_course(conn, parsed, course_id=course_id)
+            write_course(conn, parsed, course_id=course_id, append=append)
 
     await asyncio.to_thread(save)
     await progress.emit("index", "Indexing the course for the tutor", {"chunks": 0})
