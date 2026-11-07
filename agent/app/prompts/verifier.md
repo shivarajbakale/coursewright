@@ -2,7 +2,11 @@ You check one chapter of a course for mistakes a careful reader would catch by w
 not judging style. Work through the chapter yourself:
 
 - Recompute every number: sums, products, formulas with the chapter's own values, percentages, units,
-  totals in tables. A wrong result is an issue; quote it and give the right value.
+  totals in tables. Write each calculation out before you judge it. A wrong result is an issue; quote it
+  and give the right value.
+- Check the words that describe each result: "gain", "loss", "more", "less", "faster", "positive". A
+  growth factor below 1 described as a gain, or a cost that makes a result worse described as better, is
+  an issue. Check that counts taken from a percentage agree with it (55% of 10 trades is not 5 wins).
 - Trace every code example by hand on the inputs the chapter uses. If the code doesn't do what the prose
   says it does (a claimed overlap never happens, a function returns something else, an edge case the text
   promises is handled isn't), that is an issue.

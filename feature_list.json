@@ -308,6 +308,21 @@
       "evidence": [
         "Live: Course options → Extend this course opens the dialog; empty request blocked; Cancel sends nothing"
       ]
+    },
+    {
+      "id": "lesson-precision",
+      "priority": 25,
+      "area": "Course content",
+      "title": "Precise lessons: STE writing rules, checked arithmetic, steadier reader and accuracy check",
+      "user_visible_behavior": "New lessons state causes, number their steps, map their comparisons and keep their arithmetic right; a wrong lesson can be corrected in place.",
+      "status": "in_progress",
+      "plan": null,
+      "verification": [
+        "pytest (test_precision, test_routes, test_pipeline)",
+        "make check",
+        "live: PATCH corrects Trading edge"
+      ],
+      "evidence": []
     }
   ]
 }

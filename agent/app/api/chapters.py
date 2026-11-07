@@ -118,3 +118,102 @@ async def write_questions(chapter_id: str):
     await asyncio.to_thread(save)
     with db() as conn:
         return ok(chapter_out(conn, chapter_id))
+
+
+_reindexing: set = set()  # running re-index tasks, kept so they aren't collected before they finish
+
+
+class QuestionEdit(BaseModel):
+    id: str
+    prompt: str
+    options: list[str]
+    answer: int
+    explanation: str = ""
+
+
+class ChapterEdit(BaseModel):
+    markdown: str | None = None
+    questions: list[QuestionEdit] = []
+
+
+def _lesson_files(conn, course_id: str, title: str):
+    """The built course's own copy of a lesson (`<key>.md` and `<key>.json` in the build folder), found by
+    its title, so a later extension or backfill starts from the corrected text. None for an imported course."""
+    from app import config
+
+    p = row(conn, "SELECT workdir FROM course_plans WHERE course_id=?", (course_id,))
+    if not p or not p["workdir"]:
+        return None
+    folder = config.jobs_dir() / p["workdir"] / "course" / "chapters"
+    if not folder.is_dir():
+        return None
+    for md in folder.glob("*.md"):
+        first = md.read_text().split("\n", 1)[0].strip()
+        if first == f"# {title}":
+            return md, md.with_suffix(".json")
+    return None
+
+
+@router.patch("/chapters/{chapter_id}")
+async def edit_chapter(chapter_id: str, body: ChapterEdit):
+    """Correct a lesson in place: its text and any of its questions, by id. Progress, notes and answers stay
+    attached (ids don't change), the build folder's copy is updated to match, and the tutor index re-reads
+    the lesson. The text must still start with its title and every drawing in it must pass the checker."""
+    import asyncio
+    import json
+
+    from fastapi import HTTPException
+
+    from app import inkling
+    from app.db import jdump
+    from app.materialise import _reading_minutes
+    from app.rag import ingest
+
+    with db() as conn:
+        ch = row(conn, "SELECT id, course_id, title, markdown, reading_minutes FROM chapters WHERE id=?", (chapter_id,))
+        if not ch:
+            raise not_found("Chapter not found")
+        have = {r["id"]: r for r in conn.execute("SELECT id, prompt FROM questions WHERE chapter_id=?", (chapter_id,))}
+    md = body.markdown.strip() + "\n" if body.markdown is not None else None
+    if md is not None:
+        if not md.startswith(f"# {ch['title']}"):
+            raise HTTPException(status_code=422, detail=f"The lesson must start with `# {ch['title']}`")
+        bad = await asyncio.to_thread(inkling.markdown_problems, md)
+        if bad:
+            raise HTTPException(status_code=422, detail="A drawing has problems: " + "; ".join(bad[:5]))
+    for q in body.questions:
+        if q.id not in have:
+            raise HTTPException(status_code=422, detail=f"Question {q.id} is not in this lesson")
+        if not 2 <= len(q.options) <= 5 or not 0 <= q.answer < len(q.options):
+            raise HTTPException(status_code=422, detail=f"Question {q.id} needs 2-5 options and an answer among them")
+
+    def save():
+        with db() as conn, tx(conn):
+            files = _lesson_files(conn, ch["course_id"], ch["title"])
+            if md is not None:
+                conn.execute("UPDATE chapters SET markdown=?, reading_minutes=? WHERE id=?",
+                             (md, _reading_minutes(md, ch["reading_minutes"]), chapter_id))
+                if files:
+                    files[0].write_text(md)
+            for q in body.questions:
+                conn.execute("UPDATE questions SET prompt=?, options=?, answer=?, explanation=? WHERE id=?",
+                             (q.prompt, jdump(q.options), q.answer, q.explanation, q.id))
+            if files and body.questions and files[1].exists():
+                extras = json.loads(files[1].read_text())
+                old = {have[q.id]["prompt"]: q for q in body.questions}
+                for i, spec in enumerate(extras.get("questions", [])):
+                    if spec.get("prompt") in old:
+                        q = old[spec["prompt"]]
+                        extras["questions"][i] = {**spec, "prompt": q.prompt, "options": q.options,
+                                                  "answer": q.answer, "explanation": q.explanation}
+                files[1].write_text(json.dumps(extras, indent=2))
+            src = row(conn, "SELECT id FROM sources WHERE kind='chapter' AND ref_id=?", (chapter_id,))
+        return src["id"] if src else None
+
+    source_id = await asyncio.to_thread(save)
+    if source_id and md is not None:  # the tutor's index re-reads it in the background
+        task = asyncio.get_running_loop().create_task(ingest.ingest_source(source_id, force=True))
+        _reindexing.add(task)
+        task.add_done_callback(_reindexing.discard)
+    with db() as conn:
+        return ok(chapter_out(conn, chapter_id))

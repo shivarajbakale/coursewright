@@ -158,8 +158,9 @@ def test_build_runs_every_stage_in_order_and_counts_tokens_per_stage(fake):
     assert _status(cid) == "ready"
     names = fake.calls
     assert names[:2] == ["ResearchOut", "CurriculumOut"]
-    assert names.count("ChapterOut") == 3 and names.count("ReaderOut") == 3  # every lesson read by a newcomer
-    assert names.count("movie") == 1 and names.count("ProjectSpec") == 2 and names.count("VerifyOut") == 3
+    # every lesson read by a newcomer, READS times (the median reading counts)
+    assert names.count("ChapterOut") == 3 and names.count("ReaderOut") == 3 * pipeline.READS
+    assert names.count("movie") == 1 and names.count("ProjectSpec") == 2 and names.count("VerifyOut") == 3 * pipeline.VERIFY_RUNS
     stages = out["usage"]["stages"]
     assert set(stages) == {"research", "curriculum", "chapters", "reader", "verify", "explainers", "diagrams", "projects"}
     assert names.count("ExplainersOut") == 3  # one call per lesson, each drawing passed the checker first time
@@ -232,7 +233,7 @@ def test_a_lesson_a_newcomer_gets_stuck_in_is_revised_with_the_quotes_and_read_a
     cid, job = _build({"topic": "Bloom filters"}, "Read course")
     out = asyncio.run(build_course.run(job))
     assert fake.calls.count("ChapterOut") == 3 + 1 and out["usage"]["stages"]["revisions"]["calls"] == 1
-    assert fake.calls.count("ReaderOut") == 3 + 1  # the revision is read again
+    assert fake.calls.count("ReaderOut") == (3 + 1) * pipeline.READS  # the revision is read again
     revision = [u for u in fake.users["ChapterOut"] if "fix these problems" in u]
     assert len(revision) == 1 and 'A newcomer got stuck at "Each step": which step?' in revision[0]
     assert f"Current lesson:\n# {T2}" in revision[0]
@@ -420,7 +421,7 @@ def test_the_verifier_sends_a_wrong_lesson_back_with_its_mistake(fake):
     out = asyncio.run(build_course.run(job))
     fixes = [u for u in fake.users["ChapterOut"] if "fix these problems" in u]
     assert any("'2 + 2 = 5' should be 4" in u and f"Current lesson:\n# {T2}" in u for u in fixes)
-    assert out["usage"]["stages"]["verify"]["calls"] == 3 and out["usage"]["stages"]["fixes"]["calls"] == 1
+    assert out["usage"]["stages"]["verify"]["calls"] == 3 * pipeline.VERIFY_RUNS and out["usage"]["stages"]["fixes"]["calls"] == 1
     assert _status(cid) == "ready"
 
 

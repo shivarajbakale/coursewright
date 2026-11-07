@@ -216,3 +216,36 @@ def test_questions_are_written_only_for_a_lesson_without_any(client, course, mon
     r = client.post(f"/api/chapters/{target}/questions")
     assert r.status_code == 201 and len(r.json()["data"]["questions"]) == 2  # the malformed one is dropped
     assert client.post(f"/api/chapters/{target}/questions").status_code == 409
+
+
+def test_a_lesson_is_corrected_in_place_and_keeps_its_ids_and_progress(client, course, monkeypatch):
+    from app.rag import ingest
+
+    reindexed = []
+
+    async def fake_ingest(source_id, force=False, **_):
+        reindexed.append((source_id, force))
+        return 1
+
+    monkeypatch.setattr(ingest, "ingest_source", fake_ingest)
+    ch = client.get(f"/api/chapters/{course['modules'][0]['chapters'][0]['id']}").json()["data"]
+    q = ch["questions"][0]
+    client.post(f"/api/questions/{q['id']}/attempts", json={"chosen": q["answer"]})
+    md = f"# {ch['title']}\n\nCorrected text: 1.01 × 0.99 = 0.9999, a small loss.\n"
+    fixed = {**{k: q[k] for k in ("id", "prompt", "options")}, "answer": (q["answer"] + 1) % len(q["options"]),
+             "explanation": "Corrected."}
+    r = client.patch(f"/api/chapters/{ch['id']}", json={"markdown": md, "questions": [fixed]})
+    assert r.status_code == 200
+    out = r.json()["data"]
+    assert out["id"] == ch["id"] and out["markdown"].startswith("# ") and "Corrected text" in out["markdown"]
+    after = next(x for x in out["questions"] if x["id"] == q["id"])
+    assert after["answer"] == fixed["answer"] and after["explanation"] == "Corrected."
+    assert after["lastAttempt"] is not None  # the learner's earlier answer stays attached
+
+
+def test_a_lesson_correction_is_refused_without_its_title_or_with_a_foreign_question(client, course):
+    ch = course["modules"][0]["chapters"][0]
+    assert client.patch(f"/api/chapters/{ch['id']}", json={"markdown": "# Something else\n\nText."}).status_code == 422
+    bad = {"id": "nope", "prompt": "p", "options": ["a", "b"], "answer": 0}
+    assert client.patch(f"/api/chapters/{ch['id']}", json={"questions": [bad]}).status_code == 422
+    assert client.patch("/api/chapters/missing", json={"markdown": "# x"}).status_code == 404

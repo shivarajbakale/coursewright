@@ -21,6 +21,16 @@ Return:
   6. `## What you have now`: two or three sentences joining this concept to the earlier ones it rests on,
      and the question it leaves open, which the next lesson answers.
   Use `##` headings sparingly (two or three in all). Short sentences, second person, no filler.
+  Write precisely (these rules come from Simplified Technical English):
+  - One idea per sentence, at most 25 words. Split a longer sentence.
+  - Say cause and effect out loud: "X happens. Because of this, Y happens." Never leave the link to infer.
+  - Steps that happen in order go in a numbered list, not inside a paragraph.
+  - Give the number, the condition or the name instead of a vague word ("some", "various", "many",
+    "things", "usually"). If a fact is approximate, say how approximate.
+  - Map every comparison from everyday life: say what each part stands for in the field, and where the
+    comparison stops holding. A comparison the reader must decode confuses more than it helps.
+  - When you work out a number, write each step, and say what the result means with the right sign: a
+    growth factor below 1 is a loss. A count taken from a percentage must be a whole number of things.
 - `defines`: the terms this lesson explains, each `{term, meaning}` with a one-line meaning. The first is
   this lesson's concept. At most 3 others, and only small supporting words you explain in a sentence.
 - `uses`: every technical term the lesson relies on that it does not define itself. Each must be in the

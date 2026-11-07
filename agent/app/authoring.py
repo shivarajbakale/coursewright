@@ -130,7 +130,7 @@ def _explainer_issues(report: Report, rel: str, md: str, node: bool) -> None:
 def check_folder(folder: Path, *, flow: bool = True) -> Report:
     """Everything wrong with a course folder. `flow=False` skips compiling Flowmovie diagrams (they need node)."""
     from app import flowmovie
-    from app.jobs import pedagogy
+    from app.jobs import pedagogy, precision
     from app.jobs.pipeline import CHAPTER_WORDS, MAX_CHAPTERS, MIN_CHAPTERS, word_count
 
     folder = Path(folder)
@@ -212,6 +212,11 @@ def check_folder(folder: Path, *, flow: bool = True) -> Report:
             report.warn(md_rel, f"{words} words of prose; a lesson is {lo}-{hi} (aim for 350-650).")
         for s in pedagogy.assumes_experience(md):
             report.warn(md_rel, f'assumes the learner already knows the topic: "{s}"')
+        for e in precision.arithmetic_errors(md):
+            report.error(md_rel, f"arithmetic does not add up: {e}")
+        for p in precision.problems(md):
+            if not p.startswith("This arithmetic"):
+                report.warn(md_rel, p)
         later = [concepts[k].name for k, j in taught_at.items() if j > i and k in concepts]
         for t in pedagogy.future_terms(md, later):
             report.warn(md_rel, f'uses "{t}", which a later lesson teaches; describe it in plain words or reorder.')

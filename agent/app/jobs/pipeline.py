@@ -47,7 +47,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app import config, inkling
 from app.agents import llm
-from app.jobs import pedagogy, store
+from app.jobs import pedagogy, precision, store
 from app.materialise import (
     ChapterExtras,
     ChapterSpec,
@@ -72,6 +72,12 @@ MAX_FIXES = 8
 CHAPTER_CONCURRENCY = 8  # lessons no longer wait for each other: their terms are fixed in the plan
 WRAP_UP = "## What you have now"
 READ_ROUNDS = 1  # revisions after the beginner reader, each read again
+# The beginner reader is noisy (one unchanged lesson gave 0, 10 and 8 sticking points), so a lesson is read
+# this many times at once and the median reading is the one that counts.
+READS = 3
+# The accuracy check misses a wrong number about one time in three, so it reads each lesson this many times
+# and every mistake any reading found is fixed.
+VERIFY_RUNS = 2
 BANNED = re.compile(r"\b(simply|obviously|trivially)\b|\bit is easy to see\b", re.I)
 KEY_IDEA = "> **Key idea:**"
 NOT_AN_ISSUE = re.compile(r"\bno (error|issue|mistake)s?\b|\b(is|are|looks) (correct|fine)\.?$|— correct\b", re.I)
@@ -446,10 +452,11 @@ def tidy(out: ChapterOut, title: str) -> ChapterOut:
 
 
 # Problems a revision may add when it makes the lesson easier for a newcomer: form, not teaching.
-SOFT_KINDS = {"the limit is", "is only", "questions", "What you have now", "new terms"}
+SOFT_KINDS = {"the limit is", "is only", "questions", "What you have now", "new terms", "words long", "are vague"}
 PROBLEM_KINDS = (
     "must start with", "the limit is", "is only", "Key idea", "Remove these words", "quiz", "questions",
     "What you have now", "assumes", "before any lesson", "later lesson", "new terms", "own concept",
+    "arithmetic is wrong", "words long", "are vague",
 )
 
 
@@ -494,6 +501,7 @@ def chapter_problems(out: ChapterOut, title: str, ctx: LessonContext | None = No
         problems.append(f"Give 2-3 questions; there are {len(out.questions)}.")
     for s in pedagogy.assumes_experience(md):
         problems.append(f'This assumes the learner has done it before instead of teaching it: "{s}"')
+    problems += precision.problems(md)
     if ctx is None:
         return problems
     defined = [t.term for t in out.defines]
@@ -533,6 +541,12 @@ def chapter_problems(out: ChapterOut, title: str, ctx: LessonContext | None = No
             "words without the name, or leave it out."
         )
     return problems
+
+
+def median_read(reads: list[ReaderOut]) -> ReaderOut:
+    """The reading in the middle by number of sticking points (the lower middle for an even count)."""
+    ranked = sorted(reads, key=lambda r: len(r.stuck))
+    return ranked[(len(ranked) - 1) // 2]
 
 
 def reader_prompt(before: list[str], markdown: str, questions: list[dict]) -> str:
@@ -859,24 +873,28 @@ class Run:
         )
 
     async def read_lesson(self, outline: CourseOutline, ch: ChapterSpec, out: ChapterOut) -> ReaderOut | None:
-        """The beginner reader: a learner who knows only the earlier lessons reads this one."""
+        """The beginner reader: a learner who knows only the earlier lessons reads this one, READS times at
+        once; the median reading (by sticking points) is kept, so one unlucky run neither sends a good
+        lesson back nor lets a revision look better than it is."""
         chapters = [c for m in outline.modules for c in m.chapters]
         i = chapters.index(ch)
         terms = self.known_terms(outline, ch)
         before = [f"- {c.title}" for c in chapters[max(0, i - 3): i]]
         if terms:
             before.append(f"Terms those lessons and the ones before them explained: {', '.join(terms)}")
-        try:
-            return await self.call(
-                "reader", system=config.prompt("beginner"),
-                user=reader_prompt(before, out.markdown, [q.model_dump() for q in out.questions]),
-                schema=ReaderOut, max_tokens=4000,
-            )
-        except store.Cancelled:
-            raise
-        except Exception as e:  # noqa: BLE001 - the lesson keeps its code checks; the reader is a second opinion
-            log.warning("beginner reader on %s failed: %s", ch.key, e)
+        user = reader_prompt(before, out.markdown, [q.model_dump() for q in out.questions])
+        reads = await asyncio.gather(*[
+            self.call("reader", system=config.prompt("beginner"), user=user, schema=ReaderOut, max_tokens=4000)
+            for _ in range(READS)
+        ], return_exceptions=True)
+        for r in reads:
+            if isinstance(r, store.Cancelled):
+                raise r
+        good = [r for r in reads if isinstance(r, ReaderOut)]
+        if not good:  # the lesson keeps its code checks; the reader is a second opinion
+            log.warning("beginner reader on %s failed: %s", ch.key, reads[0])
             return None
+        return median_read(good)
 
     async def write_chapter(self, outline: CourseOutline, ch: ChapterSpec, notes: str, counter: dict) -> None:
         """Draft (checked in code, one retry), then the beginner reader; a lesson they got stuck in, or that
@@ -1089,16 +1107,19 @@ class Run:
             + f"\n  answer: {q.answer}\n  explanation: {q.explanation}"
             for i, q in enumerate(lesson.questions)
         )
-        try:
-            out = await self.call(
-                "verify", system=config.prompt("verifier"), user=f"{lesson.markdown}\n\nQuestions:\n{qs}",
-                schema=VerifyOut, max_tokens=8000,
-            )
-        except store.Cancelled:
-            raise
-        except Exception as e:  # noqa: BLE001 - this lesson goes unchecked; the others carry on
-            log.warning("verify %s failed: %s", ch.key, e)
+        runs = await asyncio.gather(*[
+            self.call("verify", system=config.prompt("verifier"), user=f"{lesson.markdown}\n\nQuestions:\n{qs}",
+                      schema=VerifyOut, max_tokens=8000)
+            for _ in range(VERIFY_RUNS)
+        ], return_exceptions=True)
+        for r in runs:
+            if isinstance(r, store.Cancelled):
+                raise r
+        good = [r for r in runs if isinstance(r, VerifyOut)]
+        if not good:  # this lesson goes unchecked; the others carry on
+            log.warning("verify %s failed: %s", ch.key, runs[0])
             return
+        out = VerifyOut(issues=list(dict.fromkeys(i for r in good for i in r.issues)))
         # Accuracy mistakes are always worth a revision; a lesson that only still has a code problem was
         # already revised once when it was written.
         if out.issues:
