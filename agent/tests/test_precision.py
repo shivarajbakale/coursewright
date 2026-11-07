@@ -48,3 +48,46 @@ def test_the_median_reading_is_kept():
     assert len(pipeline.median_read([r(0), r(10), r(8)]).stuck) == 8
     assert len(pipeline.median_read([r(4)]).stuck) == 4
     assert len(pipeline.median_read([r(2), r(6)]).stuck) == 2
+
+
+def test_progressive_and_perfect_verbs_are_found_but_adjectives_and_field_terms_are_not():
+    md = ("The buyer at 30 is still waiting. The order has filled. You have learned it. Keep going until it ends. "
+          "The file is missing. There is nothing more. The desk is trading, and a model finished training.")
+    hits = " ".join(precision.verb_forms(md, ["trading", "model training"]))
+    for h in ("is still waiting", "has filled", "have learned", "Keep going"):
+        assert h in hits
+    for h in ("is missing", "is nothing", "is trading", "finished training"):
+        assert h not in hits
+    assert precision.verb_forms("The need has a seed. They had a hundred.") == []
+
+
+def test_figurative_and_wordy_phrases_name_the_plain_word():
+    hits = precision.plain_word_hits("Sellers lay out what they have and money changes hands. That picture "
+                                     "stops holding here. In order to sell, she hands over the ticket.")
+    text = " ".join(hits)
+    assert len(hits) == 5 and "write 'give'" in text and "write 'to'" in text and "stops holding" in text
+    assert precision.plain_word_hits("Sellers put their items on a table. The layout is clear.") == []
+
+
+def test_steps_paragraphs_key_idea_and_closing_are_measured():
+    long_step = "Sort " + " ".join(["the"] * 21) + " buyers. Then wait."
+    md = (f"1. {long_step}\n2. Pair them.\n3. **Sandbox.** {' '.join(['word'] * 30)}.\n\n"
+          + "One is here. Two is here. Three is here. Four is here. Five is here. Six is here. Seven is here.\n\n"
+          + "> **Key idea:** " + " ".join(["idea"] * 26) + ".\n\n## What you have now\n\n"
+          + "First one here. Second one here. Third one here. Fourth one here. Fifth one here.\n")
+    assert precision.long_steps(md) == [long_step.split(" Then")[0]]
+    assert len(precision.long_paragraphs(md)) == 1
+    assert precision.key_idea_words(md) == 26
+    assert precision.wrap_up_sentences(md) == 5
+    kinds = {pipeline.problem_kind(p) for p in precision.problems(md)}
+    assert {"steps are long", "paragraphs are long", "key-idea line", "closing section"} <= kinds
+    assert kinds <= pipeline.SOFT_KINDS  # style is revised once, never a reason to throw a lesson away
+
+
+def test_a_clean_lesson_passes_and_the_report_counts_per_course():
+    clean = ("# A market\n\nA market matches buyers with sellers. Each match is a trade.\n\n"
+             "> **Key idea:** A market matches buyers with sellers.\n\n## What you have now\n\n"
+             "You know what a trade is. What is a share?\n")
+    assert precision.problems(clean) == []
+    rows = precision.report([("c", clean), ("c", clean + "They are waiting. It has gone. We are going.")])
+    assert rows[0]["lessons"] == 2 and rows[0]["verb forms /100 sentences"] > 0 and rows[0]["sent back %"] == 50

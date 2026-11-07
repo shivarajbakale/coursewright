@@ -16,7 +16,8 @@ from tests.test_notifications import _course, _job
 
 pytestmark = pytest.mark.usefixtures("client")  # runs the migrations
 
-WORDS = " ".join(["Each step follows from the one before it, so you can check it by hand."] * 30)
+# 30 sentences in paragraphs of 6, the most a paragraph may have
+WORDS = "\n\n".join([" ".join(["Each step follows from the one before it, so you can check it by hand."] * 6)] * 5)
 
 # The fake curriculum: three concepts, one lesson each, in two modules. `to_outline` turns it into the
 # outline below (`outline_data`), which the outline-review tests reshape.
@@ -407,7 +408,7 @@ def test_a_reply_with_no_content_is_asked_again(monkeypatch):
 
 def test_problem_kinds_tell_length_from_callouts():
     title = "T"
-    long = _lesson(lesson_markdown(title, f"{WORDS} {WORDS}"))
+    long = _lesson(lesson_markdown(title, f"{WORDS}\n\n{WORDS}"))
     two = _lesson(lesson_markdown(title).replace("## What", "> **Key idea:** y\n\n## What"))
     kinds = {pipeline.problem_kind(p) for o in (long, two) for p in pipeline.chapter_problems(o, title)}
     assert kinds == {"the limit is", "Key idea"}

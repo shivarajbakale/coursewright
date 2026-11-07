@@ -335,14 +335,37 @@
       "area": "Course content",
       "title": "Check a built course for mistakes again and propose corrections",
       "user_visible_behavior": "POST /api/courses/:id/accuracy re-checks every lesson with the stricter verifier and records proposed corrections, before and after, to review and apply.",
-      "status": "in_progress",
+      "status": "blocked",
       "plan": "none: agent API and job only, no screen changes",
       "verification": [
         "pytest test_accuracy",
         "make check",
         "live: quant course pass, proposals checked by computation"
       ],
-      "evidence": []
+      "evidence": [],
+      "blocker": "Code and tests landed (ced0654, 2193137); the live pass on the quant course has not run. Parked while prose-clarity is in flight; resume by running POST /api/courses/:id/accuracy on the quant course and checking the proposals."
+    },
+    {
+      "id": "prose-clarity",
+      "priority": 27,
+      "area": "Course content",
+      "title": "Clear, concise lessons: checked verb forms, plain words, short steps and one showing of each example",
+      "user_visible_behavior": "Each new lesson is checked for progressive and perfect verbs, idioms and phrasal verbs, long steps, paragraphs, key-idea lines and closing sections, and is sent back once with the plain word to use; make prose-report measures every course against these checks.",
+      "status": "passing",
+      "plan": "none: agent checks, prompt and a report command only, no screen changes",
+      "verification": [
+        "pytest test_precision",
+        "calibration on live lessons: every new check's flags read by hand",
+        "make prose-report",
+        "make check"
+      ],
+      "evidence": [
+        "pytest 125 passed (4 new precision tests; pipeline fixture split into 6-sentence paragraphs); make check green",
+        "Calibration on 461 live lessons, flags read by hand: 'stops holding' 296 times, traced to writer.md's own wording (fixed); adjectives such as 'is missing' and labelled list items excluded; a repeated-example check dropped for false flags (it could not tell steps that explain code output from steps that repeat it)",
+        "Baseline on live lessons: key idea over 25 words in 376/461, closing section over 4 sentences in 152, paragraph over 6 sentences in 154, figurative or wordy phrases in 142, non-simple verbs in 82; lessons sent back by the prose checks 182 -> 436 (all new kinds soft)",
+        "make prose-report: quant 12.3 words per sentence, 2.2 verb flags and 3.1 plain-word flags per 100 sentences; course-check on both local courses still 0 errors",
+        "Not yet run: a fresh build to measure how far the new prompt moves these numbers"
+      ]
     }
   ]
 }

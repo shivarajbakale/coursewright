@@ -5,7 +5,7 @@
 - Repository root: this project
 - Standard startup path: `./init.sh`
 - Standard verification path: `make check` (install + type-check + lint + test)
-- Current highest-priority unfinished feature: none open (inkling-explainers passing: harness course backfilled; other five courses wait for the owner's look); reader Phase 4 (reader-pwa-offline) passing, iPhone/iPad home-screen check by the owner; design canvas https://claude.ai/artifact/LUdrDTLccSWPURFiLgHjYS; flaky ui-probe M3 on desktop Sources (2 of 3 full make check runs); later per-module skip quiz, later-name leaks in lessons
+- Current highest-priority unfinished feature: course-accuracy-pass (blocked: code landed, live pass on the quant course not run; resume with POST /api/courses/:id/accuracy). prose-clarity passing: STE verb, plain-word, step, paragraph, key-idea and closing checks in agent/app/jobs/precision.py, `make prose-report`; next, build a few lessons to measure the new writer prompt against the live baseline (key idea over 25 words in 376/461 lessons) and consider the editor pass for synonyms. Also: inkling-explainers backfill for five courses waits for the owner's look; reader-pwa-offline home-screen check by the owner; flaky ui-probe M3 on desktop Sources; later per-module skip quiz, later-name leaks in lessons
 - Current blocker: none
 
 ## Session Log

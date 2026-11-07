@@ -452,11 +452,14 @@ def tidy(out: ChapterOut, title: str) -> ChapterOut:
 
 
 # Problems a revision may add when it makes the lesson easier for a newcomer: form, not teaching.
-SOFT_KINDS = {"the limit is", "is only", "questions", "What you have now", "new terms", "words long", "are vague"}
+SOFT_KINDS = {"the limit is", "is only", "questions", "What you have now", "new terms", "words long", "are vague",
+              "not simple tenses", "figurative or wordy", "steps are long", "paragraphs are long", "key-idea line",
+              "closing section"}
 PROBLEM_KINDS = (
     "must start with", "the limit is", "is only", "Key idea", "Remove these words", "quiz", "questions",
     "What you have now", "assumes", "before any lesson", "later lesson", "new terms", "own concept",
-    "arithmetic is wrong", "words long", "are vague",
+    "arithmetic is wrong", "words long", "are vague", "not simple tenses", "figurative or wordy", "steps are long",
+    "paragraphs are long", "key-idea line", "closing section",
 )
 
 
@@ -501,7 +504,7 @@ def chapter_problems(out: ChapterOut, title: str, ctx: LessonContext | None = No
         problems.append(f"Give 2-3 questions; there are {len(out.questions)}.")
     for s in pedagogy.assumes_experience(md):
         problems.append(f'This assumes the learner has done it before instead of teaching it: "{s}"')
-    problems += precision.problems(md)
+    problems += precision.problems(md, (ctx.vocabulary + list(ctx.glossary.terms.values()) + [ctx.concept]) if ctx else None)
     if ctx is None:
         return problems
     defined = [t.term for t in out.defines]

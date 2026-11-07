@@ -214,7 +214,7 @@ def check_folder(folder: Path, *, flow: bool = True) -> Report:
             report.warn(md_rel, f'assumes the learner already knows the topic: "{s}"')
         for e in precision.arithmetic_errors(md):
             report.error(md_rel, f"arithmetic does not add up: {e}")
-        for p in precision.problems(md):
+        for p in precision.problems(md, [c.name for c in outline.concepts]):
             if not p.startswith("This arithmetic"):
                 report.warn(md_rel, p)
         later = [concepts[k].name for k, j in taught_at.items() if j > i and k in concepts]

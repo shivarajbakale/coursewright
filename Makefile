@@ -12,6 +12,7 @@ help:
 	@echo "  lint        eslint (max-warnings 0)"
 	@echo "  ui-lint     design-system contract (no hand-rolled primitives)"
 	@echo "  plan-lint   planning contract (plans validate, FEATURE-PLAN.md in sync)"
+	@echo "  prose-report clarity and concision per course (DIR=courses/x for one)"
 	@echo "  capability-lint          knowledge contract (the Mantine map matches the packages and the source)"
 	@echo "  doc-links   source contract (the map cites Mantine's own docs, recently read)"
 	@echo "  storybook-lint           story contract (titles, states, controls, docs freshness)"
@@ -115,6 +116,9 @@ course-check:
 course-import:
 	@test -n "$(DIR)" || (echo "usage: make course-import DIR=<course folder> [ARGS=--replace]" && exit 2)
 	cd agent && uv run python -m app.cli import "$(abspath $(DIR))" $(ARGS)
+
+prose-report: ## Clarity and concision per course: sentence length and each STE check's flags per 100 sentences
+	cd agent && uv run python -m app.cli prose-report $(if $(DIR),$(abspath $(DIR)),$(abspath $(wildcard courses/*)))
 
 course-schema:
 	@cd agent && uv run python -m app.cli schema
