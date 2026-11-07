@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "The quote is best bid 20.00 and best ask 20.10. You buy 200 shares at once and sell them at once a second later. The quote has not changed. What is your result?",
+      "options": [
+        "A loss of 10 pounds",
+        "A loss of 20 pounds",
+        "No gain and no loss, because the price did not move",
+        "A loss of 0.10 pounds"
+      ],
+      "answer": 1,
+      "explanation": "You buy at the ask and sell at the bid, so you lose 20.10 − 20.00 = 0.10 per share. On 200 shares that is 0.10 × 200 = 20 pounds.",
+      "conceptKeys": ["bid-ask-spread"]
+    },
+    {
+      "prompt": "The quote is best bid 49.95 and best ask 50.05. What is the mid price, and what does one immediate purchase cost compared with it?",
+      "options": [
+        "Mid price 50.00; a purchase pays 0.10 above it",
+        "Mid price 50.05; a purchase pays nothing extra",
+        "Mid price 50.00; a purchase pays 0.05 above it",
+        "Mid price 49.95; a purchase pays 0.10 above it"
+      ],
+      "answer": 2,
+      "explanation": "The mid price is (49.95 + 50.05) / 2 = 50.00. A purchase at once pays the ask, 0.05 above the mid price, which is half the spread of 0.10.",
+      "conceptKeys": ["bid-ask-spread"]
+    },
+    {
+      "prompt": "Share A has a spread of 0.04 at a mid price of 100.00. Share B has a spread of 0.10 at a mid price of 5.00. Which is cheaper to trade, and why?",
+      "options": [
+        "Share A, because its spread is 0.04% of its price and share B's is 2%",
+        "Share B, because its spread of 0.10 is a small number",
+        "They cost the same, because both spreads are below 1 pound",
+        "Share B, because its price is lower"
+      ],
+      "answer": 0,
+      "explanation": "A spread matters relative to the price. 0.04 / 100.00 = 0.0004 and 0.10 / 5.00 = 0.02, so share B costs 50 times as much per trade, as a fraction of its price.",
+      "conceptKeys": ["bid-ask-spread"]
+    }
+  ]
+}

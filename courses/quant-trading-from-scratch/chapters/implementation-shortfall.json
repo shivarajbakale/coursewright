@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You decide to buy 10,000 shares at $50.00, fill 8,000 at $50.12 on average with $40 of fees, and judge at $50.40. Which part of the $1,800 shortfall comes from the 2,000 shares that never filled?",
+      "options": [
+        "$800, the 2,000 missed shares times the $0.40 rise",
+        "$960, the filled shares times the $0.12 paid above arrival",
+        "$560, the 2,000 missed shares times the $0.28 rise after your fills",
+        "$0, because you paid nothing for shares you did not buy"
+      ],
+      "answer": 0,
+      "explanation": "Opportunity cost is the move since the decision times the missed shares: 2,000 × 0.40 = 800 dollars. The paper portfolio would have earned that rise, and the real one did not.",
+      "conceptKeys": ["implementation-shortfall"]
+    },
+    {
+      "prompt": "A trader fills only 1,000 of 10,000 shares, all at the arrival price, and the price then rises sharply. Why does implementation shortfall still show a large cost?",
+      "options": [
+        "Because fees are charged on the shares that were not bought",
+        "Because the 9,000 missed shares count as opportunity cost at the rise since the decision",
+        "Because the filled shares are valued at the arrival price",
+        "Because the arrival price is moved to the end price"
+      ],
+      "answer": 1,
+      "explanation": "The paper portfolio holds all 10,000 shares. Every share that did not fill misses the rise, so trading too little cannot hide the cost.",
+      "conceptKeys": ["implementation-shortfall"]
+    },
+    {
+      "prompt": "You decide to sell 5,000 shares at an arrival price of $30.00 and sell all of them at $29.90 on average, with no fees. What is the implementation shortfall?",
+      "options": [
+        "A gain of $500, because the price fell",
+        "$0, because every share filled",
+        "A cost of $500, because you sold $0.10 below the arrival price",
+        "A cost of $50, because 5,000 × 0.01 = 50"
+      ],
+      "answer": 2,
+      "explanation": "For a sell the signs flip: selling below the arrival price is a cost. 5,000 × 0.10 = 500 dollars less than the paper portfolio received.",
+      "conceptKeys": ["implementation-shortfall"]
+    }
+  ]
+}

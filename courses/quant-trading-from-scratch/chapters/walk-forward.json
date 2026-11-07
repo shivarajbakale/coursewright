@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "In the example, the four fit windows averaged a Sharpe ratio of 1.10 and the joined test years scored 0.38. Which number estimates how the rule would have traded?",
+      "options": [
+        "1.10, because it uses twice as much data",
+        "The best fit score, 1.45",
+        "0.38, because every test year was unseen by the fit that chose the length",
+        "The average of the two, 0.74"
+      ],
+      "answer": 2,
+      "explanation": "Each fit score is the best of 5 on the data that chose it, so it carries luck. The test years played no part in any choice, so their joined score of 0.38 is the honest one.",
+      "conceptKeys": ["walk-forward"]
+    },
+    {
+      "prompt": "With a 2-year rolling fit window, which years are used to choose the length for the 2022 test?",
+      "options": [
+        "2018 to 2021",
+        "2020 and 2021",
+        "2021 and 2022",
+        "2018 and 2019"
+      ],
+      "answer": 1,
+      "explanation": "A rolling window keeps a fixed length and moves forward. For a 2022 test, the 2 years before it are 2020 and 2021.",
+      "conceptKeys": ["walk-forward"]
+    },
+    {
+      "prompt": "Why is a single out-of-sample split a weaker test than walk-forward for a rule that is refitted each year?",
+      "options": [
+        "A single split cannot compute a Sharpe ratio",
+        "Walk-forward avoids transaction costs",
+        "Walk-forward uses the test data to choose the length",
+        "A single split gives one verdict on one fixed fit, while walk-forward tests each refit the way it would run"
+      ],
+      "answer": 3,
+      "explanation": "Walk-forward repeats fit, test and roll, so it tests the refitting itself and gives four test years instead of one stretch. The test data still never chooses anything.",
+      "conceptKeys": ["walk-forward"]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "questions": [
+    {
+      "prompt": "A strategy has a daily volatility of 2%. Using 252 trading days, what is its yearly volatility?",
+      "options": ["504%", "31.7%", "2%", "15.9%"],
+      "answer": 1,
+      "explanation": "Volatility scales with the square root of time: 2% × 15.87 = 31.7%. Multiplying by 252 would ignore how up and down days cancel.",
+      "conceptKeys": ["annualising"]
+    },
+    {
+      "prompt": "Why does volatility grow with the square root of the number of days, not with the number of days?",
+      "options": [
+        "Because exchanges are closed on weekends",
+        "Because volatility is measured in percentage points",
+        "Because for independent days the variances add, and up and down days partly cancel",
+        "Because the mean return is always positive"
+      ],
+      "answer": 2,
+      "explanation": "The year's variance is the daily variance times 252. Volatility is the square root of variance, so it grows with √252.",
+      "conceptKeys": ["annualising"]
+    },
+    {
+      "prompt": "A share's mean daily return is 0.05%. What is its simple yearly mean return?",
+      "options": ["12.6%", "0.79%", "1.26%", "5%"],
+      "answer": 0,
+      "explanation": "The mean scales with time: 0.05% × 252 = 12.6%. The 0.79% would come from wrongly using the square root.",
+      "conceptKeys": ["annualising"]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "The volume profile gives 0.27 to the 15:00 hour. How many of a 12,000-share order does VWAP execution put in that hour?",
+      "options": [
+        "2,000 shares, one sixth of the order",
+        "2,700 shares",
+        "3,240 shares",
+        "270 shares"
+      ],
+      "answer": 2,
+      "explanation": "Each hour gets its fraction of the order: 12,000 × 0.27 = 3,240 shares. An equal split would give 12,000 / 6 = 2,000.",
+      "conceptKeys": ["vwap"]
+    },
+    {
+      "prompt": "100 shares trade at $10.00 and 300 shares trade at $10.10. What is the VWAP?",
+      "options": [
+        "$10.05, the average of the two prices",
+        "$10.075",
+        "$10.10, the last price",
+        "$10.025"
+      ],
+      "answer": 1,
+      "explanation": "Weight each price by its shares: (100 × 10.00 + 300 × 10.10) / 400 = 10.075 dollars. The plain average of $10.05 ignores that three times as many shares traded at $10.10.",
+      "conceptKeys": ["vwap"]
+    },
+    {
+      "prompt": "Why does an equal TWAP slice stand out more in the 12:00 hour than in the 10:00 hour?",
+      "options": [
+        "The 12:00 hour trades half as many shares, so the same 2,000 shares are 1.82% of it instead of 0.91%",
+        "The bid-ask spread is always zero at 10:00",
+        "TWAP execution buys more shares at 12:00 than at 10:00",
+        "The volume profile is the same for every hour"
+      ],
+      "answer": 0,
+      "explanation": "The market trades 110,000 shares at 12:00 and 220,000 at 10:00. A fixed 2,000 shares is twice as large a part of the quiet hour, so it is easier to notice and moves the price more.",
+      "conceptKeys": ["vwap"]
+    }
+  ]
+}

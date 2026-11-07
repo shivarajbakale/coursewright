@@ -1,0 +1,81 @@
+{
+  "title": "Build and honestly judge one strategy end to end",
+  "brief": "Build `onestrategy`, a small Python project that takes one simple strategy from a written idea to a paper-trading dry run, and decides honestly whether it deserves real money. This is the capstone of the basics: every part of the first five modules appears once.\n\n**Why.** A backtest that shows a profit proves very little on its own. It can rest on low cost guesses, a lucky handful of days, a one-day timing trick, or the twentieth variant you tried. This project makes each of those checks part of the code, so the final verdict is a number with its error and its count of tries, not a hopeful chart.\n\n**What you build, in order:**\n\n1. **A hypothesis first.** Before any code runs, write `hypothesis.md`: the claim, the source of edge you expect (behaviour, risk or market rules), the exact rule, the costs you assume, and the pass rule. A good pass rule: an out-of-sample t-statistic above 2.5, and a Sharpe ratio still above 0 with doubled costs and with a one-day delay.\n2. **A backtest with honest books.** One rule from the strategy families, for example a trend rule on a moving average. Positions use only data known the day before (`shift(1)`). Each unit traded pays a commission plus slippage.\n3. **Sizing.** Volatility targeting to 10% a year from a 20-day rolling window, with the weight capped at half the Kelly fraction estimated in-sample (m / s²) and at a leverage of 2.\n4. **Risk limits.** A drawdown limit that halves the position after a fall of 15% from the peak, and a daily loss limit of 2%. Both act inside the backtest, never only afterwards.\n5. **Honest evaluation.** Walk-forward testing with 3 years to fit and 1 year to test, rolled forward. Report the out-of-sample Sharpe ratio, its standard error √((1 + S² / 2) / n) annualised, and its t-statistic. Every variant you run is appended to `research_log.csv` by the code itself.\n6. **Stress tests.** Doubled costs, one extra day of delay, the best 10 days removed, and the Sharpe ratio of each year.\n7. **A paper-trading dry run.** Feed the last 60 days to the strategy one bar at a time, as if live, with simulated fills at the next bar. Compare it day by day with the backtest on the same days and list every gap above 0.1%.\n\n**The verdict.** `verdict.py` reads the log, the evaluation and the stress tests, and prints PASS or FAIL against the pass rule in `hypothesis.md`, with the number of variants tried. A FAIL is a good result if it is honest: a rule on made-up data with no edge built in should fail.\n\n**Constraints.** Python 3 with numpy and pandas only. Use 252 trading days a year. All data is made up: `make_data.py` writes `prices.csv` (date, close) with 15 illustrative years, and takes a `--edge` switch that adds a small trend so you can check that your tests find an edge when one exists. Do not download real prices. If you kept the backtest or the report code from earlier projects, import it.",
+  "starter": [
+    {
+      "path": "hypothesis.md",
+      "note": "Template with headings to fill in before any code runs: claim, source of edge, rule, cost assumptions, pass rule, and the date you wrote it."
+    },
+    {
+      "path": "make_data.py",
+      "note": "Writes prices.csv with 15 years of made-up daily closes from a fixed seed; --edge adds a small trend so a real edge exists to be found."
+    },
+    {
+      "path": "strategy.py",
+      "note": "Empty functions: signal(close), target_weight(returns, kelly_cap, target=0.10, window=20, max_leverage=2.0), apply_limits(weights, equity), backtest(close, cost, delay=1) returning daily net returns, weights and equity."
+    },
+    {
+      "path": "evaluate.py",
+      "note": "Empty functions: walk_forward(close, fit_years=3, test_years=1), sharpe(r), sharpe_se(r), t_stat(r), log_variant(name, params, result), plus stress_tests(close) returning one row per test."
+    },
+    {
+      "path": "paper.py",
+      "note": "Empty functions: replay_live(close, days=60) feeding one bar at a time to strategy.py, and compare(paper, replay) printing the average gap and every day off by more than 0.1%."
+    }
+  ],
+  "hints": [
+    "Write the pass rule in hypothesis.md and commit it before you run anything. If you change it later, log the change as a new variant.",
+    "Compute every estimate that sizes a position, including volatility and the Kelly cap, from data before the day it is used: shift it by one day, and fit the Kelly cap only on each walk-forward fit window.",
+    "Make log_variant the first line of the function that returns a result, so a variant cannot run without leaving a row in research_log.csv.",
+    "For the standard error, use the daily Sharpe ratio S and the number of out-of-sample days n, then multiply by √252. For one year at a yearly Sharpe ratio of 1 you should get about 1.00.",
+    "In paper.py, call the same signal and target_weight functions as the backtest, with only the bars up to that day. If the two disagree on a day with no data problem, you have look-ahead bias in one of them."
+  ],
+  "rubric": [
+    {
+      "criterion": "hypothesis.md states the claim, the source of edge and a numeric pass rule, and research_log.csv holds a row for every variant run, written by the code",
+      "chapterKey": "research-log"
+    },
+    {
+      "criterion": "Daily weights are target volatility ÷ yesterday's 20-day estimate, capped at half the in-sample Kelly fraction and at a leverage of 2, and each year's realised volatility is reported against the 10% target",
+      "chapterKey": "volatility-targeting"
+    },
+    {
+      "criterion": "The drawdown limit and the daily loss limit act inside the backtest, and the report shows the days each one fired",
+      "chapterKey": "risk-limits"
+    },
+    {
+      "criterion": "The out-of-sample Sharpe ratio is reported with its standard error and t-statistic, and the number of independent bets is stated next to it",
+      "chapterKey": "sharpe-significance"
+    },
+    {
+      "criterion": "Doubled costs, one extra day of delay, the best 10 days removed and each year's Sharpe ratio are shown in one table beside the base result",
+      "chapterKey": "stress-tests"
+    },
+    {
+      "criterion": "The paper-trading dry run uses the same strategy code one bar at a time, matches the backtest on clean days, and lists every gap above 0.1%",
+      "chapterKey": "paper-trading"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Write the hypothesis and make the data",
+      "body": "Fill in hypothesis.md with a numeric pass rule. Run make_data.py twice, once plain and once with --edge, into two files.",
+      "checkCmd": "python make_data.py --out prices.csv && python make_data.py --edge --out prices_edge.csv && grep -i 'pass rule' hypothesis.md"
+    },
+    {
+      "title": "Backtest with sizing and limits",
+      "body": "Fill in strategy.py. Print each year's realised volatility, the largest leverage used, and the days the drawdown and daily loss limits fired. Each year's volatility should sit near 10%, and the leverage should never pass 2.",
+      "checkCmd": "python strategy.py prices_edge.csv"
+    },
+    {
+      "title": "Evaluate out of sample and stress it",
+      "body": "Fill in evaluate.py. Run it on both files. On prices_edge.csv the t-statistic should be clearly positive; on prices.csv it should be near 0, because no edge was built in. Check that research_log.csv grew by one row per variant.",
+      "checkCmd": "python evaluate.py prices.csv && python evaluate.py prices_edge.csv && wc -l research_log.csv"
+    },
+    {
+      "title": "Dry run and verdict",
+      "body": "Fill in paper.py and write verdict.py. Replay the last 60 days one bar at a time, compare with the backtest, then print PASS or FAIL against your pass rule with the count of variants tried.",
+      "checkCmd": "python paper.py prices_edge.csv --days 60 && python verdict.py"
+    }
+  ]
+}

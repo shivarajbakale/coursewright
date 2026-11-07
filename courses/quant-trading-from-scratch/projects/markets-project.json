@@ -1,0 +1,77 @@
+{
+  "title": "A price toolkit: from trades to returns",
+  "brief": "Build a small Python toolkit that turns raw trades and quotes for one share into the numbers every later module uses. It reads illustrative trades and quotes from two CSV files and does four jobs.\n\n1. It matches a list of waiting buyers with a list of waiting sellers and reports the trades, as in the lesson on a market.\n2. It reads quotes and computes, for each one, the bid-ask spread, the mid price and the spread as a fraction of the mid price.\n3. It groups trades into price bars: open, high, low, close and volume for each hour or each day.\n4. It turns the daily closes into simple returns and log returns, and combines them over the whole period in two ways that must agree.\n\nWhy build it: every strategy you test later starts from bars and returns. If these numbers are wrong, every result built on them is wrong too, so each function comes with a test that checks a number you can work out by hand.\n\nConstraints: Python 3 with pandas and numpy only, plus pytest to run the tests. Use only made-up prices; no market data download is needed. Keep each function short and pure: it takes data in and returns a result, with no printing inside.",
+  "starter": [
+    {
+      "path": "data/trades.csv",
+      "note": "Illustrative trades for one ticker over three days, one row per trade: time, price, shares. Rows are in time order."
+    },
+    {
+      "path": "data/quotes.csv",
+      "note": "Illustrative quotes for the same ticker: time, bid, ask. The bid is always below the ask."
+    },
+    {
+      "path": "markets.py",
+      "note": "Empty functions to fill in: match(buyers, sellers), spread_table(quotes), build_bars(trades, period), simple_returns(close), log_returns(close), compound(returns)."
+    },
+    {
+      "path": "test_markets.py",
+      "note": "pytest tests that use the numbers from the lessons, for example match([40, 35, 30], [28, 33, 38]) gives trades at 28 and 33."
+    },
+    {
+      "path": "report.py",
+      "note": "Loads both CSV files, calls the functions and prints daily bars, daily returns and the total return worked out two ways."
+    }
+  ],
+  "hints": [
+    "Start with the tests: each one names a small input and the result you would get by hand. Make one test pass at a time.",
+    "For match, sort the buyers from the highest price down and the sellers from the lowest price up, then pair them until a buyer pays less than a seller asks.",
+    "For build_bars, index the trades by time, then use resample(period) with ohlc() on the price column and sum() on the shares column. Drop periods with no trades, because they have no prices.",
+    "For the total return, multiply the growth factors with (1 + r).prod() - 1. With log returns, add them and use np.exp(total) - 1. Both must give the same number to 6 decimal places.",
+    "pct_change() and diff() leave the first row empty, because the first day has no earlier price. Drop it before you combine returns."
+  ],
+  "rubric": [
+    {
+      "criterion": "match pairs the keenest buyer with the cheapest seller first, trades at the seller's price, and stops when the buyer pays less than the seller asks",
+      "chapterKey": "market"
+    },
+    {
+      "criterion": "spread_table gives, for every quote, the spread as ask minus bid, the mid price as their average, and the spread divided by the mid price",
+      "chapterKey": "bid-ask-spread"
+    },
+    {
+      "criterion": "build_bars gives the first, highest, lowest and last price and the total shares for each period, with no rows for empty periods",
+      "chapterKey": "price-bar"
+    },
+    {
+      "criterion": "simple_returns divides each close's change by the close before it, so a fall from 55 to 50 gives −0.0909",
+      "chapterKey": "return"
+    },
+    {
+      "criterion": "The total return from multiplying growth factors equals the total from adding log returns and converting back, and neither equals the plain sum of the simple returns",
+      "chapterKey": "log-return"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Match buyers with sellers",
+      "body": "Write match(buyers, sellers). It returns a list of trade prices. With buyers [40, 35, 30] and sellers [28, 33, 38], it returns [28, 33]. With no buyer at or above any seller's price, it returns an empty list.",
+      "checkCmd": "python -m pytest -q test_markets.py -k match"
+    },
+    {
+      "title": "Spreads from quotes",
+      "body": "Write spread_table(quotes). For a quote of bid 99.98 and ask 100.02, the spread is 0.04, the mid price is 100.00 and the relative spread is 0.0004. For bid 4.95 and ask 5.05, the relative spread is 0.02.",
+      "checkCmd": "python -m pytest -q test_markets.py -k spread"
+    },
+    {
+      "title": "Bars from trades",
+      "body": "Write build_bars(trades, period). For the six trades from the price bar lesson and a period of \"1h\", the 10:00 bar is open 100.10, high 100.40, low 99.80, close 100.20 and volume 1000, and the 11:00 bar has volume 400.",
+      "checkCmd": "python -m pytest -q test_markets.py -k bars"
+    },
+    {
+      "title": "Returns that combine correctly",
+      "body": "Write simple_returns, log_returns and compound. For closes 100, 110, 99 and 103.95, the simple returns are 0.10, −0.10 and 0.05, and the total return is 0.0395 both by multiplying growth factors and by adding log returns. Then run report.py on the CSV files and check that its two totals agree.",
+      "checkCmd": "python -m pytest -q test_markets.py && python report.py"
+    }
+  ]
+}

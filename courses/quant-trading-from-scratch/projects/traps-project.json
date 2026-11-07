@@ -1,0 +1,77 @@
+{
+  "title": "Make a backtest honest",
+  "brief": "Build `honest`, a small Python package that takes a rule and a price history and reports two results side by side: the naive backtest result, and the honest one with every trap from this module removed.\n\n**Why.** A naive backtest reads the future, trades for free, ignores companies that failed and reports the best of many tries. Each mistake adds profit that live trading never pays. This tool shows how much of a result each mistake invented, so you can trust the number that is left. Every later module runs its strategies through it.\n\n**What it does**, in this order:\n\n1. Costs: subtract commission, half the spread and slippage from every trade. Cost is turnover times the cost per dollar traded.\n2. Timing: trade each bar on the signal from the bar before, with `shift(1)`.\n3. Prices: compute returns from adjusted prices, and size orders with raw prices.\n4. Universe: on each date, trade only the companies listed on that date, including ones delisted later.\n5. Judging: keep a log of every variant you try, hold back the last 2 years as out-of-sample data, and score the rule walk-forward with a 2-year fit window and 1-year test periods.\n\n**What it prints:** one line per trap, each showing the Sharpe ratio and total return with that trap and without it, then the walk-forward Sharpe ratio, the buy and hold Sharpe ratio on the same years, and the number of tries in the log.\n\n**Constraints.** Python 3 with numpy and pandas only. Use 252 trading days and a risk-free rate of 0. All data is made up by `data.py`; do not download real prices. Use 0.05% commission, 0.05% half spread and 6 basis points of slippage per trade as defaults, all illustrative. If you kept the vectorised backtest from the previous module's project, import it rather than writing a new one.",
+  "starter": [
+    {
+      "path": "data.py",
+      "note": "make_prices(seed) returns 6 years of made-up daily closes with no edge in them; make_split(seed) returns raw closes with a 2-for-1 split and a $1.00 dividend in them; make_universe(seed) returns 20 made-up companies with listing and delisting dates and prices, 5 of them delisted."
+    },
+    {
+      "path": "costs.py",
+      "note": "Empty functions to fill in: turnover(position), trade_costs(position, commission, half_spread, slippage_bps), net_returns(position, ret, ...)."
+    },
+    {
+      "path": "traps.py",
+      "note": "Empty functions to fill in: rule_returns(signal, ret) that shifts the signal by one bar, adjust(raw, splits, dividends) that returns adjusted closes, universe_on(date, listings) that returns the companies listed on that date."
+    },
+    {
+      "path": "judge.py",
+      "note": "TryLog that records each variant and its in-sample score; split_by_date(df, last_years); walk_forward(close, lengths, fit_years=2, test_years=1) that returns the joined test returns and one row per test year."
+    },
+    {
+      "path": "test_honest.py",
+      "note": "pytest tests built from the lessons' numbers: turnover 6 and net -0.001% on the 7-day costs example, 5.46 basis points of average slippage, the cheat 5.10% against honest -1.00%, the +1.00% split day, and +20.0% against -24.0% for the five-company universe."
+    }
+  ],
+  "hints": [
+    "Start with the tests. Each lesson printed its numbers, so a test that reproduces them tells you the function is right before you use it on new data.",
+    "Turnover is `position.diff().fillna(position).abs()`. The fill counts the first purchase, which `diff()` alone leaves out.",
+    "For adjusted prices, build a factor series that starts at 1.0 and multiply every row before each event: 0.5 for a 2-for-1 split, and 1 - dividend / previous close for a dividend.",
+    "Build the universe from listing and delisting dates, not from the companies that have prices on the last day. A delisted company keeps its last price, or 0 after a bankruptcy.",
+    "In walk_forward, compute each rule's daily returns on the whole history first, then slice the fit and test years. A moving average then has its earlier days available, and still uses only closes up to yesterday."
+  ],
+  "rubric": [
+    {
+      "criterion": "Costs charge commission, half the spread and slippage on turnover, including the first purchase, and match the lessons' numbers",
+      "chapterKey": "slippage"
+    },
+    {
+      "criterion": "Every rule trades on the signal from the bar before, and a test shows the gap between the shifted and unshifted results",
+      "chapterKey": "look-ahead-bias"
+    },
+    {
+      "criterion": "Returns come from adjusted prices, orders are sized with raw prices, and the universe on each date includes companies delisted later",
+      "chapterKey": "survivorship-bias"
+    },
+    {
+      "criterion": "Every variant tried is logged with its in-sample score, and the report states the number of tries next to the best result",
+      "chapterKey": "multiple-testing"
+    },
+    {
+      "criterion": "The final score is walk-forward, with fit and test years that never overlap, and it is compared with buy and hold on the same years",
+      "chapterKey": "walk-forward"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Costs and slippage",
+      "body": "Fill in costs.py. Reproduce the 7-day example: turnover 6, gross 0.601% and net -0.001% at 0.10% per trade. Then reproduce the four fills with an average slippage of 5.46 basis points.",
+      "checkCmd": "python -m pytest test_honest.py -k \"cost or slippage\" -q"
+    },
+    {
+      "title": "Timing, prices and universe",
+      "body": "Fill in traps.py. Show the cheat and honest results of the up-day rule, 5.10% and -1.00%. Adjust the split series so the split day returns +1.00%. Average the five-company universe both ways: +20.0% for survivors only and -24.0% for everyone.",
+      "checkCmd": "python -m pytest test_honest.py -k \"lookahead or adjust or universe\" -q"
+    },
+    {
+      "title": "Judging with a log and walk-forward",
+      "body": "Fill in judge.py. Log every moving-average length you try. Run walk_forward on make_prices(5) with lengths 5, 10, 20, 50 and 100, and print one row per test year with the chosen length, its fit score and its test score.",
+      "checkCmd": "python -c \"from judge import walk_forward; from data import make_prices; r, rows = walk_forward(make_prices(5), [5, 10, 20, 50, 100]); print(rows)\""
+    },
+    {
+      "title": "The naive and honest report",
+      "body": "Write report.py. For one trend rule, print each trap's effect on the Sharpe ratio and total return, the walk-forward Sharpe ratio, buy and hold on the same years, and the number of tries. Write two sentences under the table in REPORT.md saying which trap invented the most profit.",
+      "checkCmd": "python report.py && grep -c \"tries\" REPORT.md"
+    }
+  ]
+}

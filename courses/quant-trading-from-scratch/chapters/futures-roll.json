@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "The spot price of oil stays at $80. Each month you buy the next contract at $82 and hold it to expiry. What happens to your money each month?",
+      "options": [
+        "It stays the same, because the oil price did not move",
+        "It grows by 2.50%",
+        "It shrinks by 2.50%",
+        "It shrinks by 2.44%"
+      ],
+      "answer": 3,
+      "explanation": "At expiry the contract is worth the spot price, $80. The growth factor is 80 / 82 = 0.9756, a loss of 2.44% each month.",
+      "conceptKeys": [
+        "futures-roll"
+      ]
+    },
+    {
+      "prompt": "The futures curve for oil falls: contracts with later expiries cost less. What is this shape called, and what does it do to a rolled long position?",
+      "options": [
+        "Backwardation, and it adds return as each contract rises to the spot price",
+        "Contango, and it subtracts return as each contract falls to the spot price",
+        "Backwardation, and it subtracts return as each contract falls to the spot price",
+        "Contango, and it adds return as each contract rises to the spot price"
+      ],
+      "answer": 0,
+      "explanation": "A falling curve is backwardation. You buy the next contract below the spot price, and it rises to the spot price by expiry, so each roll gains.",
+      "conceptKeys": [
+        "futures-roll"
+      ]
+    },
+    {
+      "prompt": "Why does a rolled long position lose money in contango even when the spot price never moves?",
+      "options": [
+        "Because the exchange charges a fee at each roll",
+        "Because margin earns no interest",
+        "Because each contract is bought above the spot price and falls to it by expiry",
+        "Because the spot price is always above the futures price"
+      ],
+      "answer": 2,
+      "explanation": "In contango the next contract costs more than the spot price. At expiry it is worth the spot price, so the holder loses the gap at every roll.",
+      "conceptKeys": [
+        "futures-roll"
+      ]
+    }
+  ]
+}

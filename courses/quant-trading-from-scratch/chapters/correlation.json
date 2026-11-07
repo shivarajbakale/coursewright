@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Stock D moves exactly like stock B but twice as far each day. The correlation of A and B is 0.96. What is the correlation of A and D?",
+      "options": [
+        "1.92, because D moves twice as far",
+        "0.48, because D is twice as volatile",
+        "0.96, because the factor of 2 cancels",
+        "1, because D copies B"
+      ],
+      "answer": 2,
+      "explanation": "Doubling D doubles both the covariance and D's volatility. Correlation divides one by the other, so the 2 cancels and the value stays 0.96.",
+      "conceptKeys": ["correlation"]
+    },
+    {
+      "prompt": "Two stocks have a correlation of 0.98 in their daily returns. What can you conclude?",
+      "options": [
+        "Their prices will stay close together over the next year",
+        "Their daily returns move in nearly perfect step, but their prices can still drift apart",
+        "Their covariance is 0.98",
+        "One stock causes the other to move"
+      ],
+      "answer": 1,
+      "explanation": "Correlation describes daily moves. In the simulated year, a correlation of 0.98 still left one stock 23% down and the other 0.2% up.",
+      "conceptKeys": ["correlation"]
+    },
+    {
+      "prompt": "Why can you rank pairs of stocks by correlation but not by covariance?",
+      "options": [
+        "Correlation has no unit and always lies between -1 and 1",
+        "Covariance can only be positive",
+        "Correlation uses more days of data",
+        "Covariance ignores the sign of the moves"
+      ],
+      "answer": 0,
+      "explanation": "Covariance grows with each stock's volatility, so wild pairs get big numbers. Dividing by both volatilities removes the units and puts every pair on the same -1 to 1 scale.",
+      "conceptKeys": ["correlation"]
+    }
+  ]
+}

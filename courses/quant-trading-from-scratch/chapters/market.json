@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A buyer will pay at most 30 pounds and a seller will accept at least 38 pounds. What happens?",
+      "options": [
+        "They trade at 34 pounds, halfway between",
+        "They trade at 30 pounds, the buyer's price",
+        "No trade happens, and both keep waiting",
+        "They trade at 38 pounds, the seller's price"
+      ],
+      "answer": 2,
+      "explanation": "A trade needs a buyer who pays at least what the seller asks. Because 30 is less than 38, nobody agrees, and both wait for someone new.",
+      "conceptKeys": ["market"]
+    },
+    {
+      "prompt": "Why does the matching sort buyers from the highest price down and sellers from the lowest price up?",
+      "options": [
+        "So the keenest buyer meets the cheapest seller first, which finds every possible match",
+        "So the trades happen in the order people arrived",
+        "So every buyer pays the same price",
+        "So the market can set the price in advance"
+      ],
+      "answer": 0,
+      "explanation": "Pairing the buyer who pays most with the seller who asks least gives each pair the best chance to agree. In the example, this found 2 trades out of 3 pairs.",
+      "conceptKeys": ["market"]
+    },
+    {
+      "prompt": "Two tickets traded at 28 and 33 pounds. A new seller arrives and accepts 30, and the waiting buyer at 30 takes it. What is the price of a ticket now?",
+      "options": [
+        "33 pounds, the highest trade so far",
+        "28 pounds, the first trade",
+        "25 pounds, the printed price",
+        "30 pounds, the most recent trade"
+      ],
+      "answer": 3,
+      "explanation": "A price is the result of trades, and the price people mention is the most recent one. The new trade at 30 sets the price for that moment.",
+      "conceptKeys": ["market"]
+    }
+  ]
+}

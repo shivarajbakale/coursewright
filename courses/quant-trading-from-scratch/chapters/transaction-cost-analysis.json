@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You sell 8,000 shares with an arrival price of $75.00 and fill at $74.91 on average. With side = −1, what does the table report against arrival?",
+      "options": [
+        "A gain of 0.12%, because the fill price is lower",
+        "A cost of 0.09%",
+        "A cost of 0.12%",
+        "A cost of 0.05%"
+      ],
+      "answer": 2,
+      "explanation": "Selling below the arrival price is a cost. The fill is 0.09 dollars lower, and −1 × (74.91 − 75.00) / 75.00 = 0.12%, a positive number, which means a cost.",
+      "conceptKeys": ["transaction-cost-analysis"]
+    },
+    {
+      "prompt": "A buy order filled at $50.09. The arrival price was $50.00 with a $0.04 spread, and the market's VWAP was $50.06. What does the split call market impact?",
+      "options": [
+        "$0.03 a share, the gap from the VWAP",
+        "$0.01 a share, what is left after spread and timing",
+        "$0.09 a share, the whole gap from arrival",
+        "$0.06 a share, the market's move"
+      ],
+      "answer": 1,
+      "explanation": "Of the 0.09 dollars, half the spread is 0.02 and the market's move to the VWAP is 0.06. What is left, 0.09 − 0.02 − 0.06 = 0.01, is the estimate of impact.",
+      "conceptKeys": ["transaction-cost-analysis"]
+    },
+    {
+      "prompt": "Why is the timing part of the split only an estimate?",
+      "options": [
+        "Because your own buying pushed the VWAP up, so part of the market's move was your impact",
+        "Because the arrival price changes after the trade",
+        "Because the spread is unknown after the trade",
+        "Because VWAP ignores the shares traded"
+      ],
+      "answer": 0,
+      "explanation": "Unlike a driver at a fuel pump, your trades move the market price. The VWAP includes that push, so the split cannot fully separate the market's own move from yours.",
+      "conceptKeys": ["transaction-cost-analysis"]
+    }
+  ]
+}

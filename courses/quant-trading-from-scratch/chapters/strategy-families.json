@@ -1,0 +1,35 @@
+{
+  "questions": [
+    {
+      "prompt": "A rule holds a share tomorrow whenever its price rose today. Prices go up one day and down the next, again and again. What happens?",
+      "options": [
+        "It gains, because it always holds after a rise",
+        "It earns nothing, because it never holds",
+        "It loses, because each day after a rise is a fall",
+        "It gains exactly as much as buy and hold"
+      ],
+      "answer": 2,
+      "explanation": "This is a trend rule. On the back-and-forth path it held 3 times, each time on a day that fell 3.85%, and lost 11.1%.",
+      "conceptKeys": ["strategy-families"]
+    },
+    {
+      "prompt": "A price has climbed far above its recent average. Which family bets that it will move back toward that average?",
+      "options": ["Trend", "Mean reversion", "Carry", "Buy and hold"],
+      "answer": 1,
+      "explanation": "Mean reversion bets that a price far from its recent average will return toward it. A trend strategy would bet the climb continues.",
+      "conceptKeys": ["strategy-families"]
+    },
+    {
+      "prompt": "You borrow at 1% a year in one currency and earn 5% a year in another. When does this carry trade lose money?",
+      "options": [
+        "When the currency you hold falls by more than the interest you earn above what you pay",
+        "When the exchange rate stays the same",
+        "Whenever prices stay calm",
+        "Never, because 5% is more than 1%"
+      ],
+      "answer": 0,
+      "explanation": "Carry earns 4 a year only while the exchange rate holds. A 6% fall turned the 105 into 98.7, below the 101 owed.",
+      "conceptKeys": ["strategy-families"]
+    }
+  ]
+}

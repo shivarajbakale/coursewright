@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "A call with strike $100 costs $10.45 and the put with the same strike and expiry costs $5.57. What does the straddle cost?",
+      "options": [
+        "$4.88",
+        "$10.45",
+        "$16.02",
+        "$5.57"
+      ],
+      "answer": 2,
+      "explanation": "A straddle is a call and a put with the same strike and expiry, so it costs 10.45 + 5.57 = $16.02.",
+      "conceptKeys": [
+        "volatility-risk-premium"
+      ]
+    },
+    {
+      "prompt": "You sell a straddle priced at 20% implied volatility and delta hedge it daily. The stock moves at 16%. What happens on average in the simulation?",
+      "options": [
+        "You lose $15.63",
+        "You break even",
+        "You earn $16.02",
+        "You earn $3.09"
+      ],
+      "answer": 3,
+      "explanation": "The stock moved less than the 20% in the price, so the hedged seller earned $3.09 on average. That gain is the volatility risk premium at work.",
+      "conceptKeys": [
+        "volatility-risk-premium"
+      ]
+    },
+    {
+      "prompt": "Nine quiet years earn $27.81 and one crash year loses $15.63. Why does this make sizing so important for a volatility seller?",
+      "options": [
+        "Because one crash year erases about five quiet years, and too much leverage can wipe out the account first",
+        "Because quiet years lose money",
+        "Because the premium is paid only in crash years",
+        "Because realised volatility is always above implied volatility"
+      ],
+      "answer": 0,
+      "explanation": "15.63 / 3.09 is about 5, so one crash wipes out five quiet years. A seller with too much leverage may not survive the crash to collect the later years.",
+      "conceptKeys": [
+        "volatility-risk-premium"
+      ]
+    }
+  ]
+}

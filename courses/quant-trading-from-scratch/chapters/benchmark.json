@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A strategy trading one share gained 15% over a year after costs. Over the same year, buying and holding that share gained 20%. What do you conclude about return?",
+      "options": [
+        "The strategy did well, because 15% is a large gain",
+        "The strategy and buy and hold did equally well",
+        "The strategy should be compared with a different share",
+        "The strategy fell 5 percentage points short of doing nothing"
+      ],
+      "answer": 3,
+      "explanation": "The benchmark is buy and hold on the same share over the same dates. 15% against 20% is 5 points behind it.",
+      "conceptKeys": ["benchmark"]
+    },
+    {
+      "prompt": "Each round trip costs 0.05% in spread. Why does this matter more for a strategy than for buy and hold?",
+      "options": [
+        "Buy and hold pays a higher spread on each trade",
+        "The strategy makes many round trips, and each one pays the spread again",
+        "Spreads only apply to strategies, not to holding",
+        "The spread is paid once a year by everyone"
+      ],
+      "answer": 1,
+      "explanation": "Buy and hold buys once and sells once. A strategy with 40 round trips pays the spread 40 times, which cost 1.98% in the example.",
+      "conceptKeys": ["benchmark"]
+    },
+    {
+      "prompt": "You test a strategy from 2015 to 2020 and measure buy and hold from 2010 to 2020. What is wrong?",
+      "options": [
+        "The dates differ, so the comparison does not measure the same market conditions",
+        "Nothing, longer benchmarks are more accurate",
+        "Buy and hold must always be measured over one year",
+        "The strategy should be tested over more dates than the benchmark"
+      ],
+      "answer": 0,
+      "explanation": "A benchmark must cover the same dates as the strategy. Different dates include different rises and falls, so the gap would not show the strategy's own skill.",
+      "conceptKeys": ["benchmark"]
+    }
+  ]
+}

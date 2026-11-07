@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Your target for AAA is 300 shares. You hold 100, and an accepted buy order for 50 has not filled yet. What order does the system send?",
+      "options": [
+        "Buy 200",
+        "Buy 300",
+        "Buy 150",
+        "Buy 250"
+      ],
+      "answer": 2,
+      "explanation": "Target minus holdings minus open orders: 300 − 100 − 50 = 150. Forgetting the open order gives 200 and buys 50 shares too many.",
+      "conceptKeys": ["order-management"]
+    },
+    {
+      "prompt": "The program crashes right after sending its orders and starts again. Why does the second run send nothing?",
+      "options": [
+        "The broker deletes duplicate orders without telling you",
+        "The orders from the first run are now open orders, so the difference is 0",
+        "The targets are set back to 0 after a crash",
+        "The second run only sends sells"
+      ],
+      "answer": 1,
+      "explanation": "Open orders are part of the subtraction. Once the first run's orders are waiting, target minus holdings minus open orders is 0 for each share, so the repeat has no effect.",
+      "conceptKeys": ["order-management"]
+    },
+    {
+      "prompt": "You hold 50 shares of BBB and the target is 0, with no open orders. What does the system send?",
+      "options": [
+        "Sell 50",
+        "Buy 50",
+        "Nothing, because the target is 0",
+        "Sell 100"
+      ],
+      "answer": 0,
+      "explanation": "0 − 50 − 0 = −50. A negative difference is a sell, so the system sells the 50 shares it holds.",
+      "conceptKeys": ["order-management"]
+    }
+  ]
+}

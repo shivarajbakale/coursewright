@@ -1,0 +1,30 @@
+{
+  "questions": [
+    {
+      "prompt": "A share gains 20% one day and loses 20% the next. What is the combined return over the two days?",
+      "options": ["0%", "−4%", "+4%", "−2%"],
+      "answer": 1,
+      "explanation": "The growth factors are 1.20 and 0.80, and 1.20 × 0.80 = 0.96. A growth factor of 0.96 is a loss of 4%.",
+      "conceptKeys": ["compounding"]
+    },
+    {
+      "prompt": "An account loses 25%. What gain does it need to get back to where it started?",
+      "options": ["25%", "50%", "20%", "33.3%"],
+      "answer": 3,
+      "explanation": "After the loss, the account holds 0.75 of its money. It needs a growth factor of 1 / 0.75 = 1.333, a gain of 33.3%.",
+      "conceptKeys": ["compounding"]
+    },
+    {
+      "prompt": "What does a growth factor of 0.99 over one period mean?",
+      "options": [
+        "A loss of 1%, because the money was multiplied by less than 1",
+        "A gain of 99%",
+        "A gain of 0.99%",
+        "A loss of 99%"
+      ],
+      "answer": 0,
+      "explanation": "A growth factor is 1 plus the return, so the return is 0.99 − 1 = −0.01. Any growth factor below 1 is a loss.",
+      "conceptKeys": ["compounding"]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You short 10 shares at 103 and later buy them back at 99. What is your gain or loss?",
+      "options": [
+        "A loss of 40, because the price fell",
+        "A gain of 40",
+        "A gain of 4",
+        "A gain of 1,030, the cash from the sale"
+      ],
+      "answer": 1,
+      "explanation": "The sale brings in 10 × 103 = 1030 and buying back costs 10 × 99 = 990, so you keep 40. The same comes from −10 × (99 − 103) = 40.",
+      "conceptKeys": ["short-selling"]
+    },
+    {
+      "prompt": "Right after you sell 10 borrowed shares at 103, your cash is 1,030 higher. Why is that 1,030 not a gain?",
+      "options": [
+        "Because the lender keeps the cash",
+        "Because the sale has not settled yet",
+        "Because the cash goes back to the market at the close",
+        "Because you still owe 10 shares, and buying them back will cost money"
+      ],
+      "answer": 3,
+      "explanation": "Your position is −10: you owe 10 shares to the lender. The gain is known only when you buy them back, and it is the sale price minus the buy-back price, times 10.",
+      "conceptKeys": ["short-selling"]
+    },
+    {
+      "prompt": "Why can a short position lose more than a long position of the same size?",
+      "options": [
+        "Because a price can rise without limit, but it cannot fall below 0",
+        "Because the lender charges a fee equal to the share price",
+        "Because a short position earns nothing when the price falls",
+        "Because short positions are held for longer"
+      ],
+      "answer": 0,
+      "explanation": "Buying 10 shares at 103 can lose at most 10 × 103 = 1030. A short at 103 loses 10 for every 1 the price rises, and the price has no ceiling.",
+      "conceptKeys": ["short-selling"]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A rule gains 0.03% on the average trade before costs. Each round trip costs 0.04% in spread. What is true?",
+      "options": [
+        "It has an edge of 0.03% a trade",
+        "It has an edge of 0.07% a trade",
+        "It breaks even, because the spread is paid only once",
+        "It loses 0.01% on the average trade, so it has no edge after costs"
+      ],
+      "answer": 3,
+      "explanation": "An edge must survive costs: 0.03% - 0.04% = -0.01% a trade. The rule loses money, however often it wins.",
+      "conceptKeys": ["trading-edge"]
+    },
+    {
+      "prompt": "Why does a casino earn a reliable profit from an advantage of only 2.70% a bet?",
+      "options": [
+        "Because it takes a huge number of bets, so the small tilt adds up",
+        "Because it wins every bet",
+        "Because players always bet on 0",
+        "Because the advantage grows with each spin"
+      ],
+      "answer": 0,
+      "explanation": "Any one bet can go either way, but over many bets the casino keeps about 1 of every 37 units bet on a single number.",
+      "conceptKeys": ["trading-edge"]
+    },
+    {
+      "prompt": "Shares must offer a higher return than safe government bills, or nobody would hold them. Which source of edge is this?",
+      "options": [
+        "Behaviour, because people panic",
+        "A risk premium, because holders are paid for carrying the chance of a fall",
+        "A market rule, because funds must buy at set times",
+        "Costs, because shares pay the spread"
+      ],
+      "answer": 1,
+      "explanation": "A risk premium is the extra return earned for holding a risk others do not want. The chance that a share's price falls is that risk.",
+      "conceptKeys": ["trading-edge"]
+    }
+  ]
+}

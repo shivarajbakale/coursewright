@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A rule computes `signal` from each day's close. Which line backtests it without look-ahead bias?",
+      "options": [
+        "`pnl = signal * ret`",
+        "`pnl = signal.shift(1) * ret`",
+        "`pnl = signal.shift(-1) * ret`",
+        "`pnl = signal * ret.shift(1)` with no shift on the signal"
+      ],
+      "answer": 1,
+      "explanation": "`shift(1)` moves each signal down one row, so a day's return is earned by the signal from the day before. `shift(-1)` would pull tomorrow's signal into today, which reads even further ahead.",
+      "conceptKeys": ["look-ahead-bias"]
+    },
+    {
+      "prompt": "In the example, the cheat version made 5.10% and the honest version lost 1.00%. What explains the 6.10 percentage point gap?",
+      "options": [
+        "The honest version pays more transaction costs",
+        "The cheat version holds the share longer",
+        "The honest version starts a day later",
+        "The cheat version knew each day's result before it chose to hold the share"
+      ],
+      "answer": 3,
+      "explanation": "Multiplying `up` by the same day's return holds the share on exactly the four rising days. Only a rule that saw the close in advance could do that.",
+      "conceptKeys": ["look-ahead-bias"]
+    },
+    {
+      "prompt": "A rule divides each day's return by the average daily return of the full 10-year history. Why is that look-ahead bias?",
+      "options": [
+        "On each day, the average uses returns from later years that were not known yet",
+        "Dividing by an average always removes the signal",
+        "The average must be computed with log returns",
+        "It is not a problem, because the average is a single number"
+      ],
+      "answer": 0,
+      "explanation": "On a day in year 2, the full-history average already contains years 3 to 10. A fair rule may only use an average of the days before the decision.",
+      "conceptKeys": ["look-ahead-bias"]
+    }
+  ]
+}

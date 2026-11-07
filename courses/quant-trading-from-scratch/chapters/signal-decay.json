@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A signal's IC is 0.130 for the next day's return and 0.092 for the return two days after. What share of the edge do you keep if you always trade one day late?",
+      "options": [
+        "0.092 / 0.130 = 0.71, so about 71%",
+        "0.130 - 0.092 = 0.038, so about 4%",
+        "100%, because the IC is still positive",
+        "50%, because each day halves the IC"
+      ],
+      "answer": 0,
+      "explanation": "Trading one day late means your position earns the return two days after the signal. Its IC is 0.092, which is 0.71 of the 0.130 you would get by trading at once.",
+      "conceptKeys": ["signal-decay"]
+    },
+    {
+      "prompt": "Why does the information coefficient use a rank correlation instead of correlating the raw returns?",
+      "options": [
+        "Because ranks make the IC larger",
+        "Because raw returns cannot be correlated with a signal",
+        "Because ranks remove the need for a long history",
+        "Because ranks stop one extreme day from dominating the result"
+      ],
+      "answer": 3,
+      "explanation": "A rank correlation replaces each value by its position in order, so a very large return counts only as the highest rank, not by its size.",
+      "conceptKeys": ["signal-decay"]
+    },
+    {
+      "prompt": "Signal A's IC falls close to zero within 3 days. Signal B's IC stays near its first value for 20 days. Both have the same IC on day 1. Which is cheaper to trade, and why?",
+      "options": [
+        "A, because its edge is collected sooner",
+        "B, because it can be traded less often, so it has lower turnover and pays less in transaction costs",
+        "Both cost the same, because their day-1 IC is the same",
+        "A, because a faster signal needs smaller positions"
+      ],
+      "answer": 1,
+      "explanation": "A signal that decays fast must be traded often to catch its edge, and each trade pays costs. A slow signal keeps its edge between trades, so you trade it less.",
+      "conceptKeys": ["signal-decay"]
+    }
+  ]
+}

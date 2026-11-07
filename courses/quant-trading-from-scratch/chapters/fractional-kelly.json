@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You estimate the coin lands heads 60% of the time and stake the Kelly fraction of 20%. The true chance is 55%. What happens to your money?",
+      "options": [
+        "It grows at the best possible rate for the true coin",
+        "It grows, but at 75% of the best rate",
+        "It shrinks slowly, because 20% is twice the true Kelly stake of 10%",
+        "It is lost on the first tail"
+      ],
+      "answer": 2,
+      "explanation": "The true Kelly stake is 0.55 − 0.45 = 0.1. A 20% stake is twice that, and at the true chance it grows at −0.00014 per round, a slow loss.",
+      "conceptKeys": ["fractional-kelly"]
+    },
+    {
+      "prompt": "With an exact edge, how much of the best growth does half Kelly keep, using 2c − c²?",
+      "options": [
+        "50%",
+        "75%",
+        "25%",
+        "100%"
+      ],
+      "answer": 1,
+      "explanation": "With c = 0.5, 2 × 0.5 − 0.5² = 1 − 0.25 = 0.75. You keep 75% of the growth while the swings are about half as large.",
+      "conceptKeys": ["fractional-kelly"]
+    },
+    {
+      "prompt": "In 10,000 simulated 5-year backtests of a strategy whose true Kelly fraction is 1.25, 30% of the estimates were above 2.5. Why does this argue for a fraction of Kelly?",
+      "options": [
+        "Because staking more than twice the true Kelly fraction gives zero growth or a loss, while staking less only grows more slowly",
+        "Because a Kelly fraction above 1 is always a mistake in the formula",
+        "Because 5 years of data always overstate the edge",
+        "Because half of an estimate is always the true value"
+      ],
+      "answer": 0,
+      "explanation": "The two errors cost different amounts. Too large a stake can stop growth entirely, so cutting the estimate protects you when it is too high, at the price of a little growth when it is right.",
+      "conceptKeys": ["fractional-kelly"]
+    }
+  ]
+}

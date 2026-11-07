@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Two shares both go from 100 to 102 over 5 days. Share X has daily volatility 0.82% and share Y has 5.8%. What does this tell you?",
+      "options": [
+        "Y earned more over the 5 days",
+        "Y's daily returns swung far more widely, even though both ended in the same place",
+        "X is certain to rise again next week",
+        "Y will fall below 100 next week"
+      ],
+      "answer": 1,
+      "explanation": "Volatility measures how far a typical day's return lands from the average day. Both ended at 102, but Y's days swung about 7 times as widely.",
+      "conceptKeys": ["volatility"]
+    },
+    {
+      "prompt": "A share rises 5% one day, then rises 5% again the next. How does volatility treat these big rises?",
+      "options": [
+        "It ignores rises and counts only falls",
+        "It counts them as negative risk, which lowers volatility",
+        "It counts a big rise as risk, the same as a big fall of the same size",
+        "It counts them only if the share later falls"
+      ],
+      "answer": 2,
+      "explanation": "Volatility is a standard deviation, and squaring a distance from the mean makes a rise and a fall of the same size count equally.",
+      "conceptKeys": ["volatility"]
+    },
+    {
+      "prompt": "Why does the jumpy share need a higher mean daily return than the calm share to end at the same price?",
+      "options": [
+        "Because a fall needs a bigger rise to recover, so large swings cost growth",
+        "Because pandas divides by one less than the count",
+        "Because its first price was lower",
+        "Because volatility is measured in percentage points"
+      ],
+      "answer": 0,
+      "explanation": "Returns combine by multiplying. After a 5.77% fall, a rise of more than 5.77% is needed to get back, so big swings pull growth down.",
+      "conceptKeys": ["volatility"]
+    }
+  ]
+}

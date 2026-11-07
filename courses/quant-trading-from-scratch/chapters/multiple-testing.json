@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A colleague shows a rule with a one-year Sharpe ratio of 2.5. Which fact matters most for judging it?",
+      "options": [
+        "Which programming language ran the backtest",
+        "Whether the Sharpe ratio was annualised with 252 trading days",
+        "Whether the rule is long or short more often",
+        "How many variants were tried before this one was kept"
+      ],
+      "answer": 3,
+      "explanation": "The best of 100 no-edge rules has a middle best score of 2.49. A 2.5 from 100 tries is what luck alone produces; from 1 try it would be strong.",
+      "conceptKeys": ["multiple-testing"]
+    },
+    {
+      "prompt": "In the example, the best of 100 random rules scored 2.63 in year 1. What did it score in year 2, and why?",
+      "options": [
+        "-0.90, because its year 1 score was luck that did not repeat",
+        "2.63 again, because a good rule keeps its score",
+        "About 5, because Sharpe ratios add up over years",
+        "0 exactly, because a random rule always scores 0"
+      ],
+      "answer": 0,
+      "explanation": "Every rule was a coin flip with a true Sharpe ratio of 0. Year 1 picked the luckiest one, and in year 2 it scored -0.90.",
+      "conceptKeys": ["multiple-testing"]
+    },
+    {
+      "prompt": "You try 20 moving-average lengths and 5 holding periods, every combination. How many tries is that?",
+      "options": [
+        "25, because there are 20 + 5 values",
+        "100, because each length is tried with each holding period",
+        "20, because only the lengths are parameters",
+        "1, because it is one rule"
+      ],
+      "answer": 1,
+      "explanation": "Each combination is a separate backtest: 20 × 5 = 100 tries. Every parameter you add multiplies the number of tries.",
+      "conceptKeys": ["multiple-testing"]
+    }
+  ]
+}

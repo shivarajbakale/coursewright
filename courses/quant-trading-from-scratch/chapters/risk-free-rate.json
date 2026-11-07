@@ -1,0 +1,30 @@
+{
+  "questions": [
+    {
+      "prompt": "A strategy returned 6% in a year when short government bills paid 5%. What is its excess return?",
+      "options": ["11%", "6%", "1%", "-1%"],
+      "answer": 2,
+      "explanation": "Excess return is the return minus the risk-free rate: 6% - 5% = 1%. Only that 1% was the reward for taking risk.",
+      "conceptKeys": ["risk-free-rate"]
+    },
+    {
+      "prompt": "The risk-free rate is 3% a year. What daily rate do you subtract from daily returns, using 252 trading days?",
+      "options": ["About 0.0119% a day", "3% a day", "About 0.19% a day", "About 0.0082% a day"],
+      "answer": 0,
+      "explanation": "A rate scales with the number of days, so the daily rate is 3% / 252 = 0.0119%. Using 365 calendar days would give 0.0082%, which does not match trading-day returns.",
+      "conceptKeys": ["risk-free-rate"]
+    },
+    {
+      "prompt": "Why is a short government bill called nearly risk-free, rather than a long loan to a company?",
+      "options": [
+        "Its interest rate never changes",
+        "The government is very unlikely to fail to pay, and the short life means rate changes barely move its value",
+        "It always pays more than shares",
+        "It is protected against all rises in prices"
+      ],
+      "answer": 1,
+      "explanation": "Both reasons make it nearly safe. The rate itself does change over time, from close to 0% to above 5% in the US.",
+      "conceptKeys": ["risk-free-rate"]
+    }
+  ]
+}

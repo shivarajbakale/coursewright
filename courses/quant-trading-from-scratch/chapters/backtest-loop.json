@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "In the backtest loop, why does the fill happen before the books are marked at the close?",
+      "options": [
+        "Because marking first would make the signal wrong",
+        "Because the fill changes the shares, and the close must value the shares you hold after it",
+        "Because fills can only happen at the close",
+        "Because marking to market is skipped on days with a fill"
+      ],
+      "answer": 1,
+      "explanation": "The order trades at the open, so by the close you hold the new shares. Marking after the fill values those shares, as on 2025-03-07: 48 × 107 = 5136 in holdings.",
+      "conceptKeys": ["backtest-loop"]
+    },
+    {
+      "prompt": "After the close of 107, equity is 10,120 and the signal is unchanged. Without the rule that resizes only on a signal change, what would the loop do?",
+      "options": [
+        "Buy 48 more shares",
+        "Nothing, because the signal is still +1",
+        "Sell 1 share, because 0.5 × 10,120 / 107 rounds down to 47",
+        "Sell all 48 shares"
+      ],
+      "answer": 2,
+      "explanation": "The target would be 0.5 × 10,120 / 107 = 47.29, so 47 shares against 48 held. The loop would trade 1 share for no reason, and would do so again whenever equity moves.",
+      "conceptKeys": ["backtest-loop"]
+    },
+    {
+      "prompt": "On the same 500 bars, the loop returns −9.54% and the vectorised backtest −8.32%. What explains the gap?",
+      "options": [
+        "The vectorised version trades at the close, holds fractions of shares and resizes on every bar",
+        "The vectorised version uses a different signal",
+        "The loop counts each gain twice",
+        "The vectorised version includes buy and hold"
+      ],
+      "answer": 0,
+      "explanation": "Both use the same trend signal. The loop fills whole shares at the next open and resizes only on a signal change, so it trades differently from the column formula.",
+      "conceptKeys": ["backtest-loop"]
+    }
+  ]
+}

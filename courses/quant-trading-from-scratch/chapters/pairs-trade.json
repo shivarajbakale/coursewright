@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "The spread's z-score is -2.4 and you hold no position. What does the rule do?",
+      "options": [
+        "Short 1 share of A and buy h shares of B",
+        "Nothing, because only a z-score above 2 opens a trade",
+        "Exit both legs",
+        "Buy 1 share of A and short h shares of B"
+      ],
+      "answer": 3,
+      "explanation": "A z-score below -2 means the spread A - h × B is cheap. You buy the spread: long the A leg and short h shares of the B leg, and wait for it to rise back toward its mean.",
+      "conceptKeys": ["pairs-trade"]
+    },
+    {
+      "prompt": "In the trade on day 296, both A and B fell in price. Why did the trade still make 0.93 per spread unit?",
+      "options": [
+        "Because the short A leg gained more (1.59) than the long B leg lost (0.66)",
+        "Because a pairs trade cannot lose money",
+        "Because the hedge ratio was fitted on the same days",
+        "Because B's price rose during the trade"
+      ],
+      "answer": 0,
+      "explanation": "The trade bets on the gap, not on the direction of the market. A fell by more than 1.362 times B's fall, so 1.59 - 0.66 = 0.93.",
+      "conceptKeys": ["pairs-trade"]
+    },
+    {
+      "prompt": "Why does the backtest fit the hedge ratio on the first 250 days and trade only the last 250?",
+      "options": [
+        "Because the z-score needs 250 days of data",
+        "Because a ratio fitted on every day would use future prices, which is look-ahead bias",
+        "Because cointegration only holds in the second half",
+        "Because the half-life is 250 days"
+      ],
+      "answer": 1,
+      "explanation": "A hedge ratio fitted on all 500 days knows prices the trader could not have seen on day 250. Fitting on earlier days only keeps each decision honest.",
+      "conceptKeys": ["pairs-trade"]
+    }
+  ]
+}

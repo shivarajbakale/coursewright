@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A TWAP schedule must buy 9,000 shares from 10:00 to 16:00 in slices every 30 minutes. How many shares does each child order buy?",
+      "options": [
+        "1,500 shares",
+        "750 shares",
+        "900 shares",
+        "600 shares"
+      ],
+      "answer": 1,
+      "explanation": "Six hours hold 12 slices of 30 minutes. Equal slices give 9,000 / 12 = 750 shares each.",
+      "conceptKeys": ["twap"]
+    },
+    {
+      "prompt": "Splitting 2,000 shares into 4 orders of 500 cut the average cost from $0.0265 to $0.014 above the mid price. Which assumption does that saving depend on?",
+      "options": [
+        "That the commission is lower on small orders",
+        "That the bid-ask spread is zero",
+        "That every child order fills at the mid price",
+        "That the book refills to the same shape before each slice"
+      ],
+      "answer": 3,
+      "explanation": "Each 500-share slice paid $100.024 only because 300 shares waited again at $100.02 and 200 at $100.03. If the book does not refill, or the price rises between slices, the saving shrinks or disappears.",
+      "conceptKeys": ["twap"]
+    },
+    {
+      "prompt": "Why do real schedules move each child order's start time by a random number of seconds?",
+      "options": [
+        "So other traders find it harder to spot the regular pattern and buy ahead of it",
+        "So the total number of shares bought changes from day to day",
+        "So each child order pays a smaller commission",
+        "So the parent order finishes before the window ends"
+      ],
+      "answer": 0,
+      "explanation": "An order that arrives every 30 minutes on the dot is easy to notice. Other traders who notice it can buy first and sell to you at a higher price.",
+      "conceptKeys": ["twap"]
+    }
+  ]
+}

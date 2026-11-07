@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "At minute 2 a bar and a fill both have time 2. Why does the strategy see the bar first?",
+      "options": [
+        "Bars always come before fills, whatever their times",
+        "The bar was pushed into the queue first, so its tie-breaking counter is smaller",
+        "The fill's time is 3, so it comes later",
+        "heapq returns events in the order of their kind names"
+      ],
+      "answer": 1,
+      "explanation": "Events are ordered by time and then by the counter `seq`. The three bars were pushed before any fill, so at equal time 2 the bar has the smaller counter and comes out first.",
+      "conceptKeys": ["event-driven-backtester"]
+    },
+    {
+      "prompt": "What must change to run the same strategy live?",
+      "options": [
+        "The strategy function `on_bar` must be rewritten for live prices",
+        "The event queue must be sorted by price instead of time",
+        "Nothing: the backtester already sends real orders",
+        "The source of bars and the simulated broker are replaced; `on_bar` stays the same"
+      ],
+      "answer": 3,
+      "explanation": "The strategy only reacts to events. Live, the bars come from the market and the fills from a real broker, but `on_bar` receives the same kind of events in the same time order.",
+      "conceptKeys": ["event-driven-backtester"]
+    },
+    {
+      "prompt": "Why can't the strategy in this loop read a bar from the future?",
+      "options": [
+        "A bar reaches the strategy only when the loop takes it from the queue at its own time",
+        "The bars are shifted by one row before the loop starts",
+        "The simulated broker deletes future bars",
+        "Python's heapq raises an error on future times"
+      ],
+      "answer": 0,
+      "explanation": "The loop hands out the earliest event each time. A bar for minute 2 is still in the queue while the strategy handles minute 1, so the strategy has no way to see it.",
+      "conceptKeys": ["event-driven-backtester"]
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "title": "Build a paper-trading system from its parts",
+  "brief": "You will build a small paper-trading system in Python: the whole path from a stored price to a checked order, a fill and an end-of-day check of your books. Paper trading means running a strategy as if it were live, with a simulated broker and no real money. The point is to see every part of a trading system work together, and to see each guard catch the failure it exists for.\n\nThe system has six parts, one for each lesson in this module:\n\n1. **An event engine** (`engine.py`): a heap-based event queue that hands out bars, orders and fills in timestamp order.\n2. **A market data store** (`store.py`): a pandas table where every price row has the day it belongs to and the moment it was known, plus a symbology table from tickers to stable ids. `as_of(moment)` returns what was known then.\n3. **A fake broker** (`broker.py`): an in-memory class that accepts orders, fills them in parts on later bars, and sends a report event for every change of order state. It can be told to reject an order or to lose a report, so you can test your guards.\n4. **An order management system** (`oms.py`): it takes target positions from the strategy and sends target minus holdings minus open orders. Running it twice in a row sends nothing new.\n5. **Pre-trade risk checks** (`risk.py`): a maximum order value, a price gap from the last price, a maximum exposure and a kill switch. Every order passes through `check` before the broker sees it.\n6. **Reconciliation** (`recon.py`): after each simulated day, compare your positions and cash with the fake broker's, print an alert for each gap and turn on the kill switch.\n\nThe strategy is a moving-average signal on one made-up share: hold 100 shares when the close is above its 5-bar moving average, and none otherwise. Generate the prices yourself with numpy (for example a random walk starting at 50.00 with a fixed seed), so every run is the same.\n\nConstraints: Python 3.10 or later, the standard library plus numpy, pandas and pytest. No network calls, no real broker and no credentials anywhere. Every number the system prints must come from its own records, never typed in by hand.",
+  "starter": [
+    {
+      "path": "engine.py",
+      "note": "Event dataclass ordered by (time, seq), push() and run(handlers) over a heapq queue. Handlers may push new events."
+    },
+    {
+      "path": "store.py",
+      "note": "Price rows with id, day, known_at and close; add_row() never overwrites; as_of(moment) returns the latest known close per day; ticker_on(id, day) reads the symbology table."
+    },
+    {
+      "path": "broker.py",
+      "note": "FakeBroker: submit(order) returns an id and pushes an accepted event; on each bar fills at most a set number of shares per order; cancel() is a request; lose_next_report and reject_next flags for tests."
+    },
+    {
+      "path": "oms.py",
+      "note": "Order dataclass with the allowed-moves table from the broker API lesson; OMS.rebalance(targets) sends only the difference; on_report() updates state, holdings and cash."
+    },
+    {
+      "path": "risk.py",
+      "note": "check(order, last_price, exposure) returns 'passed' or a reason; module-level limits and a kill_switch flag."
+    },
+    {
+      "path": "recon.py",
+      "note": "reconcile(our_positions, our_cash, broker_positions, broker_cash) returns a list of gaps; run_paper.py prints each as ALERT and turns on the kill switch."
+    },
+    {
+      "path": "run_paper.py",
+      "note": "Wires the parts: loads prices into the store, pushes bar events, runs the strategy, OMS, risk and broker, and reconciles at the end of each day. --days N and --lose-report flags."
+    }
+  ],
+  "hints": [
+    "Build and test one part at a time, in the order of the lessons. Each part should run on its own before you wire it to the next.",
+    "Make the fake broker push its reports as events with a time later than the order. Then the strategy, the OMS and the broker all talk through the same queue, as they would live.",
+    "Keep cash and holdings in one place: the OMS's on_report(). If two parts update them, they will disagree, and reconciliation will tell you so.",
+    "Test idempotency by calling rebalance(targets) twice with no events in between and asserting that the second call sends 0 orders.",
+    "For the lost-report test, let the broker apply a fill to its own books but skip pushing the report. Your reconciliation should show a share gap and a cash gap of quantity × fill price."
+  ],
+  "rubric": [
+    {
+      "criterion": "Bars, orders and reports come out of one heap-based queue in time order, ties broken by push order, and the strategy never reads a bar before its time",
+      "chapterKey": "event-driven-backtester"
+    },
+    {
+      "criterion": "The store never overwrites a row, as_of returns the value known at a given moment, and prices are keyed by a stable id with a ticker table",
+      "chapterKey": "market-data-store"
+    },
+    {
+      "criterion": "Every order moves only through allowed states from broker reports; a partial fill, a rejection and a cancel that arrives too late are each handled and tested",
+      "chapterKey": "broker-api"
+    },
+    {
+      "criterion": "Orders sent equal target minus holdings minus open orders, and a repeated rebalance with no new reports sends nothing",
+      "chapterKey": "order-management"
+    },
+    {
+      "criterion": "Every order passes size, price and exposure checks before the broker sees it, a test shows a fat-finger order blocked, and the kill switch blocks all orders",
+      "chapterKey": "pre-trade-risk"
+    },
+    {
+      "criterion": "An end-of-day check compares positions and cash with the broker, prints an alert for each gap, turns on the kill switch, and catches a lost fill report",
+      "chapterKey": "reconciliation"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Event engine and data store",
+      "body": "Write engine.py and store.py. Test that three events pushed out of order come out sorted by time, that two events with the same time come out in push order, and that as_of returns the first close before a correction arrives and the corrected one after.",
+      "checkCmd": "python -m pytest tests/test_engine.py tests/test_store.py -q"
+    },
+    {
+      "title": "Fake broker and order states",
+      "body": "Write broker.py and the Order class in oms.py. Test an order for 100 shares that fills 60 and then 40, an order the broker rejects, and a cancel that arrives after the last fill. A move the table does not allow must raise an error.",
+      "checkCmd": "python -m pytest tests/test_broker.py -q"
+    },
+    {
+      "title": "Order management and risk checks",
+      "body": "Write OMS.rebalance and risk.py, and send every order through check before submit. Test that rebalance sends the difference, that a second call sends nothing, that an order for 15,000 shares at the limits in the lesson is blocked, and that no order passes with the kill switch on.",
+      "checkCmd": "python -m pytest tests/test_oms.py tests/test_risk.py -q"
+    },
+    {
+      "title": "Paper-trade and reconcile",
+      "body": "Write recon.py and run_paper.py. Run 20 simulated days and confirm the last line reports no gaps. Then run again with --lose-report and confirm you see one ALERT for the share gap, one for the cash gap, and the kill switch turned on.",
+      "checkCmd": "python run_paper.py --days 20 && python run_paper.py --days 20 --lose-report | grep -c ALERT"
+    }
+  ]
+}

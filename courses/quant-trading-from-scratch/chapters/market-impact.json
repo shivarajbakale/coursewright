@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "The asks are 300 shares at $100.02, 500 at $100.03, 800 at $100.04 and 1,200 at $100.05. After a market buy of 2,000 shares, what is the new best ask?",
+      "options": [
+        "$100.02, because the book refills at once",
+        "$100.04, the last level the order emptied",
+        "$100.05, with 800 shares left there",
+        "$100.06, the next level above the order"
+      ],
+      "answer": 2,
+      "explanation": "The order takes 300 + 500 + 800 = 1,600 shares from the first three levels and 400 of the 1,200 at $100.05. So $100.05 is the lowest price still on offer, with 800 shares.",
+      "conceptKeys": [
+        "market-impact"
+      ]
+    },
+    {
+      "prompt": "With the square-root law, an order of 10,000 shares moves the price 0.16%. What move does the same rule give for 40,000 shares?",
+      "options": [
+        "0.64%, four times as much",
+        "0.32%, twice as much",
+        "0.16%, the same",
+        "1.28%, eight times as much"
+      ],
+      "answer": 1,
+      "explanation": "Impact grows with the square root of size. Four times the shares gives the square root of 4, which is 2 times the move: 0.32%. The dollar cost is what grows 8 times, because twice the move is paid on four times the shares.",
+      "conceptKeys": [
+        "market-impact"
+      ]
+    },
+    {
+      "prompt": "Why does a real large buy often move the price further than the visible depth of the book predicts?",
+      "options": [
+        "Other traders see the asks empty and raise their prices or buy too",
+        "The exchange charges a higher fee on large orders",
+        "The bid-ask spread is always paid twice on large orders",
+        "Average daily volume falls when you trade"
+      ],
+      "answer": 0,
+      "explanation": "Unlike the tomato stalls, other traders react. When your buying empties the asks, sellers ask more and other buyers join, so the price rises beyond what the snapshot of the book showed.",
+      "conceptKeys": [
+        "market-impact"
+      ]
+    }
+  ]
+}

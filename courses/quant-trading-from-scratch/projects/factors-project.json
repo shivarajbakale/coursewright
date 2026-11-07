@@ -1,0 +1,89 @@
+{
+  "title": "A momentum factor, hedged and combined",
+  "brief": "Build a small Python research tool that turns monthly prices for 100 stocks into a momentum factor portfolio, removes its market risk, and decides how much of it to hold next to the market. It does five jobs.\n\n1. It fits each stock's beta and alpha against the market by linear regression on a rolling window of 36 months.\n2. On every month-end, it computes each stock's 12-1 momentum score: the price 1 month ago divided by the price 12 months ago, minus 1.\n3. It ranks the stocks against each other on that date, cuts them into 5 quantiles, and records the next month's return of the top group minus the bottom group.\n4. It sizes the short leg so that the beta-weighted exposures of the two legs cancel, and compares that result with equal dollars on both sides.\n5. It chooses weights for the market and the hedged factor by mean-variance optimisation, with the expected returns shrunk toward a simple target, and tests those weights walk-forward.\n\nWhy build it: each lesson in this module showed one step on a handful of made-up numbers. A real factor needs all of them at once, on every date, without one step leaking the future into another. The backtest from earlier modules handled one asset at a time; this tool works across a whole universe.\n\nConstraints: Python 3 with pandas, numpy and statsmodels, plus pytest for the tests. Use only the illustrative prices in the starter files; no download is needed. The universe includes stocks that are delisted part-way through, so every date must use the stocks that existed on that date. A score computed at the end of a month may only be traded during the following month.",
+  "starter": [
+    {
+      "path": "data/prices.csv",
+      "note": "Illustrative month-end closes for 100 stocks over 121 months, one column per ticker. A stock that is delisted has empty cells after its last month."
+    },
+    {
+      "path": "data/market.csv",
+      "note": "Illustrative month-end level of a market index over the same 121 months, and a risk-free rate for each month."
+    },
+    {
+      "path": "factors.py",
+      "note": "Empty functions to fill in: rolling_beta(stock_returns, market_returns, window), momentum_score(prices), quantile_returns(scores, next_returns, groups), beta_neutral_short(long_dollars, long_beta, short_beta), shrink(estimate, target, pull), max_sharpe_weights(mu, cov)."
+    },
+    {
+      "path": "test_factors.py",
+      "note": "pytest tests that use the numbers from the lessons, for example beta_neutral_short(10_000, 1.2, 0.8) gives 15,000 and shrink(0.08, 0.04, 0.25) gives 0.07."
+    },
+    {
+      "path": "report.py",
+      "note": "Loads both CSV files, runs every step and prints the factor's monthly returns, its Sharpe ratio hedged and unhedged, its beta, and the walk-forward weights."
+    }
+  ],
+  "hints": [
+    "Start with the tests. Each one names a small input from a lesson and the result you can work out by hand, so make one pass at a time.",
+    "For momentum_score, use prices.shift(1) / prices.shift(12) - 1. A stock 50 twelve months ago and 60 one month ago scores 60 / 50 - 1 = 0.20, whatever its price today.",
+    "For quantile_returns, work one row at a time: drop the stocks with no score on that date, cut the rest with pd.qcut(row, 5, labels=False), and pair each date's groups with the returns of the next month, from returns.shift(-1).",
+    "To check the hedge, regress the factor's monthly returns on the market's. The beta-neutral version should have a beta close to 0; the equal-dollar version will not if the two legs' average betas differ.",
+    "For the weights, estimate the mean returns and the covariance matrix only from months before each test period. Shrink the means toward their average with a pull such as 0.5, then use np.linalg.solve(cov, mu) and divide by the sum."
+  ],
+  "rubric": [
+    {
+      "criterion": "rolling_beta fits the slope and intercept by least squares on each 36-month window and uses only months up to that date",
+      "chapterKey": "linear-regression"
+    },
+    {
+      "criterion": "Each stock's beta and alpha are reported, and a stock with beta 1.49 is shown to move 1.49% on average for each 1% market move",
+      "chapterKey": "beta"
+    },
+    {
+      "criterion": "beta_neutral_short makes the long and short market exposures equal, so the hedged factor's regression beta on the market is close to 0",
+      "chapterKey": "market-neutral"
+    },
+    {
+      "criterion": "Ranks and groups are computed within each date, across only the stocks that existed on that date, including ones delisted later",
+      "chapterKey": "cross-sectional-ranking"
+    },
+    {
+      "criterion": "The factor return each month is the top quantile's average return minus the bottom quantile's, and all 5 group averages are printed",
+      "chapterKey": "factor-portfolio"
+    },
+    {
+      "criterion": "The momentum score skips the latest month, and a score from the end of month t is matched with the return of month t + 1",
+      "chapterKey": "momentum"
+    },
+    {
+      "criterion": "max_sharpe_weights uses expected returns and the covariance matrix, and its weights have a higher Sharpe ratio than equal weights on the same inputs",
+      "chapterKey": "mean-variance"
+    },
+    {
+      "criterion": "Shrunk expected returns give steadier walk-forward weights than the raw estimates, and the report shows both",
+      "chapterKey": "shrinkage"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Betas from regression",
+      "body": "Write rolling_beta. On the six market returns 1.0, -0.5, 2.0, -1.0, 0.5 and -1.5 and the stock returns 1.6, -0.6, 3.1, -1.4, 1.0 and -2.1, in percent, it gives a beta of 1.49 and an alpha of 0.14. Then write beta_neutral_short: a $10,000 long with beta 1.2 against a short with beta 0.8 needs $15,000 short.",
+      "checkCmd": "python -m pytest -q test_factors.py -k \"beta\""
+    },
+    {
+      "title": "Momentum scores and quantile returns",
+      "body": "Write momentum_score and quantile_returns. Check that a stock with no price 12 months ago gets no score, that a delisted stock drops out after its last month, and that each date's groups are paired with the next month's returns, never the same month's.",
+      "checkCmd": "python -m pytest -q test_factors.py -k \"momentum or quantile\""
+    },
+    {
+      "title": "Hedge the factor and measure it",
+      "body": "In report.py, build the factor's monthly returns with equal dollars and with beta-neutral legs. Regress each on the market and print both betas, and both Sharpe ratios after transaction costs from the turnover of each month's groups.",
+      "checkCmd": "python report.py --hedge"
+    },
+    {
+      "title": "Combine with the market, walk-forward",
+      "body": "Write shrink and max_sharpe_weights. For each year after the first 5, estimate means and the covariance matrix from the years before it, choose weights for the market and the hedged factor, and hold them for that year. Print the weights from raw and from shrunk means, year by year.",
+      "checkCmd": "python -m pytest -q test_factors.py -k \"shrink or sharpe\" && python report.py --combine"
+    }
+  ]
+}

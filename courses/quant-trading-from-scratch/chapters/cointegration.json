@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Prices A and B both give large ADF p-values on their own. The spread A - 1.5 × B gives a coint p-value of 0.0026. What do you conclude?",
+      "options": [
+        "Both prices are stationary",
+        "The pair is not cointegrated, because each price wanders",
+        "The pair looks cointegrated: each price wanders, but the spread is stationary",
+        "Price A causes price B to move"
+      ],
+      "answer": 2,
+      "explanation": "Cointegration means exactly this: each price wanders on its own, but a combination of them returns to its mean. A coint p-value below 0.05 is evidence for that.",
+      "conceptKeys": ["cointegration"]
+    },
+    {
+      "prompt": "Why does coint report a larger p-value (0.0026) than a plain adfuller on the same fitted spread (0.0005)?",
+      "options": [
+        "coint uses fewer days of data",
+        "The hedge ratio was chosen to make the spread look calm, so coint uses stricter thresholds to make up for it",
+        "adfuller is wrong for spreads",
+        "coint tests each price separately"
+      ],
+      "answer": 1,
+      "explanation": "Fitting the hedge ratio on the same data makes the spread look as stable as possible. The Engle-Granger test allows for that choice, so its p-value is the honest one.",
+      "conceptKeys": ["cointegration"]
+    },
+    {
+      "prompt": "The hedge ratio of a pair is 1.5. What does that mean?",
+      "options": [
+        "You pair 1.5 shares of B with each share of A to form the spread",
+        "Price A is always 1.5 dollars above price B",
+        "The pair's correlation is 1.5",
+        "The spread closes 1.5 times per month"
+      ],
+      "answer": 0,
+      "explanation": "The hedge ratio h is the slope of the best straight line through the prices. The spread is A - h × B, so h is the number of B shares paired with one share of A.",
+      "conceptKeys": ["cointegration"]
+    }
+  ]
+}

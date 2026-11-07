@@ -1,0 +1,35 @@
+{
+  "questions": [
+    {
+      "prompt": "Buyers wait at 50.10, 50.08 and 50.05. Sellers wait at 50.14, 50.15 and 50.20. You want to sell one share now. What price do you get?",
+      "options": ["50.14", "50.05", "50.10", "50.20"],
+      "answer": 2,
+      "explanation": "Selling now means meeting a waiting buyer. The best bid, 50.10, is the most any waiting buyer will pay.",
+      "conceptKeys": ["quote"]
+    },
+    {
+      "prompt": "Why is the best bid always below the best ask for the prices still waiting?",
+      "options": [
+        "Because the exchange sets the gap in advance",
+        "Because a buyer at or above the best ask matches that seller at once, so the trade happens and neither price waits",
+        "Because buyers are not allowed to offer more than sellers",
+        "Because the best ask is the last trade price plus a fee"
+      ],
+      "answer": 1,
+      "explanation": "Whenever a buyer will pay at least what a seller asks, they trade. So the prices left waiting always have the buyers below the sellers.",
+      "conceptKeys": ["quote"]
+    },
+    {
+      "prompt": "The quote is best bid 99.98 for 300 shares and best ask 100.02 for 400 shares. The seller at 100.02 leaves without trading, and the next seller waits at 100.03. What is the new quote?",
+      "options": [
+        "Best bid 99.98, best ask 100.02",
+        "Best bid 100.02, best ask 100.03",
+        "Best bid 99.97, best ask 100.03",
+        "Best bid 99.98, best ask 100.03"
+      ],
+      "answer": 3,
+      "explanation": "The buyers did not change, so the best bid stays 99.98. The lowest seller still waiting is now at 100.03, so that is the new best ask.",
+      "conceptKeys": ["quote"]
+    }
+  ]
+}

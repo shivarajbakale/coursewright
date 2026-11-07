@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "In stock index options, how does implied volatility usually change from low strikes to high strikes?",
+      "options": [
+        "It is the same at every strike",
+        "It rises from low strikes to high strikes",
+        "It is highest at the strike nearest the index",
+        "It falls from low strikes to high strikes"
+      ],
+      "answer": 3,
+      "explanation": "Stock index options show a skew: in the example, implied volatility falls from 27% at strike 80 to 17% at strike 120.",
+      "conceptKeys": [
+        "volatility-smile"
+      ]
+    },
+    {
+      "prompt": "The put with strike $80 costs $1.91 at its 27% implied volatility, but $0.69 at a flat 20%. What does this gap reflect?",
+      "options": [
+        "An error in the Black-Scholes formula",
+        "The market charging for crash risk and fat tails that a flat volatility leaves out",
+        "The interest rate being higher for low strikes",
+        "The put being exercised early"
+      ],
+      "answer": 1,
+      "explanation": "Large falls happen more often than a bell predicts, and buyers pay for protection. So the market prices the $80 put at about 2.77 times its flat-volatility price.",
+      "conceptKeys": [
+        "volatility-smile"
+      ]
+    },
+    {
+      "prompt": "A normal distribution puts a daily move beyond 5 standard deviations at about once in 6,900 years. In 1987, the S&P 500 fell by about 20 standard deviations in one day. What does this show?",
+      "options": [
+        "Real returns have fat tails: extreme days happen far more often than the normal distribution predicts",
+        "The 1987 data must be wrong",
+        "The normal distribution fits daily returns well",
+        "Volatility was zero before 1987"
+      ],
+      "answer": 0,
+      "explanation": "A move that size should almost never happen under a bell curve, yet it did. Real returns have more extreme days than the normal distribution allows.",
+      "conceptKeys": [
+        "volatility-smile"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "On 1 July 2024, what sales growth does the point-in-time feature give, and why?",
+      "options": [
+        "14.58%, because June sales of 110 and revised March sales of 96 are the true figures",
+        "5.26%, because the June figure is not published until 25 July",
+        "10.00%, because June sales of 110 divided by March sales of 100 is 1.10",
+        "1.05%, because the revised March figure of 96 replaces 100"
+      ],
+      "answer": 1,
+      "explanation": "On 1 July only the December (95) and March (100) figures are public, so growth is 100 / 95 - 1 = 5.26%. The June figure and the revision come later.",
+      "conceptKeys": ["point-in-time-features"]
+    },
+    {
+      "prompt": "A data file holds each quarter's final figure, dated by the quarter's last day. Why does shifting your signal by one bar not remove the look-ahead in it?",
+      "options": [
+        "Because a shift only works on daily bars, not quarterly reports",
+        "Because the file has no publication dates, so the shift cannot be computed",
+        "Because the shift moves the signal, but the file's dates are already up to 25 days too early and its values include later revisions",
+        "Because revisions always make the figures larger, and a shift cannot undo that"
+      ],
+      "answer": 2,
+      "explanation": "The file says June sales were known from 30 June and March sales were 96 all along. Both were learned later, so a one-bar shift is far too short and cannot undo a revision.",
+      "conceptKeys": ["point-in-time-features"]
+    },
+    {
+      "prompt": "A quarter ends on 30 June and its report is published on 25 July. What is the publication lag?",
+      "options": [
+        "25 days",
+        "0 days, because the sales happened by 30 June",
+        "1 quarter",
+        "It depends on when you download the data"
+      ],
+      "answer": 0,
+      "explanation": "The publication lag is the time from the end of the period the number describes (30 June) to the day it becomes public (25 July): 25 days.",
+      "conceptKeys": ["point-in-time-features"]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "A stock at $100 will be $130 or $70 in one year. A call with strike $100 pays $30 or $0. How many shares copy the call?",
+      "options": [
+        "0.3",
+        "1",
+        "0.5",
+        "0.6"
+      ],
+      "answer": 2,
+      "explanation": "The call's payoff range is 30 − 0 = 30 and the stock's range is 130 − 70 = 60. So 30 / 60 = 0.5 shares move by the same amount as the call.",
+      "conceptKeys": [
+        "binomial-pricing"
+      ]
+    },
+    {
+      "prompt": "Why did the replication price of $11.95 not need the chance that the stock goes up?",
+      "options": [
+        "Because the chance of up was assumed to be 50%",
+        "Because the mix of shares and loan pays the same as the call in both outcomes",
+        "Because the risk-free rate fixes the chance of up",
+        "Because the call always pays something"
+      ],
+      "answer": 1,
+      "explanation": "The copy pays $20 if the stock rises and $0 if it falls, exactly like the call. So the call must cost what the copy costs, whatever the chance.",
+      "conceptKeys": [
+        "binomial-pricing"
+      ]
+    },
+    {
+      "prompt": "What is the risk-neutral probability q in the one-step example?",
+      "options": [
+        "The weight that makes the expected stock price grow at the risk-free rate",
+        "The forecast chance that the stock rises",
+        "The share of investors who expect the stock to rise",
+        "The chance that the call expires worthless"
+      ],
+      "answer": 0,
+      "explanation": "q solves q × 120 + (1 − q) × 80 = 105.13, so the expected stock price grows at 5%. It is a pricing weight, not a forecast.",
+      "conceptKeys": [
+        "binomial-pricing"
+      ]
+    }
+  ]
+}

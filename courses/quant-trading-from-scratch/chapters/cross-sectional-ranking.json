@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You add 3 to every stock's measure on one date. What happens to their cross-sectional ranks?",
+      "options": [
+        "Every rank goes up by 3",
+        "The ranks do not change, because the order of the stocks is the same",
+        "The stock with the highest value drops to last place",
+        "All the ranks become equal"
+      ],
+      "answer": 1,
+      "explanation": "Ranking compares the stocks with each other. A move that shifts every stock by the same amount keeps their order, so the ranks and the views stay the same.",
+      "conceptKeys": ["cross-sectional-ranking"]
+    },
+    {
+      "prompt": "Five stocks have ranks 1, 2, 3, 4 and 5 on one date. What are their centred views?",
+      "options": [
+        "0, 1, 2, 3 and 4",
+        "-1, -0.5, 0, 0.5 and 1",
+        "1, 2, 3, 4 and 5 divided by 15",
+        "-2, -1, 0, 1 and 2"
+      ],
+      "answer": 3,
+      "explanation": "The mean rank is (1 + 2 + 3 + 4 + 5) / 5 = 3. Subtracting 3 from each rank gives -2, -1, 0, 1 and 2, which add to 0.",
+      "conceptKeys": ["cross-sectional-ranking"]
+    },
+    {
+      "prompt": "In pandas, why does the lesson use `rank(axis=1)` on a DataFrame with one row per date and one column per stock?",
+      "options": [
+        "To rank the stocks against each other within each date",
+        "To rank each stock's values against its own past dates",
+        "To sort the dates from oldest to newest",
+        "To remove stocks that were delisted"
+      ],
+      "answer": 0,
+      "explanation": "With axis=1, pandas ranks along each row. Each row is one date's cross-section, so every stock is compared with the other stocks on that date.",
+      "conceptKeys": ["cross-sectional-ranking"]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "After 3 months of paper trading, a strategy shows a Sharpe ratio of 1. What does that prove about its edge?",
+      "options": [
+        "That the edge is real, because the data was live",
+        "That the backtest was overfitted",
+        "Very little: 63 days give a t-statistic of about 0.5, far below 2",
+        "That the strategy is ready for full size"
+      ],
+      "answer": 2,
+      "explanation": "With a Sharpe ratio of 1, the t-statistic after 63 days is 1 × √(63 / 252) = 0.5. Paper trading checks data, timing and code, not the edge.",
+      "conceptKeys": [
+        "paper-trading"
+      ]
+    },
+    {
+      "prompt": "Paper fills are 0.03% worse than the backtest every day. What should you do?",
+      "options": [
+        "Raise the slippage estimate in the backtest and recheck the result, because about 7.56% a year is lost",
+        "Ignore it, because 0.03% is smaller than one day's volatility",
+        "Move to full size, because paper fills are always worse than real ones",
+        "Stop paper trading, because the data feed is broken"
+      ],
+      "answer": 0,
+      "explanation": "A steady gap every day means an estimate is wrong, not a fault. Over 252 days it adds up to about 0.03% × 252 = 7.56% a year, enough to erase a modest edge.",
+      "conceptKeys": [
+        "paper-trading"
+      ]
+    },
+    {
+      "prompt": "Which problem can paper trading NOT find, so it needs the small-money stage of staged deployment?",
+      "options": [
+        "A price that arrives 5 minutes late",
+        "Code that crashes on a holiday",
+        "A signal that differs from the backtest's signal on the same day",
+        "How your own real orders move the price when they trade"
+      ],
+      "answer": 3,
+      "explanation": "Paper orders never reach the market, so they cannot move the price. Only real orders, at first small ones, show that cost.",
+      "conceptKeys": [
+        "paper-trading"
+      ]
+    }
+  ]
+}

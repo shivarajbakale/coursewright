@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "Your target volatility is 12% a year and the asset's recent volatility is 30%. What weight does volatility targeting hold?",
+      "options": [
+        "2.50",
+        "0.30",
+        "0.40",
+        "0.12"
+      ],
+      "answer": 2,
+      "explanation": "The weight is target ÷ estimate: 0.12 / 0.30 = 0.4. You hold 40% of your equity in the asset.",
+      "conceptKeys": [
+        "volatility-targeting"
+      ]
+    },
+    {
+      "prompt": "An account has equity of 50,000 and holds positions worth 80,000. What is its leverage?",
+      "options": [
+        "0.63",
+        "1.60",
+        "30,000",
+        "1.30"
+      ],
+      "answer": 1,
+      "explanation": "Leverage is the total value of positions divided by equity: 80,000 / 50,000 = 1.6. The extra 30,000 is borrowed.",
+      "conceptKeys": [
+        "volatility-targeting"
+      ]
+    },
+    {
+      "prompt": "In the example, the first 20 stormy days ran at 29.2% volatility instead of near 10%. Why?",
+      "options": [
+        "The 20-day window still held calm days, so the estimate was too low and the weight too high",
+        "The cap of 2 on the weight stopped the rule from cutting the position",
+        "The shift by one day used tomorrow's data",
+        "Volatility targeting only works in calm markets"
+      ],
+      "answer": 0,
+      "explanation": "The estimate looks back over 20 days. Right after the change most of those days were calm, so the rule kept a large weight until the stormy days filled the window.",
+      "conceptKeys": [
+        "volatility-targeting"
+      ]
+    }
+  ]
+}

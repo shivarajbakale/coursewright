@@ -1,0 +1,30 @@
+{
+  "questions": [
+    {
+      "prompt": "An account goes 100, 130, 104, 140. What is its maximum drawdown?",
+      "options": ["-26%", "-20%", "0%", "+40%"],
+      "answer": 1,
+      "explanation": "The peak before the low is 130, and 104 / 130 - 1 = -0.20. The fall of 26 is in money, not a fraction of the peak, and +40% is the total return.",
+      "conceptKeys": ["drawdown"]
+    },
+    {
+      "prompt": "An account is in a drawdown of -20%. What gain does it need to get back to its peak?",
+      "options": ["20%", "16.7%", "40%", "25%"],
+      "answer": 3,
+      "explanation": "The account is at 0.8 of its peak. Getting back needs 1 / 0.8 - 1 = 0.25, a gain of 25%, because the gain is measured from the lower value.",
+      "conceptKeys": ["drawdown"]
+    },
+    {
+      "prompt": "Two accounts both gain 8% over a year. Account A's maximum drawdown is -5% and account B's is -25%. What does this tell you?",
+      "options": [
+        "Account B sat through a far deeper fall on the way to the same result",
+        "Account B earned more, because it moved more",
+        "Both had the same experience, because the yearly returns match",
+        "Account A had a higher volatility"
+      ],
+      "answer": 0,
+      "explanation": "The maximum drawdown is the deepest fall from a peak. Equal returns can hide very different worst stretches.",
+      "conceptKeys": ["drawdown"]
+    }
+  ]
+}

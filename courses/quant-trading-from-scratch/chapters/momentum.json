@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the classic momentum score skip the latest month?",
+      "options": [
+        "The latest month's prices are not known yet at the end of the month",
+        "Returns over the most recent month tend to partly reverse, which works against the longer pattern",
+        "Leaving out one month lowers transaction costs",
+        "A 12-month window is too long for pandas to shift"
+      ],
+      "answer": 1,
+      "explanation": "Short-term returns tend to partly reverse within about a month, while 3 to 12 month returns tend to continue. Skipping the latest month keeps the two effects apart.",
+      "conceptKeys": ["momentum"]
+    },
+    {
+      "prompt": "A stock was at 50 twelve months ago, 60 one month ago and 54 today. What is its 12-1 momentum score?",
+      "options": [
+        "0.08, an 8% rise",
+        "-0.10, a 10% fall",
+        "0.18, an 18% rise",
+        "0.20, a 20% rise"
+      ],
+      "answer": 3,
+      "explanation": "The score uses the price 1 month ago and the price 12 months ago: 60 / 50 - 1 = 0.20. Today's price of 54 falls in the skipped month, so it does not count.",
+      "conceptKeys": ["momentum"]
+    },
+    {
+      "prompt": "What risk of momentum did Daniel and Moskowitz (2016) document?",
+      "options": [
+        "Rare, very large losses when the market rebounds fast after a fall and past losers rise most",
+        "Steady small losses every month that cancel the average gain",
+        "Losses only when the market rises slowly",
+        "No risk, because a momentum factor portfolio is market-neutral"
+      ],
+      "answer": 0,
+      "explanation": "They named these losses momentum crashes. The short side holds past losers, so a fast rebound that lifts those losers most hits the portfolio hard.",
+      "conceptKeys": ["momentum"]
+    }
+  ]
+}

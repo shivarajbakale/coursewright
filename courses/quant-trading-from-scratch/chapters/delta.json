@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "The call has delta 0.6368 with the stock at $100. The stock rises to $102. About how much does the call gain?",
+      "options": [
+        "$2.00",
+        "$0.64",
+        "$1.27",
+        "$0.36"
+      ],
+      "answer": 2,
+      "explanation": "The gain is about delta × move = 0.6368 × 2 = 1.27 dollars. The exact gain is a little larger, because delta rises as the stock rises.",
+      "conceptKeys": [
+        "delta"
+      ]
+    },
+    {
+      "prompt": "With the stock at $80, the call with strike $100 has delta 0.2219. What does that mean?",
+      "options": [
+        "The call has a 22% chance of a profit",
+        "The call moves about $0.22 for each $1 of stock, because it will probably pay nothing",
+        "The call is worth $0.22",
+        "The call moves like 2.2 shares"
+      ],
+      "answer": 1,
+      "explanation": "Far below the strike, a $1 stock move changes the call's value by only about $0.22. Delta rises toward 1 as the stock rises above the strike.",
+      "conceptKeys": [
+        "delta"
+      ]
+    },
+    {
+      "prompt": "The put with strike $100 has delta −0.3632 with the stock at $100. What happens to the put when the stock falls $1?",
+      "options": [
+        "It gains about $0.36",
+        "It loses about $0.36",
+        "It gains about $0.64",
+        "It does not change"
+      ],
+      "answer": 0,
+      "explanation": "A negative delta means the value moves against the stock. A $1 fall changes the put by about −0.3632 × −1 = 0.36 dollars, a gain.",
+      "conceptKeys": [
+        "delta"
+      ]
+    }
+  ]
+}

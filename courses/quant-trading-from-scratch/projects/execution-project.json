@@ -1,0 +1,81 @@
+{
+  "title": "Build an execution desk that schedules, fills and grades its own orders",
+  "brief": "Your backtests so far assumed that every order filled at one price with a fixed cost. In this project you build the part of a trading firm that turns one large decision, such as \"buy 12,000 shares today\", into real fills, and then measures what those fills cost.\n\n**What you build.** A small Python package with five parts:\n\n1. A limit order book that matches orders best price first, then by arrival time, and reports partial fills.\n2. A market impact model: the exact cost of walking the book, and the square-root rule of thumb for orders larger than the book shows.\n3. A scheduler that splits a parent order into child orders, with equal slices (TWAP) or slices sized by a volume profile (VWAP).\n4. An implementation shortfall calculator that compares a paper portfolio with the real fills, including the shares that never filled.\n5. A transaction cost report that compares each order with benchmark prices and splits the cost into spread, timing and impact.\n\n**Why.** A strategy that looks profitable with a guessed cost can lose money once real fills are counted. The desk gives you a measured cost to put back into the backtest from earlier modules.\n\n**Constraints.** Python 3 with numpy and pandas only. All market data is made up: generate a day of prices and volumes with a fixed random seed, so every run gives the same numbers. The square-root rule needs a coefficient Y; it is an empirical rule of thumb, so use the illustrative value Y = 0.8 and keep it as a parameter. Prices are in dollars, sizes in whole shares, and every cost is reported so that a positive number means you paid, for buys and sells alike.",
+  "starter": [
+    {
+      "path": "book.py",
+      "note": "OrderBook with add(side, price, shares, owner), cancel(owner) and match_market(side, shares). Bids sort highest price first, asks lowest first, and equal prices by arrival time. match_market returns a list of (owner, shares, price) fills and leaves unfilled remainders in the book."
+    },
+    {
+      "path": "impact.py",
+      "note": "walk_cost(asks, shares, mid) returns the average fill price and the cost per share above the mid price. sqrt_impact(shares, adv, daily_vol, Y=0.8) returns the estimated price move as a fraction."
+    },
+    {
+      "path": "schedule.py",
+      "note": "twap(parent, start, end, freq) and vwap(parent, profile) return a DataFrame of child orders with a start time and shares. volume_profile(past) turns a DataFrame of past daily volumes into the average fraction traded in each period. Both schedules must sum to the parent order."
+    },
+    {
+      "path": "shortfall.py",
+      "note": "shortfall(side, wanted, arrival, fills, fee_per_share, end_price) returns the execution cost, fees, opportunity cost and total in dollars, and the total as a percentage of the plan."
+    },
+    {
+      "path": "tca.py",
+      "note": "tca(orders) takes a DataFrame with side, shares, arrival, fill, vwap and half_spread columns and adds vs_arrival_%, vs_vwap_%, spread_usd, timing_usd, impact_usd and cost_usd. run_desk.py generates a made-up day, runs a TWAP and a VWAP schedule through the book and prints the report for both."
+    }
+  ],
+  "hints": [
+    "Write the order book first and test it with the lesson's example: bids of 250 and 150 shares from A and B at $100.00, your 100 shares behind them, and C's 600 at $99.99. A market sell of 450 must fill A 250, B 150 and you 50, and leave C untouched.",
+    "Keep one sign rule everywhere: multiply each price difference by side, with 1 for a buy and -1 for a sell. Then a positive number is always a cost, and you never need two versions of a formula.",
+    "In the shortfall, value the paper portfolio and the real one at the same end price. Check that execution cost + fees + opportunity cost equals paper result - real result; for the lesson's example both give 1,800 dollars.",
+    "For the VWAP schedule, round each child order to whole shares and add the rounding remainder to the last slice, as the TWAP lesson did with integer division, so the child orders always sum to the parent order.",
+    "In the made-up day, make each child order's fill price the mid price plus half the spread plus the square-root estimate for that child's share of the period's volume. Then the report's impact column should grow when you make the parent order larger."
+  ],
+  "rubric": [
+    {
+      "criterion": "The book fills best price first and, at one price, in arrival order; it reports partial fills and keeps unfilled shares waiting",
+      "chapterKey": "order-book"
+    },
+    {
+      "criterion": "Walking the book reproduces the lesson's average of $100.0365 for 2,000 shares, and the square-root estimate doubles when the order grows four times",
+      "chapterKey": "market-impact"
+    },
+    {
+      "criterion": "Shortfall splits into execution cost, fees and opportunity cost that add up to the paper result minus the real result, with signs that flip correctly for a sell",
+      "chapterKey": "implementation-shortfall"
+    },
+    {
+      "criterion": "The TWAP schedule gives equal child orders at equal time steps that sum to the parent order",
+      "chapterKey": "twap"
+    },
+    {
+      "criterion": "The VWAP schedule sizes child orders by a volume profile averaged from past days, so each child order is the same fraction of its period's volume",
+      "chapterKey": "vwap"
+    },
+    {
+      "criterion": "The cost report compares each order with the arrival price and the market's VWAP, splits the cost into spread, timing and impact, and gives one total cost as a percentage of the dollars traded",
+      "chapterKey": "transaction-cost-analysis"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "A limit order book that matches by price, then time",
+      "body": "Write book.py. Add the four bids from the order book lesson, send a market sell for 450 shares, and print the fills. Then send a second market sell for 650 shares and confirm it fills your remaining 50 shares at $100.00 before it fills C's 600 at $99.99.",
+      "checkCmd": "python -c \"from book import OrderBook; b=OrderBook(); b.add('buy',100.00,250,'A'); b.add('buy',100.00,150,'B'); b.add('buy',100.00,100,'you'); b.add('buy',99.99,600,'C'); print(b.match_market('sell',450))\""
+    },
+    {
+      "title": "Impact from the book and from the rule of thumb",
+      "body": "Write impact.py. walk_cost on the asks 300 at $100.02, 500 at $100.03, 800 at $100.04 and 1,200 at $100.05 with a mid price of $100.01 must give an average of $100.0365 for 2,000 shares. sqrt_impact with a daily volatility of 2% and an average daily volume of 1,000,000 shares must give 0.16% for 10,000 shares and 0.32% for 40,000.",
+      "checkCmd": "python -c \"from impact import sqrt_impact; print(round(100*sqrt_impact(10_000, 1_000_000, 0.02), 3), round(100*sqrt_impact(40_000, 1_000_000, 0.02), 3))\""
+    },
+    {
+      "title": "TWAP and VWAP schedules",
+      "body": "Write schedule.py. A TWAP schedule for 12,000 shares from 09:30 to 15:30 every 30 minutes gives 12 child orders of 1,000. A VWAP schedule built from the three past days in the VWAP lesson gives 2,640 shares at 10:00 and 3,240 at 15:00. Both must sum to 12,000.",
+      "checkCmd": "python -c \"from schedule import twap; s=twap(12_000, '2026-03-02 09:30', '2026-03-02 15:00', '30min'); print(len(s), s['shares'].sum())\""
+    },
+    {
+      "title": "Shortfall and a cost report for a whole day",
+      "body": "Write shortfall.py and tca.py, then run_desk.py. The lesson's shortfall example (10,000 shares wanted at $50.00, 8,000 filled at $50.12, $0.005 fee per share, end price $50.40) must give 1,800 dollars, 0.36% of the plan. run_desk.py then runs the same parent order with TWAP and with VWAP on a made-up day and prints one report row per schedule, with spread, timing, impact and total cost.",
+      "checkCmd": "python run_desk.py --parent 12000 --seed 7"
+    }
+  ]
+}

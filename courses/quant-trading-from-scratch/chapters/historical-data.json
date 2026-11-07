@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A price file arrives with 2025-03-04 above 2025-03-03. What does `sort_index` do with it?",
+      "options": [
+        "It sorts the rows by close price, lowest first",
+        "It puts the rows in date order, so 2025-03-03 comes first",
+        "It removes the row that is out of place",
+        "It stops the program with an error"
+      ],
+      "answer": 1,
+      "explanation": "The dates are the time index, so sorting the index puts the rows in date order. Nothing is removed; a later assert stops the program only for duplicates, missing values or impossible bars.",
+      "conceptKeys": ["historical-data"]
+    },
+    {
+      "prompt": "A bar has open 102.0, close 104.0 and high 103.0. Which check in `load_bars` fails?",
+      "options": [
+        "The check that the index is unique",
+        "The check that no value is missing",
+        "The check that the low is at most the open and the close",
+        "The check that the high is at least the open and the close"
+      ],
+      "answer": 3,
+      "explanation": "The high is the highest trade of the period, so it cannot be below the close of 104.0. A high of 103.0 is impossible, so the high check stops the program.",
+      "conceptKeys": ["historical-data"]
+    },
+    {
+      "prompt": "Why does `load_bars` stop the program on a duplicated date instead of carrying on?",
+      "options": [
+        "Because a duplicated day is counted twice by the replay and changes the result without any message",
+        "Because pandas cannot store two rows with the same date",
+        "Because a duplicated date always means the close is missing",
+        "Because exchanges never trade twice on one day"
+      ],
+      "answer": 0,
+      "explanation": "The replay believes every row. A day that appears twice counts twice, and nothing warns you, so the assert turns that silent error into a loud one at load time.",
+      "conceptKeys": ["historical-data"]
+    }
+  ]
+}

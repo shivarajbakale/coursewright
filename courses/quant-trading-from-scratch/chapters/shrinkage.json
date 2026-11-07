@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "An estimate of a return is 8%, the shrinkage target is 4% and the pull is 0.25. What is the shrunk estimate?",
+      "options": [
+        "5%",
+        "6%",
+        "2%",
+        "7%"
+      ],
+      "answer": 3,
+      "explanation": "The blend is (1 - k) × the estimate + k × the target: 0.75 × 8% + 0.25 × 4% = 6% + 1% = 7%. A pull of 0.25 moves the estimate a quarter of the way to the target.",
+      "conceptKeys": ["shrinkage"]
+    },
+    {
+      "prompt": "Two assets have a correlation of 0.9 and estimated returns of 6% and 5%. Why does the optimiser put 136% in one and -36% in the other?",
+      "options": [
+        "Because the first asset has a much lower volatility",
+        "Because it treats the two as near copies and bets heavily on the 1% gap, which is smaller than the noise",
+        "Because a correlation of 0.9 forces one weight to be negative",
+        "Because weights must always add to more than 1"
+      ],
+      "answer": 1,
+      "explanation": "With a high correlation, the optimiser sees long one and short the other as low risk, so a small gap drives a large bet. Swapping the estimates swaps the weights, which shows the bet follows noise.",
+      "conceptKeys": ["shrinkage"]
+    },
+    {
+      "prompt": "What does a pull of 1 do to the estimated returns in the lesson's example?",
+      "options": [
+        "It replaces every estimate with the target, so both assets get 5.5% and equal weights",
+        "It leaves the estimates unchanged",
+        "It doubles the gap between the two estimates",
+        "It sets every estimate to 0%"
+      ],
+      "answer": 0,
+      "explanation": "With k = 1, the blend is 0 × the estimate + 1 × the target. Both assets get the target of 5.5%, the gap is gone and the weights are 50% each.",
+      "conceptKeys": ["shrinkage"]
+    }
+  ]
+}

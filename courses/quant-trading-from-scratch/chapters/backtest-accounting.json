@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You have 10,000 in cash and buy 48 shares at 104.5. Right after the fill, what is your equity at a price of 104.5?",
+      "options": [
+        "4,984, the cash left",
+        "15,016, cash plus the cost of the shares",
+        "10,000, because the fill only changed cash into holdings",
+        "5,016, the value of the shares"
+      ],
+      "answer": 2,
+      "explanation": "Cash falls to 10,000 − 48 × 104.5 = 4984 and the holdings are 48 × 104.5 = 5016. Equity is 4984 + 5016 = 10,000: a fill changes the mix, not the total.",
+      "conceptKeys": ["backtest-accounting"]
+    },
+    {
+      "prompt": "The books hold −48 shares and 14,824 in cash. The next close is 101. What is the equity?",
+      "options": [
+        "9,976",
+        "14,824",
+        "19,672",
+        "4,848"
+      ],
+      "answer": 0,
+      "explanation": "Marking to market gives holdings of −48 × 101 = −4848. Equity is 14824 − 4848 = 9976, because the cash includes money for shares you still owe.",
+      "conceptKeys": ["backtest-accounting"]
+    },
+    {
+      "prompt": "A backtest updates cash on every fill, values shares at each close, and also adds each day's gain to cash. What goes wrong?",
+      "options": [
+        "Nothing, because the gain belongs in cash",
+        "Each gain is counted twice: once in the holdings' new value and once in cash",
+        "Short positions stop working, but long ones are fine",
+        "Equity is correct but cash is too low"
+      ],
+      "answer": 1,
+      "explanation": "Valuing the shares at the new close already puts the gain into equity. Adding it to cash as well counts it a second time, so equity grows faster than the account really did.",
+      "conceptKeys": ["backtest-accounting"]
+    }
+  ]
+}

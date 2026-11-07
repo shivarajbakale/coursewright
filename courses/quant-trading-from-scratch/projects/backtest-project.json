@@ -1,0 +1,31 @@
+{
+  "title": "A bar-by-bar backtester for one share",
+  "brief": "Build a small backtester in Python that replays daily bars of one share through a trend rule and keeps honest books. It reads bars, computes a signal from the closes known so far, sizes a target position, sends orders, fills them on the next bar and marks the books at every close. At the end it reports the equity curve's total return, maximum drawdown and Sharpe ratio next to buy and hold, the measures you built in the previous module.\n\n**Why.** A backtest is only as honest as its order of steps and its books. Writing each part yourself, with a test for each, shows you where a replay can quietly invent or lose money.\n\n**Constraints.**\n\n- Python 3.10 or later with pandas and numpy only. No downloads: use the 10 hard-coded bars from the lessons and illustrative bars made with a seeded random generator.\n- One share, daily bars, decisions at the close, fills at the next bar's open.\n- The signal is the 3-bar moving-average trend rule with +1, −1 and 0. Ties give 0.\n- Sizing is a fixed fraction of equity (default 0.5), rounded down to whole shares, and changed only when the signal changes.\n- Fills are capped at 10% of the bar's volume. Market orders fill at the open. Limit orders fill only if the bar's low (for a buy) or high (for a sell) reached the limit.\n- Cash and shares change only on fills. Equity is cash plus shares times the close.\n- Run with `python run.py`. Tests run with `python -m pytest`.",
+  "starter": [
+    {"path": "data.py", "note": "load_bars(text) reads CSV text into a DataFrame with a time index, sorts it and asserts: unique dates, no missing values, high and low consistent with open and close. make_bars(n, seed) returns illustrative bars."},
+    {"path": "strategy.py", "note": "trend_signal(closes, window=3) returns +1, −1 or 0 per bar using only closes up to that bar; target_shares(signal, equity, price, fraction) returns a signed whole number of shares."},
+    {"path": "orders.py", "note": "Order and Fill dataclasses, order_for(target, current, kind, limit) and fill_order(order, date, bar, max_share=0.10)."},
+    {"path": "books.py", "note": "Books(cash) with apply(fill) and mark(close); keeps cash, shares and equity."},
+    {"path": "run.py", "note": "run_backtest(bars, cash, fraction) runs fill, mark, decide, size, order on every bar and returns one row per bar; the main block prints the 10-bar table and the 500-bar report against buy and hold."}
+  ],
+  "hints": [
+    "Start with the books: write a test that buys 48 at 104.5 from 10,000 cash and checks cash is 4984 and equity at a close of 107 is 10120.",
+    "Test that the signal for a date does not change when later bars are added: compute it on all bars and on bars up to that date, and compare.",
+    "Round the number of shares before you apply the sign, because `-5000 // 104` is −49 in Python.",
+    "Keep a `target` variable in the loop and call `order_for(target, books.shares)` on every bar, so an unfilled remainder of a partial fill is retried on the next bar.",
+    "Your 10-bar run should end with equity 9952 and fills at 104.5, 102.5 and 101.5. If a number differs, print the books after each step of one bar."
+  ],
+  "rubric": [
+    {"criterion": "load_bars sorts by date and stops on duplicate dates, missing values and impossible highs or lows", "chapterKey": "historical-data"},
+    {"criterion": "The signal for any date uses only closes up to that date, and a test proves it", "chapterKey": "signal"},
+    {"criterion": "Market and limit orders fill on the next bar by the stated rules, with partial fills above 10% of volume", "chapterKey": "fills"},
+    {"criterion": "Cash and shares change only on fills, short positions give negative holdings, and equity equals cash plus holdings at every close", "chapterKey": "backtest-accounting"},
+    {"criterion": "The loop runs fill, mark, decide, size and order in that order and reports total return, maximum drawdown and Sharpe ratio next to buy and hold", "chapterKey": "backtest-loop"}
+  ],
+  "milestones": [
+    {"title": "Bars you can trust", "body": "load_bars and make_bars work, and a bad file stops the program with a clear message.", "checkCmd": "python -m pytest tests/test_data.py"},
+    {"title": "Signal, sizing and orders", "body": "trend_signal reads only the past, target_shares rounds toward zero, order_for returns the gap as one order.", "checkCmd": "python -m pytest tests/test_strategy.py tests/test_orders.py"},
+    {"title": "Books that count once", "body": "The accounting trace from the lessons is reproduced: equity 10120 on 2025-03-07 and 10072 on 2025-03-12.", "checkCmd": "python -m pytest tests/test_books.py"},
+    {"title": "The full replay", "body": "python run.py prints the 10-bar table ending at equity 9952 and the 500-bar report with total return, maximum drawdown, Sharpe ratio and buy and hold.", "checkCmd": "python run.py && python -m pytest"}
+  ]
+}

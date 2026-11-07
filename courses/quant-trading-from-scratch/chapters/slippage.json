@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Your backtest expected to sell at $50.00. The sale filled at $49.95. What is the slippage, counted so that worse is positive?",
+      "options": [
+        "+$0.05 a share, 10 basis points worse",
+        "-$0.05 a share, 10 basis points better",
+        "+$0.05 a share, 1 basis point worse",
+        "Zero, because slippage only applies to buys"
+      ],
+      "answer": 0,
+      "explanation": "For a sell, slippage is expected minus fill: 50.00 - 49.95 = 0.05. As basis points that is 0.05 / 50.00 × 10,000 = 10, and a lower sale price is worse for you.",
+      "conceptKeys": ["slippage"]
+    },
+    {
+      "prompt": "A daily rule decides from today's close. Which fill assumption removes the delay error from the backtest?",
+      "options": [
+        "Fill at today's close, the price the rule saw",
+        "Fill at the day's highest price",
+        "Fill at the next bar's open, the first price after the decision",
+        "Fill at the average of today's open and close"
+      ],
+      "answer": 2,
+      "explanation": "The rule sees the close only after it has happened, so it cannot trade at it. The next bar's open is the first price it could really trade at.",
+      "conceptKeys": ["slippage"]
+    },
+    {
+      "prompt": "The best ask offers 100 shares and you send a market order to buy 300. Why does your average price come out above the best ask?",
+      "options": [
+        "The broker adds its commission to the price",
+        "The other 200 shares fill at higher asks, because the best ask held only 100",
+        "The mid price rises whenever anyone buys",
+        "Market orders always fill at the previous close"
+      ],
+      "answer": 1,
+      "explanation": "Size is one cause of slippage. Only 100 shares were offered at the best price, so the rest of the order buys from sellers asking more.",
+      "conceptKeys": ["slippage"]
+    }
+  ]
+}

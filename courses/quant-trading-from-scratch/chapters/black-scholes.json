@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "For S = 100, K = 100, T = 1, r = 5% and σ = 20%, d1 is 0.35. What is d2?",
+      "options": [
+        "0.55",
+        "0.35",
+        "0.07",
+        "0.15"
+      ],
+      "answer": 3,
+      "explanation": "d2 is d1 − σ × √T = 0.35 − 0.2 × 1 = 0.15.",
+      "conceptKeys": [
+        "black-scholes"
+      ]
+    },
+    {
+      "prompt": "The volatility input rises from 20% to 30%, and the call rises from $10.45 to $14.23. Why does more volatility raise the price?",
+      "options": [
+        "Because a wider spread of outcomes gives more chances of a large payoff, while the loss stays capped at the premium",
+        "Because volatility raises the stock price",
+        "Because the risk-free rate rises with volatility",
+        "Because the strike falls when volatility rises"
+      ],
+      "answer": 0,
+      "explanation": "The option pays more in large up moves but never less than zero in down moves. So a wider spread of outcomes adds value.",
+      "conceptKeys": [
+        "black-scholes"
+      ]
+    },
+    {
+      "prompt": "Which of the five inputs cannot be observed directly in the market?",
+      "options": [
+        "The stock price",
+        "The future volatility of the stock",
+        "The risk-free rate",
+        "The time to expiry"
+      ],
+      "answer": 1,
+      "explanation": "The stock price, strike, time and rate are all known today. The volatility of the stock until expiry is in the future, so it must be estimated.",
+      "conceptKeys": [
+        "black-scholes"
+      ]
+    }
+  ]
+}

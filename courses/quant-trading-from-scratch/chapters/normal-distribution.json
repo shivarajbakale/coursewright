@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "Yearly log returns are normal with mean 0 and standard deviation 20%. What share of years fall between −20% and +20%?",
+      "options": [
+        "50%",
+        "95.45%",
+        "84.13%",
+        "68.27%"
+      ],
+      "answer": 3,
+      "explanation": "For any normal distribution, 68.27% of outcomes fall within 1 standard deviation of the mean, and here 1 standard deviation is 20%.",
+      "conceptKeys": [
+        "normal-distribution"
+      ]
+    },
+    {
+      "prompt": "The daily moves in the simulation were spread evenly, not bell-shaped. Why were the 10,000 yearly totals bell-shaped?",
+      "options": [
+        "Because the random number generator makes bell shapes",
+        "Because a sum of many small independent effects takes a bell shape, whatever the shape of each one",
+        "Because 252 is a large number of years",
+        "Because log returns are always normal"
+      ],
+      "answer": 1,
+      "explanation": "Each year added 252 small independent moves. Sums of many such effects form the normal distribution, even when each effect is flat-shaped.",
+      "conceptKeys": [
+        "normal-distribution"
+      ]
+    },
+    {
+      "prompt": "What does N(−1) = 0.1587 tell you?",
+      "options": [
+        "The chance of an outcome more than 1 standard deviation below the mean is 15.87%",
+        "The height of the bell at −1 is 0.1587",
+        "The mean of the distribution is −1",
+        "15.87% of outcomes fall within 1 standard deviation"
+      ],
+      "answer": 0,
+      "explanation": "N(x) is the area under the standard normal curve to the left of x, so it is the probability of an outcome below x. The height of the curve is the density, which is not a probability.",
+      "conceptKeys": [
+        "normal-distribution"
+      ]
+    }
+  ]
+}

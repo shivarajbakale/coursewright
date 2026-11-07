@@ -1,0 +1,35 @@
+{
+  "questions": [
+    {
+      "prompt": "In one hour, a share trades at 20.00, 20.50, 19.70 and 20.10, in that order. What are the bar's open, high, low and close?",
+      "options": [
+        "Open 20.00, high 20.50, low 19.70, close 20.10",
+        "Open 19.70, high 20.50, low 19.70, close 20.50",
+        "Open 20.00, high 20.10, low 20.00, close 20.10",
+        "Open 20.10, high 20.50, low 19.70, close 20.00"
+      ],
+      "answer": 0,
+      "explanation": "The open is the first trade and the close is the last. The high and low are the largest and smallest of all four prices, wherever they fall in the hour.",
+      "conceptKeys": ["price-bar"]
+    },
+    {
+      "prompt": "The trades in an hour were for 200, 100, 300 and 400 shares. What is the bar's volume?",
+      "options": ["400 shares", "250 shares", "1000 shares", "4 trades"],
+      "answer": 2,
+      "explanation": "Volume counts shares, not trades. It is 200 + 100 + 300 + 400 = 1000 shares.",
+      "conceptKeys": ["price-bar"]
+    },
+    {
+      "prompt": "A bar has open 100.10, high 100.40, low 99.80 and close 100.20. What can you not tell from this bar alone?",
+      "options": [
+        "The price of the last trade in the period",
+        "Whether the high came before the low",
+        "The highest price anyone traded at in the period",
+        "Whether the price ended above where it started"
+      ],
+      "answer": 1,
+      "explanation": "A bar keeps the range of prices but loses their order. Only the open and close have fixed places in time, so the order of the high and the low is lost.",
+      "conceptKeys": ["price-bar"]
+    }
+  ]
+}

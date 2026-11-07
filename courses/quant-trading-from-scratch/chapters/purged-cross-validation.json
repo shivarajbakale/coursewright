@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Labels look 10 days ahead and the test fold is days 20 to 39. Which training examples does purging remove?",
+      "options": [
+        "Days 10 to 19 and 40 to 49, because their days overlap days 20 to 49",
+        "Days 20 to 39 only, because those are the test days",
+        "Days 10 to 19 only, because only earlier labels can reach the test fold",
+        "Days 40 to 49 only, because only later examples can leak"
+      ],
+      "answer": 0,
+      "explanation": "The test examples touch prices up to day 39 + 10 = 49. An example on day t uses days t to t + 10, so the examples on days 10 to 19 and 40 to 49 overlap and are dropped from training.",
+      "conceptKeys": ["purged-cross-validation"]
+    },
+    {
+      "prompt": "Why can a training example on day 38 help the model \"predict\" the test example on day 45 when labels look 10 days ahead?",
+      "options": [
+        "Because day 38 comes before day 45, so it is the past",
+        "Because both labels contain the price moves of days 45 to 48, so the training answer holds part of the test answer",
+        "Because the model trains on the test fold as well",
+        "Because cross-validation averages the scores of all folds"
+      ],
+      "answer": 1,
+      "explanation": "Day 38's label covers days 38 to 48 and day 45's covers days 45 to 55. They share days 45 to 48, so a jump in that stretch shows up in both answers.",
+      "conceptKeys": ["purged-cross-validation"]
+    },
+    {
+      "prompt": "What problem does the embargo solve that purging alone does not?",
+      "options": [
+        "It removes the test examples whose labels run past the end of the data",
+        "It makes every fold the same size",
+        "It stops training examples after the test fold from using test-period prices in features that look back",
+        "It removes training examples before the test fold whose labels overlap it"
+      ],
+      "answer": 2,
+      "explanation": "A feature such as the past 5-day return on day 72 uses days 67 to 72, inside the test labels. Dropping days 70 to 74 after the test fold removes that leak.",
+      "conceptKeys": ["purged-cross-validation"]
+    }
+  ]
+}

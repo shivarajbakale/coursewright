@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Equity is 100,000, the position limit is 25% and the gross exposure limit is 100%. You hold 70,000 of positions in gross. Your signal asks to buy 40,000 of a new asset. How much do the limits allow?",
+      "options": [
+        "40,000",
+        "25,000",
+        "30,000",
+        "0"
+      ],
+      "answer": 1,
+      "explanation": "The position limit allows 25,000 and the gross limit leaves 100,000 − 70,000 = 30,000. The smaller room wins, so the order is 25,000.",
+      "conceptKeys": ["risk-limits"]
+    },
+    {
+      "prompt": "You bought at 80 with a stop loss 10% below entry. The price closes at 75 and opens the next day at 64. What loss do you most likely take?",
+      "options": [
+        "−10%, because the stop loss caps the loss",
+        "−6.25%, the move from 80 to 75",
+        "0%, because the stop loss was never reached during trading",
+        "About −20%, because the price opened below the stop at 72 and the fill is at the open"
+      ],
+      "answer": 3,
+      "explanation": "The stop is at 80 × 0.9 = 72. The price jumps from 75 to 64 without trading in between, so the market order fills near 64: (64 − 80) / 80 = −20%.",
+      "conceptKeys": ["risk-limits"]
+    },
+    {
+      "prompt": "Why should a risk limit sit outside the strategy's own code and ignore whether a trade looks good?",
+      "options": [
+        "Because a bug or a wrong estimate in the strategy could otherwise switch the limit off at the moment it is needed",
+        "Because limits make the strategy's Sharpe ratio higher",
+        "Because the strategy cannot read the account's equity",
+        "Because limits are only used in live trading, never in a backtest"
+      ],
+      "answer": 0,
+      "explanation": "A limit protects you from what the strategy gets wrong. If the strategy could overrule it, the same mistake that causes a huge order could also skip the check.",
+      "conceptKeys": ["risk-limits"]
+    }
+  ]
+}

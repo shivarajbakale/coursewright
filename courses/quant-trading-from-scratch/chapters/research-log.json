@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Why must the pass rule be written in the research log before the test runs?",
+      "options": [
+        "Because the backtest needs it as a parameter",
+        "Because a rule chosen after seeing the result can always be bent to fit that result",
+        "Because a written rule makes the strategy's t-statistic higher",
+        "Because the log file cannot be changed after the first row"
+      ],
+      "answer": 1,
+      "explanation": "If you pick the bar after seeing the number, you can always pick a bar the number clears. Writing it first means the result can fail.",
+      "conceptKeys": ["research-log"]
+    },
+    {
+      "prompt": "Your log shows 20 variants of one idea, and the best has a t-statistic of 2.1. In the simulation, strategies with no edge gave a best t-statistic above 2 in 40% of cases after 20 variants. What should you conclude?",
+      "options": [
+        "The idea is proven, because 2.1 is above 2",
+        "The best variant has a 2% chance of being luck",
+        "The result is weak evidence, because 20 tries of a strategy with no edge clear 2 in 40% of cases",
+        "You should delete the 19 weaker rows and keep the best"
+      ],
+      "answer": 2,
+      "explanation": "The bar of 2 holds for one test. After 20 tries, luck alone clears it in 40% of cases, so 2.1 says little about a real edge.",
+      "conceptKeys": ["research-log"]
+    },
+    {
+      "prompt": "Which row belongs in the research log?",
+      "options": [
+        "Every variant you ran, including the ones that failed",
+        "Only variants with a t-statistic above 2",
+        "Only the final variant you plan to trade",
+        "Only variants that passed the stress tests"
+      ],
+      "answer": 0,
+      "explanation": "The count of all tries sets how high the bar must be. Leaving out failures makes the best result look rarer, and so more convincing, than it is.",
+      "conceptKeys": ["research-log"]
+    }
+  ]
+}

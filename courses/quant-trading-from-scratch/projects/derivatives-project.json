@@ -1,0 +1,85 @@
+{
+  "title": "A small options desk in Python",
+  "brief": "Build a small Python library and three short studies that price, hedge and test options and futures. It does five jobs.\n\n1. It rolls a futures position through a year of illustrative oil contracts and splits its return into the part from the spot price and the part from the shape of the futures curve.\n2. It prices European calls and puts three ways: with a one-step copy of shares and cash, with a tree of many steps, and with the Black-Scholes formula. It checks that the three agree and that every call and put pair obeys put-call parity.\n3. It computes delta, gamma and vega, and finds the implied volatility of every quote in a table of illustrative option prices, so you can draw the volatility smile.\n4. It sells a call priced at one volatility, delta hedges it once a day on simulated stock paths that move at another volatility, and reports the profit and loss.\n5. It sells a delta-hedged straddle each year on an illustrative index history and measures what the volatility risk premium earned, year by year, including the crash years.\n\nWhy build it: each lesson in this module worked one number by hand, such as the call at $10.45 with the stock and strike at $100, a 5% rate, one year and 20% volatility. A trading desk needs all of these numbers at once, for every strike and every day, and it needs them to agree with each other. A wrong option price is easy to miss, so the tests check each function against values you can rebuild from the lessons.\n\nConstraints: Python 3 with numpy, pandas and scipy, plus pytest for the tests. Use only the illustrative data in the starter files; no download is needed. Every option is European and the stock pays no dividend. Use continuous interest everywhere, so the present value of K is K × e^(−r × T). The hedging and straddle studies use the same random seeds every run, so their output does not change between runs. Like the backtests from earlier modules, the straddle study may use only the prices known on each day.",
+  "starter": [
+    {
+      "path": "options.py",
+      "note": "Empty functions to fill in: futures_price(S, r, T), black_scholes(S, K, T, r, sigma, kind), delta(...), gamma(...), vega(...), one_step_price(S, up, down, K, r, T), tree_price(S, K, T, r, sigma, steps), implied_vol(price, S, K, T, r, kind)."
+    },
+    {
+      "path": "test_options.py",
+      "note": "pytest tests built on the lesson numbers: black_scholes(100, 100, 1, 0.05, 0.20) is 10.45 to the cent, the put is 5.57, the call at 30% is 14.23, delta at $100 is 0.6368, the one-step price with $120 or $80 is 11.95, implied_vol(12.00, ...) is 0.2411, and call minus put equals 100 − 95.12 = 4.88."
+    },
+    {
+      "path": "data/oil_futures.csv",
+      "note": "Illustrative monthly settlement prices for 13 oil contract months over one year, one column per expiry, plus a spot column."
+    },
+    {
+      "path": "data/option_quotes.csv",
+      "note": "Illustrative prices of one-year puts and calls on an index at 100, at strikes from 70 to 130, with a rate of 5%."
+    },
+    {
+      "path": "data/index_history.csv",
+      "note": "An illustrative daily index level over 20 years, with a one-year implied volatility for each day. It includes two crash years."
+    }
+  ],
+  "hints": [
+    "Write black_scholes first and test it against the lesson numbers before anything else. Every later study depends on it, and a wrong price spreads into every delta and implied volatility.",
+    "Test the formula against itself. A call minus a put with the same strike and expiry must equal S − K × e^(−r × T), and tree_price with 1,000 steps must land within 0.01 of the formula price.",
+    "For delta, compare N(d1) with the bump estimate (price at S + 1 minus price at S − 1) / 2. The two should agree to about the fourth decimal. Check that call delta rises as S rises: 0.2219 at $80, 0.6368 at $100, 0.8965 at $120.",
+    "For implied_vol, use scipy.optimize.brentq between 0.001 and 3.0. A price below the option's lowest possible value, such as a call below S − K × e^(−r × T), has no answer, so return NaN instead of crashing.",
+    "In the hedge study, rebalance before the stock moves each day, add one day of interest to the cash, and close out at expiry by adding the shares' value and paying the option's payoff. If the stock moves at the same 20% the call was priced at, the mean profit over 2,000 paths should be close to $0.00."
+  ],
+  "rubric": [
+    {
+      "criterion": "The futures study rolls each contract before expiry and reports the roll return apart from the spot return, with a loss in contango and a gain in backwardation when the spot price is flat",
+      "chapterKey": "futures-roll"
+    },
+    {
+      "criterion": "black_scholes returns 10.45 for the call and 5.57 for the put at S = K = 100, r = 5%, T = 1 and σ = 20%, and 14.23 for the call at 30%, and every call and put pair satisfies put-call parity to the cent",
+      "chapterKey": "black-scholes"
+    },
+    {
+      "criterion": "one_step_price copies the payoff with shares and a loan, and tree_price converges to the formula price as the number of steps grows",
+      "chapterKey": "binomial-pricing"
+    },
+    {
+      "criterion": "delta equals N(d1) for a call and N(d1) − 1 for a put, agrees with a bump estimate, and rises with the stock price",
+      "chapterKey": "delta"
+    },
+    {
+      "criterion": "The hedge study rebalances daily and shows a mean profit near $0.00 when the stock moves at the pricing volatility, and a mean loss near $3.97 when it moves at 30%",
+      "chapterKey": "delta-hedging"
+    },
+    {
+      "criterion": "implied_vol recovers the volatility that produced a price, and the smile plot shows implied volatility for each strike in the quotes file",
+      "chapterKey": "implied-volatility"
+    },
+    {
+      "criterion": "The straddle study compares each year's implied volatility with its realised volatility and reports the yearly profit, the crash years and the largest loss",
+      "chapterKey": "volatility-risk-premium"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Price futures and roll them",
+      "body": "Write futures_price and a roll function in options.py. futures_price(100, 0.05, 1) should give 105.13. Roll a position through data/oil_futures.csv, selling each contract a few days before expiry and buying the next. Print the total return, the spot return and the roll return. Then check your roll function on the lesson case: a flat spot price of $80 and a next contract at $81 should turn $1,000 into $861.51 after 12 rolls.",
+      "checkCmd": "pytest -q test_options.py -k futures"
+    },
+    {
+      "title": "Price options three ways that agree",
+      "body": "Fill in black_scholes, one_step_price and tree_price. Check the running example: the call is 10.45, the put is 5.57, the one-step price with $120 or $80 is 11.95, and the tree with 1,000 steps gives 10.4486. Check put-call parity for every strike from 70 to 130.",
+      "checkCmd": "pytest -q test_options.py -k \"black_scholes or parity or tree\""
+    },
+    {
+      "title": "Greeks, implied volatility and the smile",
+      "body": "Fill in delta, gamma, vega and implied_vol. At the running example, delta is 0.6368, gamma is 0.0188 and vega is 37.52 per unit of σ. Run implied_vol on every quote in data/option_quotes.csv, print implied volatility by strike, and save a plot of it to smile.png.",
+      "checkCmd": "pytest -q test_options.py -k \"greeks or implied\" && python smile.py && test -f smile.png"
+    },
+    {
+      "title": "Hedge a call and sell volatility",
+      "body": "Write hedge.py: sell the call priced at 20%, delta hedge it daily on 2,000 simulated paths, and print the mean and standard deviation of the profit when the stock moves at 20% and at 30%. Then write vrp.py: on data/index_history.csv, sell a delta-hedged straddle at the start of each year at that day's implied volatility. Print each year's implied volatility, realised volatility and profit, and the total with and without the crash years.",
+      "checkCmd": "python hedge.py && python vrp.py"
+    }
+  ]
+}

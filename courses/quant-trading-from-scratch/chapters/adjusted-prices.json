@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A share closes at $90.00, then does a 3-for-1 split and closes the next day at $30.60. What is the holder's true return for that day?",
+      "options": [
+        "-66.0%, from 30.60 / 90.00 - 1",
+        "+2.0%, because 3 shares at $30.60 are worth $91.80",
+        "0%, because a split never changes the price",
+        "+3.0%, because there are 3 times as many shares"
+      ],
+      "answer": 1,
+      "explanation": "One old share became 3 new shares worth 3 × 30.60 = $91.80. Compared with $90.00 that is 91.80 / 90.00 - 1 = 2.0%. The adjusted earlier close is 90.00 × 1/3 = $30.00.",
+      "conceptKeys": ["adjusted-prices"]
+    },
+    {
+      "prompt": "A share closes at $40.00, pays a $0.80 dividend, and closes the next day at $39.60. What did a holder really earn that day?",
+      "options": [
+        "-1.0%, the change in the raw price",
+        "+2.0%, the dividend alone",
+        "+1.0%, from (39.60 + 0.80) / 40.00 - 1",
+        "0%, because a dividend is already in the price"
+      ],
+      "answer": 2,
+      "explanation": "The price fell $0.40 but the holder received $0.80 in cash. (39.60 + 0.80) / 40.00 - 1 = 1.0%, so the raw -1.0% understates the return.",
+      "conceptKeys": ["adjusted-prices"]
+    },
+    {
+      "prompt": "Your backtest sizes an order to buy shares on 5 March, before the split. Which price should it use to work out the number of shares?",
+      "options": [
+        "The raw price of $100.00, the price you would have paid then",
+        "The adjusted price of $50.00, because it is the corrected one",
+        "The average of the raw and adjusted prices",
+        "Either, because they give the same number of shares"
+      ],
+      "answer": 0,
+      "explanation": "Orders and fills use raw prices, the prices people really traded at. The adjusted $50.00 only makes returns correct; nobody could buy a share for $50.00 on 5 March.",
+      "conceptKeys": ["adjusted-prices"]
+    }
+  ]
+}

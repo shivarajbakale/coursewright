@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Your order for 100 shares is partly filled with 60. You send a cancel, and the broker then reports \"filled 40\". What is the order's final state?",
+      "options": [
+        "Cancelled, with 60 shares filled",
+        "Partly filled, with 60 shares filled",
+        "Cancelled, with 0 shares filled",
+        "Filled, with 100 shares filled"
+      ],
+      "answer": 3,
+      "explanation": "The other 40 shares traded before the cancel request arrived, so 60 + 40 = 100 are filled. Filled is final, so the cancel has nothing left to remove.",
+      "conceptKeys": ["broker-api"]
+    },
+    {
+      "prompt": "Why does your program record the state the broker reports instead of setting the state itself when it sends a cancel?",
+      "options": [
+        "A cancel is only a request, and the shares may trade before it arrives",
+        "The broker charges a fee each time your program sets a state",
+        "Python dataclasses cannot change their fields",
+        "Cancels always fail, so there is no point recording them"
+      ],
+      "answer": 0,
+      "explanation": "Only the broker knows what happened at the market. If you mark the order cancelled yourself and the shares traded, your program believes it holds fewer shares than it does.",
+      "conceptKeys": ["broker-api"]
+    },
+    {
+      "prompt": "Which states are final, so that no later report can change the order?",
+      "options": [
+        "Sent, accepted and partly filled",
+        "Filled, cancelled and rejected",
+        "Accepted and filled",
+        "Only filled"
+      ],
+      "answer": 1,
+      "explanation": "Filled, cancelled and rejected have no entry in the table of allowed moves. An order in one of them is finished.",
+      "conceptKeys": ["broker-api"]
+    }
+  ]
+}

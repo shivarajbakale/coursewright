@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "The model gives \"up\" a chance of 0.6, and the day goes down. What is the penalty for that day?",
+      "options": [
+        "-log(0.6) = 0.511",
+        "-log(0.5) = 0.693",
+        "-log(0.4) = 0.916",
+        "0.6 - 0 = 0.6"
+      ],
+      "answer": 2,
+      "explanation": "The penalty uses the chance given to what really happened. The day went down, and the chance of down was 1 - 0.6 = 0.4, so the penalty is -log(0.4) = 0.916.",
+      "conceptKeys": ["classifier"]
+    },
+    {
+      "prompt": "The trained model has a training penalty of 0.6715 and a test penalty of 0.6842. Which number tells you how the model will do on new days?",
+      "options": [
+        "The training penalty, because it uses more days",
+        "The test penalty, because those 300 days were not used to choose a and b",
+        "The average of the two, 0.6779",
+        "Neither, because both are below 0.693"
+      ],
+      "answer": 1,
+      "explanation": "Training chose a and b to fit the 700 training days, so their score is too kind. The 300 test days are unseen, like new days, so 0.6842 is the honest score.",
+      "conceptKeys": ["classifier"]
+    },
+    {
+      "prompt": "Why does logistic regression pass the straight-line score through 1 / (1 + e^(-score)) instead of using the score as the answer?",
+      "options": [
+        "Because a straight-line score can be any number, and a probability must lie between 0 and 1",
+        "Because the squashing function makes training faster",
+        "Because the score must be negative for days that go down",
+        "Because a straight line cannot use more than one feature"
+      ],
+      "answer": 0,
+      "explanation": "A score such as 3.2 or -7 is not a chance. The squashing function turns any score into a number between 0 and 1, with a score of 0 giving 0.5.",
+      "conceptKeys": ["classifier"]
+    }
+  ]
+}

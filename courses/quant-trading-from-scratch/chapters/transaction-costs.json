@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "The best bid is $99.95, the best ask is $100.05 and the commission is 0.05%. What does buying $10,000 of shares with a market order cost?",
+      "options": [
+        "$5, the commission only",
+        "$10, commission plus half the spread",
+        "$15, commission plus the full spread",
+        "$20, the cost of a round trip"
+      ],
+      "answer": 1,
+      "explanation": "The commission is $10,000 × 0.05% = $5. Buying at the ask pays $0.05 above the $100.00 mid price, another 0.05% or $5. That makes $10, or 0.10%.",
+      "conceptKeys": ["transaction-costs"]
+    },
+    {
+      "prompt": "Two rules have the same signal quality. Rule A trades all its equity once a day; rule B once a month. Each trade costs 0.10%. What happens to their yearly costs?",
+      "options": [
+        "Both pay the same, because the cost per trade is the same",
+        "Rule B pays more, because it holds each position longer",
+        "Rule A pays 25.2% a year and rule B pays 1.2%, because cost is turnover times the cost rate",
+        "Neither pays anything until it sells"
+      ],
+      "answer": 2,
+      "explanation": "Cost grows with turnover: 252 × 0.10% = 25.2% for daily trading and 12 × 0.10% = 1.2% for monthly trading. Buying costs money too, not only selling.",
+      "conceptKeys": ["transaction-costs"]
+    },
+    {
+      "prompt": "A rule's position goes 0, 1, 1, 0 over four days, as a fraction of equity. What is its turnover?",
+      "options": [
+        "1",
+        "3",
+        "0.5",
+        "2"
+      ],
+      "answer": 3,
+      "explanation": "Turnover adds up the size of each change: 0 to 1 is 1, 1 to 1 is 0, and 1 to 0 is 1. The total is 2: once in and once out.",
+      "conceptKeys": ["transaction-costs"]
+    }
+  ]
+}

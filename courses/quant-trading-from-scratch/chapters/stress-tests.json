@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "In the example, trading one day later turned a Sharpe ratio of 0.89 into −0.68. What does that tell you about the strategy?",
+      "options": [
+        "Its costs were estimated too low",
+        "Its whole edge sits in the next day's move, so any delay in real fills destroys it",
+        "It only works in 2 of the 5 years",
+        "The t-statistic of 1.99 was computed wrongly"
+      ],
+      "answer": 1,
+      "explanation": "Delaying the trade by one day changed nothing except timing, and the edge disappeared. The strategy depends on acting at one exact moment, which a real order may miss.",
+      "conceptKeys": ["stress-tests"]
+    },
+    {
+      "prompt": "A strategy's Sharpe ratio is 1.2. With costs doubled it is 1.1, and without its best 10 days it is 0.3. Which weakness should worry you most?",
+      "options": [
+        "Costs, because the Sharpe ratio fell by 0.1",
+        "Nothing, because the base Sharpe ratio is above 1",
+        "Timing, because it was not tested",
+        "Its dependence on a few lucky days, because removing 10 days cut the Sharpe ratio by three quarters"
+      ],
+      "answer": 3,
+      "explanation": "Doubling costs barely moved the result, but removing 10 days took it from 1.2 to 0.3, a fall of 75%. The profit rests on a handful of days that may not repeat.",
+      "conceptKeys": ["stress-tests"]
+    },
+    {
+      "prompt": "What does one stress test change?",
+      "options": [
+        "One assumption, made worse, with everything else kept the same so the change in the result has one cause",
+        "Every assumption at once, to find the worst case",
+        "The strategy's rule, until the result improves",
+        "The data, by adding years from the future"
+      ],
+      "answer": 0,
+      "explanation": "Changing one assumption at a time shows which guess the result depends on. Changing the rule to improve the result is tuning, not testing.",
+      "conceptKeys": ["stress-tests"]
+    }
+  ]
+}

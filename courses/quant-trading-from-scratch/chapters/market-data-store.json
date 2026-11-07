@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "The vendor corrects the 3 March close from 52.10 to 51.90 the next morning. What does `as_of(rows, \"2025-03-03 18:00\")` return for 3 March?",
+      "options": [
+        "51.90, because it is the correct price",
+        "52.10, because the correction was not known until 09:00 on 4 March",
+        "Both values, one for each row",
+        "Nothing, because the first row was replaced"
+      ],
+      "answer": 1,
+      "explanation": "The query keeps only rows with known_at at or before 18:00 on 3 March. The correction arrived at 09:00 on 4 March, so the only known close is 52.10.",
+      "conceptKeys": ["market-data-store"]
+    },
+    {
+      "prompt": "Why does the store add the corrected price as a new row instead of overwriting the old one?",
+      "options": [
+        "Overwriting would make a backtest use 51.90 on 3 March, a price nobody had then",
+        "New rows take less disk space than updates",
+        "pandas cannot change a value in a DataFrame",
+        "The vendor's first price is always the right one"
+      ],
+      "answer": 0,
+      "explanation": "If the old row is gone, a backtest of the evening of 3 March sees the corrected 51.90. That is look-ahead bias, because the strategy only had 52.10 at that moment.",
+      "conceptKeys": ["market-data-store"]
+    },
+    {
+      "prompt": "A company trades as OLDCO until 3 March 2025 and as NEWCO from 4 March 2025. Why does the store key its prices by the number 7 instead of the ticker?",
+      "options": [
+        "Numbers sort faster than text",
+        "Tickers are secret and cannot be stored",
+        "Tickers change and can be reused, so a stable number keeps one company's history together",
+        "The exchange only reports prices by number"
+      ],
+      "answer": 2,
+      "explanation": "The symbology table maps each ticker to the stable number for the dates it applied. The price rows use the number, so the history does not break when the ticker changes.",
+      "conceptKeys": ["market-data-store"]
+    }
+  ]
+}

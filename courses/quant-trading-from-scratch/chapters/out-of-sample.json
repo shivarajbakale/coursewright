@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You tested 5 moving-average lengths on 2018-2021 and the 50-day rule scored a Sharpe ratio of 0.95. Why is 0.95 not a fair estimate of how it will do next?",
+      "options": [
+        "Because the Sharpe ratio cannot be annualised",
+        "Because 2018-2021 is too short to compute a moving average",
+        "Because it is the highest of 5 scores on the same data that picked it",
+        "Because the 50-day rule trades too often"
+      ],
+      "answer": 2,
+      "explanation": "The data that chose the rule also scored it, and you kept the top score. Luck in those 4 years pushed it up, so a later period scored 0.30 instead.",
+      "conceptKeys": ["out-of-sample"]
+    },
+    {
+      "prompt": "You checked your rule on the out-of-sample years, did not like the result, changed the rule and checked again. What are those years now?",
+      "options": [
+        "In-sample data, because they helped shape the rule",
+        "Still out-of-sample data, because the rule was not fitted to them directly",
+        "Better test data, because the rule has been improved",
+        "Unusable for any purpose"
+      ],
+      "answer": 0,
+      "explanation": "Out-of-sample data can be used once. Once a result on it changed the rule, it has shaped the design, so it no longer gives a fair judgement.",
+      "conceptKeys": ["out-of-sample"]
+    },
+    {
+      "prompt": "Why should the split be by date, with the held-back period last, rather than a random 30% of days?",
+      "options": [
+        "Random splits make the Sharpe ratio negative",
+        "Neighbouring days share information, and the held-back part should play the role of the future",
+        "pandas cannot select random rows from a time index",
+        "A random split always holds back too few days"
+      ],
+      "answer": 1,
+      "explanation": "With a random split, each held-back day sits next to days used for design. Holding back the last stretch keeps the test like trading a future you have not seen.",
+      "conceptKeys": ["out-of-sample"]
+    }
+  ]
+}

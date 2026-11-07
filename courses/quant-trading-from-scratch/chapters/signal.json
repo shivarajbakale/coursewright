@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Closes are 106, 103 and 99 on three days in a row. What does the 3-bar trend rule give on the third day?",
+      "options": [
+        "+1, because the average of 102.67 is above 99",
+        "0, because the close of 99 is below the average of 102.67",
+        "0, because there is not enough history",
+        "+1, because the price fell 3 times"
+      ],
+      "answer": 1,
+      "explanation": "The moving average is (106 + 103 + 99) / 3 = 102.67. The rule gives +1 only when the close is above its average, and 99 is below it, so the signal is 0.",
+      "conceptKeys": ["signal"]
+    },
+    {
+      "prompt": "You compute a signal for 2025-03-07 twice: once with all 10 bars and once with bars up to 2025-03-07. The two values differ. What does that tell you?",
+      "options": [
+        "The moving average window is too short",
+        "pandas sorted the bars in a different order",
+        "The rule used bars after 2025-03-07, so it reads the future",
+        "The signal is working as intended"
+      ],
+      "answer": 2,
+      "explanation": "A signal may use only the data known up to its bar. If later bars change an earlier value, the rule read them, and a replay would trade on information nobody had then.",
+      "conceptKeys": ["signal"]
+    },
+    {
+      "prompt": "On 2025-03-13 the close is 101 and its 3-bar moving average is 101.00. Why is the signal 0?",
+      "options": [
+        "Because the rule needs the close to be strictly above the average, and a tie is not above",
+        "Because the average is missing on that day",
+        "Because the close fell from the day before",
+        "Because the signal can change at most twice"
+      ],
+      "answer": 0,
+      "explanation": "The code tests `closes > average`. Equal values make that test false, so this rule treats a tie as no view and gives 0.",
+      "conceptKeys": ["signal"]
+    }
+  ]
+}

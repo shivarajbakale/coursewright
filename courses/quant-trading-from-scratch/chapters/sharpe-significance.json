@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "A backtest of 4 years shows a yearly Sharpe ratio of 0.5. Its standard error is about 0.50. What is the t-statistic, and does it pass a bar of 2?",
+      "options": [
+        "2.0, so it passes",
+        "0.25, so it fails",
+        "4.0, so it passes easily",
+        "1.0, so it fails"
+      ],
+      "answer": 3,
+      "explanation": "The t-statistic is the estimate divided by its standard error: 0.5 / 0.50 = 1.0. That is well below 2, so luck explains the result as well as an edge does.",
+      "conceptKeys": [
+        "sharpe-significance"
+      ]
+    },
+    {
+      "prompt": "You want to halve the standard error of a Sharpe ratio estimate. How much more independent data do you need?",
+      "options": [
+        "Twice as much",
+        "Four times as much",
+        "Half as much",
+        "The same amount, measured more often"
+      ],
+      "answer": 1,
+      "explanation": "The error shrinks with the square root of the length. One year gives an error of about 1.00 and 4 years give 0.50, so halving it takes 4 times the data.",
+      "conceptKeys": [
+        "sharpe-significance"
+      ]
+    },
+    {
+      "prompt": "A strategy holds each position for 30 days and has made 12 trades a year for 2 years. Why is a count of 504 daily returns misleading here?",
+      "options": [
+        "Because daily returns cannot be used to compute a Sharpe ratio",
+        "Because 504 is fewer than the 4 years the formula requires",
+        "Because the days inside one holding depend on the same bet, so there are only about 24 independent bets",
+        "Because the standard error only counts losing trades"
+      ],
+      "answer": 2,
+      "explanation": "The formula assumes independent periods. Days inside one 30-day position are one bet, so the evidence is about 12 × 2 = 24 bets, far fewer than 504.",
+      "conceptKeys": [
+        "sharpe-significance"
+      ]
+    }
+  ]
+}

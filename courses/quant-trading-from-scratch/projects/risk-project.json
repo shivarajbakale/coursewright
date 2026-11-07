@@ -1,0 +1,77 @@
+{
+  "title": "A risk report for any strategy",
+  "brief": "Build `riskreport`, a small Python tool that takes a strategy's daily account values and the daily closes of the share it traded, and prints one honest report card.\n\n**Why.** A return on its own says little. A gain of 8% can hide a fall of 25% on the way, can lose to buying and holding, and can be no better than safe bills. Every later module scores its strategies with this report, so build it once and test it well.\n\n**What it prints**, for the strategy and for buy and hold on the same dates:\n\n1. Total return, and the yearly mean return (daily mean × 252).\n2. Daily volatility and yearly volatility (daily × √252).\n3. Maximum drawdown, and the gain needed to recover from it.\n4. Excess return over a risk-free rate you pass in (for example 4% a year, illustrative).\n5. Sharpe ratio and Sortino ratio.\n6. One line that says whether the strategy beat buy and hold on return and on Sharpe ratio.\n\n**Constraints.** Python 3 with numpy and pandas only. Use 252 trading days. Use `std()` from pandas, which divides by one less than the count, for volatility. All test data is made up; do not download real prices. If you kept your return and compounding code from the previous module's project, import it in `metrics.py`.\n\n**Also build** a tiny rule lab: on two made-up price paths, run a trend rule (hold tomorrow if the price rose today) and a mean reversion rule (hold tomorrow if it fell today), and print each rule's report. You should see each rule win on one path and lose on the other.",
+  "starter": [
+    {
+      "path": "metrics.py",
+      "note": "Empty functions to fill in: daily_returns(close), volatility(returns), annualise_mean(m), annualise_vol(v), max_drawdown(equity), recovery_gain(dd), excess(returns, rf_year), sharpe(returns, rf_year), sortino(returns, rf_year)."
+    },
+    {
+      "path": "prices.py",
+      "note": "make_path(kind, days, seed) returns a made-up pandas Series of closes: 'trend' drifts up steadily, 'choppy' swings back and forth, 'calm' moves little."
+    },
+    {
+      "path": "report.py",
+      "note": "report(equity, close, rf_year) returns a dict of every number above for the strategy and for buy and hold; main() prints it as an aligned table."
+    },
+    {
+      "path": "rules.py",
+      "note": "trend_rule(close) and reversion_rule(close) return the account value each day, starting at 100, holding the share only on days the rule chose the evening before."
+    },
+    {
+      "path": "test_metrics.py",
+      "note": "pytest tests built from the numbers in the lessons: route times, the 7-day equity curve, the 10 daily returns used for the Sharpe ratio."
+    }
+  ],
+  "hints": [
+    "Start with the smallest numbers from the lessons. The route B times 20, 45, 25, 40, 20 must give a standard deviation of 10.49 when you divide by the count, and 11.73 with pandas' default.",
+    "Maximum drawdown is two lines in pandas: divide the equity curve by its cummax(), subtract 1, and take min(). The recovery gain is 1 / (1 + dd) - 1, so -0.25 needs 0.333.",
+    "Turn the yearly risk-free rate into a daily one by dividing by 252 before you subtract it from each day. Annualise the Sharpe ratio by multiplying the daily ratio by √252.",
+    "For the Sortino ratio, set every positive daily excess return to 0 with clip(upper=0), square, take the mean over all days, and take the square root. For the 10 lesson returns at 4% you should get 1.09, against a Sharpe ratio of 0.74.",
+    "In rules.py, a decision made with today's close can only use tomorrow's return. Pair each return with the next one, as in the lesson, so a rule never trades on a price it has not seen yet."
+  ],
+  "rubric": [
+    {
+      "criterion": "volatility() is the standard deviation of daily returns from pct_change(): route B gives 10.49 (divide by count) and 11.73 (pandas default), and the calm and jumpy shares give 0.82% and 5.8%",
+      "chapterKey": "volatility"
+    },
+    {
+      "criterion": "Yearly numbers use × 252 for the mean and × √252 for volatility, with a test that 1.2% a day becomes 19.05% a year",
+      "chapterKey": "annualising"
+    },
+    {
+      "criterion": "max_drawdown() returns -0.25 for 100, 110, 99, 105, 120, 90, 108, and every strategy number is printed next to buy and hold on the same dates",
+      "chapterKey": "drawdown"
+    },
+    {
+      "criterion": "Sharpe and Sortino ratios subtract the daily risk-free rate first and give 0.74 and 1.09 on the lesson's 10 returns at 4%",
+      "chapterKey": "sharpe-ratio"
+    },
+    {
+      "criterion": "The rule lab shows the trend rule winning on the 'trend' path and the mean reversion rule winning on the 'choppy' path, and the printout names the bet each rule makes",
+      "chapterKey": "strategy-families"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Spread and volatility",
+      "body": "Fill in daily_returns() and volatility() in metrics.py. Write tests for the route times and for the calm and jumpy shares from the lessons, and make them pass.",
+      "checkCmd": "python -m pytest test_metrics.py -k \"std or volatility\" -q"
+    },
+    {
+      "title": "Yearly numbers and drawdown",
+      "body": "Add annualise_mean(), annualise_vol(), max_drawdown() and recovery_gain(). Test that 0.04% a day becomes 10.08% a year, that 1.2% a day becomes 19.05%, and that the 7-day equity curve has a maximum drawdown of -25%.",
+      "checkCmd": "python -m pytest test_metrics.py -k \"annual or drawdown\" -q"
+    },
+    {
+      "title": "Excess return, Sharpe and Sortino",
+      "body": "Add excess(), sharpe() and sortino(). Test them on the 10 lesson returns with a 4% risk-free rate: yearly excess return 8.6%, Sharpe ratio 0.74, Sortino ratio 1.09.",
+      "checkCmd": "python -m pytest test_metrics.py -k \"sharpe or sortino\" -q"
+    },
+    {
+      "title": "The full report and the rule lab",
+      "body": "Write report.py and rules.py. Run both rules on a 'trend' path and a 'choppy' path from prices.py, print each report next to buy and hold, and check that each rule wins on one path and loses on the other.",
+      "checkCmd": "python report.py --demo"
+    }
+  ]
+}

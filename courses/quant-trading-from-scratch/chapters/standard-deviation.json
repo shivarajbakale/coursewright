@@ -1,0 +1,35 @@
+{
+  "questions": [
+    {
+      "prompt": "Why do you square each distance from the mean instead of adding the plain distances?",
+      "options": [
+        "Squaring makes the result smaller and easier to read",
+        "The plain distances always add up to 0, so they cannot measure spread",
+        "Squaring removes the unit, so lists in different units can be compared",
+        "The plain distances are always positive already"
+      ],
+      "answer": 1,
+      "explanation": "Numbers above the mean balance numbers below it, so plain distances sum to 0. Squares are all positive and cannot cancel.",
+      "conceptKeys": ["standard-deviation"]
+    },
+    {
+      "prompt": "The numbers 4, 6, 4, 6 have a mean of 5. What is their standard deviation, dividing by the count?",
+      "options": ["0", "2", "4", "1"],
+      "answer": 3,
+      "explanation": "Each distance is 1 or -1, each square is 1, the mean of the squares (the variance) is 1, and the square root of 1 is 1.",
+      "conceptKeys": ["standard-deviation"]
+    },
+    {
+      "prompt": "Route A has a variance of 2 minutes squared. Why do you take the square root at the end?",
+      "options": [
+        "To put the answer back in minutes, the unit of the original numbers",
+        "To make the answer always smaller than the mean",
+        "To correct for having only 5 mornings of data",
+        "To turn the answer into a percentage"
+      ],
+      "answer": 0,
+      "explanation": "The variance is in minutes squared because the distances were squared. Its square root, 1.41 minutes, is in the same unit as the times.",
+      "conceptKeys": ["standard-deviation"]
+    }
+  ]
+}

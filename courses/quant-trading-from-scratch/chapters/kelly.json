@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "With the coin that lands heads 60% of the time, you stake 40% of your money each round. What happens over 100 rounds?",
+      "options": [
+        "You end with 0.78 of your money, because each loss at 0.6 hurts more than each win at 1.4 helps",
+        "You grow fastest, because 40% has the largest expected value per round",
+        "You end with exactly what you started with, because the wins and losses cancel",
+        "You lose everything on the first tail"
+      ],
+      "answer": 0,
+      "explanation": "The average log growth at 40% is −0.00245 per round, so 100 rounds give a growth factor of 0.78, a loss of 22%. The expected value is positive, but compounding punishes the large losses.",
+      "conceptKeys": [
+        "kelly"
+      ]
+    },
+    {
+      "prompt": "A bet wins 50% of the time and pays 3 for each 1 staked. What fraction does the Kelly criterion stake?",
+      "options": [
+        "0.50",
+        "0.25",
+        "0.33",
+        "0.17"
+      ],
+      "answer": 2,
+      "explanation": "f = p − q / b = 0.5 − 0.5 / 3 = 0.33. The value 0.17 is only q / b, the part you subtract from p.",
+      "conceptKeys": [
+        "kelly"
+      ]
+    },
+    {
+      "prompt": "Why does the Kelly criterion maximise the average log growth instead of the average gain per bet?",
+      "options": [
+        "Because logarithms make the numbers smaller and easier to print",
+        "Because your money compounds, so what you end with is the product of growth factors, and logs turn that product into a sum",
+        "Because the average gain per bet is always negative",
+        "Because the average gain ignores the chance of winning"
+      ],
+      "answer": 1,
+      "explanation": "Each round multiplies your money by 1 + f or 1 − f. Adding the logs of those growth factors is the same as multiplying them, so the stake with the highest average log growth ends with the most money.",
+      "conceptKeys": [
+        "kelly"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A spread keeps 80% of its gap from the mean each day. What is its half-life?",
+      "options": [
+        "About 3.1 days, from ln(0.5) / ln(0.8)",
+        "0.8 days",
+        "5 days, because 20% closes each day",
+        "2.5 days, because 0.5 / 0.2 = 2.5"
+      ],
+      "answer": 0,
+      "explanation": "The gap after h days is 0.8^h of the start, and half-life solves 0.8^h = 0.5. So h = ln(0.5) / ln(0.8) = -0.6931 / -0.2231 = 3.1 days.",
+      "conceptKeys": ["half-life"]
+    },
+    {
+      "prompt": "You fit a line through (yesterday's spread, today's change) and get a slope of +0.01. What should you do with this pair?",
+      "options": [
+        "Trade it with a half-life of 100 days",
+        "Hold each trade for 1 day",
+        "Drop it: k is above 1, so there is no pull back to the mean",
+        "Use a rolling window of 1 day"
+      ],
+      "answer": 2,
+      "explanation": "The slope is k - 1, so k = 1.01. A gap that keeps more than 100% of itself each day grows instead of closing, and the formula gives no half-life.",
+      "conceptKeys": ["half-life"]
+    },
+    {
+      "prompt": "The pair was built with a true half-life of 6.58 days, but the estimate from 500 days of data is 8.1 days. Why?",
+      "options": [
+        "The formula ln(0.5) / ln(k) is only an approximation",
+        "The daily random news moves the fitted slope, so the estimate is rough",
+        "The estimate counts weekends",
+        "The hedge ratio was wrong, so the spread is not stationary"
+      ],
+      "answer": 1,
+      "explanation": "The slope is fitted on noisy daily changes. Even 500 days leave an error of a couple of days here, so treat a half-life as a rough guide.",
+      "conceptKeys": ["half-life"]
+    }
+  ]
+}

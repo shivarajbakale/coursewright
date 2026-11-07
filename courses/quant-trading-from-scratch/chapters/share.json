@@ -1,0 +1,35 @@
+{
+  "questions": [
+    {
+      "prompt": "A company has 4,000,000 shares and you own 2,000 of them. What fraction of the company do you own?",
+      "options": ["0.5%", "0.05%", "2%", "0.005%"],
+      "answer": 1,
+      "explanation": "Your fraction is 2,000 / 4,000,000 = 0.0005, which is 0.05%. Each share is one equal slice, so you divide your shares by all the shares.",
+      "conceptKeys": ["share"]
+    },
+    {
+      "prompt": "A company has 2,000,000 shares. The last trade was at 15.00 pounds, and the next one is at 14.00 pounds. What changed?",
+      "options": [
+        "The company lost 2,000,000 pounds from its bank account",
+        "The company now has fewer shares",
+        "Nothing inside the company changed; the agreed price fell, so its value at market prices fell to 28,000,000 pounds",
+        "The owners must pay the company 1.00 pound per share"
+      ],
+      "answer": 2,
+      "explanation": "The value of all shares is the last trade price multiplied by the number of shares: 2,000,000 × 14 = 28,000,000. Only the price people agreed on moved.",
+      "conceptKeys": ["share"]
+    },
+    {
+      "prompt": "What is a ticker?",
+      "options": [
+        "A short code that names one company's shares on an exchange, such as AAPL",
+        "The price of the most recent trade",
+        "A list of everyone who owns shares in a company",
+        "The number of shares a company has"
+      ],
+      "answer": 0,
+      "explanation": "A ticker is the short name an exchange uses for a share. Code and data files use tickers, not company names.",
+      "conceptKeys": ["share"]
+    }
+  ]
+}

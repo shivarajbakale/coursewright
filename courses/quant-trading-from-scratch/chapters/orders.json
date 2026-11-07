@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "The best bid is 103.90 and the best ask is 104.10. You send a market order to sell 10 shares. What do you receive?",
+      "options": [
+        "1,041, at the best ask",
+        "1,040, at the mid price",
+        "1,039, at the best bid",
+        "Nothing until a buyer accepts 104.00"
+      ],
+      "answer": 2,
+      "explanation": "A market sell trades at once at the best price a buyer offers, the best bid. It receives 10 × 103.90 = 1039.",
+      "conceptKeys": ["orders"]
+    },
+    {
+      "prompt": "You hold +10 shares and want −10. What does `order_for(-10, 10)` return?",
+      "options": [
+        "A sell of 10",
+        "A sell of 20",
+        "A buy of 20",
+        "Two orders: a sell of 10 and a sell of 10"
+      ],
+      "answer": 1,
+      "explanation": "The change is −10 − 10 = −20, so the side is sell and the quantity is 20. One order sells the 10 shares you own and 10 borrowed shares.",
+      "conceptKeys": ["orders"]
+    },
+    {
+      "prompt": "With the best ask at 104.10, you send a limit order to buy at 104.00. What is the risk you take compared with a market order?",
+      "options": [
+        "You may pay more than 104.00",
+        "You may buy twice as many shares",
+        "The order may trade at the best bid instead",
+        "The order may never trade, for example if the price rises"
+      ],
+      "answer": 3,
+      "explanation": "A limit buy trades only at 104.00 or lower. No seller asks that now, so it waits, and if the price rises you end with no shares at all.",
+      "conceptKeys": ["orders"]
+    }
+  ]
+}

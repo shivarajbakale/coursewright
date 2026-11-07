@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "You buy one futures contract on 100 shares at $105.13 and deposit $1,000 of margin. The next evening it settles at $103.13. What is your margin now?",
+      "options": [
+        "$1,000, because nothing is paid until expiry",
+        "$800",
+        "$998",
+        "$1,200"
+      ],
+      "answer": 1,
+      "explanation": "The price fell by $2.00 and the contract covers 100 shares, so daily settlement takes 2.00 × 100 = $200 from your margin: $1,000 − $200 = $800.",
+      "conceptKeys": [
+        "futures"
+      ]
+    },
+    {
+      "prompt": "A stock costs $100 and pays no dividend, and the risk-free rate is 5%. Why is the one-year futures price $105.13 and not $100?",
+      "options": [
+        "Because the seller charges a fee for the risk of default",
+        "Because futures prices always rise over time",
+        "Because the futures buyer keeps the $100 earning interest until expiry, so the price must include that interest",
+        "Because the exchange adds its margin to the price"
+      ],
+      "answer": 2,
+      "explanation": "If the futures price were $100, buying futures and keeping the cash at 5% would earn a year of interest for free. So the price is 100 × e^(0.05) = $105.13.",
+      "conceptKeys": [
+        "futures"
+      ]
+    },
+    {
+      "prompt": "What does daily settlement stop from happening?",
+      "options": [
+        "A loss growing for months without being paid",
+        "The futures price moving during the day",
+        "The buyer selling the contract before expiry",
+        "The futures price differing from the stock price"
+      ],
+      "answer": 0,
+      "explanation": "Each evening the exchange moves cash from the side that lost to the side that gained, so no loss is left unpaid beyond one day.",
+      "conceptKeys": [
+        "futures"
+      ]
+    }
+  ]
+}

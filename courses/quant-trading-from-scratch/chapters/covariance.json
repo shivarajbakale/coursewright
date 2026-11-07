@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "On one day, A's return is below its mean and B's return is above its mean. What does that day add to the covariance?",
+      "options": [
+        "A positive product, because both stocks moved",
+        "A negative product, because the two deviations have opposite signs",
+        "Nothing, because only days where both rise count",
+        "A product equal to A's variance"
+      ],
+      "answer": 1,
+      "explanation": "A negative deviation times a positive deviation is negative. Days like this pull the covariance down, toward 'moving apart'.",
+      "conceptKeys": ["covariance"]
+    },
+    {
+      "prompt": "You compute the covariance of two stocks' returns written in percent and get 2.6. You then write the same returns as decimals (2% becomes 0.02). What is the covariance now?",
+      "options": [
+        "2.6, because the stocks did not change",
+        "0.026",
+        "0.00026",
+        "260"
+      ],
+      "answer": 2,
+      "explanation": "Each deviation shrinks 100 times, so each product shrinks 100 × 100 = 10,000 times: 2.6 becomes 0.00026. The co-movement is the same; only the unit changed.",
+      "conceptKeys": ["covariance"]
+    },
+    {
+      "prompt": "What is the covariance of a series of returns with itself?",
+      "options": [
+        "Its variance",
+        "Always 1",
+        "Always 0",
+        "Its mean"
+      ],
+      "answer": 0,
+      "explanation": "Each product becomes a deviation times itself, a squared deviation. Averaging squared deviations is the variance, which is why the diagonal of r.cov() shows 4.3 for A.",
+      "conceptKeys": ["covariance"]
+    }
+  ]
+}

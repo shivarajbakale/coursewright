@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "A market buy of 400 shares meets a bar with open 101.5 and volume 1,700. With the 10% volume cap, what is the fill?",
+      "options": [
+        "400 shares at 101.5",
+        "170 shares at 101.5, a partial fill",
+        "170 shares at the close",
+        "No fill, because the order is too large"
+      ],
+      "answer": 1,
+      "explanation": "The cap is 1700 × 0.10 = 170 shares, so only 170 of the 400 trade. A market order fills at the bar's open of 101.5.",
+      "conceptKeys": ["fills"]
+    },
+    {
+      "prompt": "A limit buy at 102.0 meets a bar with open 102.5, high 103.0 and low 98.5. At what price does it fill?",
+      "options": [
+        "102.5, the open",
+        "98.5, the low",
+        "102.0, the limit",
+        "It does not fill"
+      ],
+      "answer": 2,
+      "explanation": "The low of 98.5 reached the limit, so the order fills. Its price is the lower of the open (102.5) and the limit (102.0), which is 102.0.",
+      "conceptKeys": ["fills"]
+    },
+    {
+      "prompt": "The signal reads the close of 2025-03-06. Why does the backtest fill the order at the open of 2025-03-07 instead of that close?",
+      "options": [
+        "Because the open is always cheaper than the close",
+        "Because exchanges accept orders only at the open",
+        "Because a fill at the open is easier to code",
+        "Because the close is already in the past when the signal has its view, so the next open is the earliest price you can trade at"
+      ],
+      "answer": 3,
+      "explanation": "The decision needs the close, so it is made after the close. The first price after that decision is the next bar's open, here 104.5 instead of 104.0.",
+      "conceptKeys": ["fills"]
+    }
+  ]
+}

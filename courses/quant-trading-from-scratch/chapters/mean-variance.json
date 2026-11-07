@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Two assets each have a volatility of 20%, and their correlation is 0.3. You put half your money in each. What is true of the mix's volatility?",
+      "options": [
+        "It is exactly 20%, the average of the two",
+        "It is 40%, the sum of the two",
+        "It is below 20%, because the two assets do not always move together",
+        "It is 0%, because the swings cancel completely"
+      ],
+      "answer": 2,
+      "explanation": "With a correlation below 1, part of the two assets' swings cancel, so the mix swings less than the average of its parts. Only a correlation of -1 with the right weights could cancel them completely.",
+      "conceptKeys": ["mean-variance"]
+    },
+    {
+      "prompt": "In a covariance matrix for assets A and B, what sits on the diagonal?",
+      "options": [
+        "The expected return of each asset",
+        "The variance of each asset",
+        "The covariance of A with B",
+        "The correlation of A with B"
+      ],
+      "answer": 1,
+      "explanation": "The diagonal holds each asset's variance, its covariance with itself. The two places off the diagonal hold the covariance of A with B.",
+      "conceptKeys": ["mean-variance"]
+    },
+    {
+      "prompt": "The optimised weights earn 4.49% at 9.79% volatility, and half each earns 5.00% at 12.04%. Why is the optimised mix still the better choice?",
+      "options": [
+        "It has the higher Sharpe ratio, and leverage can scale it to 12.04% volatility with a higher return",
+        "It has the higher return",
+        "It holds more of asset A, which has the higher expected return",
+        "It has no risk at all"
+      ],
+      "answer": 0,
+      "explanation": "Its Sharpe ratio is 0.46 against 0.42. Scaled up 1.23 times to the same 12.04% volatility, it earns 5.52%, more than the 5.00% of half each.",
+      "conceptKeys": ["mean-variance"]
+    }
+  ]
+}

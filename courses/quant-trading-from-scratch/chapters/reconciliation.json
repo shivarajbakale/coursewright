@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "Your books say 300 AAA and $42,485.00 cash. The broker says 340 AAA and $40,485.00 cash. What is the most likely story?",
+      "options": [
+        "The broker sold 40 shares for $2,000 that your books missed",
+        "Your books are right and the broker made two separate mistakes",
+        "A buy of 40 shares at $50.00 filled, and its fill report never reached your books",
+        "The cash gap is rounding and can be ignored"
+      ],
+      "answer": 2,
+      "explanation": "The broker has 40 more shares and 2,000.00 less cash. 40 × 50.00 = 2,000, so both gaps fit one buy that your books never recorded.",
+      "conceptKeys": ["reconciliation"]
+    },
+    {
+      "prompt": "The check finds a gap. What should happen first?",
+      "options": [
+        "Copy the broker's numbers into your books and keep trading",
+        "Turn on the kill switch so no new orders go out on wrong numbers",
+        "Ignore it unless the gap repeats tomorrow",
+        "Send an order that closes the gap at once"
+      ],
+      "answer": 1,
+      "explanation": "Until the cause is known, every new order is computed from numbers that may be wrong. Stopping first keeps the gap from growing while a person finds out why.",
+      "conceptKeys": ["reconciliation"]
+    },
+    {
+      "prompt": "The broker's list leaves out BBB, which you do not hold. Why does the check still show BBB as matching?",
+      "options": [
+        "fillna(0) turns the missing entry into 0, and your books also say 0",
+        "pandas drops rows that one side does not list",
+        "The check skips every share with a zero position",
+        "The broker always lists every share you ever traded"
+      ],
+      "answer": 0,
+      "explanation": "Joining the two lists gives a missing value for BBB on the broker's side. fillna(0) makes it 0, and 0 − 0 = 0 is no gap.",
+      "conceptKeys": ["reconciliation"]
+    }
+  ]
+}

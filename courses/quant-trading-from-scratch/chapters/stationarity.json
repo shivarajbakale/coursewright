@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You run adfuller on a gap between two prices and get a p-value of 0.003. What does that tell you?",
+      "options": [
+        "The gap is a random walk",
+        "The test cannot tell the gap from a random walk",
+        "The gap will close within 3 days",
+        "The test rejects the random walk, so the gap looks stationary"
+      ],
+      "answer": 3,
+      "explanation": "The ADF test starts from 'this is a random walk'. A p-value below 0.05 rejects that, which is evidence the gap is pulled back to its mean.",
+      "conceptKeys": ["stationarity"]
+    },
+    {
+      "prompt": "A price series gives an ADF p-value of 0.83. Which reading is correct?",
+      "options": [
+        "The price is proven to be a random walk",
+        "There is no evidence of a pull back to a level, so mean reversion on this price has no support from the test",
+        "The price is stationary with 83% confidence",
+        "The price returns to its mean 83% of the time"
+      ],
+      "answer": 1,
+      "explanation": "A large p-value means the test cannot tell the series from a random walk. It is not proof of a random walk, but it gives no evidence of a pull either.",
+      "conceptKeys": ["stationarity"]
+    },
+    {
+      "prompt": "In the example, the walk's mean was -20.95 in the first 250 days and -43.35 in the next 250. Why does that matter?",
+      "options": [
+        "A stationary series keeps the same mean over time, so a moving mean is a sign of a random walk",
+        "It shows the walk has a stronger pull than the other series",
+        "It means the random steps were larger in the second half",
+        "It shows the ADF test was run on too few days"
+      ],
+      "answer": 0,
+      "explanation": "A random walk has no level to return to, so its average drifts from one period to the next. The pulled series stayed near 0 in both halves.",
+      "conceptKeys": ["stationarity"]
+    }
+  ]
+}

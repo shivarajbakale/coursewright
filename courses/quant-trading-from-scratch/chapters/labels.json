@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "With barriers at +4% and -4% and a horizon of 10 days, the price goes from 100 to 95.5 on day 3 and to 105 on day 8. What is the triple-barrier label?",
+      "options": [
+        "+1, because the price ends above 104",
+        "0, because both lines were touched",
+        "-1, because the lower line at 96 is touched first, on day 3",
+        "-1, because the 10-day return is negative"
+      ],
+      "answer": 2,
+      "explanation": "The label is set by the first line touched. 95.5 is below 100 × 0.96 = 96 on day 3, so the answer is -1 and later prices do not count.",
+      "conceptKeys": ["labels"]
+    },
+    {
+      "prompt": "Why may a label use prices after the decision day when a feature may not?",
+      "options": [
+        "The label is the answer the program learns to predict, so it describes the future on purpose",
+        "Labels are only used after the strategy goes live",
+        "Prices after the decision day are point-in-time once they are published",
+        "A label uses a horizon of 10 days, which is too short to matter"
+      ],
+      "answer": 0,
+      "explanation": "The label is the answer key: what happened after the decision. A feature is the question asked on the day, so it may only use what was known then.",
+      "conceptKeys": ["labels"]
+    },
+    {
+      "prompt": "Labels use a horizon of 10 days. How many days do the labels of day 0 and day 1 have in common?",
+      "options": [
+        "0 days",
+        "1 day",
+        "10 days",
+        "9 days"
+      ],
+      "answer": 3,
+      "explanation": "Day 0's label looks at days 1 to 10 and day 1's label at days 2 to 11. Days 2 to 10 are shared: 9 days, so neighbouring labels are not independent.",
+      "conceptKeys": ["labels"]
+    }
+  ]
+}

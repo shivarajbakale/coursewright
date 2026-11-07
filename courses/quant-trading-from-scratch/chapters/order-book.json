@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "C bid $99.99 at 09:30:02, and you bid $100.00 at 09:30:07. A market sell order for 450 shares arrives. Why do you trade and C does not?",
+      "options": [
+        "The book sorts by price first, so the higher bid of $100.00 fills before any $99.99 order",
+        "The book sorts by arrival time first, and C's order expired",
+        "Market sell orders always fill the newest order first",
+        "C's order is larger than 450 shares, so it cannot fill"
+      ],
+      "answer": 0,
+      "explanation": "Price comes before time. The sell order fills every $100.00 order (250 + 150 + 50 shares) before it reaches $99.99, and the 450 shares run out first.",
+      "conceptKeys": ["order-book"]
+    },
+    {
+      "prompt": "At $100.00, A waits with 250 shares, then B with 150, then you with 100. What is your queue position?",
+      "options": [
+        "100 shares",
+        "250 shares",
+        "400 shares",
+        "500 shares"
+      ],
+      "answer": 2,
+      "explanation": "Queue position is the number of shares ahead of you at your price: 250 + 150 = 400. The 500 shares is the depth at $100.00, which includes your own 100.",
+      "conceptKeys": ["order-book"]
+    },
+    {
+      "prompt": "You want to trade sooner than the 400 shares ahead of you at $100.00. Which change to your buy order does that?",
+      "options": [
+        "Cancel it and send it again at $100.00",
+        "Make it larger, for example 1,000 shares",
+        "Cancel it and send it at $99.99",
+        "Cancel it and send it at $100.01"
+      ],
+      "answer": 3,
+      "explanation": "A new order at the same price joins the back of the queue. A higher bid of $100.01 is a better price for sellers, so it sits ahead of every $100.00 order.",
+      "conceptKeys": ["order-book"]
+    }
+  ]
+}

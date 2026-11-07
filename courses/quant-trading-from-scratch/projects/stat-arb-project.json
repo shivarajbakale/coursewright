@@ -1,0 +1,94 @@
+{
+  "title": "A pairs desk: find, test and trade a cointegrated pair",
+  "brief": "You will build a small Python research desk for pairs trading. It takes a handful of made-up prices, finds the pairs whose gap is stable, measures how fast each gap closes, trades the best pair with z-score rules, and charges every cost of holding both legs. At the end it prints one report per pair: the evidence that the pair is tied, its half-life, and its profit before and after costs.\n\nThe point is not a profitable pair. The point is a desk whose test results you can read the right way round, and whose profit already pays for the short leg.\n\nThe desk has five parts, one or two for each lesson in this module:\n\n1. **Co-movement** (`stats.py`): covariance and correlation written by hand with numpy, checked against pandas `cov` and `corr` on the five days from the lessons (covariance 2.6, correlation about 0.96).\n2. **Screening** (`screen.py`): for each price, the ADF p-value from `adfuller`; for every pair, the correlation of daily returns, the hedge ratio from `np.polyfit` and the Engle-Granger p-value from `coint`. A pair passes only when its `coint` p-value is below 0.05.\n3. **Half-life** (`halflife.py`): fit the best straight line through (yesterday's spread, today's change), turn the slope into k, and return ln(0.5) / ln(k). Return no half-life when the slope is 0 or above.\n4. **The pairs trade** (`backtest.py`): fit the hedge ratio on the first half of the days only, build a 20-day rolling z-score, enter at a z-score beyond 2 or -2, exit when it is between -0.5 and 0.5, and earn yesterday's position times today's spread change.\n5. **Costs** (`costs.py`): a transaction cost on both legs at every entry and exit, a daily borrow fee on the short leg's value at 1/360 of a yearly rate, and financing on the long leg's value.\n\nGenerate the data yourself with numpy and a fixed seed, so every run gives the same numbers. Make 750 days of prices for five illustrative stocks, P1 to P5. P1 and P2 are tied: P2 is a constant plus 1.2 times P1 plus a gap that keeps 92% of itself each day. P3 and P4 are tied the same way with a gap that keeps 95% each day, so their gap closes more slowly. P5 wanders alone. Keep every price above 5.\n\nConstraints: Python 3.10 or later, with numpy, pandas, statsmodels and pytest only. No downloaded data and no network calls. Every number in the report must come from the code, never typed in by hand. Treat this as the research log entry for the desk: write your hypothesis about which pairs will pass before you run the screen.",
+  "starter": [
+    {
+      "path": "data.py",
+      "note": "make_prices(seed, days=750) returns a DataFrame with columns P1 to P5: two tied pairs with different pull strengths and one price that wanders alone."
+    },
+    {
+      "path": "stats.py",
+      "note": "covariance(x, y) and correlation(x, y) written with numpy only, dividing by the number of days minus 1, the same as pandas."
+    },
+    {
+      "path": "screen.py",
+      "note": "screen(prices) returns one row per pair with return correlation, hedge ratio, coint p-value and passed (True when the p-value is below 0.05); it also prints each price's adfuller p-value."
+    },
+    {
+      "path": "halflife.py",
+      "note": "half_life(spread) returns ln(0.5) / ln(k) in days, where k is 1 plus the fitted slope, or None when the slope is 0 or above."
+    },
+    {
+      "path": "backtest.py",
+      "note": "run_pair(a, b, window=20, enter=2.0, exit=0.5) fits the hedge ratio on the first half, trades the second half and returns positions, daily profit per spread unit and the list of trades."
+    },
+    {
+      "path": "costs.py",
+      "note": "apply_costs(a, b, ratio, pos, cost_per_share, borrow_yearly, financing_yearly) returns the daily transaction costs, borrow fees and financing, each per spread unit."
+    },
+    {
+      "path": "tests/",
+      "note": "test_stats.py, test_halflife.py and test_costs.py with the hand-checked cases from the lessons: covariance 2.6, a gap that keeps 90% has a half-life of 6.58 days, and $42,740 short for 6 days at 30% a year costs $213.70."
+    }
+  ],
+  "hints": [
+    "Check each part on a case from the lessons before you run it on 750 days: the five days of returns for stats.py, a gap that keeps 90% each day for halflife.py, and the 6-day trade for costs.py.",
+    "Screen with correlation of returns and with coint, and print both. A high correlation with a large coint p-value is a pair whose prices drift apart, and it must not pass.",
+    "Read every p-value the same way: below 0.05 rejects the random walk, so the price or the spread looks stationary. A single price should give a large p-value.",
+    "With 5 stocks there are 10 pairs, and at the 0.05 threshold an unrelated pair passes by luck about once in 20 tries. If a pair that includes P5 passes, keep it in the report and mark it as a luck pass: the data has no tie built in for it.",
+    "Shift the position by one day before you multiply by the spread change, and fit the hedge ratio with days from the first half only. Otherwise the backtest uses prices it could not have seen.",
+    "The short leg is A when you are short the spread and ratio times B when you are long it. Charge the borrow fee on that leg's value for every day the position is held overnight."
+  ],
+  "rubric": [
+    {
+      "criterion": "Hand-written covariance and correlation match pandas to 6 decimals and give 2.6 and about 0.96 on the lesson's five days",
+      "chapterKey": "covariance"
+    },
+    {
+      "criterion": "The report shows return correlation for every pair and explains why it does not decide whether a pair passes",
+      "chapterKey": "correlation"
+    },
+    {
+      "criterion": "Each price's adfuller p-value is reported and read the right way round: a small p-value rejects the random walk",
+      "chapterKey": "stationarity"
+    },
+    {
+      "criterion": "Pairs pass on the coint p-value below 0.05, with the hedge ratio from the best straight line, and any passing pair that includes P5 is marked as a luck pass",
+      "chapterKey": "cointegration"
+    },
+    {
+      "criterion": "half_life returns 6.58 days for a gap that keeps 90% each day, and the report shows the P1-P2 half-life shorter than the P3-P4 one",
+      "chapterKey": "half-life"
+    },
+    {
+      "criterion": "The backtest fits the hedge ratio on the first half only, uses a shifted position, and lists each trade's entry and exit z-score",
+      "chapterKey": "pairs-trade"
+    },
+    {
+      "criterion": "Profit is shown before costs and after transaction costs, borrow fees at 0.5%, 5% and 30% a year, and financing",
+      "chapterKey": "borrow-costs"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Co-movement by hand",
+      "body": "Write stats.py with covariance and correlation using numpy only. Test them on the lesson's five days of returns for A and B, and against pandas on 750 days of returns from make_prices.",
+      "checkCmd": "python -m pytest tests/test_stats.py -q"
+    },
+    {
+      "title": "Screen every pair",
+      "body": "Write data.py and screen.py. Print each price's adfuller p-value, then a table of all 10 pairs with return correlation, hedge ratio and coint p-value. Confirm that P1-P2 and P3-P4 pass, and mark any passing pair with P5 as a luck pass.",
+      "checkCmd": "python screen.py"
+    },
+    {
+      "title": "Half-life of each passing pair",
+      "body": "Write halflife.py and add a half-life column for the passing pairs. Test it on a made-up gap that keeps 90% each day, and on a gap that grows, which must return None.",
+      "checkCmd": "python -m pytest tests/test_halflife.py -q && python screen.py"
+    },
+    {
+      "title": "Trade the pairs and charge for both legs",
+      "body": "Write backtest.py and costs.py, and a report that runs both passing pairs. For each, print the number of trades, the days in a trade, and the profit per spread unit before costs, after transaction costs, and after borrow fees at 0.5%, 5% and 30% a year plus financing at 6% a year. Compare the average borrow fee per trade of the two pairs, and explain the difference with their half-lives.",
+      "checkCmd": "python -m pytest tests/ -q && python backtest.py"
+    }
+  ]
+}

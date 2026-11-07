@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "With a quarter of Kelly, a 5% risk per trade and a cap of 100%, what position does a probability of 0.53 give?",
+      "options": [
+        "+53% of equity",
+        "+15% of equity",
+        "+100% of equity, because any edge hits the cap",
+        "+30% of equity"
+      ],
+      "answer": 3,
+      "explanation": "The edge is 2 × 0.53 - 1 = 0.06. A quarter is 0.015 of equity at risk, and 0.015 / 0.05 = 0.3, a long position of 30%.",
+      "conceptKeys": ["probability-sizing"]
+    },
+    {
+      "prompt": "The model says 0.45. What does the sizing rule do?",
+      "options": [
+        "Holds nothing, because the probability of up is below 0.5",
+        "Goes short 50% of equity, because the edge 2 × 0.45 - 1 = -0.1 is negative",
+        "Goes long 45% of equity",
+        "Goes short 100%, because any probability below 0.5 hits the cap"
+      ],
+      "answer": 1,
+      "explanation": "A negative edge means down is more likely. A quarter of -0.1 is -0.025, and -0.025 / 0.05 = -0.5, a short of 50%.",
+      "conceptKeys": ["probability-sizing"]
+    },
+    {
+      "prompt": "Why should the probabilities that feed the sizing rule come from test folds, not from the training days?",
+      "options": [
+        "Because on its training days a model looks more certain than it is, so every position would be too large",
+        "Because training days have no labels",
+        "Because test folds always have probabilities closer to 0.5 by design",
+        "Because the cap only applies to test folds"
+      ],
+      "answer": 0,
+      "explanation": "Training chose the model's numbers to fit those days, so its probabilities there sit too far from 0.5. The position grows with that distance, so it would be too large.",
+      "conceptKeys": ["probability-sizing"]
+    }
+  ]
+}

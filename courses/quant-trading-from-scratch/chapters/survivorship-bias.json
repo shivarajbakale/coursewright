@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "In the example, why does the survivors-only test report +20.0% while the whole universe returned -24.0%?",
+      "options": [
+        "The survivors had lower transaction costs",
+        "The test on today's list leaves out CCC and DDD, which lost 100% and 80%",
+        "The survivors' prices were not adjusted for splits",
+        "The whole-universe test holds the companies for a shorter time"
+      ],
+      "answer": 1,
+      "explanation": "Today's list only holds companies that were still trading. The two failures, and their losses of 100% and 80%, are missing from it, so the average looks 44 percentage points better.",
+      "conceptKeys": ["survivorship-bias"]
+    },
+    {
+      "prompt": "You want to test a rule on 2015 data. Which universe avoids survivorship bias?",
+      "options": [
+        "The companies listed on the exchange today",
+        "The companies listed today that also existed in 2015",
+        "Only the companies that were bought by another company",
+        "The companies listed on each date in 2015, including ones delisted later"
+      ],
+      "answer": 3,
+      "explanation": "The universe must be the list as it stood on each date. Only that list contains the companies that later failed, along with their losses.",
+      "conceptKeys": ["survivorship-bias"]
+    },
+    {
+      "prompt": "A company is delisted because another company bought all its shares. What does that kind of delisting often mean for shareholders?",
+      "options": [
+        "It often ends well, because the buyer pays for the shares",
+        "They always lose everything",
+        "Nothing, because a delisting does not affect the price",
+        "They must keep the shares forever"
+      ],
+      "answer": 0,
+      "explanation": "Not every delisting is a failure. A purchase by another company often ends well for shareholders; bankruptcies and prices too low for the exchange are the cases that end in large losses.",
+      "conceptKeys": ["survivorship-bias"]
+    }
+  ]
+}

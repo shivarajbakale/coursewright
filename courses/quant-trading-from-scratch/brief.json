@@ -1,0 +1,6 @@
+{
+  "topic": "Quantitative trading for software engineers",
+  "goal": "Understand how markets and quantitative trading work from the ground up; build, backtest and honestly evaluate systematic strategies in Python; then go deep enough on statistical arbitrage, factor portfolios, futures and options, machine-learning research, execution and trading infrastructure to design and build such systems in-house.",
+  "pace": "1-2 months, a few hours a week, then the advanced modules at your own pace",
+  "answers": []
+}

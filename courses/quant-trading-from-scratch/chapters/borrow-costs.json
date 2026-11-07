@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You short $42,740 of stock A for 6 days at a borrow fee of 30% a year, charged at 1/360 of the yearly rate per day. What does the fee cost?",
+      "options": [
+        "$12,822, because 30% of 42,740 is 12,822",
+        "$35.62",
+        "$2,137",
+        "$213.70"
+      ],
+      "answer": 3,
+      "explanation": "The fee is a yearly rate charged per day: 42,740 × 0.30 × 6 / 360 = $213.70. On a $930 gain, that takes about 23%.",
+      "conceptKeys": ["borrow-costs"]
+    },
+    {
+      "prompt": "Halfway through a pairs trade, the lender recalls the shares of your short leg and your broker cannot borrow them elsewhere. What happens?",
+      "options": [
+        "The lender pays you the remaining expected profit",
+        "You must buy the shares back and close the short leg, even if the spread is still far from its mean",
+        "Nothing changes until the z-score returns near 0",
+        "The borrow fee drops to zero for the rest of the trade"
+      ],
+      "answer": 1,
+      "explanation": "A recall means returning the shares now. Buying them back closes the short leg early, which can lock in a loss while the gap is still open.",
+      "conceptKeys": ["borrow-costs"]
+    },
+    {
+      "prompt": "Two pairs have the same expected gain per trade. Pair X has a half-life of 5 days and pair Y a half-life of 40 days. Both short legs cost 20% a year to borrow. Which statement is right?",
+      "options": [
+        "Y pays more in borrow fees, because its trades hold the short leg for more days",
+        "Both pay the same fee, because the rate is the same",
+        "X pays more, because it trades faster",
+        "Neither pays a fee, because a pairs trade is hedged"
+      ],
+      "answer": 0,
+      "explanation": "The fee is charged for each day the short leg is open. A slower spread keeps trades open longer, so more days pay the same daily fee.",
+      "conceptKeys": ["borrow-costs"]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "questions": [
+    {
+      "prompt": "The risk-free rate is 4%. Strategy X returns 10% with volatility 12%. Strategy Y returns 16% with volatility 30%. Which has the higher Sharpe ratio?",
+      "options": [
+        "Y, because it returns more",
+        "They are equal",
+        "X, with 0.5 against Y's 0.4",
+        "Y, because its excess return of 12% is twice X's 6%"
+      ],
+      "answer": 2,
+      "explanation": "X: (10% - 4%) / 12% = 0.5. Y: (16% - 4%) / 30% = 0.4. X earns more excess return for each unit of volatility.",
+      "conceptKeys": ["sharpe-ratio"]
+    },
+    {
+      "prompt": "You compute a ratio of 0.05 from daily excess returns (mean divided by standard deviation). What is the yearly Sharpe ratio?",
+      "options": ["About 0.79", "12.6", "0.05", "About 0.003"],
+      "answer": 0,
+      "explanation": "The yearly mean grows by 252 and the yearly volatility by √252, so the ratio grows by √252: 0.05 × 15.87 = 0.79.",
+      "conceptKeys": ["sharpe-ratio"]
+    },
+    {
+      "prompt": "A strategy has a few very large up days and small, steady down days. How does its Sortino ratio compare with its Sharpe ratio?",
+      "options": [
+        "Lower, because the Sortino ratio counts more days",
+        "Higher, because the Sortino ratio does not count the large up days as risk",
+        "The same, because both use the same excess return",
+        "It cannot be computed when there are up days"
+      ],
+      "answer": 1,
+      "explanation": "The Sortino ratio divides by the downside deviation, which sets positive days to 0. Large rises no longer increase the bottom of the fraction, so the ratio is higher.",
+      "conceptKeys": ["sharpe-ratio"]
+    }
+  ]
+}

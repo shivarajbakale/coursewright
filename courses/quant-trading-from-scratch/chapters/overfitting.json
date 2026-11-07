@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "The 60-group rule scored a Sharpe ratio of 2.93 in-sample and 0.19 out-of-sample. What explains the fall?",
+      "options": [
+        "Transaction costs were added out-of-sample",
+        "The rule chose each group's side from about 17 days of noise, and that noise did not repeat",
+        "The out-of-sample period was too short to compute a Sharpe ratio",
+        "The weekdays changed between 2021 and 2022"
+      ],
+      "answer": 1,
+      "explanation": "The returns were random, so each group's in-sample average was noise. The rule fitted that noise perfectly in-sample, and new data brought new noise.",
+      "conceptKeys": ["overfitting"]
+    },
+    {
+      "prompt": "Your rule scores well with a 50-day moving average, but badly with 45 or 55 days. What does that suggest?",
+      "options": [
+        "The 50-day setting has found a real and precise edge",
+        "The rule needs more parameters",
+        "The rule is probably fitted to noise, because a real pattern would not depend on one exact setting",
+        "The data has look-ahead bias"
+      ],
+      "answer": 2,
+      "explanation": "A pattern that repeats should still show with nearby settings. A result that only one exact value produces is a sign the rule fits the wiggles of this history.",
+      "conceptKeys": ["overfitting"]
+    },
+    {
+      "prompt": "Across 500 made-up histories, which rule had the bigger gap between its in-sample and out-of-sample Sharpe ratio?",
+      "options": [
+        "The 60-parameter rule: 3.08 in-sample against 0.01 out-of-sample",
+        "The 1-parameter rule: 0.38 in-sample against 0.00 out-of-sample",
+        "Neither, because both gaps were 0",
+        "Both had the same gap, because neither had an edge"
+      ],
+      "answer": 0,
+      "explanation": "Both rules had no edge, so both scored about 0 out-of-sample. The rule with 60 parameters fitted far more noise, so its in-sample score was 3.07 higher than its out-of-sample score.",
+      "conceptKeys": ["overfitting"]
+    }
+  ]
+}

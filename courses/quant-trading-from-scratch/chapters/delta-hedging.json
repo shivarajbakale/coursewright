@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "You sell 10 calls, each on one share, with delta 0.6368. How many shares do you hold to cancel their price risk?",
+      "options": [
+        "0.64",
+        "10",
+        "3.63",
+        "6.37"
+      ],
+      "answer": 3,
+      "explanation": "Each call moves like 0.6368 shares, so 10 calls move like 10 × 0.6368 = 6.368 shares. You hold about 6.37 shares.",
+      "conceptKeys": [
+        "delta-hedging"
+      ]
+    },
+    {
+      "prompt": "You sell a call priced at 20% volatility and hedge it every day. The stock then moves at 30%. What happens on average?",
+      "options": [
+        "You break even, because the hedge cancels the moves",
+        "You lose about $3.97, because large moves cost the hedge more than a quiet day earns",
+        "You earn about $3.97, because you sold at a high price",
+        "You lose the whole $10.45 premium"
+      ],
+      "answer": 1,
+      "explanation": "The simulation lost $3.97 on average. That is (14.23 − 10.45) × 1.0513, the gap between the call's value at 30% and at 20%, grown to expiry.",
+      "conceptKeys": [
+        "delta-hedging"
+      ]
+    },
+    {
+      "prompt": "What is gamma, and why does it force rebalancing?",
+      "options": [
+        "It is the change in delta per $1 of stock, so the right number of shares keeps changing",
+        "It is the daily interest on the loan, so the loan must be repaid each day",
+        "It is the call's price per point of volatility, so the call must be repriced",
+        "It is the stock's daily standard deviation, so the shares must be sold"
+      ],
+      "answer": 0,
+      "explanation": "At $100 gamma is 0.0188, so delta moves from 0.6368 toward 0.6553 as the stock rises to $101. The shares held must follow it.",
+      "conceptKeys": [
+        "delta-hedging"
+      ]
+    }
+  ]
+}

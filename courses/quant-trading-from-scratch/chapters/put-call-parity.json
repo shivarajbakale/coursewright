@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "A call with strike $100 and one year to expiry costs $10.45. The stock is $100, and the present value of $100 is $95.12. What must the put with the same strike and expiry cost?",
+      "options": [
+        "$4.88",
+        "$10.45",
+        "$5.57",
+        "$15.33"
+      ],
+      "answer": 2,
+      "explanation": "Put-call parity says call − put = stock − present value of strike = 100 − 95.12 = 4.88. So the put is 10.45 − 4.88 = $5.57.",
+      "conceptKeys": [
+        "put-call-parity"
+      ]
+    },
+    {
+      "prompt": "The put trades at $5.57 but the call is quoted at $11.45, $1.00 too high. Which set of trades locks in $1.00 today with no risk?",
+      "options": [
+        "Buy the call, sell the put, sell a share, lend $95.12",
+        "Sell the call, buy the put, buy a share, borrow $95.12",
+        "Buy the call and the put, borrow $95.12",
+        "Sell the call and the put, lend $95.12"
+      ],
+      "answer": 1,
+      "explanation": "Selling the overpriced call and buying the cheaper side gives 11.45 − 5.57 − 100 + 95.12 = $1.00 today. At expiry the share, put and sold call are worth $100, which repays the loan.",
+      "conceptKeys": [
+        "put-call-parity"
+      ]
+    },
+    {
+      "prompt": "Why must a call plus $95.12 of cash cost the same today as a put plus one share?",
+      "options": [
+        "Because both pay the larger of the stock price and $100 at expiry, in every case",
+        "Because calls and puts always have the same premium",
+        "Because the stock price is equal to the strike",
+        "Because the risk-free rate is 5%"
+      ],
+      "answer": 0,
+      "explanation": "Two baskets that pay the same in every outcome must cost the same. If they did not, an arbitrage would buy the cheap basket and sell the expensive one.",
+      "conceptKeys": [
+        "put-call-parity"
+      ]
+    }
+  ]
+}

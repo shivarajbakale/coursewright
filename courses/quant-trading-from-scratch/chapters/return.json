@@ -1,0 +1,35 @@
+{
+  "questions": [
+    {
+      "prompt": "A share's close goes from 40 to 45. What is the return?",
+      "options": ["5%", "11.1%", "12.5%", "−11.1%"],
+      "answer": 2,
+      "explanation": "The return is (45 − 40) / 40 = 0.125, a gain of 12.5%. You divide the change by the starting price, 40.",
+      "conceptKeys": ["return"]
+    },
+    {
+      "prompt": "The same share then falls from 45 back to 40. Why is this loss smaller in percent than the 12.5% gain before it?",
+      "options": [
+        "Because losses are always rounded down",
+        "Because the fall is measured from 45, a bigger starting price, so the same 5 pounds is a smaller fraction",
+        "Because the fall was 5 pounds and the rise was more",
+        "Because a return cannot be negative"
+      ],
+      "answer": 1,
+      "explanation": "The return is (40 − 45) / 45 = −0.111, a loss of 11.1%. The same 5 pounds is divided by 45 instead of 40, so it is a smaller fraction.",
+      "conceptKeys": ["return"]
+    },
+    {
+      "prompt": "Share A rises from 50 to 55, and share B rises from 200 to 205. Which statement is right?",
+      "options": [
+        "Both did equally well, because both rose by 5 pounds",
+        "B did better, because its price is higher",
+        "You cannot compare them, because their prices differ",
+        "A did better: its return is 10% and B's is 2.5%"
+      ],
+      "answer": 3,
+      "explanation": "Returns divide the change by the starting price, so they compare shares at any price. A gained (55 − 50) / 50 = 10% and B gained (205 − 200) / 200 = 2.5%.",
+      "conceptKeys": ["return"]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "You hold 10 shares during a day in which the close moves from 107 to 106. What is that day's gain or loss?",
+      "options": [
+        "A gain of 10",
+        "A loss of 1",
+        "A loss of 10",
+        "Nothing, because you did not sell"
+      ],
+      "answer": 2,
+      "explanation": "The day's result is shares held times the price change: 10 × (106 − 107) = −10. You gain or lose on shares you hold whether you sell or not.",
+      "conceptKeys": ["position"]
+    },
+    {
+      "prompt": "The signal turns +1 at the close of 2025-03-06 and you buy 10 shares at that close. Which day's gain is the first one those shares earn?",
+      "options": [
+        "2025-03-06, because the signal turned +1 that day",
+        "2025-03-07, the first day during which you hold them",
+        "2025-03-05, the day before the signal",
+        "None, until you sell the shares"
+      ],
+      "answer": 1,
+      "explanation": "You held nothing during 2025-03-06, so its gain is 0. The shares chosen at that close are held during 2025-03-07, which is why `held` is the position moved one row down.",
+      "conceptKeys": ["position"]
+    },
+    {
+      "prompt": "Your position is 0 shares and the price falls by 4. What happens to your account?",
+      "options": [
+        "Nothing: a flat position gains and loses nothing",
+        "You lose 4, the size of the fall",
+        "You gain 4, because you avoided the fall",
+        "You lose 4 times the last signal"
+      ],
+      "answer": 0,
+      "explanation": "Being flat means holding zero shares, and 0 × (−4) = 0. Avoiding a loss is not the same as earning a gain.",
+      "conceptKeys": ["position"]
+    }
+  ]
+}

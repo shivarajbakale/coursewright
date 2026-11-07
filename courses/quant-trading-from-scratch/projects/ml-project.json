@@ -1,0 +1,90 @@
+{
+  "title": "An honest machine learning research pipeline",
+  "brief": "You will build a small research pipeline in Python that trains a classification model on market data without letting the future leak into the past. At the end, it prints one honest report: the model's out-of-sample penalty against a coin flip, the positions it would take, and how fast its edge fades. The point is not a profitable model. The point is a pipeline whose numbers you can trust, so that a good result means something.\n\nThe pipeline has six parts, one for each lesson in this module:\n\n1. **Point-in-time features** (`features.py`): a table of quarterly reports with a `published` date and revisions, and a function that returns each feature as it was known on a given date.\n2. **Labels** (`labels.py`): triple-barrier labels with barriers at +5% and -5% and a horizon of 10 days, plus the end day of each label.\n3. **A classification model** (`model.py`): logistic regression written with numpy and `scipy.optimize.minimize`, trained by making the average penalty `-log(p)` as small as possible.\n4. **Purged cross-validation** (`cv.py`): 5 folds in time order, with training examples removed when their label days overlap a test fold, and an embargo of 5 days after it.\n5. **Sizing from probability** (`sizing.py`): a quarter of Kelly on the edge `2p - 1`, divided by the 5% barrier and capped at 100% of equity, long or short.\n6. **Signal decay** (`decay.py`): the information coefficient (a Spearman rank correlation) between the out-of-sample probability minus 0.5 and the return 1, 2, 3, 5 and 10 days later.\n\nGenerate the data yourself with numpy and a fixed seed, so every run gives the same numbers. Make 2,000 days of made-up prices for one share. Plant a weak, fading signal in them: a hidden series that keeps 70% of its value each day and moves the next day's return a little. Make a quarterly sales table whose figures are published 25 days after each quarter ends, and revise one figure 2 months after it is published. One feature comes from the price (the past 5-day return) and one from the sales table (sales growth as it was known on each day).\n\nConstraints: Python 3.10 or later, with numpy, pandas, scipy and pytest only. No scikit-learn, no downloaded data and no network calls. Every number in the report must come from the pipeline, never typed in by hand. Each test result must come only from test folds.",
+  "starter": [
+    {
+      "path": "data.py",
+      "note": "make_prices(seed) returns a DataFrame of 2,000 daily closes with a planted fading signal; make_reports(seed) returns quarterly sales with quarter, published and sales columns, including one revision."
+    },
+    {
+      "path": "features.py",
+      "note": "growth_as_of(reports, date) keeps rows published on or before the date and the newest version of each quarter; build_features(prices, reports) returns one row per day with past_5d_return and sales_growth."
+    },
+    {
+      "path": "labels.py",
+      "note": "triple_barrier(close, horizon=10, barrier=0.05) returns a DataFrame with label (+1, -1 or 0) and end_day for each day that has a full horizon ahead."
+    },
+    {
+      "path": "model.py",
+      "note": "fit(X, y) returns the starting value and one slope per feature; predict_proba(params, X) returns the probability of up; penalty(params, X, y) is the average -log(p)."
+    },
+    {
+      "path": "cv.py",
+      "note": "purged_folds(n, end_day, k=5, embargo=5) yields (train_idx, test_idx) pairs; a training example is dropped when its days from t to end_day[t] touch the test fold."
+    },
+    {
+      "path": "research.py",
+      "note": "Runs the whole pipeline: features, labels, purged cross-validation, sizing from the out-of-sample probabilities, and the IC at each later day. Prints the report."
+    },
+    {
+      "path": "tests/",
+      "note": "test_features.py, test_labels.py, test_cv.py and test_sizing.py, with the small hand-checked cases from the lessons."
+    }
+  ],
+  "hints": [
+    "Build and test each part on a tiny case you can check by hand before you run it on 2,000 days. The lessons' examples make good first tests.",
+    "Labels for the last 10 days have no full horizon. Drop those days from the examples, and drop the rows with missing features at the start too.",
+    "Logistic regression only has a label of up or not up. Use 1 for a +1 label and 0 for a -1 or 0 label, and say so in the report.",
+    "In purged_folds, compute each test fold's first day and the largest end_day of its examples. Drop every training example t with t <= that end day and end_day[t] >= the first day, then drop the next 5 days.",
+    "Collect the probabilities from each test fold into one series in day order. Size and measure the IC from that series only, never from probabilities on training days.",
+    "Compare the purged result with a plain cross-validation that removes nothing. If the plain one scores better, the difference is the leak the purge removed."
+  ],
+  "rubric": [
+    {
+      "criterion": "Sales growth on each day uses only reports published on or before that day, in the version known then, and a test shows the revision changes growth only after its publish date",
+      "chapterKey": "point-in-time-features"
+    },
+    {
+      "criterion": "Triple-barrier labels record which barrier is touched first and the day it is touched, and no label is used as a feature",
+      "chapterKey": "labels"
+    },
+    {
+      "criterion": "The model is trained by minimising the average -log(p) and the report compares its test penalty with the coin flip's 0.693",
+      "chapterKey": "classifier"
+    },
+    {
+      "criterion": "Every fold drops the training examples whose label days overlap the test fold plus a 5-day embargo, and a test checks the training sizes for a small case",
+      "chapterKey": "purged-cross-validation"
+    },
+    {
+      "criterion": "Positions come from out-of-sample probabilities only, grow with the distance from 0.5 and never pass 100% of equity",
+      "chapterKey": "probability-sizing"
+    },
+    {
+      "criterion": "The report prints the information coefficient at 1, 2, 3, 5 and 10 days and says how many days of delay halve it",
+      "chapterKey": "signal-decay"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Point-in-time features and labels",
+      "body": "Write data.py, features.py and labels.py. Test that growth_as_of gives 5.26% on 15 May 2024 and 14.58% on 15 August 2024 for the lesson's four reports. Test that the 11-price path from the labels lesson gives +1 on day 5 with barriers at 4% and a horizon of 10 days.",
+      "checkCmd": "python -m pytest tests/test_features.py tests/test_labels.py -q"
+    },
+    {
+      "title": "Logistic regression with purged folds",
+      "body": "Write model.py and cv.py. Test that 100 examples with a horizon of 10, 5 folds and an embargo of 5 give training sizes of 65, 55, 55, 55 and 70. Then train on each fold's training rows and print the average test penalty next to 0.693.",
+      "checkCmd": "python -m pytest tests/test_cv.py -q && python research.py --step model"
+    },
+    {
+      "title": "Sizing from the out-of-sample probabilities",
+      "body": "Write sizing.py. Test that probabilities of 0.50, 0.55, 0.60, 0.70 and 0.45 give positions of 0%, +50%, +100%, +100% and -50%. Size every day from the test-fold probabilities and print the share of days that are long, flat and short.",
+      "checkCmd": "python -m pytest tests/test_sizing.py -q && python research.py --step sizing"
+    },
+    {
+      "title": "The full report with signal decay",
+      "body": "Write decay.py and finish research.py. Print the information coefficient at 1, 2, 3, 5 and 10 days, the first day on which it falls to half of day 1 or below, and the purged test penalty next to a plain cross-validation that removes nothing.",
+      "checkCmd": "python research.py"
+    }
+  ]
+}

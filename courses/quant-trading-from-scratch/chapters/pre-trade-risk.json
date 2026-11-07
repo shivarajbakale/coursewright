@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "prompt": "The last price is $50.00 and the price check allows 5%. Which limit price for a buy order passes the price check?",
+      "options": [
+        "$501.00",
+        "$53.00",
+        "$45.00",
+        "$52.40"
+      ],
+      "answer": 3,
+      "explanation": "(52.40 − 50) / 50 = 0.048, which is 4.8% and under 5%. $53.00 is 6% away, $45.00 is 10% away and $501.00 is 902% away.",
+      "conceptKeys": ["pre-trade-risk"]
+    },
+    {
+      "prompt": "You hold $197,515 of shares and the exposure limit is $200,000. An order for 200 shares at $50.10 passes the size check. What happens next?",
+      "options": [
+        "It passes, because 10,020 is under the 50,000 order limit",
+        "The exposure check blocks it, because 197,515 + 10,020 = 207,535 is over 200,000",
+        "The price check blocks it, because 50.10 is above 50.00",
+        "The kill switch turns on by itself"
+      ],
+      "answer": 1,
+      "explanation": "Each order is checked on its own and then against what you already hold. The order alone is small, but it would take the total over the 200,000 limit.",
+      "conceptKeys": ["pre-trade-risk"]
+    },
+    {
+      "prompt": "Why is the kill switch checked before every other rule?",
+      "options": [
+        "It must block all orders even when the rest of the system is broken",
+        "It is the fastest check to compute",
+        "It needs the order's value, which the size check computes",
+        "The broker requires it to come first"
+      ],
+      "answer": 0,
+      "explanation": "The kill switch is the control you use when you no longer trust the system. Checking it first means no other code has to work correctly for it to stop an order.",
+      "conceptKeys": ["pre-trade-risk"]
+    }
+  ]
+}

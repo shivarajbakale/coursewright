@@ -1,0 +1,2171 @@
+{
+  "title": "Quantitative trading from scratch to an in-house system",
+  "topic": "Quantitative trading for software engineers",
+  "summary": "Starting from what a market and a price are, the course teaches how to measure returns and risk, build and honestly test a systematic strategy in Python, and size and control its risk. It then goes deep into pairs trading, factor portfolios, futures and options, machine-learning research, execution and the parts of an in-house trading system, with a project in every module.",
+  "colour": "indigo",
+  "concepts": [
+    {
+      "key": "market",
+      "name": "A market",
+      "summary": "A market matches people who want to buy with people who want to sell, and every match sets a price.",
+      "terms": [
+        "trade"
+      ]
+    },
+    {
+      "key": "share",
+      "name": "A share",
+      "summary": "A share is a slice of a company's ownership that people buy and sell on an exchange.",
+      "terms": [
+        "exchange",
+        "ticker"
+      ]
+    },
+    {
+      "key": "quote",
+      "name": "A quote",
+      "summary": "At any moment the best bid is the highest price a buyer offers and the best ask is the lowest price a seller accepts.",
+      "terms": [
+        "best bid",
+        "best ask"
+      ]
+    },
+    {
+      "key": "bid-ask-spread",
+      "name": "The bid-ask spread",
+      "summary": "The gap between ask and bid is a cost every immediate trade pays.",
+      "terms": [
+        "mid price"
+      ]
+    },
+    {
+      "key": "price-bar",
+      "name": "A price bar",
+      "summary": "A bar summarises all trades in one period by four prices and the volume traded.",
+      "terms": [
+        "volume"
+      ]
+    },
+    {
+      "key": "return",
+      "name": "A return",
+      "summary": "A return measures a gain or loss as a fraction of what you started with.",
+      "terms": []
+    },
+    {
+      "key": "compounding",
+      "name": "Compounding",
+      "summary": "Returns over several periods combine by multiplying growth factors, so a loss needs a bigger gain to recover.",
+      "terms": [
+        "growth factor"
+      ]
+    },
+    {
+      "key": "log-return",
+      "name": "Log returns",
+      "summary": "The logarithm of a growth factor turns multiplying returns into adding them.",
+      "terms": [
+        "logarithm"
+      ]
+    },
+    {
+      "key": "standard-deviation",
+      "name": "Standard deviation",
+      "summary": "The standard deviation measures the typical distance of numbers from their mean.",
+      "terms": [
+        "mean",
+        "variance"
+      ]
+    },
+    {
+      "key": "volatility",
+      "name": "Volatility",
+      "summary": "Volatility is the standard deviation of returns, the standard measure of risk.",
+      "terms": []
+    },
+    {
+      "key": "annualising",
+      "name": "Annualising",
+      "summary": "Average returns scale with time and volatility with the square root of time.",
+      "terms": [
+        "trading days"
+      ]
+    },
+    {
+      "key": "drawdown",
+      "name": "Drawdown",
+      "summary": "A drawdown measures how far an account has fallen from its highest value so far.",
+      "terms": [
+        "equity curve",
+        "maximum drawdown"
+      ]
+    },
+    {
+      "key": "benchmark",
+      "name": "A benchmark",
+      "summary": "Buying once and holding is the benchmark every strategy must beat after costs.",
+      "terms": [
+        "buy and hold"
+      ]
+    },
+    {
+      "key": "risk-free-rate",
+      "name": "The risk-free rate",
+      "summary": "Cash in short government bills earns a nearly safe rate, so a strategy's real gain is its return above it.",
+      "terms": [
+        "excess return"
+      ]
+    },
+    {
+      "key": "sharpe-ratio",
+      "name": "The Sharpe ratio",
+      "summary": "The Sharpe ratio divides excess return by volatility so strategies with different risk can be compared.",
+      "terms": [
+        "Sortino ratio"
+      ]
+    },
+    {
+      "key": "trading-edge",
+      "name": "A trading edge",
+      "summary": "An edge is a small, repeatable tilt in your favour, and it usually comes from behaviour, risk or market rules.",
+      "terms": [
+        "risk premium"
+      ]
+    },
+    {
+      "key": "strategy-families",
+      "name": "Strategy families",
+      "summary": "Most systematic strategies bet that a move continues, that it reverses, or that holding a risk pays.",
+      "terms": [
+        "trend",
+        "mean reversion",
+        "carry"
+      ]
+    },
+    {
+      "key": "historical-data",
+      "name": "Historical price data",
+      "summary": "A backtest starts from a table of dated bars, loaded and checked with pandas.",
+      "terms": [
+        "DataFrame",
+        "time index"
+      ]
+    },
+    {
+      "key": "signal",
+      "name": "A signal",
+      "summary": "A signal is a function from the data known so far to a desired direction or size.",
+      "terms": [
+        "moving average"
+      ]
+    },
+    {
+      "key": "position",
+      "name": "A position",
+      "summary": "A position is the signed quantity you hold, and it is what earns returns.",
+      "terms": [
+        "long",
+        "flat"
+      ]
+    },
+    {
+      "key": "short-selling",
+      "name": "Short selling",
+      "summary": "Selling shares you borrowed and buying them back later earns money when the price falls.",
+      "terms": [
+        "borrow"
+      ]
+    },
+    {
+      "key": "orders",
+      "name": "Orders",
+      "summary": "A market order trades at once at the best price; a limit order waits for a price you name.",
+      "terms": [
+        "market order",
+        "limit order"
+      ]
+    },
+    {
+      "key": "fills",
+      "name": "Fills",
+      "summary": "A fill records the quantity and price an order really got, which can differ from what you asked.",
+      "terms": [
+        "partial fill"
+      ]
+    },
+    {
+      "key": "position-sizing",
+      "name": "Position sizing",
+      "summary": "Sizing turns a signal into a quantity, for example a fixed fraction of the account.",
+      "terms": [
+        "notional"
+      ]
+    },
+    {
+      "key": "backtest-accounting",
+      "name": "Backtest accounting",
+      "summary": "Each bar the books update cash, holdings and equity so every gain and cost is counted once.",
+      "terms": [
+        "mark to market"
+      ]
+    },
+    {
+      "key": "backtest-loop",
+      "name": "The backtest loop",
+      "summary": "A backtest repeats one cycle per bar: read data, decide, trade, update the books.",
+      "terms": [
+        "vectorised backtest"
+      ]
+    },
+    {
+      "key": "transaction-costs",
+      "name": "Transaction costs",
+      "summary": "Commissions and the spread are paid on every trade, so trading more costs more.",
+      "terms": [
+        "commission",
+        "turnover"
+      ]
+    },
+    {
+      "key": "slippage",
+      "name": "Slippage",
+      "summary": "Prices move between decision and fill, so real fills are usually worse than the backtest's.",
+      "terms": []
+    },
+    {
+      "key": "look-ahead-bias",
+      "name": "Look-ahead bias",
+      "summary": "A backtest that uses any data not yet known at decision time invents profit.",
+      "terms": [
+        "shift"
+      ]
+    },
+    {
+      "key": "adjusted-prices",
+      "name": "Adjusted prices",
+      "summary": "Splits and dividends break a raw price series, so returns need adjusted prices.",
+      "terms": [
+        "stock split",
+        "dividend"
+      ]
+    },
+    {
+      "key": "survivorship-bias",
+      "name": "Survivorship bias",
+      "summary": "Leaving out companies that failed or were delisted makes any strategy look better.",
+      "terms": [
+        "delisting",
+        "universe"
+      ]
+    },
+    {
+      "key": "out-of-sample",
+      "name": "Out-of-sample testing",
+      "summary": "Data used to design a rule cannot judge it; held-back data can.",
+      "terms": [
+        "in-sample"
+      ]
+    },
+    {
+      "key": "multiple-testing",
+      "name": "Multiple testing",
+      "summary": "Testing many variants guarantees some look good by chance alone.",
+      "terms": [
+        "parameter"
+      ]
+    },
+    {
+      "key": "overfitting",
+      "name": "Overfitting",
+      "summary": "A rule tuned until it matches history's noise fails on new data.",
+      "terms": [
+        "noise"
+      ]
+    },
+    {
+      "key": "walk-forward",
+      "name": "Walk-forward testing",
+      "summary": "Walk-forward testing rolls a fit window and a test window forward through time.",
+      "terms": [
+        "rolling window"
+      ]
+    },
+    {
+      "key": "kelly",
+      "name": "The Kelly criterion",
+      "summary": "Kelly picks the fraction of capital that maximises long-run growth when the odds are known.",
+      "terms": [
+        "expected value"
+      ]
+    },
+    {
+      "key": "fractional-kelly",
+      "name": "Fractional Kelly",
+      "summary": "Because the edge is estimated, betting a fraction of Kelly gives up a little growth for much less risk.",
+      "terms": []
+    },
+    {
+      "key": "volatility-targeting",
+      "name": "Volatility targeting",
+      "summary": "Scaling positions by recent volatility keeps a strategy's risk near a chosen level.",
+      "terms": [
+        "leverage"
+      ]
+    },
+    {
+      "key": "risk-limits",
+      "name": "Risk limits",
+      "summary": "Hard limits on loss, position size and exposure stop one bad day from ending the strategy.",
+      "terms": [
+        "stop loss",
+        "exposure"
+      ]
+    },
+    {
+      "key": "sharpe-significance",
+      "name": "Is the Sharpe real",
+      "summary": "A Sharpe ratio estimated from little data has a wide error, so a result needs enough independent trades.",
+      "terms": [
+        "standard error",
+        "t-statistic"
+      ]
+    },
+    {
+      "key": "stress-tests",
+      "name": "Stress tests",
+      "summary": "Doubling costs, shifting dates and removing the best trades shows how fragile a result is.",
+      "terms": []
+    },
+    {
+      "key": "research-log",
+      "name": "A research log",
+      "summary": "Recording the idea, every variant tried and every result keeps you honest about multiple testing.",
+      "terms": [
+        "hypothesis"
+      ]
+    },
+    {
+      "key": "paper-trading",
+      "name": "Paper trading",
+      "summary": "Running the strategy on live data with simulated fills checks the parts a backtest cannot.",
+      "terms": [
+        "staged deployment"
+      ]
+    },
+    {
+      "key": "covariance",
+      "name": "Covariance",
+      "summary": "Covariance averages the product of two series' deviations, positive when they move together.",
+      "terms": []
+    },
+    {
+      "key": "correlation",
+      "name": "Correlation",
+      "summary": "Correlation divides covariance by both volatilities so its size is comparable across pairs.",
+      "terms": []
+    },
+    {
+      "key": "stationarity",
+      "name": "Stationarity",
+      "summary": "A stationary series has a stable mean and spread, so a gap from its mean tends to close.",
+      "terms": [
+        "random walk"
+      ]
+    },
+    {
+      "key": "cointegration",
+      "name": "Cointegration",
+      "summary": "Two prices that each wander can still have a combination that is stationary.",
+      "terms": [
+        "hedge ratio",
+        "Engle-Granger test"
+      ]
+    },
+    {
+      "key": "half-life",
+      "name": "Mean-reversion half-life",
+      "summary": "The half-life estimates how long a spread takes to close half its distance to the mean.",
+      "terms": []
+    },
+    {
+      "key": "pairs-trade",
+      "name": "A pairs trade",
+      "summary": "A pairs trade enters when the spread's z-score is far from zero and exits as it reverts.",
+      "terms": [
+        "z-score",
+        "leg"
+      ]
+    },
+    {
+      "key": "borrow-costs",
+      "name": "Borrow costs",
+      "summary": "Shorting needs borrowed shares that cost a fee, and a pair can be recalled or squeezed.",
+      "terms": [
+        "borrow fee",
+        "recall",
+        "financing"
+      ]
+    },
+    {
+      "key": "linear-regression",
+      "name": "Linear regression",
+      "summary": "Least squares finds the line that minimises squared vertical distances.",
+      "terms": [
+        "slope",
+        "residual"
+      ]
+    },
+    {
+      "key": "beta",
+      "name": "Beta",
+      "summary": "Beta is the slope of an asset's returns against the market's, the market risk it carries.",
+      "terms": [
+        "alpha"
+      ]
+    },
+    {
+      "key": "market-neutral",
+      "name": "Market-neutral portfolios",
+      "summary": "Balancing beta on the long and short side leaves a bet on the spread between them.",
+      "terms": [
+        "hedge"
+      ]
+    },
+    {
+      "key": "cross-sectional-ranking",
+      "name": "Cross-sectional ranking",
+      "summary": "Ranking every asset by a measure on the same date turns a signal into relative views.",
+      "terms": [
+        "cross-section"
+      ]
+    },
+    {
+      "key": "factor-portfolio",
+      "name": "A factor portfolio",
+      "summary": "Sorting assets into groups by a characteristic and going long the top, short the bottom isolates a factor.",
+      "terms": [
+        "factor",
+        "quantile"
+      ]
+    },
+    {
+      "key": "momentum",
+      "name": "Momentum",
+      "summary": "Assets that rose most over the past year tend to keep outperforming over the next months.",
+      "terms": [
+        "lookback",
+        "skip month"
+      ]
+    },
+    {
+      "key": "mean-variance",
+      "name": "Mean-variance optimisation",
+      "summary": "Combining expected returns and a covariance matrix gives the weights with the best Sharpe ratio.",
+      "terms": [
+        "diversification",
+        "covariance matrix"
+      ]
+    },
+    {
+      "key": "shrinkage",
+      "name": "Shrinkage",
+      "summary": "Shrinking estimated returns and covariances toward simple targets stops the optimiser from chasing noise.",
+      "terms": []
+    },
+    {
+      "key": "futures",
+      "name": "A futures contract",
+      "summary": "A futures contract fixes a price for a later date, and gains and losses are settled each day.",
+      "terms": [
+        "margin",
+        "daily settlement",
+        "expiry"
+      ]
+    },
+    {
+      "key": "futures-roll",
+      "name": "Rolling futures",
+      "summary": "Holding futures for long means rolling into later contracts, and the curve's shape adds or subtracts return.",
+      "terms": [
+        "futures curve",
+        "contango",
+        "backwardation"
+      ]
+    },
+    {
+      "key": "option-payoff",
+      "name": "Option payoffs",
+      "summary": "A call pays the rise above a strike at expiry and a put pays the fall below it.",
+      "terms": [
+        "call",
+        "put",
+        "strike",
+        "premium"
+      ]
+    },
+    {
+      "key": "put-call-parity",
+      "name": "Put-call parity",
+      "summary": "A call minus a put equals the stock minus the discounted strike, or someone can lock in free money.",
+      "terms": [
+        "arbitrage",
+        "present value"
+      ]
+    },
+    {
+      "key": "normal-distribution",
+      "name": "The normal distribution",
+      "summary": "The normal distribution describes outcomes built from many small random effects, set by a mean and a standard deviation.",
+      "terms": [
+        "probability density"
+      ]
+    },
+    {
+      "key": "binomial-pricing",
+      "name": "Pricing by replication",
+      "summary": "In a one-step model, a mix of stock and cash copies the option, so the option must cost what the mix costs.",
+      "terms": [
+        "risk-neutral probability"
+      ]
+    },
+    {
+      "key": "black-scholes",
+      "name": "The Black-Scholes formula",
+      "summary": "Black-Scholes prices a European option from the price, strike, time, rate and volatility.",
+      "terms": []
+    },
+    {
+      "key": "delta",
+      "name": "Delta",
+      "summary": "Delta is the change in option value for a small change in the stock price.",
+      "terms": [
+        "Greeks"
+      ]
+    },
+    {
+      "key": "delta-hedging",
+      "name": "Delta hedging",
+      "summary": "Rebalancing a stock position to cancel delta leaves a profit or loss driven by realised volatility.",
+      "terms": [
+        "gamma",
+        "rebalancing"
+      ]
+    },
+    {
+      "key": "implied-volatility",
+      "name": "Implied volatility",
+      "summary": "Solving Black-Scholes backwards for volatility turns an option price into the market's volatility estimate.",
+      "terms": [
+        "vega"
+      ]
+    },
+    {
+      "key": "volatility-smile",
+      "name": "The volatility smile",
+      "summary": "Implied volatility varies with strike and expiry because real returns have fat tails and crashes.",
+      "terms": [
+        "skew",
+        "fat tails"
+      ]
+    },
+    {
+      "key": "volatility-risk-premium",
+      "name": "The volatility risk premium",
+      "summary": "Implied volatility tends to exceed later realised volatility, which option sellers earn with crash risk.",
+      "terms": [
+        "realised volatility",
+        "straddle"
+      ]
+    },
+    {
+      "key": "point-in-time-features",
+      "name": "Point-in-time features",
+      "summary": "Every feature must use only data published before the decision time, including revisions.",
+      "terms": [
+        "feature",
+        "publication lag"
+      ]
+    },
+    {
+      "key": "labels",
+      "name": "Labels",
+      "summary": "A label fixes the target, such as the return over the next ten days or which barrier is hit first.",
+      "terms": [
+        "triple-barrier label",
+        "horizon"
+      ]
+    },
+    {
+      "key": "classifier",
+      "name": "A classification model",
+      "summary": "A classifier such as logistic regression learns from labelled examples to output a probability.",
+      "terms": [
+        "logistic regression",
+        "probability"
+      ]
+    },
+    {
+      "key": "purged-cross-validation",
+      "name": "Purged cross-validation",
+      "summary": "Overlapping labels leak between folds, so training examples near each test fold are removed.",
+      "terms": [
+        "fold",
+        "embargo"
+      ]
+    },
+    {
+      "key": "probability-sizing",
+      "name": "Sizing from probability",
+      "summary": "A position grows with how far the predicted probability is from a coin flip, capped by risk limits.",
+      "terms": []
+    },
+    {
+      "key": "signal-decay",
+      "name": "Signal decay",
+      "summary": "Measuring the signal's edge at later horizons shows how quickly it must be traded.",
+      "terms": [
+        "information coefficient"
+      ]
+    },
+    {
+      "key": "order-book",
+      "name": "The limit order book",
+      "summary": "The book lists resting limit orders at each price, and orders at the same price fill first-come, first-served.",
+      "terms": [
+        "depth",
+        "queue position"
+      ]
+    },
+    {
+      "key": "market-impact",
+      "name": "Market impact",
+      "summary": "A large order eats through the book, and impact grows roughly with the square root of its size.",
+      "terms": [
+        "square-root law",
+        "average daily volume"
+      ]
+    },
+    {
+      "key": "implementation-shortfall",
+      "name": "Implementation shortfall",
+      "summary": "Shortfall compares the price when you decided with the prices you finally got, including what never filled.",
+      "terms": [
+        "arrival price",
+        "opportunity cost"
+      ]
+    },
+    {
+      "key": "twap",
+      "name": "TWAP execution",
+      "summary": "Time-weighted execution splits an order into equal pieces spread across a period.",
+      "terms": [
+        "child order"
+      ]
+    },
+    {
+      "key": "vwap",
+      "name": "VWAP execution",
+      "summary": "Volume-weighted execution follows the day's usual volume pattern to hide in the crowd.",
+      "terms": [
+        "volume profile"
+      ]
+    },
+    {
+      "key": "transaction-cost-analysis",
+      "name": "Transaction cost analysis",
+      "summary": "Comparing fills with benchmarks after the fact splits cost into spread, impact and timing.",
+      "terms": [
+        "benchmark price"
+      ]
+    },
+    {
+      "key": "event-driven-backtester",
+      "name": "The event-driven backtester",
+      "summary": "Processing every market and order event in time order lets the same strategy code run in backtest and live.",
+      "terms": [
+        "event",
+        "event queue"
+      ]
+    },
+    {
+      "key": "market-data-store",
+      "name": "A market data store",
+      "summary": "Storing every observation with when it happened and when you learned it makes point-in-time research possible.",
+      "terms": [
+        "bitemporal",
+        "symbology"
+      ]
+    },
+    {
+      "key": "broker-api",
+      "name": "A broker API",
+      "summary": "A broker's API accepts orders and reports their states: sent, accepted, partly filled, filled, cancelled.",
+      "terms": [
+        "order state",
+        "FIX protocol"
+      ]
+    },
+    {
+      "key": "order-management",
+      "name": "An order management system",
+      "summary": "The order management system compares targets with holdings and open orders, then sends only the difference.",
+      "terms": [
+        "idempotency"
+      ]
+    },
+    {
+      "key": "pre-trade-risk",
+      "name": "Pre-trade risk checks",
+      "summary": "Every order passes size, price and exposure checks, and a kill switch stops everything at once.",
+      "terms": [
+        "kill switch",
+        "fat finger"
+      ]
+    },
+    {
+      "key": "reconciliation",
+      "name": "Reconciliation",
+      "summary": "Comparing your positions and cash with the broker's every day, and alerting on gaps, catches silent failures.",
+      "terms": [
+        "monitoring",
+        "alert"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "market",
+      "to": "share"
+    },
+    {
+      "from": "share",
+      "to": "quote"
+    },
+    {
+      "from": "quote",
+      "to": "bid-ask-spread"
+    },
+    {
+      "from": "quote",
+      "to": "price-bar"
+    },
+    {
+      "from": "price-bar",
+      "to": "return"
+    },
+    {
+      "from": "return",
+      "to": "compounding"
+    },
+    {
+      "from": "compounding",
+      "to": "log-return"
+    },
+    {
+      "from": "return",
+      "to": "standard-deviation"
+    },
+    {
+      "from": "standard-deviation",
+      "to": "volatility"
+    },
+    {
+      "from": "volatility",
+      "to": "annualising"
+    },
+    {
+      "from": "compounding",
+      "to": "annualising"
+    },
+    {
+      "from": "compounding",
+      "to": "drawdown"
+    },
+    {
+      "from": "return",
+      "to": "benchmark"
+    },
+    {
+      "from": "return",
+      "to": "risk-free-rate"
+    },
+    {
+      "from": "risk-free-rate",
+      "to": "sharpe-ratio"
+    },
+    {
+      "from": "annualising",
+      "to": "sharpe-ratio"
+    },
+    {
+      "from": "sharpe-ratio",
+      "to": "trading-edge"
+    },
+    {
+      "from": "bid-ask-spread",
+      "to": "trading-edge"
+    },
+    {
+      "from": "trading-edge",
+      "to": "strategy-families"
+    },
+    {
+      "from": "price-bar",
+      "to": "historical-data"
+    },
+    {
+      "from": "historical-data",
+      "to": "signal"
+    },
+    {
+      "from": "strategy-families",
+      "to": "signal"
+    },
+    {
+      "from": "signal",
+      "to": "position"
+    },
+    {
+      "from": "position",
+      "to": "short-selling"
+    },
+    {
+      "from": "position",
+      "to": "orders"
+    },
+    {
+      "from": "quote",
+      "to": "orders"
+    },
+    {
+      "from": "orders",
+      "to": "fills"
+    },
+    {
+      "from": "fills",
+      "to": "position-sizing"
+    },
+    {
+      "from": "volatility",
+      "to": "position-sizing"
+    },
+    {
+      "from": "position-sizing",
+      "to": "backtest-accounting"
+    },
+    {
+      "from": "short-selling",
+      "to": "backtest-accounting"
+    },
+    {
+      "from": "backtest-accounting",
+      "to": "backtest-loop"
+    },
+    {
+      "from": "drawdown",
+      "to": "backtest-loop"
+    },
+    {
+      "from": "sharpe-ratio",
+      "to": "backtest-loop"
+    },
+    {
+      "from": "backtest-loop",
+      "to": "transaction-costs"
+    },
+    {
+      "from": "transaction-costs",
+      "to": "slippage"
+    },
+    {
+      "from": "fills",
+      "to": "slippage"
+    },
+    {
+      "from": "backtest-loop",
+      "to": "look-ahead-bias"
+    },
+    {
+      "from": "historical-data",
+      "to": "adjusted-prices"
+    },
+    {
+      "from": "return",
+      "to": "adjusted-prices"
+    },
+    {
+      "from": "adjusted-prices",
+      "to": "survivorship-bias"
+    },
+    {
+      "from": "look-ahead-bias",
+      "to": "out-of-sample"
+    },
+    {
+      "from": "out-of-sample",
+      "to": "multiple-testing"
+    },
+    {
+      "from": "sharpe-ratio",
+      "to": "multiple-testing"
+    },
+    {
+      "from": "multiple-testing",
+      "to": "overfitting"
+    },
+    {
+      "from": "overfitting",
+      "to": "walk-forward"
+    },
+    {
+      "from": "position-sizing",
+      "to": "kelly"
+    },
+    {
+      "from": "log-return",
+      "to": "kelly"
+    },
+    {
+      "from": "kelly",
+      "to": "fractional-kelly"
+    },
+    {
+      "from": "fractional-kelly",
+      "to": "volatility-targeting"
+    },
+    {
+      "from": "volatility",
+      "to": "volatility-targeting"
+    },
+    {
+      "from": "volatility-targeting",
+      "to": "risk-limits"
+    },
+    {
+      "from": "drawdown",
+      "to": "risk-limits"
+    },
+    {
+      "from": "sharpe-ratio",
+      "to": "sharpe-significance"
+    },
+    {
+      "from": "multiple-testing",
+      "to": "sharpe-significance"
+    },
+    {
+      "from": "sharpe-significance",
+      "to": "stress-tests"
+    },
+    {
+      "from": "slippage",
+      "to": "stress-tests"
+    },
+    {
+      "from": "stress-tests",
+      "to": "research-log"
+    },
+    {
+      "from": "walk-forward",
+      "to": "research-log"
+    },
+    {
+      "from": "research-log",
+      "to": "paper-trading"
+    },
+    {
+      "from": "risk-limits",
+      "to": "paper-trading"
+    },
+    {
+      "from": "standard-deviation",
+      "to": "covariance"
+    },
+    {
+      "from": "covariance",
+      "to": "correlation"
+    },
+    {
+      "from": "volatility",
+      "to": "correlation"
+    },
+    {
+      "from": "correlation",
+      "to": "stationarity"
+    },
+    {
+      "from": "strategy-families",
+      "to": "stationarity"
+    },
+    {
+      "from": "stationarity",
+      "to": "cointegration"
+    },
+    {
+      "from": "cointegration",
+      "to": "half-life"
+    },
+    {
+      "from": "half-life",
+      "to": "pairs-trade"
+    },
+    {
+      "from": "short-selling",
+      "to": "pairs-trade"
+    },
+    {
+      "from": "backtest-loop",
+      "to": "pairs-trade"
+    },
+    {
+      "from": "pairs-trade",
+      "to": "borrow-costs"
+    },
+    {
+      "from": "transaction-costs",
+      "to": "borrow-costs"
+    },
+    {
+      "from": "covariance",
+      "to": "linear-regression"
+    },
+    {
+      "from": "linear-regression",
+      "to": "beta"
+    },
+    {
+      "from": "benchmark",
+      "to": "beta"
+    },
+    {
+      "from": "beta",
+      "to": "market-neutral"
+    },
+    {
+      "from": "short-selling",
+      "to": "market-neutral"
+    },
+    {
+      "from": "signal",
+      "to": "cross-sectional-ranking"
+    },
+    {
+      "from": "survivorship-bias",
+      "to": "cross-sectional-ranking"
+    },
+    {
+      "from": "cross-sectional-ranking",
+      "to": "factor-portfolio"
+    },
+    {
+      "from": "market-neutral",
+      "to": "factor-portfolio"
+    },
+    {
+      "from": "factor-portfolio",
+      "to": "momentum"
+    },
+    {
+      "from": "correlation",
+      "to": "mean-variance"
+    },
+    {
+      "from": "momentum",
+      "to": "mean-variance"
+    },
+    {
+      "from": "mean-variance",
+      "to": "shrinkage"
+    },
+    {
+      "from": "overfitting",
+      "to": "shrinkage"
+    },
+    {
+      "from": "short-selling",
+      "to": "futures"
+    },
+    {
+      "from": "risk-free-rate",
+      "to": "futures"
+    },
+    {
+      "from": "futures",
+      "to": "futures-roll"
+    },
+    {
+      "from": "strategy-families",
+      "to": "futures-roll"
+    },
+    {
+      "from": "futures",
+      "to": "option-payoff"
+    },
+    {
+      "from": "option-payoff",
+      "to": "put-call-parity"
+    },
+    {
+      "from": "standard-deviation",
+      "to": "normal-distribution"
+    },
+    {
+      "from": "log-return",
+      "to": "normal-distribution"
+    },
+    {
+      "from": "put-call-parity",
+      "to": "binomial-pricing"
+    },
+    {
+      "from": "binomial-pricing",
+      "to": "black-scholes"
+    },
+    {
+      "from": "normal-distribution",
+      "to": "black-scholes"
+    },
+    {
+      "from": "black-scholes",
+      "to": "delta"
+    },
+    {
+      "from": "delta",
+      "to": "delta-hedging"
+    },
+    {
+      "from": "volatility",
+      "to": "delta-hedging"
+    },
+    {
+      "from": "black-scholes",
+      "to": "implied-volatility"
+    },
+    {
+      "from": "implied-volatility",
+      "to": "volatility-smile"
+    },
+    {
+      "from": "volatility-smile",
+      "to": "volatility-risk-premium"
+    },
+    {
+      "from": "delta-hedging",
+      "to": "volatility-risk-premium"
+    },
+    {
+      "from": "trading-edge",
+      "to": "volatility-risk-premium"
+    },
+    {
+      "from": "look-ahead-bias",
+      "to": "point-in-time-features"
+    },
+    {
+      "from": "cross-sectional-ranking",
+      "to": "point-in-time-features"
+    },
+    {
+      "from": "point-in-time-features",
+      "to": "labels"
+    },
+    {
+      "from": "risk-limits",
+      "to": "labels"
+    },
+    {
+      "from": "labels",
+      "to": "classifier"
+    },
+    {
+      "from": "linear-regression",
+      "to": "classifier"
+    },
+    {
+      "from": "classifier",
+      "to": "purged-cross-validation"
+    },
+    {
+      "from": "walk-forward",
+      "to": "purged-cross-validation"
+    },
+    {
+      "from": "purged-cross-validation",
+      "to": "probability-sizing"
+    },
+    {
+      "from": "fractional-kelly",
+      "to": "probability-sizing"
+    },
+    {
+      "from": "probability-sizing",
+      "to": "signal-decay"
+    },
+    {
+      "from": "transaction-costs",
+      "to": "signal-decay"
+    },
+    {
+      "from": "orders",
+      "to": "order-book"
+    },
+    {
+      "from": "bid-ask-spread",
+      "to": "order-book"
+    },
+    {
+      "from": "order-book",
+      "to": "market-impact"
+    },
+    {
+      "from": "slippage",
+      "to": "market-impact"
+    },
+    {
+      "from": "market-impact",
+      "to": "implementation-shortfall"
+    },
+    {
+      "from": "implementation-shortfall",
+      "to": "twap"
+    },
+    {
+      "from": "twap",
+      "to": "vwap"
+    },
+    {
+      "from": "vwap",
+      "to": "transaction-cost-analysis"
+    },
+    {
+      "from": "backtest-loop",
+      "to": "event-driven-backtester"
+    },
+    {
+      "from": "fills",
+      "to": "event-driven-backtester"
+    },
+    {
+      "from": "event-driven-backtester",
+      "to": "market-data-store"
+    },
+    {
+      "from": "point-in-time-features",
+      "to": "market-data-store"
+    },
+    {
+      "from": "event-driven-backtester",
+      "to": "broker-api"
+    },
+    {
+      "from": "orders",
+      "to": "broker-api"
+    },
+    {
+      "from": "broker-api",
+      "to": "order-management"
+    },
+    {
+      "from": "twap",
+      "to": "order-management"
+    },
+    {
+      "from": "order-management",
+      "to": "pre-trade-risk"
+    },
+    {
+      "from": "risk-limits",
+      "to": "pre-trade-risk"
+    },
+    {
+      "from": "pre-trade-risk",
+      "to": "reconciliation"
+    },
+    {
+      "from": "paper-trading",
+      "to": "reconciliation"
+    }
+  ],
+  "modules": [
+    {
+      "key": "markets",
+      "title": "How markets set prices",
+      "summary": "What is traded, how a price is agreed, and how to measure a price change.",
+      "chapters": [
+        {
+          "key": "market",
+          "title": "A market: where buyers and sellers agree on prices",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "market"
+          ],
+          "summary": "A market matches people who want to buy with people who want to sell, and every match sets a price."
+        },
+        {
+          "key": "share",
+          "title": "A share: a small piece of owning a company",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "share"
+          ],
+          "summary": "A share is a slice of a company's ownership that people buy and sell on an exchange."
+        },
+        {
+          "key": "quote",
+          "title": "A quote: the best prices to buy and sell now",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "quote"
+          ],
+          "summary": "At any moment the best bid is the highest price a buyer offers and the best ask is the lowest price a seller accepts."
+        },
+        {
+          "key": "bid-ask-spread",
+          "title": "The bid-ask spread: the gap you pay to trade at once",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "bid-ask-spread"
+          ],
+          "summary": "The gap between ask and bid is a cost every immediate trade pays."
+        },
+        {
+          "key": "price-bar",
+          "title": "A price bar: one period's open, high, low and close",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "price-bar"
+          ],
+          "summary": "A bar summarises all trades in one period by four prices and the volume traded."
+        },
+        {
+          "key": "return",
+          "title": "A return: the percentage change in a price",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "return"
+          ],
+          "summary": "A return measures a gain or loss as a fraction of what you started with."
+        },
+        {
+          "key": "compounding",
+          "title": "Compounding: returns multiply over time, they don't add",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "compounding"
+          ],
+          "summary": "Returns over several periods combine by multiplying growth factors, so a loss needs a bigger gain to recover."
+        },
+        {
+          "key": "log-return",
+          "title": "Log returns: returns you can add across periods",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "log-return"
+          ],
+          "summary": "The logarithm of a growth factor turns multiplying returns into adding them."
+        }
+      ],
+      "projectKey": "markets-project"
+    },
+    {
+      "key": "risk",
+      "title": "Measuring risk and performance",
+      "summary": "How to put numbers on how much a strategy earns and how bumpy the ride is.",
+      "chapters": [
+        {
+          "key": "standard-deviation",
+          "title": "Standard deviation: how far numbers typically sit from their average",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "standard-deviation"
+          ],
+          "summary": "The standard deviation measures the typical distance of numbers from their mean."
+        },
+        {
+          "key": "volatility",
+          "title": "Volatility: how much returns swing from day to day",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "volatility"
+          ],
+          "summary": "Volatility is the standard deviation of returns, the standard measure of risk."
+        },
+        {
+          "key": "annualising",
+          "title": "Annualising: scaling daily numbers up to a year",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "annualising"
+          ],
+          "summary": "Average returns scale with time and volatility with the square root of time."
+        },
+        {
+          "key": "drawdown",
+          "title": "Drawdown: the fall from a peak to a later low",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "drawdown"
+          ],
+          "summary": "A drawdown measures how far an account has fallen from its highest value so far."
+        },
+        {
+          "key": "benchmark",
+          "title": "A benchmark: what doing nothing clever would have earned",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "benchmark"
+          ],
+          "summary": "Buying once and holding is the benchmark every strategy must beat after costs."
+        },
+        {
+          "key": "risk-free-rate",
+          "title": "The risk-free rate: what safe money earns while you wait",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "risk-free-rate"
+          ],
+          "summary": "Cash in short government bills earns a nearly safe rate, so a strategy's real gain is its return above it."
+        },
+        {
+          "key": "sharpe-ratio",
+          "title": "The Sharpe ratio: excess return for each unit of volatility",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "sharpe-ratio"
+          ],
+          "summary": "The Sharpe ratio divides excess return by volatility so strategies with different risk can be compared."
+        },
+        {
+          "key": "trading-edge",
+          "title": "A trading edge: a repeatable advantage that survives costs",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "trading-edge"
+          ],
+          "summary": "An edge is a small, repeatable tilt in your favour, and it usually comes from behaviour, risk or market rules."
+        },
+        {
+          "key": "strategy-families",
+          "title": "Strategy families: following trends, betting on reversals, collecting carry",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "strategy-families"
+          ],
+          "summary": "Most systematic strategies bet that a move continues, that it reverses, or that holding a risk pays."
+        }
+      ],
+      "projectKey": "risk-project"
+    },
+    {
+      "key": "backtest",
+      "title": "Building a backtest in Python",
+      "summary": "Replay history through a rule and keep honest books of what it would have done.",
+      "chapters": [
+        {
+          "key": "historical-data",
+          "title": "Historical price data: past bars loaded in time order",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "historical-data"
+          ],
+          "summary": "A backtest starts from a table of dated bars, loaded and checked with pandas."
+        },
+        {
+          "key": "signal",
+          "title": "A signal: a rule that turns data into a view",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "signal"
+          ],
+          "summary": "A signal is a function from the data known so far to a desired direction or size."
+        },
+        {
+          "key": "position",
+          "title": "A position: how much of an asset you hold",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "position"
+          ],
+          "summary": "A position is the signed quantity you hold, and it is what earns returns."
+        },
+        {
+          "key": "short-selling",
+          "title": "Short selling: selling borrowed shares to profit from a fall",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "short-selling"
+          ],
+          "summary": "Selling shares you borrowed and buying them back later earns money when the price falls."
+        },
+        {
+          "key": "orders",
+          "title": "Orders: instructions to buy or sell",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "orders"
+          ],
+          "summary": "A market order trades at once at the best price; a limit order waits for a price you name."
+        },
+        {
+          "key": "fills",
+          "title": "Fills: what actually traded, at what price",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "fills"
+          ],
+          "summary": "A fill records the quantity and price an order really got, which can differ from what you asked."
+        },
+        {
+          "key": "position-sizing",
+          "title": "Position sizing: how much money each trade uses",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "position-sizing"
+          ],
+          "summary": "Sizing turns a signal into a quantity, for example a fixed fraction of the account."
+        },
+        {
+          "key": "backtest-accounting",
+          "title": "Backtest accounting: cash, holdings and equity, bar by bar",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "backtest-accounting"
+          ],
+          "summary": "Each bar the books update cash, holdings and equity so every gain and cost is counted once."
+        },
+        {
+          "key": "backtest-loop",
+          "title": "The backtest loop: data, signal, orders, fills and books together",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "backtest-loop"
+          ],
+          "summary": "A backtest repeats one cycle per bar: read data, decide, trade, update the books."
+        }
+      ],
+      "projectKey": "backtest-project"
+    },
+    {
+      "key": "traps",
+      "title": "Costs and the traps that fake profits",
+      "summary": "Why most backtests look better than reality, and how to make yours honest.",
+      "chapters": [
+        {
+          "key": "transaction-costs",
+          "title": "Transaction costs: fees and spread paid on every trade",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "transaction-costs"
+          ],
+          "summary": "Commissions and the spread are paid on every trade, so trading more costs more."
+        },
+        {
+          "key": "slippage",
+          "title": "Slippage: the gap between expected and actual price",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "slippage"
+          ],
+          "summary": "Prices move between decision and fill, so real fills are usually worse than the backtest's."
+        },
+        {
+          "key": "look-ahead-bias",
+          "title": "Look-ahead bias: using information from after the decision",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "look-ahead-bias"
+          ],
+          "summary": "A backtest that uses any data not yet known at decision time invents profit."
+        },
+        {
+          "key": "adjusted-prices",
+          "title": "Adjusted prices: prices corrected for splits and dividends",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "adjusted-prices"
+          ],
+          "summary": "Splits and dividends break a raw price series, so returns need adjusted prices."
+        },
+        {
+          "key": "survivorship-bias",
+          "title": "Survivorship bias: testing only the companies that survived",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "survivorship-bias"
+          ],
+          "summary": "Leaving out companies that failed or were delisted makes any strategy look better."
+        },
+        {
+          "key": "out-of-sample",
+          "title": "Out-of-sample testing: judging a rule on data it never saw",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "out-of-sample"
+          ],
+          "summary": "Data used to design a rule cannot judge it; held-back data can."
+        },
+        {
+          "key": "multiple-testing",
+          "title": "Multiple testing: many tries make luck look like skill",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "multiple-testing"
+          ],
+          "summary": "Testing many variants guarantees some look good by chance alone."
+        },
+        {
+          "key": "overfitting",
+          "title": "Overfitting: a rule that fits past noise",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "overfitting"
+          ],
+          "summary": "A rule tuned until it matches history's noise fails on new data."
+        },
+        {
+          "key": "walk-forward",
+          "title": "Walk-forward testing: fit on the past, test on the next period",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "walk-forward"
+          ],
+          "summary": "Walk-forward testing rolls a fit window and a test window forward through time."
+        }
+      ],
+      "projectKey": "traps-project"
+    },
+    {
+      "key": "sizing",
+      "title": "Sizing, risk control and honest evaluation",
+      "summary": "How big to bet, how to cap losses, and how to decide a result is real before risking money.",
+      "chapters": [
+        {
+          "key": "kelly",
+          "title": "The Kelly criterion: the bet size that grows money fastest",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "kelly"
+          ],
+          "summary": "Kelly picks the fraction of capital that maximises long-run growth when the odds are known."
+        },
+        {
+          "key": "fractional-kelly",
+          "title": "Fractional Kelly: betting less than Kelly because the odds are guesses",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "fractional-kelly"
+          ],
+          "summary": "Because the edge is estimated, betting a fraction of Kelly gives up a little growth for much less risk."
+        },
+        {
+          "key": "volatility-targeting",
+          "title": "Volatility targeting: sizing so risk stays steady",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "volatility-targeting"
+          ],
+          "summary": "Scaling positions by recent volatility keeps a strategy's risk near a chosen level."
+        },
+        {
+          "key": "risk-limits",
+          "title": "Risk limits: rules that cap losses and concentration",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "risk-limits"
+          ],
+          "summary": "Hard limits on loss, position size and exposure stop one bad day from ending the strategy."
+        },
+        {
+          "key": "sharpe-significance",
+          "title": "Is the Sharpe real: how many trades a result needs",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "sharpe-significance"
+          ],
+          "summary": "A Sharpe ratio estimated from little data has a wide error, so a result needs enough independent trades."
+        },
+        {
+          "key": "stress-tests",
+          "title": "Stress tests: changing assumptions to find what breaks",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "stress-tests"
+          ],
+          "summary": "Doubling costs, shifting dates and removing the best trades shows how fragile a result is."
+        },
+        {
+          "key": "research-log",
+          "title": "A research log: writing the hypothesis down before testing",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "research-log"
+          ],
+          "summary": "Recording the idea, every variant tried and every result keeps you honest about multiple testing."
+        },
+        {
+          "key": "paper-trading",
+          "title": "Paper trading: running the strategy live without real money",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "paper-trading"
+          ],
+          "summary": "Running the strategy on live data with simulated fills checks the parts a backtest cannot."
+        }
+      ],
+      "projectKey": "sizing-project"
+    },
+    {
+      "key": "stat-arb",
+      "title": "Statistical arbitrage with pairs",
+      "summary": "Trading the gap between two prices that move together.",
+      "chapters": [
+        {
+          "key": "covariance",
+          "title": "Covariance: how two returns move together",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "covariance"
+          ],
+          "summary": "Covariance averages the product of two series' deviations, positive when they move together."
+        },
+        {
+          "key": "correlation",
+          "title": "Correlation: covariance scaled to between -1 and 1",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "correlation"
+          ],
+          "summary": "Correlation divides covariance by both volatilities so its size is comparable across pairs."
+        },
+        {
+          "key": "stationarity",
+          "title": "Stationarity: a series that keeps returning to the same level",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "stationarity"
+          ],
+          "summary": "A stationary series has a stable mean and spread, so a gap from its mean tends to close."
+        },
+        {
+          "key": "cointegration",
+          "title": "Cointegration: two wandering prices with a stable gap",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "cointegration"
+          ],
+          "summary": "Two prices that each wander can still have a combination that is stationary."
+        },
+        {
+          "key": "half-life",
+          "title": "Mean-reversion half-life: how fast a gap closes",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "half-life"
+          ],
+          "summary": "The half-life estimates how long a spread takes to close half its distance to the mean."
+        },
+        {
+          "key": "pairs-trade",
+          "title": "A pairs trade: buying the cheap leg and selling the rich leg",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "pairs-trade"
+          ],
+          "summary": "A pairs trade enters when the spread's z-score is far from zero and exits as it reverts."
+        },
+        {
+          "key": "borrow-costs",
+          "title": "Borrow costs: what holding a short leg costs each day",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "borrow-costs"
+          ],
+          "summary": "Shorting needs borrowed shares that cost a fee, and a pair can be recalled or squeezed."
+        }
+      ],
+      "projectKey": "stat-arb-project"
+    },
+    {
+      "key": "factors",
+      "title": "Factor investing and portfolios",
+      "summary": "Ranking many assets against each other and combining them into one portfolio.",
+      "chapters": [
+        {
+          "key": "linear-regression",
+          "title": "Linear regression: the best straight line through points",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "linear-regression"
+          ],
+          "summary": "Least squares finds the line that minimises squared vertical distances."
+        },
+        {
+          "key": "beta",
+          "title": "Beta: how much an asset moves with the market",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "beta"
+          ],
+          "summary": "Beta is the slope of an asset's returns against the market's, the market risk it carries."
+        },
+        {
+          "key": "market-neutral",
+          "title": "Market-neutral portfolios: longs and shorts that cancel market risk",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "market-neutral"
+          ],
+          "summary": "Balancing beta on the long and short side leaves a bet on the spread between them."
+        },
+        {
+          "key": "cross-sectional-ranking",
+          "title": "Cross-sectional ranking: comparing assets with each other on one date",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "cross-sectional-ranking"
+          ],
+          "summary": "Ranking every asset by a measure on the same date turns a signal into relative views."
+        },
+        {
+          "key": "factor-portfolio",
+          "title": "A factor portfolio: long the top group, short the bottom group",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "factor-portfolio"
+          ],
+          "summary": "Sorting assets into groups by a characteristic and going long the top, short the bottom isolates a factor."
+        },
+        {
+          "key": "momentum",
+          "title": "Momentum: recent winners keep winning for a while",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "momentum"
+          ],
+          "summary": "Assets that rose most over the past year tend to keep outperforming over the next months."
+        },
+        {
+          "key": "mean-variance",
+          "title": "Mean-variance optimisation: choosing weights for the best return per risk",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "mean-variance"
+          ],
+          "summary": "Combining expected returns and a covariance matrix gives the weights with the best Sharpe ratio."
+        },
+        {
+          "key": "shrinkage",
+          "title": "Shrinkage: pulling noisy estimates toward a simple guess",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "shrinkage"
+          ],
+          "summary": "Shrinking estimated returns and covariances toward simple targets stops the optimiser from chasing noise."
+        }
+      ],
+      "projectKey": "factors-project"
+    },
+    {
+      "key": "derivatives",
+      "title": "Futures and options",
+      "summary": "Contracts on a future price, how they are priced, and how volatility is traded.",
+      "chapters": [
+        {
+          "key": "futures",
+          "title": "A futures contract: agreeing today on a price for later",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "futures"
+          ],
+          "summary": "A futures contract fixes a price for a later date, and gains and losses are settled each day."
+        },
+        {
+          "key": "futures-roll",
+          "title": "Rolling futures: replacing an expiring contract with the next",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "futures-roll"
+          ],
+          "summary": "Holding futures for long means rolling into later contracts, and the curve's shape adds or subtracts return."
+        },
+        {
+          "key": "option-payoff",
+          "title": "Option payoffs: the right but not the duty to trade",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "option-payoff"
+          ],
+          "summary": "A call pays the rise above a strike at expiry and a put pays the fall below it."
+        },
+        {
+          "key": "put-call-parity",
+          "title": "Put-call parity: the fixed link between call and put prices",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "put-call-parity"
+          ],
+          "summary": "A call minus a put equals the stock minus the discounted strike, or someone can lock in free money."
+        },
+        {
+          "key": "normal-distribution",
+          "title": "The normal distribution: the bell curve of many small effects",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "normal-distribution"
+          ],
+          "summary": "The normal distribution describes outcomes built from many small random effects, set by a mean and a standard deviation."
+        },
+        {
+          "key": "binomial-pricing",
+          "title": "Pricing by replication: copying an option's payoff with stock and cash",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "binomial-pricing"
+          ],
+          "summary": "In a one-step model, a mix of stock and cash copies the option, so the option must cost what the mix costs."
+        },
+        {
+          "key": "black-scholes",
+          "title": "The Black-Scholes formula: an option price from five inputs",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "black-scholes"
+          ],
+          "summary": "Black-Scholes prices a European option from the price, strike, time, rate and volatility."
+        },
+        {
+          "key": "delta",
+          "title": "Delta: how much an option moves per $1 of stock",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "delta"
+          ],
+          "summary": "Delta is the change in option value for a small change in the stock price."
+        },
+        {
+          "key": "delta-hedging",
+          "title": "Delta hedging: holding stock to cancel an option's price risk",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "delta-hedging"
+          ],
+          "summary": "Rebalancing a stock position to cancel delta leaves a profit or loss driven by realised volatility."
+        },
+        {
+          "key": "implied-volatility",
+          "title": "Implied volatility: the volatility the market price implies",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "implied-volatility"
+          ],
+          "summary": "Solving Black-Scholes backwards for volatility turns an option price into the market's volatility estimate."
+        },
+        {
+          "key": "volatility-smile",
+          "title": "The volatility smile: different implied volatility at each strike",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "volatility-smile"
+          ],
+          "summary": "Implied volatility varies with strike and expiry because real returns have fat tails and crashes."
+        },
+        {
+          "key": "volatility-risk-premium",
+          "title": "The volatility risk premium: options usually cost more than they pay",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "volatility-risk-premium"
+          ],
+          "summary": "Implied volatility tends to exceed later realised volatility, which option sellers earn with crash risk."
+        }
+      ],
+      "projectKey": "derivatives-project"
+    },
+    {
+      "key": "ml",
+      "title": "Machine learning research without fooling yourself",
+      "summary": "Using models on market data while keeping the future out of the past.",
+      "chapters": [
+        {
+          "key": "point-in-time-features",
+          "title": "Point-in-time features: inputs built only from what was known then",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "point-in-time-features"
+          ],
+          "summary": "Every feature must use only data published before the decision time, including revisions."
+        },
+        {
+          "key": "labels",
+          "title": "Labels: what the model is asked to predict",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "labels"
+          ],
+          "summary": "A label fixes the target, such as the return over the next ten days or which barrier is hit first."
+        },
+        {
+          "key": "classifier",
+          "title": "A classification model: predicting the chance of up or down",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "classifier"
+          ],
+          "summary": "A classifier such as logistic regression learns from labelled examples to output a probability."
+        },
+        {
+          "key": "purged-cross-validation",
+          "title": "Purged cross-validation: testing folds that cannot see each other",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "purged-cross-validation"
+          ],
+          "summary": "Overlapping labels leak between folds, so training examples near each test fold are removed."
+        },
+        {
+          "key": "probability-sizing",
+          "title": "Sizing from probability: turning a predicted chance into a position",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "probability-sizing"
+          ],
+          "summary": "A position grows with how far the predicted probability is from a coin flip, capped by risk limits."
+        },
+        {
+          "key": "signal-decay",
+          "title": "Signal decay: how fast a prediction stops being useful",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "signal-decay"
+          ],
+          "summary": "Measuring the signal's edge at later horizons shows how quickly it must be traded."
+        }
+      ],
+      "projectKey": "ml-project"
+    },
+    {
+      "key": "execution",
+      "title": "Execution and market microstructure",
+      "summary": "How orders meet in the book, and how to trade size without moving the price against you.",
+      "chapters": [
+        {
+          "key": "order-book",
+          "title": "The limit order book: every waiting order, queued by price and time",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "order-book"
+          ],
+          "summary": "The book lists resting limit orders at each price, and orders at the same price fill first-come, first-served."
+        },
+        {
+          "key": "market-impact",
+          "title": "Market impact: your own trading moving the price",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "market-impact"
+          ],
+          "summary": "A large order eats through the book, and impact grows roughly with the square root of its size."
+        },
+        {
+          "key": "implementation-shortfall",
+          "title": "Implementation shortfall: the full cost from decision to fill",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "implementation-shortfall"
+          ],
+          "summary": "Shortfall compares the price when you decided with the prices you finally got, including what never filled."
+        },
+        {
+          "key": "twap",
+          "title": "TWAP execution: trading equal slices over time",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "twap"
+          ],
+          "summary": "Time-weighted execution splits an order into equal pieces spread across a period."
+        },
+        {
+          "key": "vwap",
+          "title": "VWAP execution: trading more when the market trades more",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "vwap"
+          ],
+          "summary": "Volume-weighted execution follows the day's usual volume pattern to hide in the crowd."
+        },
+        {
+          "key": "transaction-cost-analysis",
+          "title": "Transaction cost analysis: measuring what each trade really cost",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "transaction-cost-analysis"
+          ],
+          "summary": "Comparing fills with benchmarks after the fact splits cost into spread, impact and timing."
+        }
+      ],
+      "projectKey": "execution-project"
+    },
+    {
+      "key": "platform",
+      "title": "Building an in-house trading system",
+      "summary": "The parts of a real trading system and how they fit, from data to broker and back.",
+      "chapters": [
+        {
+          "key": "event-driven-backtester",
+          "title": "The event-driven backtester: replaying events in timestamp order",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "event-driven-backtester"
+          ],
+          "summary": "Processing every market and order event in time order lets the same strategy code run in backtest and live."
+        },
+        {
+          "key": "market-data-store",
+          "title": "A market data store: keeping raw and cleaned data with timestamps",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "market-data-store"
+          ],
+          "summary": "Storing every observation with when it happened and when you learned it makes point-in-time research possible."
+        },
+        {
+          "key": "broker-api",
+          "title": "A broker API: sending orders and getting fills back",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "broker-api"
+          ],
+          "summary": "A broker's API accepts orders and reports their states: sent, accepted, partly filled, filled, cancelled."
+        },
+        {
+          "key": "order-management",
+          "title": "An order management system: turning target positions into orders",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "order-management"
+          ],
+          "summary": "The order management system compares targets with holdings and open orders, then sends only the difference."
+        },
+        {
+          "key": "pre-trade-risk",
+          "title": "Pre-trade risk checks: blocking bad orders before they leave",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "pre-trade-risk"
+          ],
+          "summary": "Every order passes size, price and exposure checks, and a kill switch stops everything at once."
+        },
+        {
+          "key": "reconciliation",
+          "title": "Reconciliation: checking your books against the broker",
+          "readingMinutes": 5,
+          "conceptKeys": [
+            "reconciliation"
+          ],
+          "summary": "Comparing your positions and cash with the broker's every day, and alerting on gaps, catches silent failures."
+        }
+      ],
+      "projectKey": "platform-project"
+    }
+  ]
+}

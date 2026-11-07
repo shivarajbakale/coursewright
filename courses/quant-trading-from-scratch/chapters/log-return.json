@@ -1,0 +1,35 @@
+{
+  "questions": [
+    {
+      "prompt": "Two days have log returns of 0.05 and −0.02. What is the log return over both days?",
+      "options": ["0.07", "0.03", "−0.001", "0.0290"],
+      "answer": 1,
+      "explanation": "Log returns over several periods add: 0.05 − 0.02 = 0.03. That is the log return of the whole two-day span.",
+      "conceptKeys": ["log-return"]
+    },
+    {
+      "prompt": "A price goes from 100 to 110 and back to 100. What are the two log returns?",
+      "options": [
+        "+0.10 and −0.10",
+        "+0.0953 and −0.1054",
+        "+10% and −9.09%",
+        "+0.0953 and −0.0953"
+      ],
+      "answer": 3,
+      "explanation": "ln(110 / 100) = 0.0953 and ln(100 / 110) = −0.0953. Log returns are symmetric, so they add to 0, and the price is back where it started.",
+      "conceptKeys": ["log-return"]
+    },
+    {
+      "prompt": "Why does a loss always have a negative log return?",
+      "options": [
+        "Because a loss has a growth factor below 1, and the logarithm of a number below 1 is negative",
+        "Because numpy prints losses with a minus sign",
+        "Because the log return is the price change in pounds",
+        "Because ln(0) = −1"
+      ],
+      "answer": 0,
+      "explanation": "The log return is the logarithm of the growth factor. ln(1) = 0, so any growth factor below 1, which is a loss, gives a negative logarithm.",
+      "conceptKeys": ["log-return"]
+    }
+  ]
+}

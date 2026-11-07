@@ -1,0 +1,46 @@
+{
+  "questions": [
+    {
+      "prompt": "The call is $10.45 at 20% volatility, and its vega is $0.375 per point of volatility. The market price is $11.20. What is a quick estimate of its implied volatility?",
+      "options": [
+        "22%",
+        "20.75%",
+        "28%",
+        "11.2%"
+      ],
+      "answer": 0,
+      "explanation": "The price is 11.20 − 10.45 = 0.75 dollars above the 20% price. 0.75 / 0.375 = 2 points, so the estimate is 22%. The exact search gives 21.99%.",
+      "conceptKeys": [
+        "implied-volatility"
+      ]
+    },
+    {
+      "prompt": "Why does each call price give exactly one implied volatility?",
+      "options": [
+        "Because the market sets the volatility by law",
+        "Because the formula price always rises as volatility rises",
+        "Because volatility can only be 20% or 30%",
+        "Because the strike fixes the volatility"
+      ],
+      "answer": 1,
+      "explanation": "A higher volatility always gives a higher price, so the price curve crosses the market price at one volatility only. A search can find that point.",
+      "conceptKeys": [
+        "implied-volatility"
+      ]
+    },
+    {
+      "prompt": "Why do traders often quote options by implied volatility instead of dollar price?",
+      "options": [
+        "Because implied volatility is always lower than the price",
+        "Because implied volatility predicts the future exactly",
+        "Because a volatility can be compared across stocks, strikes and expiries, while a dollar price cannot",
+        "Because exchanges do not show dollar prices"
+      ],
+      "answer": 2,
+      "explanation": "A $5 option on one stock and a $50 option on another tell you little side by side. Their implied volatilities are on the same scale.",
+      "conceptKeys": [
+        "implied-volatility"
+      ]
+    }
+  ]
+}
