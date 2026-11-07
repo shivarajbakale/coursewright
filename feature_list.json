@@ -482,6 +482,17 @@
       "evidence": [
         "Quant course 48 -> 125 lessons; old ids kept; readable throughout"
       ]
+    },
+    {
+      "id": "course-extend-ui",
+      "priority": 24,
+      "area": "Course content",
+      "title": "Extend a finished course from its page",
+      "user_visible_behavior": "Course options → Extend this course; review new modules; keep reading meanwhile.",
+      "status": "not_started",
+      "plan": "course-extend-ui.feature-plan.json",
+      "verification": [],
+      "evidence": []
     }
   ]
 }

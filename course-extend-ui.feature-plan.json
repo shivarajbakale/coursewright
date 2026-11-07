@@ -1,0 +1,124 @@
+{
+  "feature": {
+    "id": "course-extend-ui",
+    "title": "Extend a finished course from its page",
+    "problem": "Courses can now grow (POST /api/courses/:id/extend: plan new modules on top of what the course teaches, review, then write only them), but only through the API. The owner should be able to say 'also teach X' on a finished course, review the new modules the same way as a new outline, and keep reading the course while the new part is written.",
+    "nonGoals": [
+      "Editing or rewriting existing lessons: an extension only appends modules.",
+      "Extending courses imported from a folder (no builder plan): the menu item is hidden for them.",
+      "The phone and iPad reader: it shows the new modules once written, with no extend action."
+    ]
+  },
+  "surfaces": [
+    {
+      "id": "course",
+      "name": "Course page: Extend this course",
+      "route": "/courses/:courseId",
+      "archetype": "detail",
+      "moments": {
+        "peak": "typing 'also teach options and execution' and seeing it start planning new modules on top of the course",
+        "end": "back on the course page, a quiet banner says the new modules are being planned, waiting for review, or being written, with a link"
+      },
+      "purpose": "Ask for more of a finished course, and see where that request stands.",
+      "panels": [
+        {
+          "id": "banner",
+          "kind": "detail",
+          "title": "Extension banner (only while one is in progress)",
+          "fields": [
+            { "label": "Planning", "value": "Planning new modules on top of this course…  [See progress]" },
+            { "label": "Review", "value": "8 new modules are ready for you to review.  [Review them]" },
+            { "label": "Writing", "value": "Writing 77 new lessons. You can keep reading.  [See progress]" }
+          ]
+        },
+        {
+          "id": "modules",
+          "kind": "detail",
+          "title": "Modules (as today)",
+          "fields": [{ "label": "Course options ⋯", "value": "Extend this course · Delete course" }]
+        }
+      ],
+      "states": {
+        "loading": "As today.",
+        "empty": "No extension in progress: no banner.",
+        "error": "The extension's planning failed: the banner says 'Planning the new modules failed' with Try again (sends the same request) and Dismiss.",
+        "success": "When the new modules are written the banner goes and they appear at the end of the outline."
+      }
+    },
+    {
+      "id": "review",
+      "name": "Progress and review (the build page, reused)",
+      "route": "/courses/:courseId/building",
+      "archetype": "sequence",
+      "moments": {
+        "peak": "the new modules listed under the existing ones, reshaped by asking, then 'Write these modules'",
+        "end": "the writing progress, with a link back to read the course meanwhile"
+      },
+      "purpose": "Follow the extension and approve its outline, exactly as a new course's.",
+      "panels": [
+        {
+          "id": "progress",
+          "kind": "detail",
+          "title": "Progress",
+          "fields": [{ "label": "Steps", "value": "Researching → Mapping the new concepts → Review → Writing → Ready" }]
+        },
+        {
+          "id": "outline",
+          "kind": "detail",
+          "title": "Outline review",
+          "fields": [
+            { "label": "Existing modules", "value": "collapsed, marked 'already in the course'" },
+            { "label": "New modules", "value": "open, editable by asking" },
+            { "label": "Action", "value": "[Write these modules]" }
+          ]
+        }
+      ],
+      "states": {
+        "loading": "The progress list with the current step spinning.",
+        "empty": "No extension for this course: the page shows the course's last build, as today.",
+        "error": "A failed step shows its message with Try again, as a failed build does today.",
+        "success": "Approving starts writing; 'Read the course meanwhile' links back to the course page."
+      }
+    }
+  ],
+  "overlays": [
+    {
+      "id": "extend",
+      "kind": "dialog",
+      "title": "Extend this course",
+      "fields": [
+        { "label": "What should it add?", "placeholder": "Advanced strategies, options pricing, building a live trading system…" }
+      ],
+      "buttons": ["Cancel", "Plan new modules"]
+    }
+  ],
+  "components": [
+    { "surface": "course", "control": "Menu item 'Extend this course' in the existing Course options menu, opening a Modal with a Textarea", "why": "a rare, deliberate action; the menu already holds the course's other whole-course action (Delete) and keeps the header to one primary button", "rejected": "a second header button (competes with Continue) and a page of its own (one field does not need one)" },
+    { "surface": "course", "control": "Alert banner above the modules while an extension is planning, waiting for review, or writing", "why": "the course stays readable during an extension, so the page must say what is happening without blocking it", "rejected": "redirecting to the build page as a new course does (it would hide a readable course)" },
+    { "surface": "review", "control": "The existing build page and OutlineReview, with existing modules collapsed and labelled", "why": "one review flow for new courses and extensions; the outline chat already edits only the new modules", "rejected": "a separate extension review screen" }
+  ],
+  "endpoints": [
+    { "method": "POST", "path": "/api/courses/:id/extend", "auth": false, "purpose": "start planning (exists)" },
+    { "method": "GET", "path": "/api/courses/:id", "auth": false, "purpose": "adds extension: {status: planning|review|writing|failed, jobId, modules} (new field)" },
+    { "method": "GET/POST", "path": "/api/courses/:id/plan, /plan/chat, /plan/approve", "auth": false, "purpose": "review and approve (exist)" }
+  ],
+  "integration": [
+    { "from": "CoursePage", "to": "useExtendCourse → courseService.extend, then navigate to /courses/:id/building", "note": "MSW handler for extend" },
+    { "from": "GeneratingPage", "to": "follows the course's current job even when the course is ready", "note": "today it treats ready + job as done" },
+    { "from": "OutlineReview", "to": "knows which modules are new from plan.extension.from", "note": "button reads 'Write these modules'" }
+  ],
+  "blastRadius": {
+    "new": ["src/pages/Course/ExtendCourseModal.tsx"],
+    "changed": [
+      "src/pages/Course/CoursePage.tsx",
+      "src/pages/Generating/GeneratingPage.tsx, OutlineReview.tsx",
+      "src/api/services/coursewrightService.ts, src/api/types, src/hooks/useCoursewright.ts, src/mocks",
+      "agent/app/api/common.py (course detail: extension), agent/app/api/plans.py (plan_out: extension.from)"
+    ]
+  },
+  "verification": [
+    "vitest: menu item opens the modal, extend posts and navigates; banner per state; review collapses existing modules",
+    "make check",
+    "WebKit against the Mac mini: extend a small course end to end"
+  ]
+}

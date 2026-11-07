@@ -197,3 +197,22 @@ def test_a_prefetched_chapter_does_not_become_the_last_opened(client, course):
     client.get(f"/api/chapters/{other}", headers={"X-CW-Prefetch": "1"})
     detail = client.get(f"/api/courses/{course['id']}").json()["data"]
     assert detail["lastOpenedChapterId"] == first
+
+
+def test_questions_are_written_only_for_a_lesson_without_any(client, course, monkeypatch):
+    from app.agents import llm
+    from app.db import db
+
+    chs = [c for m in course["modules"] for c in m["chapters"]]
+    target = chs[1]["id"]
+    with db() as conn:
+        conn.execute("DELETE FROM questions WHERE chapter_id=?", (target,))
+
+    async def fake_parse(*, system, user, schema, **_):
+        q = {"prompt": "Why?", "options": ["a", "b", "c"], "answer": 1, "explanation": "Because b."}
+        return schema.model_validate({"questions": [q, q, {"prompt": "bad", "options": ["x"], "answer": 3}]}), {}
+
+    monkeypatch.setattr(llm, "parse", fake_parse)
+    r = client.post(f"/api/chapters/{target}/questions")
+    assert r.status_code == 201 and len(r.json()["data"]["questions"]) == 2  # the malformed one is dropped
+    assert client.post(f"/api/chapters/{target}/questions").status_code == 409
