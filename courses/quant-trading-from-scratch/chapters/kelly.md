@@ -38,7 +38,7 @@ stake 30%: log growth per round +0.01475, growth factor after 100 rounds 4.37
 stake 40%: log growth per round -0.00245, growth factor after 100 rounds 0.78
 ```
 
-Look at the stake of 40%. Every single bet still has a positive expected value: 0.2 × 0.4 = 0.08 per round. Yet after 100 rounds you keep only 0.78 of your money, a loss of 22%. One loss at 0.6 undoes more than one win at 1.4 gives back.
+Look at the stake of 40%. Every single bet still has a positive expected value: 0.2 × 0.4 = 0.08 per round. Yet after 100 rounds you keep only 0.78 of your money, a loss of 22%. One win at 1.4 does not recover a loss at 0.6.
 
 ```inkling
 title "Bigger stakes, slower growth"

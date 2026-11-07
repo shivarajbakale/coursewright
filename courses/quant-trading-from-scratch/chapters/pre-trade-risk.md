@@ -92,4 +92,4 @@ Pre-trade risk checks are rules that every order must pass before it goes to the
 
 ## What you have now
 
-You have joined the order management system and risk limits into a gate that bad orders cannot pass. Every order that leaves is now one you meant to send. But what if a fill report is lost, and your books say you hold 150 shares while the broker says 0?
+You have joined the order management system and risk limits into a gate that bad orders cannot pass. Every order that leaves now stays inside the limits you set. But what if a fill report is lost, and your books say you hold 150 shares while the broker says 0?

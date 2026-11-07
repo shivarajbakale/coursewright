@@ -47,7 +47,7 @@ Follow the two versions:
 2. The `cheat` line multiplies `up` by the same day's return. It holds the share on exactly the four rising days, and on no falling day. That needs the day's close before the day starts.
 3. The `cheat` result is 5.10%, more than five times the 1.00% of buy and hold.
 4. The `honest` line uses `up.shift(1)`, yesterday's value. It holds the share on days 2, 4 and 5, after each rise. Those days returned -1.98%, +2.00% and -0.98%.
-5. The `honest` result is a loss of 1.00%. The rule has no edge at all. All of the 5.10% came from reading the future.
+5. The `honest` result is a loss of 1.00%. Traded honestly, the rule made no profit here. All of the 5.10% came from reading the future.
 
 ```inkling
 title "One row too early"

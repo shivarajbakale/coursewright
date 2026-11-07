@@ -12,9 +12,9 @@ Think of the speedometer in a car. It tells you how many kilometres you cover pe
 
 The first way needs no new formula. Price the call with the stock $1 higher and $1 lower, and take half the difference:
 
-1. With the stock at $101, the call is worth $11.0967.
-2. With the stock at $99, the call is worth $9.8232.
-3. The change over $2 is 11.0967 − 9.8232 = 1.2735, so delta is 1.2735 / 2 = 0.6368.
+1. With the stock at $101, the call is worth $11.09671.
+2. With the stock at $99, the call is worth $9.82322.
+3. The change over $2 is 11.09671 − 9.82322 = 1.27349, so the bump estimate is 1.27349 / 2 = 0.6367.
 
 The second way is exact. For a call, delta equals N(d1), the same number inside the Black-Scholes formula. In the running example d1 is 0.35, and N(0.35) = 0.6368. As you saw with the formula, S × N(d1) is the share part of the copy. So delta is also the number of shares in the copy: 0.6368 shares per call.
 

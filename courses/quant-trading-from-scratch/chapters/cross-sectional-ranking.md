@@ -40,7 +40,7 @@ Walk through it:
 1. Each row of the DataFrame holds every stock's value on one date. The method `rank(axis=1)` ranks along the row, so it compares stocks with each other, never one stock with its own past.
 2. On the first date, D rose most (12%) and gets rank 5. E rose least (1%) and gets rank 1.
 3. Subtracting the row's mean rank, 3, centres the ranks on 0. Positive means "better than the others" and negative means "worse".
-4. On the second date, every stock fell. A fell only 1%, so it ranks first with a view of +2.
+4. On the second date, every stock fell. A fell only 1%, so it has the highest rank (5) and a view of +2.
 
 A rule of "buy if the past return is positive" would buy all 5 stocks on the first date and none on the second. Ranking gives 2 stocks to favour and 2 to avoid on both dates. The centred views add to 0 on every row, which suits a long side and a short side of equal size.
 

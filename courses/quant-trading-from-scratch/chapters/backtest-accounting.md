@@ -90,7 +90,7 @@ print("2025-03-12", books.shares, books.cash, holdings, books.equity)
 
 The sale brings in 96 × 102.5 = 9840, so cash is 4984 + 9840 = 14824. That is more than the 10,000 you started with, but it is not all yours. You owe 48 shares, worth −48 × 99 = −4752 at the close. Equity is 14824 − 4752 = 10072.
 
-You can check that number another way. The long lost 48 × (102.5 − 103) = −24 between the close and the sale. The short then gained −48 × (99 − 102.5) = 168. So 9928 − 24 + 168 = 10072, the same equity.
+You can check that number another way. The long lost 48 × (103 − 102.5) = 24 between the close and the sale. The short then gained −48 × (99 − 102.5) = 168. So 9928 − 24 + 168 = 10072, the same equity.
 
 > **Key idea:** Backtest accounting changes cash and shares only on fills and marks the holdings to market at every close, so equity counts every gain and cost once.
 

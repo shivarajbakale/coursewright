@@ -93,4 +93,4 @@ Rule 3 is generous. A low of 104.0 may have been one small trade, and other buye
 
 ## What you have now
 
-You can turn an order into a fill, so the price you trade at is the next open and not the close the signal saw. Every order so far used a fixed 10 shares. How many shares should an order ask for, given the money in the account?
+You can turn an order into a fill, so the price you trade at comes from the next bar, not the close the signal saw. Every order so far used a fixed 10 shares. How many shares should an order ask for, given the money in the account?
