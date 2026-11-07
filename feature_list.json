@@ -315,14 +315,19 @@
       "area": "Course content",
       "title": "Precise lessons: STE writing rules, checked arithmetic, steadier reader and accuracy check",
       "user_visible_behavior": "New lessons state causes, number their steps, map their comparisons and keep their arithmetic right; a wrong lesson can be corrected in place.",
-      "status": "in_progress",
+      "status": "passing",
       "plan": null,
       "verification": [
         "pytest (test_precision, test_routes, test_pipeline)",
         "make check",
         "live: PATCH corrects Trading edge"
       ],
-      "evidence": []
+      "evidence": [
+        "pytest 118 passed; make check green",
+        "Calibration: 375 calculations across 498 live lessons, 0 false flags; planted errors caught",
+        "Verifier on live Trading edge: 0/1 runs caught the sign error before, 2/3 after",
+        "Live PATCH: Trading edge now says 'loses about 0.05%', quiz key -0.05%, both drawings kept, last-opened chapter unchanged, tutor search returns the new text"
+      ]
     }
   ]
 }
