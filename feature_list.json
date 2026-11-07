@@ -14,197 +14,6 @@
   },
   "features": [
     {
-      "id": "feature-001",
-      "priority": 1,
-      "area": "Library",
-      "title": "Library",
-      "user_visible_behavior": "Courses, builds in progress, continue card and recent notes render from the API.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence",
-        "Route /"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "Headless Chromium against mocks and the real agent service: renders seeded Raft course, no console errors"
-      ],
-      "notes": "BLUEPRINT.md screen #1"
-    },
-    {
-      "id": "feature-002",
-      "priority": 2,
-      "area": "Interview",
-      "title": "New course interview",
-      "user_visible_behavior": "Topic, then one AskUserQuestion-style question at a time, then a summary and Generate.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence",
-        "Route /new"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "Playwright drove topic → 4 questions → Generate against the real agent service; landed on /courses/<id>/building"
-      ],
-      "notes": "BLUEPRINT.md screen #2"
-    },
-    {
-      "id": "feature-003",
-      "priority": 3,
-      "area": "Generating",
-      "title": "Generating screen",
-      "user_visible_behavior": "Live SSE job events drive a stepper, event log and an animated scene per stage; stop button; failure state.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence",
-        "Route /courses/$courseId/building"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "Mock build streamed all six stages; real build without a key showed the \"ANTHROPIC_API_KEY is not set\" failure state"
-      ],
-      "notes": "BLUEPRINT.md screen #3"
-    },
-    {
-      "id": "feature-004",
-      "priority": 4,
-      "area": "Course",
-      "title": "Course overview",
-      "user_visible_behavior": "Modules with chapters and projects, progress ring, weak spots with a tutor drill, concept map.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence",
-        "Route /courses/$courseId"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "Rendered seeded course from the real API; ui-contract tests cover cold load and error state"
-      ],
-      "notes": "BLUEPRINT.md screen #4"
-    },
-    {
-      "id": "feature-005",
-      "priority": 5,
-      "area": "Chapter",
-      "title": "Chapter reader",
-      "user_visible_behavior": "Read-only kit blocks rendering, Mermaid and Flowmovie diagrams, check-yourself questions, mark finished, add selection to notes, ask tutor.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence",
-        "Route /courses/$courseId/chapters/$chapterId"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "Rendered seeded chapter (real API) with Flowmovie player; MSW test grades an attempt"
-      ],
-      "notes": "BLUEPRINT.md screen #5"
-    },
-    {
-      "id": "feature-006",
-      "priority": 6,
-      "area": "Project",
-      "title": "Project",
-      "user_visible_behavior": "Brief, milestones with check commands, progressive hints, rubric, GitHub review submissions with findings.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence",
-        "Route /courses/$courseId/projects/$projectId"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "Rendered seeded project from the real API"
-      ],
-      "notes": "BLUEPRINT.md screen #6"
-    },
-    {
-      "id": "feature-007",
-      "priority": 7,
-      "area": "Tutor",
-      "title": "Tutor (CopilotKit + deep agent)",
-      "user_visible_behavior": "Full-page and side-panel tutor; sends course/chapter/note/selection context; frontend tools save_to_notes and open_chapter. Renders citations, movies and quizzes; frontend tools highlight_passage and start_quiz.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence",
-        "Route /tutor"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "Browser → CopilotKit runtime (:4000) → POST /agents/tutor reached the agent; without a key the agent answered 503 and the UI showed a toast. Not yet run with a real Claude key."
-      ],
-      "notes": "BLUEPRINT.md screen #7"
-    },
-    {
-      "id": "feature-008",
-      "priority": 8,
-      "area": "Notes",
-      "title": "Notes (kit, Notion-style)",
-      "user_visible_behavior": "kit PageTree, PageHeader and blocks editor with debounced autosave, search, backlinks, linked chapter, ask tutor. Chapter @mentions, Diagram and Quiz card blocks.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence",
-        "Route /notes/$pageId"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "Rendered and autosaved against mocks; rendered seeded notes from the real API",
-        "13 markdown round-trip tests for the custom blocks; slash insert, paste and @mention checked in headless Chromium"
-      ],
-      "notes": "BLUEPRINT.md screen #8"
-    },
-    {
-      "id": "feature-009",
-      "priority": 9,
-      "area": "Sources",
-      "title": "Sources (RAG index)",
-      "user_visible_behavior": "Index stats, sources table, add URL, re-index, test retrieval with ranked hits.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence",
-        "Route /sources"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "Test retrieval returned ranked seeded chunks via hybrid sqlite-vec + FTS5 search"
-      ],
-      "notes": "BLUEPRINT.md screen #9"
-    },
-    {
-      "id": "feature-010",
-      "priority": 10,
-      "area": "Agent service",
-      "title": "Python agent service",
-      "user_visible_behavior": "FastAPI REST per docs/plan/api-contract.md, SQLite (sqlite-vec, FTS5), job worker with SSE, interviewer, course builder, ingest, reviewer, tutor over AG-UI. Diagrammer subagent with Flowmovie checks, resumable builds, tutor make_flow/make_quiz, optional shared secret, evals, Docker/Fly/Litestream config.",
-      "status": "passing",
-      "verification": [
-        "make check gates listed in evidence"
-      ],
-      "evidence": [
-        "npm run type-check, lint, ui-lint, storybook-lint, capability-lint: green",
-        "npx vitest run: 327 passed",
-        "ui-probe: 153 passed (all nine routes measured)",
-        "cd agent && uv run pytest: 41 passed",
-        "uvicorn served seeded data to the web app"
-      ],
-      "notes": "Backend for all screens"
-    },
-    {
       "id": "notifications",
       "priority": 11,
       "area": "Shell",
@@ -431,7 +240,7 @@
       "priority": 21,
       "area": "Course content",
       "title": "Every chapter carries Inkling explainers, inline, chosen to fit its idea",
-      "user_visible_behavior": "Chapters show 1-2 hand-drawn Inkling explainers inline (```inkling fences), on desktop and in the reader, drawn step by step on paper matched to the theme; the builder, MCP and folder check handle them; POST /api/courses/:id/explainers backfills a course.",
+      "user_visible_behavior": "1-2 Inkling explainers inline per chapter, desktop and reader; builder, MCP, backfill.",
       "status": "passing",
       "plan": "inkling-explainers.feature-plan.json",
       "verification": [
@@ -487,8 +296,8 @@
       "id": "course-extend-ui",
       "priority": 24,
       "area": "Course content",
-      "title": "Extend a finished course from its page",
-      "user_visible_behavior": "Course options → Extend this course; review new modules; keep reading meanwhile.",
+      "title": "Extend a course from its page",
+      "user_visible_behavior": "Extend a course from its page.",
       "status": "not_started",
       "plan": "course-extend-ui.feature-plan.json",
       "verification": [],
