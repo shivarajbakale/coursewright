@@ -471,11 +471,17 @@
       "priority": 23,
       "area": "Course content",
       "title": "Extend a finished course with new modules",
-      "user_visible_behavior": "POST /api/courses/:id/extend plans new modules, then (after approval) writes and appends only them; existing chapters keep ids and progress.",
-      "status": "in_progress",
+      "user_visible_behavior": "POST /courses/:id/extend plans, then appends new modules; old chapters untouched.",
+      "status": "passing",
       "plan": "none: backend only, reuses outline review",
-      "verification": [],
-      "evidence": []
+      "verification": [
+        "pytest",
+        "make check",
+        "quant course extended live"
+      ],
+      "evidence": [
+        "Quant course 48 -> 125 lessons; old ids kept; readable throughout"
+      ]
     }
   ]
 }
