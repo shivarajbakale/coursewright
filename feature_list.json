@@ -336,7 +336,7 @@
       "title": "Check a built course for mistakes again and propose corrections",
       "user_visible_behavior": "POST /api/courses/:id/accuracy re-checks every lesson with the stricter verifier and records proposed corrections, before and after, to review and apply.",
       "status": "in_progress",
-      "plan": null,
+      "plan": "none: agent API and job only, no screen changes",
       "verification": [
         "pytest test_accuracy",
         "make check",
