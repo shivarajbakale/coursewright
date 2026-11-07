@@ -82,9 +82,10 @@ def changed_keys(before: CourseOutline, after: CourseOutline) -> list[str]:
 
 def outline_reply_tokens(outline) -> int:
     """Output tokens for an outline-chat reply: about the outline's JSON size in tokens (4 characters each),
-    doubled for the change and the reasoning, at least 8000 and at most 32000."""
+    doubled for the change and the reasoning, at least 8000 and at most 20000 (the SDK refuses a
+    non-streaming request that could run past ten minutes, about 21000 output tokens)."""
     size = len(outline.model_dump_json(by_alias=True)) // 4
-    return max(8000, min(32000, size * 2 + 4000))
+    return max(8000, min(20000, size * 2 + 4000))
 
 
 @router.get("/courses/{course_id}/plan")

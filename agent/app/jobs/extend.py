@@ -127,25 +127,30 @@ def merge(outline: CourseOutline, ext: ExtensionOut) -> CourseOutline:
 
 async def plan_extension(run: Run, outline: CourseOutline, request: str) -> CourseOutline:
     """Research the new ground, plan the new modules, check them against the course, merge."""
-    await run.emit("research", "Researching what the course will add", {})
-    brief = {**run.brief, "goal": request}
-    research = await run.call(
-        "research", system=config.prompt("researcher") + "\n\n" + rules(),
-        user=f"{brief_text(brief, level=False)}\n\nThe course already teaches:\n{outline_text(outline)}\n\n"
-             "Research only the new ground the request asks for.",
-        schema=ResearchOut, max_tokens=8000,
-    )
     notes_path = run.workdir / "research" / "notes.md"
-    notes = (notes_path.read_text() if notes_path.exists() else "") + f"\n\n# Extension: {request}\n\n{research.notes.strip()}\n"
-    notes_path.write_text(notes)
+    existing = notes_path.read_text() if notes_path.exists() else ""
+    header = f"# Extension: {request}"
+    if header in existing:  # a retry after a failed planning call: the research is already done
+        new_notes = existing.split(header, 1)[1].strip()
+    else:
+        await run.emit("research", "Researching what the course will add", {})
+        brief = {**run.brief, "goal": request}
+        research = await run.call(
+            "research", system=config.prompt("researcher") + "\n\n" + rules(),
+            user=f"{brief_text(brief, level=False)}\n\nThe course already teaches:\n{outline_text(outline)}\n\n"
+                 "Research only the new ground the request asks for.",
+            schema=ResearchOut, max_tokens=8000,
+        )
+        new_notes = research.notes.strip()
+        notes_path.write_text(f"{existing}\n\n{header}\n\n{new_notes}\n")
 
     await run.emit("concepts", "Mapping the new concepts on top of the course", {})
     taught = "\n".join(f"- {c.key}: {c.name}" for c in outline.concepts)
     user = (f"{EXTEND_RULES}\n\nThe request: {request}\n\nThe course now:\n{outline_text(outline)}\n\n"
-            f"Concept keys it already teaches:\n{taught}\n\nResearch notes for the new part:\n{research.notes}")
+            f"Concept keys it already teaches:\n{taught}\n\nResearch notes for the new part:\n{new_notes}")
     ext, left = await run.checked(
         "curriculum", system=config.prompt("curriculum") + "\n\n" + rules(), user=user, schema=ExtensionOut,
-        max_tokens=24000, retries=2, problems=lambda e: extension_problems(outline, e),
+        max_tokens=20000, retries=2, problems=lambda e: extension_problems(outline, e),
         previous=lambda e: e.model_dump_json(),
     )
     if left:
