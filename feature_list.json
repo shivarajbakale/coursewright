@@ -335,15 +335,14 @@
       "area": "Course content",
       "title": "Check a built course for mistakes again and propose corrections",
       "user_visible_behavior": "POST /api/courses/:id/accuracy re-checks every lesson with the stricter verifier and records proposed corrections, before and after, to review and apply.",
-      "status": "blocked",
+      "status": "in_progress",
       "plan": "none: agent API and job only, no screen changes",
       "verification": [
         "pytest test_accuracy",
         "make check",
         "live: quant course pass, proposals checked by computation"
       ],
-      "evidence": [],
-      "blocker": "Code and tests landed (ced0654, 2193137); the live pass on the quant course has not run. Parked while prose-clarity is in flight; resume by running POST /api/courses/:id/accuracy on the quant course and checking the proposals."
+      "evidence": []
     },
     {
       "id": "prose-clarity",
