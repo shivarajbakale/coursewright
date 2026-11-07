@@ -1,0 +1,307 @@
+{
+  "course": "be67a4db-0418-4acb-91e5-705c587eeb5a",
+  "job": "acced2dc-5fb8-4786-9892-37a91d609fdb",
+  "checked": "2026-11-07, every code block rerun and every changed number recomputed",
+  "verdicts": [
+    {
+      "p": "P1",
+      "id": "2fb905d7-7431-4995-a69a-3f292f47d9e4",
+      "title": "Log returns: returns you can add across periods",
+      "verdict": "REJECT",
+      "reason": "Original correct: ln1.10=0.09531, ln0.90=-0.10536, ln1.05=0.04879, sum 0.0387 (exact ln1.0395=0.03874), exp(0.0387)-1=0.03946. Proposal only adds hedging ('≈', 'rounded values') and a 30-word sentence.",
+      "edits": []
+    },
+    {
+      "p": "P2",
+      "id": "964d6be8-0deb-4432-9ca7-f5b9e29b0da1",
+      "title": "Standard deviation: how far numbers typically sit from their average",
+      "verdict": "REJECT",
+      "reason": "Original correct: pandas Series/DataFrame .std() and .var() default ddof=1 (pandas docs); numpy default ddof=0. Code output matches (10.49, 11.73). Proposal adds words only.",
+      "edits": []
+    },
+    {
+      "p": "P3",
+      "id": "46e02fe2-1288-4d01-a8d2-66608b179ef3",
+      "title": "The Sharpe ratio: excess return for each unit of volatility",
+      "verdict": "REJECT",
+      "reason": "No change proposed except a trailing newline. Original code reruns to exactly '8.6 11.62 / 0.74 1.09' (pandas std ddof=1); the verifier's 10.97 claim is wrong.",
+      "edits": []
+    },
+    {
+      "p": "P4",
+      "id": "9fe9519b-9281-4eab-9f58-1417ccd0d728",
+      "title": "A trading edge: a repeatable advantage that survives costs",
+      "verdict": "REJECT",
+      "reason": "Cosmetic: only adds labels to the print. Original output matches its code (0.04 gross, 0.02/-0.01 net, 4.0/-2.0). Q explanation (house keeps 1 in 37) is right.",
+      "edits": []
+    },
+    {
+      "p": "P5",
+      "id": "2b4c6791-dc1e-4abf-a0c7-30f59d0887b7",
+      "title": "Orders: instructions to buy or sell",
+      "verdict": "REJECT",
+      "reason": "Original correct. 'partly' is an inkling symbol (wavy tick) and fits case 3, where a limit at 104.20 trades at once; 'no' would contradict case 3. A resting limit at 104.00 fills at 104.00, so the 'larger saving' sentence adds nothing. Key idea rewording is cosmetic.",
+      "edits": []
+    },
+    {
+      "p": "P6",
+      "id": "7960606f-2a4b-4990-ba7a-d0c438d51cc6",
+      "title": "Fills: what actually traded, at what price",
+      "verdict": "ACCEPT_EDITED",
+      "reason": "Real but minor: the summary says the fill price is the next open, but the lesson's own limit buy filled at 104.0, not the 104.5 open. Proposed sentence is 37 words; shorter fix keeps one sentence.",
+      "edits": [
+        {
+          "field": "markdown",
+          "old": "You can turn an order into a fill, so the price you trade at is the next open and not the close the signal saw.",
+          "new": "You can turn an order into a fill, so the price you trade at comes from the next bar, not the close the signal saw."
+        }
+      ]
+    },
+    {
+      "p": "P7",
+      "id": "277b6b13-3326-4618-a798-20619b7f2834",
+      "title": "Position sizing: how much money each trade uses",
+      "verdict": "REJECT",
+      "reason": "Original correct: at price 104 a -1 signal gives -48 shares, notional 4992, the same size as the long; -5000//104 = -49 (floor of -48.08); 'toward the lower number' is the plain-word form of floor. Fraction is a magnitude, so 'at or below 1' is right. Q explanation change is wordier only.",
+      "edits": []
+    },
+    {
+      "p": "P8",
+      "id": "dfd5d2b6-348d-4c71-b33a-00f9b6ecad77",
+      "title": "Backtest accounting: cash, holdings and equity, bar by bar",
+      "verdict": "ACCEPT_EDITED",
+      "reason": "Hunk 1 accepted: '48 × (102.5 − 103) = −24' is the P&L, so 'lost −24' is a double negative; 48 × (103 − 102.5) = 24 matches '9928 − 24 + 168 = 10072' (checked: 4984+5136=10120, 14824−4752=10072). Q option '4,848' → '−4,848' rejected: both are wrong distractors, change is cosmetic.",
+      "edits": [
+        {
+          "field": "markdown",
+          "old": "The long lost 48 × (102.5 − 103) = −24 between the close and the sale.",
+          "new": "The long lost 48 × (103 − 102.5) = 24 between the close and the sale."
+        }
+      ]
+    },
+    {
+      "p": "P9",
+      "id": "b7a2aa03-7e7f-46a8-97fb-849c043bbd21",
+      "title": "Look-ahead bias: using information from after the decision",
+      "verdict": "ACCEPT_EDITED",
+      "reason": "Code output matches (cheat 5.10%, honest -1.00%, hold 1.00%). Hunk 3 rejected: 5.10% / 1.00% = 5.10, which is 'more than five times'. Hunk 4 cosmetic. Hunk 5: 'no edge at all' is an overclaim from 8 days, but the proposed text is long (a 26-word sentence) and hedged; replace only that sentence.",
+      "edits": [
+        {
+          "field": "markdown",
+          "old": "The rule has no edge at all.",
+          "new": "Traded honestly, the rule made no profit here."
+        }
+      ]
+    },
+    {
+      "p": "P10",
+      "id": "361d3799-de42-4be2-9334-4db4af3dfc34",
+      "title": "Adjusted prices: prices corrected for splits and dividends",
+      "verdict": "REJECT",
+      "reason": "Original correct; proposal introduces errors. The ex-dividend date is by definition the first day a new buyer does not get the dividend. Vendor (CRSP/Yahoo-style) adjustment multiplies earlier prices by 1 − D/P = 0.98, giving 49.50/49.00 − 1 = 1.02% against the true 1.00%, as the lesson says. The proposal's 'factor exactly 1.00', '50.50/1.01 = 50.00' and 3.06% 'total-return series' are wrong.",
+      "edits": []
+    },
+    {
+      "p": "P11",
+      "id": "e3c0060b-b87b-4be3-b344-575113deb8cd",
+      "title": "Survivorship bias: testing only the companies that survived",
+      "verdict": "REJECT",
+      "reason": "Cosmetic, and the new output block does not match what the new code prints (pandas right-aligns the string column one space wider). The original output matches its code exactly; the prose percentages come from the decimals.",
+      "edits": []
+    },
+    {
+      "p": "P12",
+      "id": "c52d7cf5-e4a4-4f72-9375-54979b339be8",
+      "title": "Out-of-sample testing: judging a rule on data it never saw",
+      "verdict": "REJECT",
+      "reason": "Seed changed 5 → 42 without regenerating the output: with seed 42 the code prints in-sample {5: 0.05, 10: 0.06, 20: -0.19, 50: -0.34, 100: -0.64}, chosen 10, OOS 0.53. The original (seed 5) reproduces 0.95/50/0.30 exactly. 0.30/0.95 = 0.316 ≈ 0.32 is fine (sharpe() already rounds). Other hunks are wordy rewording.",
+      "edits": []
+    },
+    {
+      "p": "P13",
+      "id": "96a53480-9dd5-416c-b43c-8e093458ff28",
+      "title": "Overfitting: a rule that fits past noise",
+      "verdict": "REJECT",
+      "reason": "Original correct. The code reproduces 2.93/0.19. A 500-history simulation gives 60-parameter 3.08 IS / 0.01 OOS and 1-parameter 0.38 / 0.00, matching the lesson. The 'always long or short' rule's sign is fitted in-sample, so it IS a 1-parameter rule; 'no fitted parameter' is wrong. Returns are zero-mean by construction, so 'Neither rule could ever earn' is true. The 'digits depend on library version' paragraph is false hedging (the numpy Generator stream is fixed).",
+      "edits": []
+    },
+    {
+      "p": "P14",
+      "id": "04f880a0-5677-4511-8a8e-69ac92fa1c4f",
+      "title": "The Kelly criterion: the bet size that grows money fastest",
+      "verdict": "ACCEPT_EDITED",
+      "reason": "Mostly wrong. The expected gain per round as a fraction of the account is f × 0.2 = 2%, 4%, 8%, so '0.2 × 0.4 = 0.08' and '+8%' are right and '+3.2%' is wrong. Zero log growth is at f = 0.389 = 1.95 × Kelly, so 'about twice Kelly' is right and '1.67 times' is wrong. 'Lose money' fits the 0.78 factor. Only the clearer sentence 'One win at 1.4 does not recover a loss at 0.6' (1.4 × 0.6 = 0.84) is accepted.",
+      "edits": [
+        {
+          "field": "markdown",
+          "old": "One loss at 0.6 undoes more than one win at 1.4 gives back.",
+          "new": "One win at 1.4 does not recover a loss at 0.6."
+        }
+      ]
+    },
+    {
+      "p": "P15",
+      "id": "a369e446-38d5-4aa6-b0a0-33af92461f71",
+      "title": "Risk limits: rules that cap losses and concentration",
+      "verdict": "REJECT",
+      "reason": "Cosmetic rewording; the original is correct (gross 24+20+22+18 = 84k, room 16,000 < 25,000, code prints 16000.0).",
+      "edits": []
+    },
+    {
+      "p": "P16",
+      "id": "1e293a07-b837-4488-989f-10255a937a2b",
+      "title": "Stress tests: changing assumptions to find what breaks",
+      "verdict": "REJECT",
+      "reason": "Original correct; proposal introduces errors. The rerun gives len(base) = 1,258 (shift plus diff drop two rows, not one), mean |traded| = 0.976 units a day, best 10 days = 41.4% of total profit, and yearly sums with years 2 and 3 negative (−0.034, −0.098). '1,259' is wrong, and the proposal deletes the correct 41% fact.",
+      "edits": []
+    },
+    {
+      "p": "P17",
+      "id": "8e796b21-25f2-4f1f-b4e1-90b3335bd59a",
+      "title": "Beta: how much an asset moves with the market",
+      "verdict": "REJECT",
+      "reason": "Original correct (cov 2.603, var 1.742, beta 1.495); the closing question is the course's bridge to the next lesson. The proposal only restyles it.",
+      "edits": []
+    },
+    {
+      "p": "P18",
+      "id": "df0978a2-3c5d-4a46-88a2-48d32220524c",
+      "title": "Market-neutral portfolios: longs and shorts that cancel market risk",
+      "verdict": "REJECT",
+      "reason": "Original correct; proposal wrong. Equal dollars: market −5% gives A −4% (−$400) and the short B gains 5% ($500), total +$100; market +5% gives +$800 − $300 = +$500. The table rows give total profit in both columns.",
+      "edits": []
+    },
+    {
+      "p": "P19",
+      "id": "d536f444-e4e7-4cc1-a400-62d6545c7cb4",
+      "title": "Cross-sectional ranking: comparing assets with each other on one date",
+      "verdict": "ACCEPT",
+      "reason": "Clarity fix with nothing wrong in it: the code labels 1 = lowest and 5 = highest, and A has rank 5 on 2024-04-30. 'Ranks first' can be read as rank 1. New sentence is 21 words.",
+      "edits": [
+        {
+          "field": "markdown",
+          "old": "4. On the second date, every stock fell. A fell only 1%, so it ranks first with a view of +2.",
+          "new": "4. On the second date, every stock fell. A fell only 1%, so it has the highest rank (5) and a view of +2."
+        }
+      ]
+    },
+    {
+      "p": "P20",
+      "id": "33a629f6-ddd7-4730-a577-bfd04d0a3813",
+      "title": "Option payoffs: the right but not the duty to trade",
+      "verdict": "REJECT",
+      "reason": "Proposal introduces an error: at a stock price of exactly 110.45 the profit is 0, so 'profit only above 110.45' is right and 'at or above' is wrong.",
+      "edits": []
+    },
+    {
+      "p": "P21",
+      "id": "7584b582-5aa0-4e0e-a12e-349db5b05073",
+      "title": "Put-call parity: the fixed link between call and put prices",
+      "verdict": "REJECT",
+      "reason": "No change proposed except a trailing newline; the verifier itself confirmed the parity claim.",
+      "edits": []
+    },
+    {
+      "p": "P22",
+      "id": "8f3d53ba-e330-4c97-9db6-14017d2936db",
+      "title": "Pricing by replication: copying an option's payoff with stock and cash",
+      "verdict": "REJECT",
+      "reason": "Original correct; proposal breaks it. The course uses continuous compounding: the put-call parity lesson defines e^(−0.05) = 0.9512, the futures lesson uses 105.13, and the tree and Black-Scholes code use exp(r·dt). 40e^(−0.05) = 38.05, giving 11.95, and q = 0.628 also gives 11.95. The proposal switches to annual compounding (11.90) and replaces the code output with numbers the unchanged code does not print (it prints 12.1623 / 10.2534 / 10.4306 / 10.4486, as originally shown).",
+      "edits": []
+    },
+    {
+      "p": "P23",
+      "id": "a10c89ea-accb-4625-b69f-bf4349e7751a",
+      "title": "The Black-Scholes formula: an option price from five inputs",
+      "verdict": "REJECT",
+      "reason": "Proposal wrong: black_scholes(110,100,1,0.05,0.2) = 17.66 (the code prints 17.66; by hand d1 = 0.8266, giving 110·0.7958 − 95.123·0.7344 = 17.66).",
+      "edits": []
+    },
+    {
+      "p": "P24",
+      "id": "9ab3a5a2-b849-44f1-bf16-473601160a33",
+      "title": "Delta: how much an option moves per $1 of stock",
+      "verdict": "ACCEPT_EDITED",
+      "reason": "Real issue: step 3 says 0.6368, but the exact bump is (11.096708 − 9.823219)/2 = 0.636745, which rounds to 0.6367, as the code prints. The proposal's reasons are wrong: the 0.6367 is not a binary round() artifact, and 'that gap comes from rounding' is false, because the gap 0.636831 − 0.636745 = 0.00009 is the $1-step error, as the original says. Fix: give the prices to 5 decimals.",
+      "edits": [
+        {
+          "field": "markdown",
+          "old": "1. With the stock at $101, the call is worth $11.0967.",
+          "new": "1. With the stock at $101, the call is worth $11.09671."
+        },
+        {
+          "field": "markdown",
+          "old": "2. With the stock at $99, the call is worth $9.8232.",
+          "new": "2. With the stock at $99, the call is worth $9.82322."
+        },
+        {
+          "field": "markdown",
+          "old": "3. The change over $2 is 11.0967 − 9.8232 = 1.2735, so delta is 1.2735 / 2 = 0.6368.",
+          "new": "3. The change over $2 is 11.09671 − 9.82322 = 1.27349, so the bump estimate is 1.27349 / 2 = 0.6367."
+        }
+      ]
+    },
+    {
+      "p": "P25",
+      "id": "326d9249-119f-4d67-ac24-b0ca36f64bd9",
+      "title": "Delta hedging: holding stock to cancel an option's price risk",
+      "verdict": "REJECT",
+      "reason": "Original correct; proposal wrong. The simulation reruns to mean −3.97, sd 1.96. P&L is measured at expiry, so it equals the price gap 3.7807 grown at e^0.05: 3.7807 × 1.0513 = 3.97. The proposal's 'exact discounted profit 3.78' mixes present and future value.",
+      "edits": []
+    },
+    {
+      "p": "P26",
+      "id": "5c0e1735-790c-4e32-907a-35e11b9ab0ac",
+      "title": "Point-in-time features: inputs built only from what was known then",
+      "verdict": "REJECT",
+      "reason": "Original correct: 1 July to 25 July is 24 days, and 96/95 − 1 = 0.0105, 110/96 − 1 = 0.1458. The proposal restates it a different way (30 June, 25 days) and changes the number format; cosmetic.",
+      "edits": []
+    },
+    {
+      "p": "P27",
+      "id": "ae6b92c7-9029-4770-9fc6-2786b94924d0",
+      "title": "A classification model: predicting the chance of up or down",
+      "verdict": "REJECT",
+      "reason": "Cosmetic: −ln 0.5 = 0.693147, so 0.6931 is right to 4 decimals and matches the 0.6842 beside it.",
+      "edits": []
+    },
+    {
+      "p": "P28",
+      "id": "42c39576-d70d-4acd-b6ea-5a8a59dfe3cf",
+      "title": "Signal decay: how fast a prediction stops being useful",
+      "verdict": "REJECT",
+      "reason": "Proposal wrong: trading at once earns the day-1 return (IC 0.130), and trading one day late earns the day-2 return (IC 0.092), so 0.092/0.130 = 0.71 is 'one day late'. 'Two days late' would be day 3 (0.065, 50%).",
+      "edits": []
+    },
+    {
+      "p": "P29",
+      "id": "fc2c983c-b1c8-416f-92b5-0d5c34075366",
+      "title": "The limit order book: every waiting order, queued by price and time",
+      "verdict": "REJECT",
+      "reason": "No change proposed except a trailing newline; the depth claims check out (500 + 600 = 1,100).",
+      "edits": []
+    },
+    {
+      "p": "P30",
+      "id": "ec580363-893c-4b2b-b3ae-08950a8a5b9d",
+      "title": "Market impact: your own trading moving the price",
+      "verdict": "REJECT",
+      "reason": "No change proposed except a trailing newline; the average (200,073/2,000 = 100.0365) checks out and the code output matches.",
+      "edits": []
+    },
+    {
+      "p": "P31",
+      "id": "943c1040-b009-4dc2-98f1-d255bdd24199",
+      "title": "Pre-trade risk checks: blocking bad orders before they leave",
+      "verdict": "ACCEPT_EDITED",
+      "reason": "Hunk 3 issue is real: within-limit wrong orders still pass, so 'one you meant to send' overclaims; the proposed fix is two sentences, so a shorter one is used. Hunks 1 and 2 rejected: 'In a real system it also cancels the open orders' is a standard kill-switch feature, clearly framed, and the proposed replacements are wordy hedging.",
+      "edits": [
+        {
+          "field": "markdown",
+          "old": "Every order that leaves is now one you meant to send.",
+          "new": "Every order that leaves now stays inside the limits you set."
+        }
+      ]
+    }
+  ]
+}

@@ -335,14 +335,20 @@
       "area": "Course content",
       "title": "Check a built course for mistakes again and propose corrections",
       "user_visible_behavior": "POST /api/courses/:id/accuracy re-checks every lesson with the stricter verifier and records proposed corrections, before and after, to review and apply.",
-      "status": "in_progress",
+      "status": "passing",
       "plan": "none: agent API and job only, no screen changes",
       "verification": [
         "pytest test_accuracy",
         "make check",
         "live: quant course pass, proposals checked by computation"
       ],
-      "evidence": []
+      "evidence": [
+        "pytest 126 passed; make check green",
+        "Live pass on the quant course (Mac mini, job acced2dc): 88 lessons, mistakes reported in 54, corrections proposed for 31, none applied; 328 calls, 581k input and 249k output tokens",
+        "Every proposal checked by computation (all code rerun with numpy/pandas, numbers recomputed): 1 accept, 6 accept with a smaller edit, 24 reject; at least 13 of 31 would have made a lesson wrong (e.g. the dividend factor, a seed changed without new output, 17.66 called 17.68)",
+        "Real errors found and kept as edits: a sign slip (Backtest accounting), limit fills described as the next open (Fills), delta prose 0.6368 against code 0.6367 (Delta), and four overstatements; verdicts in docs/accuracy/quant-2026-11-07.json",
+        "Consequence: proposals stay the default; apply=true is not safe with this corrector, and a proposal whose code output no longer matches should be rejected in code"
+      ]
     },
     {
       "id": "prose-clarity",
