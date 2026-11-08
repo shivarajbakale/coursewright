@@ -216,6 +216,40 @@ async def make_flow(
     return diagrammer.public(await diagrammer.make_movie(spec, context=context))
 
 
+DrawingLayout = Literal[
+    "auto", "flow", "sequence", "cycle", "stack", "timeline", "compare", "mindmap",
+    "tree", "state", "venn", "quadrant", "chart", "free",
+]
+
+
+@tool
+async def make_drawing(
+    spec: str,
+    layout: DrawingLayout = "auto",
+    runtime: ToolRuntime = None,  # type: ignore[assignment]
+) -> str:
+    """Draw a hand-drawn Inkling diagram of one idea for the chat; it draws itself step by step with captions.
+
+    Args:
+        spec: what to draw: the things in it, how they relate, the order to reveal them and the one point
+            it makes. Use the course's names and numbers.
+        layout: the shape of the idea. flow = parts and what moves between them; sequence = who sends what
+            to whom; cycle = a loop; stack = layers; timeline = events over time; compare = options side by
+            side; mindmap = an idea and its parts; tree = a hierarchy; state = states and the events between
+            them; venn = overlapping sets; quadrant = items on two axes; chart = numbers over time or a
+            curve; free = exact positions. "auto" lets the drawer choose.
+    Returns JSON {"kind": "inkling", "title", "source"} for a drawing that passed the Inkling checker, or
+    {"kind": "none", "title", "note"} when it could not be drawn. The app shows it; don't paste the source.
+    """
+    from app.agents import diagrammer
+
+    ctx = frontend_context(runtime)
+    hits = await hybrid_search(spec, k=4, course_id=ctx.get("courseId"))
+    context = "\n\n".join(f"{h['title']}: {h['text'][:1200]}" for h in hits)
+    chosen = "" if layout == "auto" else layout
+    return diagrammer.public_drawing(await diagrammer.make_drawing(spec, layout=chosen, context=context))
+
+
 class QuizDraftQuestion(BaseModel):
     prompt: str
     options: list[str]
@@ -327,7 +361,7 @@ class WebSearchToggle(AgentMiddleware):
         return await handler(self._with_tool(request))
 
 
-TOOLS = [search_course, read_chapter, read_notes, get_progress, make_flow, make_quiz]
+TOOLS = [search_course, read_chapter, read_notes, get_progress, make_drawing, make_flow, make_quiz]
 
 
 def build_tutor_graph(checkpointer=None):

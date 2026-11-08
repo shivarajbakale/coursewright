@@ -166,6 +166,7 @@ Frontend tools: `save_to_notes(markdown, title?)`, `open_chapter(courseId, chapt
 
 Tutor backend tool results the chat renders (JSON strings):
 - `search_course` → `{query, hits: [{n, chunkId, title, chapterId, courseId, text}], note?}` (cite as `[n]`)
+- `make_drawing` → `{kind: 'inkling', title, source}` (passes the Inkling checker) or `{kind: 'none', title, note}`
 - `make_flow` → `{kind: 'flow' | 'mermaid', title, source}` (flow sources pass the Flowmovie checker)
 - `make_quiz` → `{questions: [{prompt, options, answer, explanation, chapterId}], note?}`
 

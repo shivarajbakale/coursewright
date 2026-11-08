@@ -6,6 +6,8 @@ export { checkScene, type SceneProblem } from './check';
 export { describe, describeLines } from './describe';
 export { embedFonts, type EmbedOptions } from './fonts';
 export { format } from './format';
+export { complete, hover, symbols, definition, type CompletionItem, type CompletionKind, type Completions, type CompleteOptions, type Hover, type DocSymbol, type SymbolKind } from './complete';
+export { REFERENCE, type ReferenceGroup, type ReferenceRow } from './syntax/reference';
 export { ICONS, ICON_NAMES } from './icons';
 export type { Scene, SceneNode, SceneEdge } from './scene';
 export { PAPERS, PENS, HANDS, COLORS, FONT_CSS_URL } from './styles';

@@ -21391,6 +21391,19 @@ function describeLines(doc) {
 	const linked = new Set(doc.edges.flatMap((e) => [e.from, e.to]));
 	const alone = doc.nodes.filter((n) => !linked.has(n.id));
 	if (alone.length) lines.push(`Also shown: ${alone.map((n) => label(n.id)).join(", ")}.`);
+	const c = doc.chart;
+	const n = (v) => String(Math.round(v * 100) / 100);
+	if (c.candles.length) lines.push(`${c.candles.length} candles, opening at ${n(c.candles[0][0])} and closing at ${n(c.candles[c.candles.length - 1][3])}.`);
+	for (const l of c.lines) {
+		if (l.values?.length) lines.push(`${l.label ?? "Price"}: ${l.values.length} values from ${n(l.values[0])} to ${n(l.values[l.values.length - 1])}.`);
+		if (l.points?.length) lines.push(`${l.label ?? "Curve"}: ${l.points.map(([x, y]) => `${n(x)} → ${n(y)}`).join(", ")}.`);
+	}
+	for (const z of c.zones) lines.push(`${z.label ?? "Zone"} from ${n(z.from)} to ${n(z.to)}.`);
+	for (const l of c.levels) lines.push(`${l.label ?? "Level"} at ${n(l.price)}.`);
+	for (const t of c.trends) lines.push(`${t.label ?? "Trend line"} from ${n(t.a[1])} at bar ${n(t.a[0])} to ${n(t.b[1])} at bar ${n(t.b[0])}.`);
+	for (const t of c.trades) lines.push(`${t.side === "buy" ? "Buy" : "Sell"} at bar ${t.bar}, price ${n(t.price)}${t.label ? `: ${t.label}` : ""}.`);
+	for (const s of c.stops) lines.push(`Stop-loss at ${n(s.price)}.`);
+	for (const t of c.targets) lines.push(`Target at ${n(t.price)}.`);
 	for (const a of doc.annotations) if (a.kind === "note" && a.text) lines.push(`Note on ${a.targetKind === "node" ? label(a.target) : a.target}: ${a.text.replace(/\n/g, " ")}.`);
 	return lines;
 }
@@ -23673,7 +23686,7 @@ function boundaryPoint(n, tx, ty, gap = 7) {
 	const hw = n.w / 2;
 	const hh = n.h / 2;
 	let t;
-	if (n.def.shape === "circle" || n.def.shape === "cloud") t = 1 / Math.sqrt(ux * ux / (hw * hw) + uy * uy / (hh * hh));
+	if (n.def.shape === "circle" || n.def.shape === "cloud" || n.def.shape === "dot" || n.def.shape === "bullseye") t = 1 / Math.sqrt(ux * ux / (hw * hw) + uy * uy / (hh * hh));
 	else if (n.def.shape === "diamond") t = 1 / (Math.abs(ux) / hw + Math.abs(uy) / hh);
 	else t = Math.min(ux === 0 ? Infinity : hw / Math.abs(ux), uy === 0 ? Infinity : hh / Math.abs(uy));
 	return [n.cx + ux * (t + gap), n.cy + uy * (t + gap)];
@@ -23718,6 +23731,21 @@ function decorationBox(d, font) {
 			h: d.ry * 2 + 8
 		};
 		case "zigzag": return fromPts([d.at], 10);
+		case "disc": return {
+			x: d.cx - d.r - 4,
+			y: d.cy - d.r - 4,
+			w: d.r * 2 + 8,
+			h: d.r * 2 + 8
+		};
+		case "region": {
+			const c = d.in[0];
+			return {
+				x: c.cx - c.r,
+				y: c.cy - c.r,
+				w: c.r * 2,
+				h: c.r * 2
+			};
+		}
 	}
 }
 /** Moves a decoration by (dx, dy). */
@@ -23757,6 +23785,23 @@ function shiftDecoration(d, dx, dy) {
 			...d,
 			at: m(d.at)
 		};
+		case "disc": return {
+			...d,
+			cx: d.cx + dx,
+			cy: d.cy + dy
+		};
+		case "region": {
+			const mc = (c) => ({
+				...c,
+				cx: c.cx + dx,
+				cy: c.cy + dy
+			});
+			return {
+				...d,
+				in: d.in.map(mc),
+				out: d.out.map(mc)
+			};
+		}
 	}
 }
 // src/core/styles.ts
@@ -23890,7 +23935,7 @@ var COLORS = {
 	gray: "#c9c9c9"
 };
 /** Ink colours for `color=`: a darker value for light paper, a lighter one for dark paper. */
-var INKS = {
+var INKS$1 = {
 	red: {
 		light: "#c62828",
 		dark: "#ff8a80"
@@ -23932,13 +23977,19 @@ var LAYOUT_NAMES = [
 	"timeline",
 	"compare",
 	"mindmap",
-	"sequence"
+	"sequence",
+	"chart",
+	"tree",
+	"state",
+	"venn",
+	"quadrant"
 ];
 var SIZES = {
 	small: .8,
 	normal: 1,
 	large: 1.3
 };
+var STICKY = "#fff2a1";
 var DEFAULTS = {
 	layout: "flow",
 	direction: "right",
@@ -24061,7 +24112,7 @@ function drawDecorations(ctx) {
 					disableMultiStroke: true,
 					...d.dashed ? { strokeLineDash: [6, 6] } : {}
 				});
-				const line = d.smooth || d.points.length > 2 ? rc.curve(d.points, o) : rc.line(d.points[0][0], d.points[0][1], d.points[1][0], d.points[1][1], o);
+				const line = d.straight && d.points.length > 2 ? rc.linearPath(d.points, o) : d.smooth || d.points.length > 2 ? rc.curve(d.points, o) : rc.line(d.points[0][0], d.points[0][1], d.points[1][0], d.points[1][1], o);
 				g.appendChild(line);
 				pieces.push(...piecesFrom(line, stroke, !!d.dashed));
 				if (d.arrow) {
@@ -24146,18 +24197,22 @@ function drawDecorations(ctx) {
 				break;
 			}
 			case "box": {
+				const stroke = d.bare ? "none" : color(d.color);
 				const o = base(key, {
+					stroke,
 					roughness: ctx.roughness * .6,
 					disableMultiStroke: true,
 					...d.dashed ? { strokeLineDash: [6, 5] } : {},
 					...d.fill ? {
-						fill: d.fill,
-						fillStyle: "solid"
+						fill: d.fill in INKS$1 ? ctx.inkFor(d.fill) : d.fill,
+						fillStyle: d.hachure ? "hachure" : "solid",
+						hachureGap: 6,
+						fillWeight: 1.2
 					} : {}
 				});
 				const r = rc.rectangle(d.box.x, d.box.y, d.box.w, d.box.h, o);
 				g.appendChild(r);
-				pieces.push(...piecesFrom(r, ink, !!d.dashed));
+				pieces.push(...piecesFrom(r, stroke, !!d.dashed || !!d.bare));
 				break;
 			}
 			case "ring": {
@@ -24176,6 +24231,83 @@ function drawDecorations(ctx) {
 				}));
 				g.appendChild(r);
 				pieces.push(...piecesFrom(r, stroke));
+				break;
+			}
+			case "disc": {
+				const stroke = color(d.color);
+				const fill = d.fill ? COLORS[d.fill] ?? d.fill : void 0;
+				const c = rc.circle(d.cx, d.cy, d.r * 2, base(key, {
+					stroke,
+					strokeWidth: ctx.pen.width * 1.1,
+					roughness: ctx.roughness * .7,
+					...d.solid ? {
+						fill: stroke,
+						fillStyle: "solid"
+					} : fill ? {
+						fill,
+						fillStyle: "hachure",
+						hachureGap: 9,
+						fillWeight: 1,
+						hachureAngle: -41 + i * 37
+					} : {}
+				}));
+				if (fill) c.querySelectorAll("path").forEach((p) => {
+					if (p.getAttribute("stroke") === fill) p.setAttribute("stroke-opacity", ctx.paper.dark ? "0.45" : "0.6");
+				});
+				g.appendChild(c);
+				pieces.push(...piecesFrom(c, stroke));
+				break;
+			}
+			case "region": {
+				const fill = COLORS[d.fill] ?? d.fill;
+				let host = g;
+				for (const c of d.in) {
+					const id = `${uid}-rc${i}-${d.in.indexOf(c)}`;
+					const cp = el("clipPath", { id }, defs);
+					el("circle", {
+						cx: c.cx.toFixed(1),
+						cy: c.cy.toFixed(1),
+						r: c.r.toFixed(1)
+					}, cp);
+					host = el("g", { "clip-path": `url(#${id})` }, host);
+				}
+				if (d.out.length) {
+					const id = `${uid}-rm${i}`;
+					const mask = el("mask", {
+						id,
+						maskUnits: "userSpaceOnUse"
+					}, defs);
+					const c0 = d.in[0];
+					el("rect", {
+						x: (c0.cx - c0.r - 10).toFixed(1),
+						y: (c0.cy - c0.r - 10).toFixed(1),
+						width: (c0.r * 2 + 20).toFixed(1),
+						height: (c0.r * 2 + 20).toFixed(1),
+						fill: "white"
+					}, mask);
+					for (const c of d.out) el("circle", {
+						cx: c.cx.toFixed(1),
+						cy: c.cy.toFixed(1),
+						r: c.r.toFixed(1),
+						fill: "black"
+					}, mask);
+					host = el("g", { mask: `url(#${id})` }, host);
+				}
+				const c0 = d.in[0];
+				const r = rc.rectangle(c0.cx - c0.r, c0.cy - c0.r, c0.r * 2, c0.r * 2, base(key, {
+					stroke: "none",
+					fill,
+					fillStyle: "cross-hatch",
+					hachureGap: 5,
+					fillWeight: 1.6
+				}));
+				r.querySelectorAll("path").forEach((p) => p.setAttribute("stroke-opacity", "0.75"));
+				host.appendChild(r);
+				pieces.push({
+					el: r,
+					mode: "fade",
+					len: 0
+				});
 				break;
 			}
 			case "zigzag": {
@@ -24200,7 +24332,8 @@ function drawDecorations(ctx) {
 				break;
 			}
 		}
-		const step = d.owner?.node !== void 0 ? stepOf.get(d.owner.node) ?? 1 : d.owner?.edge !== void 0 ? edgeStep(d.owner.edge) : -.5;
+		const auto = ctx.doc.autoSteps && !ctx.doc.steps.length;
+		const step = d.owner?.step !== void 0 ? auto ? d.owner.step : -.5 : d.owner?.node !== void 0 ? stepOf.get(d.owner.node) ?? 1 : d.owner?.edge !== void 0 ? edgeStep(d.owner.edge) : -.5;
 		add(step, -50 + i * .01, pieces, d.kind === "text" ? .4 : .35);
 	});
 }
@@ -24714,6 +24847,23 @@ function drawMarks(ctx) {
 				extra.push(best);
 				const ncx = best.x + best.w / 2;
 				const ncy = best.y + best.h / 2;
+				if (placed.card) {
+					const card = rc.rectangle(best.x, best.y, best.w, best.h, mo(`nc-${i}`, {
+						stroke: "#c9b44a",
+						strokeWidth: 1,
+						fill: STICKY,
+						fillStyle: "solid",
+						roughness: .6
+					}));
+					g.appendChild(card);
+					const cardText = handText(g, text, ncx, ncy, {
+						...textStyle,
+						px: np,
+						color: "#2b2a26"
+					}, rand, defs, uid);
+					pieces.push(...piecesFrom(card, "#__none", true), ...cardText);
+					break;
+				}
 				const textPieces = handText(g, text, ncx, ncy, {
 					...textStyle,
 					px: np,
@@ -25151,6 +25301,24 @@ function drawNodes(ctx) {
 				shape = gg;
 				break;
 			}
+			case "dot":
+				shape = rc.circle(0, 0, n.w, {
+					...o,
+					fill: nodeInk,
+					fillStyle: "solid"
+				});
+				break;
+			case "bullseye": {
+				const gg = el("g", {});
+				gg.appendChild(rc.circle(0, 0, n.w, o));
+				gg.appendChild(rc.circle(0, 0, n.w * .55, base(`n-${def.id}-c`, {
+					...penOpts,
+					fill: nodeInk,
+					fillStyle: "solid"
+				})));
+				shape = gg;
+				break;
+			}
 		}
 		const pieces = [];
 		if (shape && fillColor && def.shape !== "sticky") shape.querySelectorAll("path").forEach((p) => {
@@ -25538,7 +25706,7 @@ function draw(doc, lay, opts = {}) {
 		ink,
 		mark,
 		good,
-		inkFor: (name) => INKS[name] ? INKS[name][paper.dark ? "dark" : "light"] : ink,
+		inkFor: (name) => INKS$1[name] ? INKS$1[name][paper.dark ? "dark" : "light"] : ink,
 		stepOf,
 		rankInStep,
 		edgeStep,
@@ -25605,6 +25773,7 @@ function draw(doc, lay, opts = {}) {
 	drawPaper(svg, defs, doc.paper, vb, uid);
 	if (pen.opacity < 1) content.setAttribute("opacity", String(pen.opacity));
 	svg.appendChild(content);
+	roundPaths(svg);
 	if (opts.still) {
 		for (const it of items) {
 			it.start = 0;
@@ -25628,6 +25797,17 @@ function draw(doc, lay, opts = {}) {
 		steps,
 		duration
 	};
+}
+/**
+* Rounds path coordinates to 0.01. Full doubles differ in their last digits
+* between CPUs (Apple Silicon and x86 disagree), which made output depend on
+* the machine; two decimals are far below a pixel and make files smaller.
+*/
+function roundPaths(svg) {
+	for (const p of Array.from(svg.querySelectorAll("path"))) {
+		const d = p.getAttribute("d");
+		if (d) p.setAttribute("d", d.replace(/-?\d+\.\d{3,}(e-?\d+)?/g, (m) => String(Math.round(Number(m) * 100) / 100)));
+	}
 }
 // src/core/humanise.ts
 /**
@@ -25665,11 +25845,13 @@ function routeEdges(scene, doc, rand) {
 		}
 		const mids = edge.route;
 		if (e.from === e.to) {
-			const r = Math.max(a.w, a.h) * .45;
+			const r = Math.min(30, Math.max(18, a.h * .5));
+			const top = a.cy - a.h / 2;
+			const right = a.cx + a.w / 2;
 			edge.points = [
-				boundaryPoint(a, a.cx + a.w, a.cy - a.h * 2),
-				[a.cx + a.w / 2 + r, a.cy - a.h / 2 - r],
-				boundaryPoint(a, a.cx + a.w * 2, a.cy - a.h * .2)
+				[right - Math.min(a.w * .3, 26), top - 6],
+				[right + r * .75, top - r * .75],
+				[right + 9, top + Math.min(a.h * .3, 18)]
 			];
 		} else if (mids.length === 0) {
 			const key = pairKey(e.from, e.to);
@@ -25694,10 +25876,11 @@ function routeEdges(scene, doc, rand) {
 				ctrl = [blocker.cx + nx * side * reach, blocker.cy + ny * side * reach];
 				edge.bend = (ctrl[0] - (a.cx + b.cx) / 2) * nx + (ctrl[1] - (a.cy + b.cy) / 2) * ny || side;
 			}
+			const via = blocker ? detours(scene, a, b, ctrl) : [ctrl];
 			edge.points = [
-				boundaryPoint(a, ctrl[0], ctrl[1]),
-				ctrl,
-				boundaryPoint(b, ctrl[0], ctrl[1], 9)
+				boundaryPoint(a, via[0][0], via[0][1]),
+				...via,
+				boundaryPoint(b, via[via.length - 1][0], via[via.length - 1][1], 9)
 			];
 		} else edge.points = [
 			boundaryPoint(a, mids[0][0], mids[0][1]),
@@ -25705,6 +25888,91 @@ function routeEdges(scene, doc, rand) {
 			boundaryPoint(b, mids[mids.length - 1][0], mids[mids.length - 1][1], 9)
 		];
 	}
+}
+/**
+* Waypoints from a to b that pass beside every node in the way, for an arrow
+* that one detour didn't clear. Tries three ways (all detours on one side, all
+* on the other, each on its nearer side) and keeps the one that hits fewest
+* nodes, then turns least. Falls back to the single detour if none is better.
+*/
+function detours(scene, a, b, first) {
+	const ux0 = b.cx - a.cx;
+	const uy0 = b.cy - a.cy;
+	const L = Math.hypot(ux0, uy0) || 1;
+	const [ux, uy] = [ux0 / L, uy0 / L];
+	const [nx, ny] = [-uy, ux];
+	const ends = (via) => [
+		[a.cx, a.cy],
+		...via,
+		[b.cx, b.cy]
+	];
+	const firstHit = (pts) => {
+		for (let i = 0; i < pts.length - 1; i++) {
+			let best;
+			let bestD = Infinity;
+			for (const n of scene.nodes.values()) {
+				if (n === a || n === b) continue;
+				const box = {
+					x: n.cx - n.w / 2 - 6,
+					y: n.cy - n.h / 2 - 6,
+					w: n.w + 12,
+					h: n.h + 12
+				};
+				if (!segmentHitsBox(pts[i], pts[i + 1], box)) continue;
+				const d = Math.hypot(n.cx - pts[i][0], n.cy - pts[i][1]);
+				if (d < bestD) [bestD, best] = [d, n];
+			}
+			if (best) return best;
+		}
+	};
+	const hits = (pts) => [...scene.nodes.values()].filter((n) => {
+		if (n === a || n === b) return false;
+		const box = {
+			x: n.cx - n.w / 2 - 4,
+			y: n.cy - n.h / 2 - 4,
+			w: n.w + 8,
+			h: n.h + 8
+		};
+		return pts.slice(1).some((q, i) => segmentHitsBox(pts[i], q, box));
+	}).length;
+	const turning = (pts) => {
+		let t = 0;
+		for (let i = 1; i < pts.length - 1; i++) {
+			let d = Math.abs(Math.atan2(pts[i + 1][1] - pts[i][1], pts[i + 1][0] - pts[i][0]) - Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0]));
+			if (d > Math.PI) d = 2 * Math.PI - d;
+			t += d;
+		}
+		return t;
+	};
+	const along = (p) => (p[0] - a.cx) * ux + (p[1] - a.cy) * uy;
+	const firstSide = (first[0] - a.cx) * nx + (first[1] - a.cy) * ny >= 0 ? 1 : -1;
+	const plan = (mode) => {
+		const via = [first];
+		for (let round = 0; round < 6; round++) {
+			const n = firstHit(ends(via));
+			if (!n) break;
+			const off = (n.cx - a.cx) * nx + (n.cy - a.cy) * ny;
+			const side = mode || (off >= 0 ? -1 : 1);
+			const reach = Math.abs(nx) * (n.w / 2) + Math.abs(ny) * (n.h / 2) + 26;
+			const t = Math.min(L - 1, Math.max(1, along([n.cx, n.cy])));
+			const across = side > 0 ? off + reach : off - reach;
+			via.push([a.cx + ux * t + nx * across, a.cy + uy * t + ny * across]);
+			via.sort((m, k) => along(m) - along(k));
+		}
+		return via;
+	};
+	let best = [first];
+	let bestCost = hits(ends(best)) * 1e3 + turning(ends(best));
+	for (const mode of [
+		firstSide,
+		-firstSide,
+		0
+	]) {
+		const via = plan(mode);
+		const cost = hits(ends(via)) * 1e3 + turning(ends(via));
+		if (cost < bestCost) [bestCost, best] = [cost, via];
+	}
+	return best;
 }
 /** The node nearest to `a` that the line a → ctrl → b passes through, if any. */
 function firstBlocker(scene, a, b, ctrl) {
@@ -25912,7 +26180,21 @@ function placeLabels(scene, doc) {
 				edge: -1
 			});
 		}
-		if (d.kind === "box") fixed.push(d.box);
+		if (d.kind === "box" && d.frame) {
+			const { x, y, w, h } = d.box;
+			const corners = [
+				[x, y],
+				[x + w, y],
+				[x + w, y + h],
+				[x, y + h],
+				[x, y]
+			];
+			const len = length(corners);
+			for (let k = 0; k < len; k += 10) samples.push({
+				p: along(corners, k).p,
+				edge: -1
+			});
+		} else if (d.kind === "box") fixed.push(d.box);
 		if (d.kind === "text") {
 			const w = measure(d.text, d.px, scene.family, scene.weight);
 			fixed.push({
@@ -26051,6 +26333,16 @@ function shapeSize(def, lw, lh) {
 			h: lh + 8,
 			labelDy: 0
 		};
+		case "dot": return {
+			w: 22,
+			h: 22,
+			labelDy: 0
+		};
+		case "bullseye": return {
+			w: 28,
+			h: 28,
+			labelDy: 0
+		};
 		case "round": return {
 			w: lw + 48,
 			h: lh + 28,
@@ -26179,6 +26471,427 @@ function warn(scene, code, message, hint) {
 }
 /** Nodes in source order, for layouts where that order is the reading order. */
 var inOrder = (doc) => [...doc.nodes].sort((a, b) => a.order - b.order);
+// src/core/layouts/chart.ts
+/** Round tick spacing: 1, 2, 2.5 or 5 times a power of ten, giving about `count` ticks. */
+function niceStep(range, count) {
+	const raw = range / count || 1;
+	const mag = 10 ** Math.floor(Math.log10(raw));
+	for (const m of [
+		1,
+		2,
+		2.5,
+		5,
+		10
+	]) if (raw <= m * mag) return m * mag;
+	return 10 * mag;
+}
+/** Shortest text for a tick value: no trailing zeros, at most two decimals. */
+var fmt = (v) => String(Math.round(v * 100) / 100);
+/**
+* Price charts and the marks traders draw on them. `candles` and `prices`
+* put one bar per value along the x axis; `curve` plots x,y points on a
+* number line instead (a payoff diagram). On top: `level` and `zone`
+* across the chart, `trend` lines, `buy` and `sell` arrows at a bar, and
+* `stop` and `target` lines from the trade on, with the reward to risk.
+* Nodes with `at bar,price` sit on the chart, so circles and notes work.
+*/
+var chart = (doc) => {
+	const scene = emptyScene(doc, "chart", {
+		tilt: 1.5,
+		stickyTilt: 4,
+		jitterX: 0,
+		jitterY: 0
+	});
+	const { px, family, weight } = textMetrics(doc);
+	const c = doc.chart;
+	const deco = (d) => scene.decorations.push(d);
+	const small = px * .72;
+	const textW = (t, size = small) => measure(t, size, family, weight).w;
+	const curves = c.lines.filter((l) => l.points);
+	const series = c.lines.filter((l) => l.values);
+	const numberLine = curves.length > 0 && !c.candles.length && !series.length;
+	if (curves.length && !numberLine) warn(scene, "W-CHART-MIXED", "A chart has either bars (candles, prices, line) or x,y curves; the curves are left out.", "Put the payoff curves in their own chart.");
+	const bars = Math.max(c.candles.length, ...series.map((l) => l.values.length), ...c.trades.map((t) => t.bar), ...c.trends.flatMap((t) => [t.a[0], t.b[0]]), ...doc.nodes.filter((n) => n.at).map((n) => Math.ceil(n.at[0])), numberLine ? 0 : 1);
+	const ys = [
+		...c.candles.flatMap((k) => [k[1], k[2]]),
+		...series.flatMap((l) => l.values),
+		...c.levels.map((l) => l.price),
+		...c.zones.flatMap((z) => [z.from, z.to]),
+		...c.trades.map((t) => t.price),
+		...c.stops.map((s) => s.price),
+		...c.targets.map((t) => t.price),
+		...c.trends.flatMap((t) => [t.a[1], t.b[1]]),
+		...doc.nodes.filter((n) => n.at).map((n) => n.at[1])
+	];
+	const xsCurve = curves.flatMap((l) => l.points.map((p) => p[0]));
+	if (numberLine) ys.push(...curves.flatMap((l) => l.points.map((p) => p[1])), 0);
+	if (!ys.length && !numberLine) {
+		warn(scene, "W-CHART-EMPTY", "This chart has no prices yet.", "Add  candles 100 104 98 103, …  or  prices 100 102 101 …");
+		ys.push(0, 10);
+	}
+	let lo = Math.min(...ys);
+	let hi = Math.max(...ys);
+	if (hi - lo < 1e-9) {
+		lo -= 1;
+		hi += 1;
+	}
+	const pad = (hi - lo) * .08;
+	lo -= pad;
+	hi += pad;
+	const tickStep = niceStep(hi - lo, 5);
+	const ticks = [];
+	for (let v = Math.ceil(lo / tickStep) * tickStep; v <= hi + 1e-9; v += tickStep) ticks.push(Math.round(v / tickStep) * tickStep);
+	const x0 = 40 + Math.max(...ticks.map((t) => textW(fmt(t)))) + 18;
+	const top = 40;
+	const H = 300;
+	const barW = numberLine ? 0 : Math.max(14, Math.min(70, 560 / bars));
+	const W = numberLine ? 500 : bars * barW;
+	const xLo = numberLine ? Math.min(...xsCurve) : 0;
+	const xHi = numberLine ? Math.max(...xsCurve) : 1;
+	const Y = (v) => top + (hi - v) / (hi - lo) * H;
+	const X = (bar) => numberLine ? x0 + (bar - xLo) / (xHi - xLo || 1) * W : x0 + (bar - .5) * barW;
+	const right = x0 + W + 14;
+	const axisY = numberLine ? Y(0) : 346;
+	deco({
+		kind: "line",
+		points: [[x0 - 12, 354], [x0 - 12, 18]],
+		arrow: true,
+		width: 1.6,
+		owner: { step: 1 }
+	});
+	deco({
+		kind: "line",
+		points: [[x0 - 20, axisY], [right + 10, axisY]],
+		arrow: true,
+		width: 1.6,
+		owner: { step: 1 }
+	});
+	for (const t of ticks) {
+		const y = Y(t);
+		deco({
+			kind: "line",
+			points: [[x0 - 17, y], [x0 - 7, y]],
+			width: 1.2,
+			owner: { step: 1 }
+		});
+		deco({
+			kind: "text",
+			x: x0 - 22 - textW(fmt(t)) / 2,
+			y,
+			text: fmt(t),
+			px: small,
+			owner: { step: 1 }
+		});
+	}
+	if (numberLine) {
+		const xStep = niceStep(xHi - xLo, 5);
+		for (let v = Math.ceil(xLo / xStep) * xStep; v <= xHi + 1e-9; v += xStep) {
+			const x = X(v);
+			deco({
+				kind: "line",
+				points: [[x, axisY - 5], [x, axisY + 5]],
+				width: 1.2,
+				owner: { step: 1 }
+			});
+			deco({
+				kind: "text",
+				x,
+				y: axisY + 18,
+				text: fmt(v),
+				px: small,
+				owner: { step: 1 }
+			});
+		}
+	} else if (c.xlabels.length) {
+		const widest = Math.max(...c.xlabels.map((t) => textW(t)));
+		const every = Math.max(1, Math.ceil((widest + 8) / barW));
+		c.xlabels.slice(0, bars).forEach((t, i) => {
+			if (i % every) return;
+			deco({
+				kind: "text",
+				x: X(i + 1),
+				y: axisY + 18,
+				text: t,
+				px: small,
+				owner: { step: 1 }
+			});
+		});
+	}
+	if (c.axis.y) deco({
+		kind: "text",
+		x: x0 - 12,
+		y: 0,
+		text: c.axis.y,
+		px: small,
+		bold: true,
+		owner: { step: 1 }
+	});
+	if (c.axis.x) deco({
+		kind: "text",
+		x: right + 10 - textW(c.axis.x) / 2,
+		y: axisY + (numberLine || c.xlabels.length ? 40 : 22),
+		text: c.axis.x,
+		px: small,
+		bold: true,
+		owner: { step: 1 }
+	});
+	const side = [];
+	for (const z of c.zones) {
+		const y1 = Y(z.to);
+		const y2 = Y(z.from);
+		deco({
+			kind: "box",
+			box: {
+				x: x0 - 4,
+				y: y1,
+				w: W + 8,
+				h: Math.max(4, y2 - y1)
+			},
+			fill: COLORS[z.color ?? "yellow"] ?? COLORS.yellow,
+			hachure: true,
+			bare: true,
+			owner: { step: 2 }
+		});
+		if (z.label) side.push({
+			y: (y1 + y2) / 2,
+			text: z.label,
+			color: z.color,
+			step: 2
+		});
+	}
+	for (const l of c.levels) {
+		const y = Y(l.price);
+		deco({
+			kind: "line",
+			points: [[x0 - 4, y], [right, y]],
+			dashed: true,
+			width: 1.4,
+			color: l.color ?? "blue",
+			owner: { step: 2 }
+		});
+		side.push({
+			y,
+			text: l.label ?? fmt(l.price),
+			color: l.color ?? "blue",
+			step: 2
+		});
+	}
+	c.candles.forEach(([o, h, l, cl], i) => {
+		const x = X(i + 1);
+		const up = cl >= o;
+		const color = up ? "green" : "red";
+		const bodyTop = Y(Math.max(o, cl));
+		const bodyBottom = Y(Math.min(o, cl));
+		const bw = Math.min(22, Math.max(6, barW * .58));
+		deco({
+			kind: "line",
+			points: [[x, Y(h)], [x, bodyTop]],
+			width: 1.4,
+			color,
+			owner: { step: 1 }
+		});
+		deco({
+			kind: "line",
+			points: [[x, bodyBottom], [x, Y(l)]],
+			width: 1.4,
+			color,
+			owner: { step: 1 }
+		});
+		deco({
+			kind: "box",
+			box: {
+				x: x - bw / 2,
+				y: bodyTop,
+				w: bw,
+				h: Math.max(2, bodyBottom - bodyTop)
+			},
+			color,
+			...up ? {} : {
+				fill: "red",
+				hachure: true
+			},
+			owner: { step: 1 }
+		});
+	});
+	const palette = [
+		"blue",
+		"orange",
+		"purple",
+		"pink"
+	];
+	const plotLine = (pts, color, label, step) => {
+		if (pts.length < 2) return;
+		deco({
+			kind: "line",
+			points: pts,
+			width: 2,
+			color,
+			straight: true,
+			owner: { step }
+		});
+		if (label) side.push({
+			y: pts[pts.length - 1][1],
+			text: label,
+			color,
+			step
+		});
+	};
+	series.forEach((s, k) => {
+		const color = s.color ?? (k === 0 && !c.candles.length && !s.label ? void 0 : palette[k % palette.length]);
+		plotLine(s.values.map((v, i) => [X(i + 1), Y(v)]), color, s.label, 1);
+	});
+	if (numberLine) curves.forEach((s, k) => {
+		const pts = [...s.points].sort((a, b) => a[0] - b[0]).map(([x, y]) => [X(x), Y(y)]);
+		plotLine(pts, s.color ?? (k === 0 ? void 0 : palette[(k - 1) % palette.length]), s.label, 1);
+	});
+	for (const t of c.trends) {
+		const [ax, ay] = [X(t.a[0]), Y(t.a[1])];
+		const [bx, by] = [X(t.b[0]), Y(t.b[1])];
+		const k = Math.min(.25, (right - bx) / Math.max(1, bx - ax));
+		const end = [bx + (bx - ax) * k, by + (by - ay) * k];
+		deco({
+			kind: "line",
+			points: [[ax, ay], end],
+			width: 1.6,
+			color: t.color ?? "purple",
+			owner: { step: 2 }
+		});
+		if (t.label) deco({
+			kind: "text",
+			x: end[0],
+			y: end[1] - 14,
+			text: t.label,
+			px: small,
+			color: t.color ?? "purple",
+			owner: { step: 2 }
+		});
+	}
+	const lowAt = (bar, price) => {
+		const k = c.candles[bar - 1];
+		const v = series[0]?.values?.[bar - 1];
+		return Math.min(price, k ? k[2] : price, v ?? price);
+	};
+	const highAt = (bar, price) => {
+		const k = c.candles[bar - 1];
+		const v = series[0]?.values?.[bar - 1];
+		return Math.max(price, k ? k[1] : price, v ?? price);
+	};
+	for (const t of c.trades) {
+		const x = X(t.bar);
+		const y = Y(t.price);
+		const buy = t.side === "buy";
+		const color = t.color ?? (buy ? "green" : "red");
+		deco({
+			kind: "line",
+			points: [[x - Math.min(20, barW * .7) - 4, y], [x + Math.min(20, barW * .7) + 4, y]],
+			width: 2.4,
+			color,
+			owner: { step: 3 }
+		});
+		const tip = buy ? Y(lowAt(t.bar, t.price)) + 8 : Y(highAt(t.bar, t.price)) - 8;
+		const tail = buy ? Math.max(tip + 30, axisY + 14) : Math.min(tip - 30, 10);
+		deco({
+			kind: "line",
+			points: [[x, tail], [x, tip]],
+			arrow: true,
+			width: 2,
+			color,
+			owner: { step: 3 }
+		});
+		deco({
+			kind: "text",
+			x,
+			y: tail + (buy ? 16 : -16),
+			text: t.label ?? t.side,
+			px: small,
+			bold: true,
+			color,
+			owner: { step: 3 }
+		});
+	}
+	const entry = c.trades[0];
+	const fromX = entry ? X(entry.bar) : x0;
+	for (const s of c.stops) {
+		const y = Y(s.price);
+		deco({
+			kind: "line",
+			points: [[fromX, y], [right, y]],
+			dashed: true,
+			width: 1.6,
+			color: s.color ?? "red",
+			owner: { step: 4 }
+		});
+		side.push({
+			y,
+			text: s.label ?? `stop ${fmt(s.price)}`,
+			color: s.color ?? "red",
+			step: 4
+		});
+	}
+	for (const t of c.targets) {
+		const y = Y(t.price);
+		deco({
+			kind: "line",
+			points: [[fromX, y], [right, y]],
+			dashed: true,
+			width: 1.6,
+			color: t.color ?? "green",
+			owner: { step: 4 }
+		});
+		side.push({
+			y,
+			text: t.label ?? `target ${fmt(t.price)}`,
+			color: t.color ?? "green",
+			step: 4
+		});
+	}
+	if (entry && c.stops.length && c.targets.length) {
+		const risk = Math.abs(entry.price - c.stops[0].price);
+		const reward = Math.abs(c.targets[0].price - entry.price);
+		if (risk > 0) side.push({
+			y: Y(entry.price),
+			text: `reward : risk = ${fmt(reward / risk)} : 1`,
+			color: "mark",
+			step: 4
+		});
+	}
+	const gap = small * 1.25;
+	side.sort((a, b) => a.y - b.y);
+	for (let i = 1; i < side.length; i++) side[i].y = Math.max(side[i].y, side[i - 1].y + gap);
+	for (const s of side) deco({
+		kind: "text",
+		x: right + 22,
+		y: s.y,
+		text: s.text,
+		px: small,
+		anchor: "start",
+		color: s.color,
+		owner: { step: s.step }
+	});
+	const loose = [];
+	for (const d of inOrder(doc)) {
+		if (!d.at) {
+			loose.push(d);
+			continue;
+		}
+		placeNode(scene, doc, d.implicit || d.shape === "box" ? {
+			...d,
+			shape: "text"
+		} : d, X(d.at[0]), Y(d.at[1]));
+	}
+	if (loose.length) {
+		warn(scene, "W-CHART-UNPLACED", `${loose.map((d) => d.id).join(", ")} ${loose.length === 1 ? "has" : "have"} no place on the chart, so ${loose.length === 1 ? "it sits" : "they sit"} underneath.`, "Give each one  at <bar>,<price>");
+		let x = x0;
+		for (const d of loose) {
+			const s = sizeDef(doc, d);
+			placeNode(scene, doc, d, x + s.w / 2, axisY + 80 + s.h / 2);
+			x += s.w + 30;
+		}
+	}
+	scene.autoSteps = { nodes: new Map(doc.nodes.map((n) => [n.id, 3])) };
+	fitScene(scene);
+	return scene;
+};
 // src/core/layouts/compare.ts
 /**
 * X versus Y: `columns` headings and `row` lines. Headings are underlined,
@@ -29987,7 +30700,7 @@ var mindmap = (doc) => {
 			points: pts,
 			w0,
 			w1: Math.max(1.6, w0 * .45),
-			color: color && INKS[color] ? color : void 0,
+			color: color && INKS$1[color] ? color : void 0,
 			owner: { node: id }
 		});
 		if (isText && !down) {
@@ -30012,12 +30725,2056 @@ var mindmap = (doc) => {
 	fitScene(scene);
 	return scene;
 };
+// src/core/syntax/suggest.ts
+/** "Did you mean" suggestions by edit distance. */
+function distance(a, b) {
+	const m = a.length;
+	const n = b.length;
+	const row = Array.from({ length: n + 1 }, (_, j) => j);
+	for (let i = 1; i <= m; i++) {
+		let prev = row[0];
+		row[0] = i;
+		for (let j = 1; j <= n; j++) {
+			const tmp = row[j];
+			row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+			prev = tmp;
+		}
+	}
+	return row[n];
+}
+/** The closest candidate, if it is close enough to be a likely typo. */
+function closest(word, candidates) {
+	const w = word.toLowerCase();
+	let best;
+	let bestD = Infinity;
+	for (const c of candidates) {
+		const d = distance(w, c.toLowerCase());
+		if (d < bestD) {
+			bestD = d;
+			best = c;
+		}
+	}
+	const limit = w.length <= 3 ? 1 : w.length <= 6 ? 2 : 3;
+	return bestD > 0 && bestD <= limit ? best : void 0;
+}
+// src/core/syntax/tokens.ts
+var ARROWS = [
+	"<~>",
+	"<->",
+	"-->",
+	"->",
+	"~>"
+];
+var IDENT = /^[A-Za-z_][\w]*(?:-[\w]+)*/;
+var NUMBER = /^\d+(?:\.\d+)?(?![A-Za-z_])/;
+var WORD = /^(?:[^\s:,="{}@.]|\.(?!\.))+/;
+function unescape(s) {
+	return s.replace(/\\(.)/g, (_, c) => c === "n" ? "\n" : c);
+}
+/** Tokenizes one line. `offset` is where the line starts in the whole source. */
+function tokenizeLine(text, line, offset = 0) {
+	const out = [];
+	let i = 0;
+	const push = (type, start, end, value, error) => {
+		const raw = text.slice(start, end);
+		out.push({
+			type,
+			text: raw,
+			value: value ?? raw,
+			from: offset + start,
+			to: offset + end,
+			line,
+			error
+		});
+	};
+	const firstNonSpace = text.search(/\S/);
+	while (i < text.length) {
+		const c = text[i];
+		if (c === " " || c === "	" || c === "\r") {
+			i++;
+			continue;
+		}
+		if (c === "#" && (i === 0 || /\s/.test(text[i - 1]))) {
+			push("comment", i, text.length);
+			break;
+		}
+		if (c === "\"") {
+			let j = i + 1;
+			while (j < text.length && text[j] !== "\"") j += text[j] === "\\" ? 2 : 1;
+			if (j >= text.length) {
+				push("string", i, text.length, unescape(text.slice(i + 1)), "This text is missing its closing quote.");
+				break;
+			}
+			push("string", i, j + 1, unescape(text.slice(i + 1, j)));
+			i = j + 1;
+			continue;
+		}
+		if (text.startsWith("..", i)) {
+			push("dots", i, i + 2);
+			i += 2;
+			continue;
+		}
+		const arrow = ARROWS.find((a) => text.startsWith(a, i));
+		if (arrow) {
+			push("arrow", i, i + arrow.length);
+			i += arrow.length;
+			continue;
+		}
+		if (c === "-" && i === firstNonSpace && /\s/.test(text[i + 1] ?? "")) {
+			push("bullet", i, i + 1);
+			i++;
+			continue;
+		}
+		const single = {
+			":": "colon",
+			",": "comma",
+			"=": "equals",
+			"{": "lbrace",
+			"}": "rbrace"
+		};
+		if (single[c]) {
+			push(single[c], i, i + 1);
+			i++;
+			continue;
+		}
+		const rest = text.slice(i);
+		let m;
+		if (c === "@" && (m = rest.match(/^@(\d+)/))) {
+			push("at", i, i + m[0].length, m[1]);
+			i += m[0].length;
+			continue;
+		}
+		if (m = rest.match(NUMBER)) {
+			push("number", i, i + m[0].length);
+			i += m[0].length;
+			continue;
+		}
+		if (m = rest.match(IDENT)) {
+			push("ident", i, i + m[0].length);
+			i += m[0].length;
+			continue;
+		}
+		m = rest.match(WORD);
+		const len = m ? m[0].length : 1;
+		push("word", i, i + len);
+		i += len;
+	}
+	return out;
+}
+/** Tokenizes a whole source, one token list per line. */
+function tokenize(source) {
+	const lines = source.split("\n");
+	const out = [];
+	let offset = 0;
+	lines.forEach((text, i) => {
+		out.push(tokenizeLine(text, i + 1, offset));
+		offset += text.length + 1;
+	});
+	return out;
+}
+// src/core/syntax/parser.ts
+var SHAPES = [
+	"box",
+	"round",
+	"circle",
+	"diamond",
+	"cloud",
+	"db",
+	"sticky",
+	"person",
+	"icon",
+	"text",
+	"dot",
+	"bullseye"
+];
+var SHAPE_ALIASES = {
+	rect: "box",
+	rectangle: "box",
+	square: "box",
+	pill: "round",
+	oval: "circle",
+	ellipse: "circle",
+	decision: "diamond",
+	database: "db",
+	cylinder: "db",
+	note: "sticky",
+	stick: "person",
+	user: "person",
+	label: "text"
+};
+var MARKS = [
+	"circle",
+	"underline",
+	"strike",
+	"highlight",
+	"note",
+	"cross",
+	"check"
+];
+var SETTINGS = [
+	"title",
+	"layout",
+	"direction",
+	"paper",
+	"pen",
+	"hand",
+	"mess",
+	"seed",
+	"steps",
+	"inkling",
+	"root",
+	"center",
+	"footer",
+	"colors",
+	"gap",
+	"branches"
+];
+/** Statements of the chart layout. */
+var CHART_WORDS = [
+	"candles",
+	"prices",
+	"line",
+	"curve",
+	"level",
+	"zone",
+	"buy",
+	"sell",
+	"stop",
+	"target",
+	"trend",
+	"axis",
+	"xlabels"
+];
+/** Sequence frames. */
+var FRAME_WORDS = [
+	"loop",
+	"opt",
+	"alt",
+	"par"
+];
+var KEYWORDS = [
+	...SETTINGS,
+	"step",
+	"group",
+	"cycle",
+	"columns",
+	"row",
+	"span",
+	"brace",
+	"activate",
+	"deactivate",
+	"start",
+	"final",
+	"set",
+	"quadrants",
+	...FRAME_WORDS,
+	"else",
+	"and",
+	...CHART_WORDS,
+	...MARKS
+];
+/** Options written as key=value, and which statements take them. */
+var NODE_OPTIONS = [
+	"color",
+	"fill",
+	"pen",
+	"size",
+	"icon",
+	"gap"
+];
+var EDGE_OPTIONS = ["color", "pen"];
+/**
+* Statements that only draw in some layouts. Anywhere else they are read but
+* ignored, with W-WRONG-LAYOUT. Completion offers them first in their layout.
+*/
+var LAYOUT_WORDS = {
+	columns: ["compare"],
+	row: ["compare"],
+	...Object.fromEntries(CHART_WORDS.map((w) => [w, ["chart"]])),
+	axis: ["chart", "quadrant"],
+	set: ["venn"],
+	quadrants: ["quadrant"],
+	activate: ["sequence"],
+	deactivate: ["sequence"],
+	footer: ["sequence"],
+	"note over": ["sequence"],
+	...Object.fromEntries(FRAME_WORDS.map((w) => [w, ["sequence"]])),
+	branches: ["tree"],
+	root: ["mindmap"],
+	colors: ["mindmap"],
+	center: ["cycle"],
+	span: ["timeline", "stack"],
+	brace: ["timeline", "stack"],
+	gap: ["stack"]
+};
+/**
+* Words kept working after a rename, with what to write instead. Each use
+* gives W-DEPRECATED with a fix. Removed only in 2.0 (see docs/language.md).
+*/
+var DEPRECATED = { brace: {
+	use: "span",
+	since: "1.0"
+} };
+/** Words saved for later versions, so adding them is never a breaking change. Using one as a statement is E-RESERVED. */
+var RESERVED = [
+	"import",
+	"use",
+	"style",
+	"class",
+	"link",
+	"theme",
+	"if",
+	"include",
+	"define"
+];
+/** Diagnostics that point at a name: one per name, with its other uses as related places. */
+var MERGED = /* @__PURE__ */ new Set([
+	"E-UNKNOWN-TARGET",
+	"E-UNKNOWN-SET",
+	"E-UNKNOWN-QUADRANT",
+	"W-NEW-NAME"
+]);
+/** Arrows people type by habit from other tools, and what Inkling writes instead. */
+var BAD_ARROWS = [[/(?<=\s)-{3,}>(?=\s)/, "-->"], [/(?<=\s)(?:=+>|- +>|[\u2014\u2013]>|\u2192)(?=\s)/, "->"]];
+var isId = (t) => !!t && (t.type === "ident" || t.type === "string");
+/** Names that marks and steps may point at: also numbers (timeline dates). */
+var isRef = (t) => isId(t) || t?.type === "number";
+/** A slug for ids made from text: lower case, words joined by hyphens. */
+var slug = (text) => text.toLowerCase().replace(/\n/g, " ").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "") || "item";
+var humanize = (id) => id.replace(/[-_]+/g, " ");
+var shapeNames = [...SHAPES, ...Object.keys(SHAPE_ALIASES)];
+/** Parses Inkling source. Never throws: problems become diagnostics and the line is skipped. */
+function parse(source) {
+	const doc = {
+		...DEFAULTS,
+		nodes: [],
+		edges: [],
+		annotations: [],
+		steps: [],
+		groups: [],
+		autoSteps: false,
+		columns: [],
+		rows: [],
+		ranges: [],
+		colors: false,
+		activations: [],
+		frames: [],
+		sets: [],
+		quadrants: [],
+		footer: true,
+		branches: "elbow",
+		chart: {
+			candles: [],
+			lines: [],
+			levels: [],
+			zones: [],
+			trades: [],
+			stops: [],
+			targets: [],
+			trends: [],
+			xlabels: [],
+			axis: {},
+			ends: {}
+		},
+		diagnostics: []
+	};
+	const nodeIndex = /* @__PURE__ */ new Map();
+	const groupIndex = /* @__PURE__ */ new Map();
+	const groupStack = [];
+	/** Open frames, innermost last. */
+	const frameStack = [];
+	/** Which kind of block each open { belongs to, innermost last, so } closes the right one. */
+	const blocks = [];
+	const lines = source.split("\n");
+	let order = 0;
+	/** `fix` is replacement text for `span`, or a replacement somewhere else. */
+	const report = (severity, code, message, span, hint, fix) => doc.diagnostics.push({
+		code,
+		severity,
+		message,
+		span,
+		hint,
+		fix: fix === void 0 ? void 0 : typeof fix === "string" ? {
+			span,
+			text: fix
+		} : fix
+	});
+	/** A fix that replaces the first whole-word `word` inside `span` with `text`. */
+	const wordFix = (span, word, text) => {
+		if (text === void 0) return void 0;
+		const esc = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		const m = new RegExp(`(?<![\\w-])${esc}(?![\\w-])`).exec(source.slice(span.from, span.to));
+		if (!m) return void 0;
+		const from = span.from + m.index;
+		return {
+			span: {
+				line: span.line,
+				from,
+				to: from + word.length
+			},
+			text
+		};
+	};
+	/** A fix that adds a line at the very end, for a block left open. */
+	const closeAtEnd = () => ({
+		span: {
+			line: lines.length,
+			from: source.length,
+			to: source.length
+		},
+		text: `${source.endsWith("\n") || !source ? "" : "\n"}}\n`
+	});
+	/** Where each layout-only statement was first used, for W-WRONG-LAYOUT. */
+	const layoutWordAt = /* @__PURE__ */ new Map();
+	let layoutLine = false;
+	/** Set by  inkling 2  (or later): this parser can't read the file. */
+	let tooNew;
+	const tokSpan = (t) => ({
+		line: t.line,
+		from: t.from,
+		to: t.to
+	});
+	const suggest = (t, candidates) => {
+		const c = closest(t.value, candidates);
+		return c ? {
+			hint: `Did you mean "${c}"?`,
+			fix: c
+		} : {
+			hint: void 0,
+			fix: void 0
+		};
+	};
+	const currentGroup = () => groupStack[groupStack.length - 1]?.group;
+	/** Outline bullets, turned into nodes once the layout is known. */
+	const bullets = [];
+	/** Compare rows as written, turned into nodes at the end. */
+	const rowDefs = [];
+	const columnDefs = [];
+	/** Puts a node in a group. Implicit joins never move a node out of a group it already has. */
+	const joinGroup = (id, group, explicit) => {
+		if (!group) return;
+		const node = doc.nodes[nodeIndex.get(id)];
+		if (node.group && node.group !== group.id && !explicit) return;
+		if (node.group && node.group !== group.id) {
+			const old = groupIndex.get(node.group);
+			if (old) old.members = old.members.filter((m) => m !== id);
+		}
+		node.group = group.id;
+		if (!group.members.includes(id)) group.members.push(id);
+	};
+	const ensureNode = (id, span, line) => {
+		if (nodeIndex.has(id)) return;
+		nodeIndex.set(id, doc.nodes.length);
+		doc.nodes.push({
+			id,
+			shape: "box",
+			label: humanize(id),
+			line,
+			span,
+			order,
+			implicit: true
+		});
+		joinGroup(id, currentGroup(), false);
+	};
+	tokenize(source).forEach((all, i) => {
+		const lineNo = i + 1;
+		const text = lines[i];
+		const comment = all.find((t) => t.type === "comment");
+		const toks = all.filter((t) => t.type !== "comment");
+		if (!toks.length) return;
+		const span = {
+			line: lineNo,
+			from: toks[0].from,
+			to: toks[toks.length - 1].to
+		};
+		const err = (code, message, at = span, hint, fix) => report("error", code, message, at, hint, fix);
+		const warn = (code, message, at = span, hint) => report("warning", code, message, at, hint);
+		const broken = toks.find((t) => t.error);
+		if (broken) {
+			report("error", "E-UNCLOSED-STRING", broken.error, tokSpan(broken), "Add a \" at the end of the text.", {
+				span: {
+					line: lineNo,
+					from: broken.to,
+					to: broken.to
+				},
+				text: "\""
+			});
+			return;
+		}
+		const lineOffset = toks[0].from - text.search(/\S/);
+		/** Raw text after token `t` up to the end of the line (before any comment). */
+		const restAfter = (t) => text.slice(t.to - lineOffset, comment ? comment.from - lineOffset : text.length).trim();
+		const unquote = (s) => {
+			const t = s.trim();
+			return (t.length >= 2 && t.startsWith("\"") && t.endsWith("\"") ? t.slice(1, -1) : t).replace(/\\(.)/g, (_, c) => c === "n" ? "\n" : c);
+		};
+		/** Reads `key=value` options from the end of a token list, or reports a problem and returns null. */
+		const takeOptions = (list, allowed) => {
+			const opts = {};
+			let end = list.length;
+			while (end >= 3 && list[end - 2].type === "equals") {
+				const key = list[end - 3];
+				const value = list[end - 1];
+				if (key.type !== "ident") break;
+				if (!allowed.includes(key.value)) {
+					const s = suggest(key, allowed);
+					err("E-UNKNOWN-OPTION", `There is no "${key.value}" option here.`, tokSpan(key), s.hint ?? `Options: ${allowed.join(", ")}.`, s.fix);
+					return null;
+				}
+				opts[key.value] = value;
+				end -= 3;
+			}
+			return {
+				opts,
+				rest: list.slice(0, end)
+			};
+		};
+		/** Checks an option's value against what it accepts. */
+		const checkOption = (key, value) => {
+			if (key === "gap") return true;
+			const list = {
+				color: Object.keys(INKS$1),
+				fill: Object.keys(COLORS),
+				pen: Object.keys(PENS),
+				size: Object.keys(SIZES),
+				icon: ICON_NAMES
+			}[key];
+			if (list && !list.includes(value.value)) {
+				const s = suggest(value, list);
+				err("E-BAD-OPTION", `"${value.value}" is not a ${key}.`, tokSpan(value), s.hint ?? `Try: ${list.join(", ")}.`, s.fix);
+				return false;
+			}
+			return true;
+		};
+		if (toks[0].type === "rbrace") {
+			const kind = blocks.pop();
+			if (!kind) {
+				err("E-UNEXPECTED", "This } does not close a group or a frame.", span);
+				return;
+			}
+			if (kind === "group") groupStack.pop();
+			const frame = kind === "frame" ? frameStack.pop() : void 0;
+			const next = toks[1];
+			if (next?.type === "ident" && (next.value === "else" || next.value === "and")) {
+				const want = next.value === "else" ? "alt" : "par";
+				let k = 2;
+				const labelTok = toks[k]?.type === "string" ? toks[k++] : void 0;
+				if (frame?.kind !== want) {
+					err(next.value === "else" ? "E-ELSE-WITHOUT-ALT" : "E-AND-WITHOUT-PAR", `"${next.value}" only follows the } of ${want === "alt" ? "an alt" : "a par"} frame.`, tokSpan(next));
+					if (frame) frame.end = ++order;
+					return;
+				}
+				if (toks[k]?.type !== "lbrace" || toks.length !== k + 1) {
+					err("E-BAD-FRAME", `Write it as  } ${next.value}${next.value === "else" ? " \"label\"" : ""} {`, span);
+					frame.end = ++order;
+					return;
+				}
+				frame.branches.push({
+					label: labelTok?.value,
+					order: ++order,
+					line: lineNo,
+					span
+				});
+				frameStack.push(frame);
+				blocks.push("frame");
+				return;
+			}
+			if (frame) frame.end = ++order;
+			if (toks.length > 1) err("E-UNEXPECTED", "Put anything after } on its own line.", {
+				line: lineNo,
+				from: toks[1].from,
+				to: span.to
+			});
+			return;
+		}
+		const [t0, t1] = toks;
+		const firstIsWord = t0.type === "ident";
+		const notDefinition = !t1 || t1.type !== "colon" && t1.type !== "arrow";
+		/** Notes a statement that only some layouts draw. */
+		const used = (word) => {
+			if (!layoutWordAt.has(word)) layoutWordAt.set(word, span);
+		};
+		if (t0.type === "bullet") {
+			order++;
+			const lead = text.slice(0, text.search(/\S/)).replace(/\t/g, "  ").length;
+			const level = Math.floor(lead / 2);
+			let body = text.slice(t0.to - lineOffset, comment ? comment.from - lineOffset : text.length).trim();
+			let as;
+			const asMatch = body.match(/\s+as\s+([A-Za-z_][\w-]*)$/);
+			if (asMatch) {
+				as = asMatch[1];
+				body = body.slice(0, asMatch.index).trim();
+			}
+			body = body.replace(/^"(.*)"$/, "$1").replace(/\\n/g, "\n");
+			if (!body) {
+				err("E-EMPTY-BULLET", "This bullet has no text.", span);
+				return;
+			}
+			let parent;
+			for (let k = bullets.length - 1; k >= 0; k--) if (bullets[k].level < level) {
+				parent = k;
+				break;
+			}
+			if (level > 0 && parent === void 0) warn("W-BULLET-INDENT", "This bullet is indented but has no bullet above it.", span);
+			bullets.push({
+				text: body,
+				as,
+				level: parent === void 0 ? 0 : level,
+				parent,
+				span,
+				line: lineNo,
+				order,
+				group: currentGroup()
+			});
+			return;
+		}
+		if (firstIsWord && t0.value === "cycle" && notDefinition) {
+			order++;
+			const ids = [];
+			let ccw = false;
+			for (const t of toks.slice(1)) {
+				if (t.type === "comma") continue;
+				if (t.type === "ident" && t.value === "counterclockwise") ccw = true;
+				else if (isId(t)) ids.push(t.value);
+				else {
+					err("E-UNEXPECTED", `I don't understand "${t.text}" in a cycle. List names separated by commas.`, tokSpan(t));
+					return;
+				}
+			}
+			if (ids.length < 2) {
+				err("E-BAD-CYCLE", "A cycle needs at least two names, like  cycle a, b, c", span);
+				return;
+			}
+			if (doc.cycle) warn("W-SECOND-CYCLE", "Only one cycle is drawn; this one adds arrows only.", span);
+			else doc.cycle = {
+				ids,
+				counterclockwise: ccw
+			};
+			ids.forEach((id) => ensureNode(id, span, lineNo));
+			ids.forEach((from, k) => {
+				const to = ids[(k + 1) % ids.length];
+				doc.edges.push({
+					from,
+					to,
+					kind: "solid",
+					both: false,
+					line: lineNo,
+					span,
+					order
+				});
+			});
+			return;
+		}
+		if (firstIsWord && (t0.value === "start" || t0.value === "final") && notDefinition) {
+			order++;
+			const word = t0.value;
+			if (!isId(t1) || toks.length !== 2) {
+				err("E-BAD-START", `Write it as  ${word} name , with one state name.`, span);
+				return;
+			}
+			const state = t1.value;
+			const dot = `${word}-${state}`;
+			ensureNode(state, span, lineNo);
+			if (nodeIndex.has(dot)) {
+				warn("W-DUPLICATE-START", `"${word} ${state}" is already written above.`, span);
+				return;
+			}
+			nodeIndex.set(dot, doc.nodes.length);
+			doc.nodes.push({
+				id: dot,
+				shape: word === "start" ? "dot" : "bullseye",
+				label: "",
+				line: lineNo,
+				span,
+				order
+			});
+			joinGroup(dot, currentGroup(), false);
+			const [from, to] = word === "start" ? [dot, state] : [state, dot];
+			doc.edges.push({
+				from,
+				to,
+				kind: "solid",
+				both: false,
+				line: lineNo,
+				span,
+				order
+			});
+			return;
+		}
+		if (firstIsWord && t0.value === "set" && isId(t1) && notDefinition) {
+			order++;
+			used("set");
+			const labelTok = toks[2]?.type === "string" ? toks[2] : void 0;
+			if (toks.length > (labelTok ? 3 : 2)) {
+				err("E-UNEXPECTED", "Write a set as  set dogs \"Dogs\"", span);
+				return;
+			}
+			const id = t1.value;
+			const existing = nodeIndex.get(id);
+			if (existing !== void 0 && !doc.nodes[existing].implicit) {
+				err("E-DUPLICATE-NODE", `"${id}" is already defined on line ${doc.nodes[existing].line}.`, tokSpan(t1));
+				return;
+			}
+			if (doc.sets.length >= 3) {
+				err("E-VENN-TOO-MANY", "A venn diagram can show two or three sets, not more.", span, "For more, compare them with  layout compare.");
+				return;
+			}
+			const def = {
+				id,
+				shape: "text",
+				label: labelTok ? labelTok.value : humanize(id),
+				role: "set",
+				line: lineNo,
+				span,
+				order
+			};
+			if (existing !== void 0) doc.nodes[existing] = def;
+			else {
+				nodeIndex.set(id, doc.nodes.length);
+				doc.nodes.push(def);
+			}
+			doc.sets.push(id);
+			return;
+		}
+		if (firstIsWord && t0.value === "quadrants" && notDefinition) {
+			order++;
+			used("quadrants");
+			const names = [];
+			for (const t of toks.slice(1)) {
+				if (t.type === "comma") continue;
+				if (isId(t)) names.push(t.value);
+				else {
+					err("E-UNEXPECTED", `I don't understand "${t.text}" here. List four names separated by commas.`, tokSpan(t));
+					return;
+				}
+			}
+			if (names.length !== 4) {
+				err("E-BAD-QUADRANTS", `Name all four squares: top left, top right, bottom left, bottom right. This line has ${names.length}.`, span);
+				return;
+			}
+			doc.quadrants = names;
+			return;
+		}
+		if (firstIsWord && t0.value === "columns" && notDefinition) {
+			order++;
+			used("columns");
+			for (const t of toks.slice(1)) {
+				if (t.type === "comma") continue;
+				if (isId(t) || t.type === "number") columnDefs.push({
+					label: t.value,
+					span: tokSpan(t)
+				});
+				else {
+					err("E-UNEXPECTED", `I don't understand "${t.text}" in columns. List names separated by commas.`, tokSpan(t));
+					return;
+				}
+			}
+			return;
+		}
+		if (firstIsWord && t0.value === "row" && isRef(t1) && toks[2]?.type === "colon") {
+			order++;
+			used("columns");
+			const cells = [];
+			let cur = null;
+			for (const t of toks.slice(3)) {
+				if (t.type === "comma") {
+					if (cur) cells.push(cur);
+					cur = null;
+					continue;
+				}
+				if (t.type === "word" && t.text === "!" && cur) {
+					cur.win = true;
+					continue;
+				}
+				if (cur) {
+					err("E-UNEXPECTED", `Put a comma between cells, before "${t.text}".`, tokSpan(t));
+					return;
+				}
+				if (t.type === "ident" && [
+					"yes",
+					"no",
+					"partly"
+				].includes(t.value)) cur = {
+					mark: t.value,
+					win: false
+				};
+				else if (t.type === "string" || t.type === "number" || t.type === "ident") cur = {
+					text: t.value,
+					win: false
+				};
+				else {
+					err("E-UNEXPECTED", `I don't understand "${t.text}" in a row. Use quoted text, yes, no or partly.`, tokSpan(t));
+					return;
+				}
+			}
+			if (cur) cells.push(cur);
+			rowDefs.push({
+				label: t1.value,
+				cells,
+				span,
+				line: lineNo,
+				order
+			});
+			return;
+		}
+		if (firstIsWord && CHART_WORDS.includes(t0.value) && notDefinition && t1 && (t1.type === "number" || t1.type === "string" || (t0.value === "axis" || t0.value === "xlabels") && t1.type === "ident")) {
+			order++;
+			used(t0.value === "axis" ? "axis" : "candles");
+			const word = t0.value;
+			const rest = restAfter(t0);
+			let body = rest;
+			let label;
+			let color;
+			for (let k = 0; k < 2; k++) {
+				const lm = body.match(/\s*"((?:[^"\\]|\\.)*)"\s*$/);
+				if (lm && label === void 0 && word !== "xlabels" && !(word === "line" || word === "curve" || word === "axis")) {
+					label = unquote(`"${lm[1]}"`);
+					body = body.slice(0, lm.index).trimEnd();
+					continue;
+				}
+				const cm = body.match(/\s+([a-z]+)\s*$/);
+				if (cm && INKS$1[cm[1]] && color === void 0) {
+					color = cm[1];
+					body = body.slice(0, cm.index).trimEnd();
+					continue;
+				}
+			}
+			if (word === "line" || word === "curve") {
+				const lm = body.match(/^"((?:[^"\\]|\\.)*)"\s*/);
+				if (lm) {
+					label = unquote(`"${lm[1]}"`);
+					body = body.slice(lm[0].length);
+				}
+				const cm = body.match(/^([a-z]+)\s+/);
+				if (cm && INKS$1[cm[1]] && color === void 0) {
+					color = cm[1];
+					body = body.slice(cm[0].length);
+				}
+			}
+			const NUM = /^-?\d+(?:\.\d+)?$/;
+			const nums = (str) => {
+				const parts = str.split(/[\s,]+/).filter(Boolean);
+				return parts.every((x) => NUM.test(x)) ? parts.map(Number) : void 0;
+			};
+			const bad = (how) => err("E-BAD-CHART", `Write it as  ${how}`, span);
+			const item = {
+				line: lineNo,
+				label,
+				color
+			};
+			const c = doc.chart;
+			switch (word) {
+				case "candles": {
+					const groups = body.split(",").map((g) => nums(g.trim()));
+					if (!groups.length || groups.some((g) => !g || g.length !== 4)) return bad("candles open high low close, open high low close, …");
+					for (const g of groups) {
+						const [o, h, l, cl] = g;
+						if (h < Math.max(o, cl) || l > Math.min(o, cl)) report("warning", "W-CANDLE", `A candle's high must be at least its open and close, and its low at most them (${g.join(" ")}).`, span);
+						c.candles.push([
+							o,
+							h,
+							l,
+							cl
+						]);
+					}
+					return;
+				}
+				case "prices":
+				case "line": {
+					const v = nums(body);
+					if (!v || !v.length) return bad(`${word} ${word === "line" ? "\"label\" " : ""}100 101 103 …`);
+					c.lines.push({
+						...item,
+						values: v
+					});
+					return;
+				}
+				case "curve": {
+					const pts = body.split(/\s+/).filter(Boolean).map((p) => p.split(","));
+					if (!pts.length || pts.some((p) => p.length !== 2 || !NUM.test(p[0]) || !NUM.test(p[1]))) return bad("curve \"label\" 80,-5 100,-5 120,15");
+					c.lines.push({
+						...item,
+						points: pts.map((p) => [Number(p[0]), Number(p[1])])
+					});
+					return;
+				}
+				case "level":
+				case "stop":
+				case "target": {
+					const v = nums(body);
+					if (!v || v.length !== 1) return bad(`${word} 105 "label"`);
+					(word === "level" ? c.levels : word === "stop" ? c.stops : c.targets).push({
+						...item,
+						price: v[0]
+					});
+					return;
+				}
+				case "zone": {
+					const m = body.match(/^(-?\d+(?:\.\d+)?)\s*\.\.\s*(-?\d+(?:\.\d+)?)$/);
+					if (!m) return bad("zone 98..101 \"label\"");
+					c.zones.push({
+						...item,
+						from: Math.min(+m[1], +m[2]),
+						to: Math.max(+m[1], +m[2])
+					});
+					return;
+				}
+				case "buy":
+				case "sell": {
+					const v = nums(body);
+					if (!v || v.length !== 2 || !Number.isInteger(v[0]) || v[0] < 1) return bad(`${word} <bar> <price> "label"   (bars count from 1)`);
+					c.trades.push({
+						...item,
+						side: word,
+						bar: v[0],
+						price: v[1]
+					});
+					return;
+				}
+				case "trend": {
+					const v = nums(body);
+					if (!v || v.length !== 4) return bad("trend <bar> <price> <bar> <price> \"label\"");
+					c.trends.push({
+						...item,
+						a: [v[0], v[1]],
+						b: [v[2], v[3]]
+					});
+					return;
+				}
+				case "axis": {
+					const m = rest.match(/^(x|y)\s+"((?:[^"\\]|\\.)*)"(?:\s+("(?:[^"\\]|\\.)*"|[^\s".]+)\.\.("(?:[^"\\]|\\.)*"|[^\s".]+))?$/);
+					if (!m) return bad("axis x \"label\"   or   axis y \"label\" low..high");
+					c.axis[m[1]] = unquote(`"${m[2]}"`);
+					if (m[3] !== void 0) c.ends[m[1]] = [unquote(m[3]), unquote(m[4])];
+					return;
+				}
+				case "xlabels": {
+					const labels = [...rest.matchAll(/"((?:[^"\\]|\\.)*)"|([^\s,"]+)/g)].map((m) => m[1] !== void 0 ? unquote(`"${m[1]}"`) : m[2]);
+					c.xlabels.push(...labels);
+					return;
+				}
+			}
+		}
+		if (firstIsWord && (t0.value === "span" || t0.value === "brace") && notDefinition) {
+			order++;
+			used("span");
+			if (t0.value === "brace") report("warning", "W-DEPRECATED", "\"brace\" is now written \"span\"; both draw the same bracket.", tokSpan(t0), "Change it to  span", "span");
+			const m = restAfter(t0).match(/^(.+?)\s*\.\.\s*(.+?)(?:\s+"((?:[^"\\]|\\.)*)")?$/);
+			if (!m) {
+				err("E-BAD-RANGE", `Write it as  ${t0.value} first..last "label"`, span);
+				return;
+			}
+			const strip = (x) => x.trim().replace(/^"(.*)"$/, "$1");
+			doc.ranges.push({
+				kind: "span",
+				from: strip(m[1]),
+				to: strip(m[2]),
+				label: m[3]?.replace(/\\n/g, "\n"),
+				line: lineNo,
+				span
+			});
+			return;
+		}
+		if (firstIsWord && FRAME_WORDS.includes(t0.value) && notDefinition && toks[toks.length - 1].type === "lbrace") {
+			order++;
+			let k = 1;
+			const labelTok = toks[k]?.type === "string" ? toks[k++] : void 0;
+			if (toks.length !== k + 1) {
+				err("E-BAD-FRAME", `Write a frame as  ${t0.value} "label" {  then its messages, then a } line.`, span);
+				return;
+			}
+			if (frameStack.length >= 3) {
+				err("E-FRAME-TOO-DEEP", "Frames can sit three deep, not deeper.", span);
+				return;
+			}
+			const frame = {
+				kind: t0.value,
+				branches: [{
+					label: labelTok?.value,
+					order,
+					line: lineNo,
+					span
+				}],
+				end: order,
+				depth: frameStack.length,
+				line: lineNo,
+				span,
+				order
+			};
+			doc.frames.push(frame);
+			frameStack.push(frame);
+			blocks.push("frame");
+			return;
+		}
+		if (firstIsWord && t0.value === "note" && t1?.type === "ident" && t1.value === "over" && isRef(toks[2])) {
+			order++;
+			used("note over");
+			const ids = [];
+			let text;
+			for (const t of toks.slice(2)) {
+				if (t.type === "comma") continue;
+				if (t.type === "string" && t === toks[toks.length - 1] && ids.length) text = t.value;
+				else if (isRef(t)) ids.push(t.value);
+				else {
+					err("E-UNEXPECTED", `I don't understand "${t.text}" here.`, tokSpan(t));
+					return;
+				}
+			}
+			if (!text) {
+				err("E-NOTE-NEEDS-TEXT", `A note needs text, like  note over ${ids.join(", ")} "remember this"`, span);
+				return;
+			}
+			if (ids.length > 2) {
+				err("E-UNEXPECTED", "A note can sit over one participant or span two, like  note over a, b \"text\"", span);
+				return;
+			}
+			doc.annotations.push({
+				kind: "note",
+				target: ids[0],
+				targetKind: "node",
+				text,
+				over: ids,
+				line: lineNo,
+				span,
+				order
+			});
+			return;
+		}
+		if (firstIsWord && (t0.value === "activate" || t0.value === "deactivate") && isId(t1) && notDefinition) {
+			order++;
+			used("activate");
+			doc.activations.push({
+				id: t1.value,
+				on: t0.value === "activate",
+				order,
+				span
+			});
+			return;
+		}
+		if (firstIsWord && t0.value === "group" && notDefinition) {
+			order++;
+			if (!isId(t1)) {
+				err("E-BAD-GROUP", "Write a group as  group name \"Label\" {", span);
+				return;
+			}
+			let k = 2;
+			const labelTok = toks[k]?.type === "string" ? toks[k++] : void 0;
+			if (toks[k]?.type !== "lbrace") {
+				err("E-BAD-GROUP", "A group needs a { after its name, then its members, then a } line.", span);
+				return;
+			}
+			k++;
+			if (groupIndex.has(t1.value)) {
+				err("E-DUPLICATE-GROUP", `There is already a group called "${t1.value}".`, tokSpan(t1));
+				return;
+			}
+			const parent = currentGroup();
+			if (parent?.parent) {
+				err("E-GROUP-TOO-DEEP", "Groups can sit inside one other group, not deeper.", span);
+				return;
+			}
+			const group = {
+				id: t1.value,
+				label: labelTok ? labelTok.value : humanize(t1.value),
+				members: [],
+				parent: parent?.id,
+				line: lineNo,
+				span,
+				order
+			};
+			groupIndex.set(group.id, group);
+			doc.groups.push(group);
+			const inner = toks.slice(k);
+			if (inner.length && inner[inner.length - 1].type === "rbrace") for (const t of inner.slice(0, -1)) {
+				if (t.type === "comma") continue;
+				if (!isId(t)) {
+					err("E-UNEXPECTED", `I don't understand "${t.text}" in a group. List names separated by commas.`, tokSpan(t));
+					return;
+				}
+				ensureNode(t.value, span, lineNo);
+				joinGroup(t.value, group, true);
+			}
+			else if (inner.length) err("E-UNEXPECTED", "After { either list members and close with } on the same line, or start the next line.", tokSpan(inner[0]));
+			else {
+				groupStack.push({
+					group,
+					span
+				});
+				blocks.push("group");
+			}
+			return;
+		}
+		if (firstIsWord && SETTINGS.includes(t0.value) && notDefinition) {
+			order++;
+			const key = t0.value;
+			if (!t1) {
+				err("E-MISSING-VALUE", `"${key}" needs a value.`, span);
+				return;
+			}
+			if (LAYOUT_WORDS[key]) used(key);
+			if (key === "title") {
+				doc.title = unquote(restAfter(t0));
+				return;
+			}
+			const extra = toks[2];
+			if (extra) err("E-UNEXPECTED", `"${key}" takes one value. I don't understand "${extra.text}" here.`, {
+				line: lineNo,
+				from: extra.from,
+				to: span.to
+			});
+			const v = t1.value;
+			if (key === "center") {
+				doc.center = unquote(restAfter(t0));
+				return;
+			}
+			if (key === "root") {
+				doc.root = v;
+				return;
+			}
+			if (key === "footer" || key === "colors") {
+				if (v !== "on" && v !== "off") {
+					err("E-BAD-SWITCH", `Write  ${key} on  or  ${key} off.`, tokSpan(t1));
+					return;
+				}
+				if (key === "footer") doc.footer = v === "on";
+				else doc.colors = v === "on";
+				return;
+			}
+			if (key === "branches") {
+				if (v === "elbow" || v === "straight") doc.branches = v;
+				else {
+					const s = suggest(t1, ["elbow", "straight"]);
+					err("E-BAD-BRANCHES", "Write  branches elbow  or  branches straight.", tokSpan(t1), s.hint, s.fix);
+				}
+				return;
+			}
+			if (key === "gap") {
+				const n = Number(v);
+				if (t1.type === "number" && n >= 0 && n <= 200) doc.gap = n;
+				else err("E-BAD-GAP", "Gap is a number of pixels from 0 to 200.", tokSpan(t1));
+				return;
+			}
+			if (key === "layout" && LAYOUT_NAMES.includes(v)) {
+				doc.layout = v;
+				layoutLine = true;
+				return;
+			}
+			if (key === "steps") {
+				if (v === "auto") doc.autoSteps = true;
+				else err("E-BAD-STEPS", "Write  steps auto  to make each node its own step.", tokSpan(t1));
+				return;
+			}
+			if (key === "inkling") {
+				doc.version = Number(v);
+				if (t1.type === "number" && Math.floor(Number(v)) > 1) {
+					tooNew = {
+						span: tokSpan(t1),
+						v
+					};
+					return;
+				}
+				if (v !== String(1)) warn("W-VERSION", `This file says Inkling ${v}; this renderer reads version 1.`, tokSpan(t1));
+				return;
+			}
+			const options = {
+				layout: [
+					"right",
+					"down",
+					...LAYOUT_NAMES
+				],
+				direction: ["right", "down"],
+				paper: Object.keys(PAPERS),
+				pen: Object.keys(PENS),
+				hand: Object.keys(HANDS)
+			};
+			if (options[key]) {
+				if (!options[key].includes(v)) {
+					const s = suggest(t1, options[key]);
+					const what = key === "layout" ? `No layout called "${v}". Layouts: ${LAYOUT_NAMES.join(", ")}; or right / down for the direction.` : key === "direction" ? `Direction can be "right" or "down", not "${v}".` : `No ${key === "hand" ? "handwriting" : key} called "${v}".`;
+					err(`E-UNKNOWN-${key === "direction" ? "LAYOUT" : key.toUpperCase()}`, what, tokSpan(t1), s.hint ?? `Try: ${options[key].join(", ")}.`, s.fix);
+					return;
+				}
+				if (key === "layout" || key === "direction") {
+					doc.direction = v;
+					doc.directionSet = true;
+				} else doc[key] = v;
+				return;
+			}
+			const n = Number(v);
+			if (key === "mess") {
+				if (t1.type === "number" && n >= 0 && n <= 1) doc.mess = n;
+				else err("E-BAD-MESS", "Mess is a number from 0 (tidy) to 1 (chaotic).", tokSpan(t1));
+				return;
+			}
+			if (key === "seed") {
+				if (t1.type === "number" && Number.isInteger(n)) doc.seed = n;
+				else err("E-BAD-SEED", "Seed is a whole number, such as 7.", tokSpan(t1));
+				return;
+			}
+		}
+		if (firstIsWord && t0.value === "step" && t1?.type === "number") {
+			order++;
+			let k = 2;
+			if (toks[k]?.type === "colon") k++;
+			const items = [];
+			let caption;
+			for (; k < toks.length; k++) {
+				const t = toks[k];
+				if (t.type === "comma") continue;
+				if (t.type === "string" && k === toks.length - 1) caption = t.value;
+				else if (t.type === "ident" || t.type === "string" || t.type === "number") items.push(t.value);
+				else {
+					err("E-UNEXPECTED", `I don't understand "${t.text}" in a step. List names separated by commas, then an optional "caption".`, tokSpan(t));
+					return;
+				}
+			}
+			doc.steps.push({
+				index: Number(t1.value),
+				items,
+				caption,
+				line: lineNo,
+				span
+			});
+			return;
+		}
+		let markToks = toks;
+		if (toks[2]?.type === "word" && (toks[2].text.startsWith(".") || toks[2].text.startsWith("&")) && toks[2].from === toks[1].to) {
+			const joined = {
+				...toks[1],
+				type: "ident",
+				text: toks[1].text + toks[2].text,
+				value: toks[1].value + toks[2].text,
+				to: toks[2].to
+			};
+			markToks = [
+				toks[0],
+				joined,
+				...toks.slice(3)
+			];
+		}
+		const onArrow = markToks[2]?.type === "arrow" && isRef(markToks[3]);
+		if (firstIsWord && MARKS.includes(t0.value) && isRef(markToks[1]) && notDefinition && (markToks[2]?.type !== "arrow" || onArrow)) {
+			order++;
+			const kind = t0.value;
+			const t1m = markToks[1];
+			const target = onArrow ? `${t1m.value}->${markToks[3].value}` : t1m.value;
+			let text;
+			let at;
+			let color;
+			for (const t of markToks.slice(onArrow ? 4 : 2)) if (t.type === "string" && text === void 0) text = t.value;
+			else if (t.type === "at") at = Number(t.value);
+			else if (t.type === "ident" && COLORS[t.value]) color = t.value;
+			else {
+				const s = t.type === "ident" ? suggest(t, Object.keys(COLORS)) : {
+					hint: void 0,
+					fix: void 0
+				};
+				err("E-UNEXPECTED", `I don't understand "${t.text}" here.`, tokSpan(t), s.hint, s.fix);
+				return;
+			}
+			if (kind === "note" && !text) {
+				err("E-NOTE-NEEDS-TEXT", `A note needs text, like  note ${target} "remember this"`, span);
+				return;
+			}
+			doc.annotations.push({
+				kind,
+				target,
+				targetKind: onArrow ? "edge" : "node",
+				text,
+				color,
+				at,
+				line: lineNo,
+				span,
+				order
+			});
+			return;
+		}
+		const colonAt = toks.findIndex((t) => t.type === "colon");
+		const headAll = colonAt === -1 ? toks : toks.slice(0, colonAt);
+		if (headAll.some((t) => t.type === "arrow")) {
+			order++;
+			const headOpts = takeOptions(headAll, EDGE_OPTIONS);
+			if (!headOpts) return;
+			const head = headOpts.rest;
+			let opts = headOpts.opts;
+			if (!(head.length >= 3 && head.length % 2 === 1 && head.every((t, k) => k % 2 === 0 ? isId(t) : t.type === "arrow"))) {
+				const bad = head.find((t, k) => k % 2 === 0 ? !isId(t) : t.type !== "arrow");
+				if (bad && bad.type === "word") err("E-BAD-NAME", `"${bad.text}" is not a valid name. Use letters, digits, - or _, or put it in quotes.`, tokSpan(bad));
+				else err("E-ARROW-NEEDS-ENDS", "An arrow needs a name on both sides, like \"a -> b\".", span);
+				return;
+			}
+			let label;
+			if (colonAt !== -1) {
+				const after = toks.slice(colonAt + 1);
+				if (after[0]?.type === "string") {
+					label = after[0].value;
+					const tail = takeOptions(after.slice(1), EDGE_OPTIONS);
+					if (!tail) return;
+					if (tail.rest.length) {
+						err("E-UNEXPECTED", `I don't understand "${tail.rest[0].text}" after the label.`, tokSpan(tail.rest[0]));
+						return;
+					}
+					opts = {
+						...opts,
+						...tail.opts
+					};
+				} else {
+					let end = after.length;
+					while (end >= 3 && after[end - 2].type === "equals" && after[end - 3].type === "ident" && EDGE_OPTIONS.includes(after[end - 3].value)) end -= 3;
+					const tail = takeOptions(after.slice(end), EDGE_OPTIONS);
+					if (!tail) return;
+					opts = {
+						...opts,
+						...tail.opts
+					};
+					const startCol = toks[colonAt].to - lineOffset;
+					const endCol = end < after.length ? after[end].from - lineOffset : comment ? comment.from - lineOffset : text.length;
+					label = unquote(text.slice(startCol, endCol)) || void 0;
+				}
+			}
+			for (const [k, v] of Object.entries(opts)) if (!checkOption(k, v)) return;
+			for (let k = 0; k + 2 < head.length; k += 2) {
+				const from = head[k].value;
+				const op = head[k + 1].value;
+				const to = head[k + 2].value;
+				ensureNode(from, span, lineNo);
+				ensureNode(to, span, lineNo);
+				const kind = op.includes("~") ? "squiggle" : op === "-->" ? "dashed" : "solid";
+				doc.edges.push({
+					from,
+					to,
+					kind,
+					both: op.startsWith("<"),
+					label: k + 2 === head.length - 1 && label ? label : void 0,
+					color: opts.color?.value,
+					pen: opts.pen?.value,
+					line: lineNo,
+					span,
+					order
+				});
+			}
+			return;
+		}
+		if (isId(t0) && t1?.type === "colon") {
+			order++;
+			const id = t0.value;
+			const parsed = takeOptions(toks.slice(2), NODE_OPTIONS);
+			if (!parsed) return;
+			const { opts } = parsed;
+			let body = parsed.rest;
+			let inside;
+			const inAt = body.findIndex((t) => t.type === "ident" && t.value === "in");
+			if (inAt !== -1) {
+				inside = [];
+				for (const t of body.slice(inAt + 1)) {
+					if (t.type === "word" && /^&+$/.test(t.text)) continue;
+					if (t.type === "word" && t.text.startsWith("&")) inside.push(...t.text.split("&").filter(Boolean));
+					else if (isRef(t)) inside.push(t.value);
+					else {
+						err("E-BAD-IN", "Write it as  in a & b  or  in \"Quick wins\"", {
+							line: lineNo,
+							from: body[inAt].from,
+							to: span.to
+						});
+						return;
+					}
+				}
+				if (!inside.length) {
+					err("E-BAD-IN", "Name what it is in, like  in dogs  or  in dogs & cats", tokSpan(body[inAt]));
+					return;
+				}
+				body = body.slice(0, inAt);
+			}
+			let at;
+			let near;
+			const placeAt = body.findIndex((t) => t.type === "ident" && [
+				"at",
+				"below",
+				"above",
+				"left",
+				"right"
+			].includes(t.value) && (t.value !== "at" || body[body.indexOf(t) + 1]?.type === "number"));
+			if (placeAt !== -1) {
+				const p = body.slice(placeAt);
+				const word = p[0].value;
+				if (word === "at") {
+					if (p.length === 4 && p[1].type === "number" && p[2].type === "comma" && p[3].type === "number") at = [Number(p[1].value), Number(p[3].value)];
+					else {
+						err("E-BAD-PLACE", "Write a position as  at 200,120", {
+							line: lineNo,
+							from: p[0].from,
+							to: span.to
+						});
+						return;
+					}
+				} else {
+					const hasOf = p[1]?.type === "ident" && p[1].value === "of";
+					const target = hasOf ? p[2] : p[1];
+					const needsOf = word === "left" || word === "right";
+					if (!isId(target) || p.length !== (hasOf ? 3 : 2) || needsOf && !hasOf) {
+						err("E-BAD-PLACE", `Write it as  ${needsOf ? `${word} of other` : `${word} other`}`, {
+							line: lineNo,
+							from: p[0].from,
+							to: span.to
+						});
+						return;
+					}
+					near = {
+						side: word,
+						of: target.value,
+						gap: opts.gap ? Number(opts.gap.value) : void 0
+					};
+				}
+				body = body.slice(0, placeAt);
+			}
+			if (opts.gap && opts.gap.type !== "number") {
+				err("E-BAD-OPTION", "gap is a number of pixels.", tokSpan(opts.gap));
+				return;
+			}
+			let k = 0;
+			let shapeTok;
+			let iconTok;
+			let labelTok;
+			let fillTok;
+			if (body[k]?.type === "ident") shapeTok = body[k++];
+			if (shapeTok?.value === "icon" && body[k]?.type === "ident") iconTok = body[k++];
+			if (body[k]?.type === "string") labelTok = body[k++];
+			if (body[k]?.type === "ident") fillTok = body[k++];
+			if (k < body.length) {
+				err("E-BAD-NODE", `Write a node as  ${id}: box "Label"`, span, `I don't understand "${body[k].text}" here.`);
+				return;
+			}
+			if (shapeTok && !shapeNames.includes(shapeTok.value)) {
+				if (!labelTok && !fillTok && COLORS[shapeTok.value]) {
+					fillTok = shapeTok;
+					shapeTok = void 0;
+				} else {
+					const s = suggest(shapeTok, shapeNames);
+					err("E-UNKNOWN-SHAPE", `No shape called "${shapeTok.value}".`, tokSpan(shapeTok), s.hint ?? `Try: ${SHAPES.join(", ")}.`, s.fix);
+					return;
+				}
+			}
+			if (fillTok && !COLORS[fillTok.value]) {
+				const s = suggest(fillTok, Object.keys(COLORS));
+				err("E-UNKNOWN-COLOR", `No colour called "${fillTok.value}".`, tokSpan(fillTok), s.hint ?? `Try: ${Object.keys(COLORS).join(", ")}.`, s.fix);
+				return;
+			}
+			if (shapeTok?.value === "icon" && iconTok && !ICON_NAMES.includes(iconTok.value)) {
+				const s = suggest(iconTok, ICON_NAMES);
+				err("E-UNKNOWN-ICON", `No icon called "${iconTok.value}".`, tokSpan(iconTok), s.hint ?? `Icons: ${ICON_NAMES.join(", ")}.`, s.fix);
+				return;
+			}
+			for (const [key, v] of Object.entries(opts)) if (!checkOption(key, v)) return;
+			let shape = shapeTok ? SHAPE_ALIASES[shapeTok.value] ?? shapeTok.value : "box";
+			if (opts.icon && !shapeTok) shape = "icon";
+			const icon = shape === "icon" ? iconTok?.value ?? opts.icon?.value : void 0;
+			if (shape === "icon" && !icon) {
+				err("E-ICON-NEEDS-NAME", `Name the icon, like  ${id}: icon server "Label"`, span, `Icons: ${ICON_NAMES.join(", ")}.`);
+				return;
+			}
+			const def = {
+				id,
+				shape,
+				label: labelTok ? labelTok.value : shape === "dot" || shape === "bullseye" ? "" : humanize(id),
+				fill: fillTok?.value ?? opts.fill?.value,
+				color: opts.color?.value,
+				pen: opts.pen?.value,
+				size: opts.size?.value,
+				icon,
+				at,
+				near,
+				inside,
+				line: lineNo,
+				span,
+				order
+			};
+			const existing = nodeIndex.get(id);
+			if (existing !== void 0) {
+				const prev = doc.nodes[existing];
+				if (!prev.implicit) err("E-DUPLICATE-NODE", `"${id}" is already defined on line ${prev.line}.`, tokSpan(t0), "Rename one of them, or delete this line.");
+				def.group = prev.group;
+				doc.nodes[existing] = def;
+			} else {
+				nodeIndex.set(id, doc.nodes.length);
+				doc.nodes.push(def);
+			}
+			joinGroup(id, currentGroup(), true);
+			return;
+		}
+		if (firstIsWord && RESERVED.includes(t0.value) && notDefinition) {
+			err("E-RESERVED", `"${t0.value}" is saved for a future version of Inkling, so this line is skipped.`, tokSpan(t0), `To use it as a name, define it first:  ${t0.value}: box`);
+			return;
+		}
+		const body = text.slice(0, comment ? comment.from - lineOffset : text.length);
+		for (const [re, good] of BAD_ARROWS) {
+			const m = re.exec(body);
+			if (!m) continue;
+			const at = {
+				line: lineNo,
+				from: m.index + lineOffset,
+				to: m.index + lineOffset + m[0].length
+			};
+			err("E-BAD-ARROW", `"${m[0]}" is not an arrow in Inkling.`, at, `Write it as ${good}`, good);
+			return;
+		}
+		if (isId(t0) && !(firstIsWord && KEYWORDS.includes(t0.value)) && (t1?.type === "string" || t1?.type === "ident" && shapeNames.includes(t1.value))) {
+			err("E-MISSING-COLON", "A node needs a : after its name.", span, `Write it as  ${t0.text}: ${toks.slice(1).map((t) => t.text).join(" ")}`, {
+				span: {
+					line: lineNo,
+					from: t0.to,
+					to: t0.to
+				},
+				text: ":"
+			});
+			return;
+		}
+		const near = firstIsWord ? closest(t0.value, KEYWORDS) : void 0;
+		err("E-UNKNOWN-LINE", "I don't understand this line.", span, near ? `Did you mean "${near}"?` : void 0, near ? {
+			span: tokSpan(t0),
+			text: near
+		} : void 0);
+	});
+	if (tooNew) {
+		const empty = parse("");
+		empty.version = Number(tooNew.v);
+		empty.diagnostics = [{
+			code: "E-VERSION-TOO-NEW",
+			severity: "error",
+			message: `This file is written for Inkling ${tooNew.v}, and this renderer reads version 1. Nothing is drawn.`,
+			hint: "Update Inkling to draw it.",
+			span: tooNew.span
+		}];
+		return empty;
+	}
+	const bulletIds = [];
+	const taken = /* @__PURE__ */ new Set([...nodeIndex.keys()]);
+	const uniqueId = (base) => {
+		let id = base;
+		for (let n = 2; taken.has(id) && !doc.nodes[nodeIndex.get(id)]?.implicit; n++) id = `${base}-${n}`;
+		taken.add(id);
+		return id;
+	};
+	for (const b of bullets) {
+		let label = b.text;
+		let date;
+		if (doc.layout === "timeline") {
+			const m = b.text.match(/^([^:]+):\s*([\s\S]+)$/);
+			if (m) {
+				date = m[1].trim();
+				label = m[2].trim();
+			}
+		}
+		let inside;
+		let at;
+		if (doc.layout === "venn" || doc.layout === "quadrant") {
+			const im = label.match(/^([\s\S]*?)\s+in\s+("[^"]*"|[\w-]+(?:\s*&\s*[\w-]+)*)$/);
+			const am = label.match(/^([\s\S]*?)\s+at\s+(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+			if (im) {
+				label = im[1];
+				inside = im[2].startsWith("\"") ? [im[2].slice(1, -1)] : im[2].split("&").map((x) => x.trim());
+			} else if (am) {
+				label = am[1];
+				at = [Number(am[2]), Number(am[3])];
+			}
+			label = label.replace(/^"(.*)"$/, "$1");
+		}
+		const id = b.as ?? uniqueId(slug(date ?? label));
+		bulletIds.push(id);
+		const parent = b.parent !== void 0 ? bulletIds[b.parent] : void 0;
+		const existing = nodeIndex.get(id);
+		if (existing !== void 0) {
+			const n = doc.nodes[existing];
+			if (n.implicit) n.label = label;
+			n.bullet = {
+				level: b.level,
+				parent
+			};
+			n.date = date;
+			if (inside) n.inside = inside;
+			if (at) n.at = at;
+			n.implicit = false;
+		} else {
+			nodeIndex.set(id, doc.nodes.length);
+			doc.nodes.push({
+				id,
+				shape: "box",
+				label,
+				date,
+				inside,
+				at,
+				bullet: {
+					level: b.level,
+					parent
+				},
+				line: b.line,
+				span: b.span,
+				order: b.order
+			});
+			joinGroup(id, b.group, true);
+		}
+		if (parent && (doc.layout === "flow" || doc.layout === "free" || doc.layout === "state")) doc.edges.push({
+			from: parent,
+			to: id,
+			kind: "solid",
+			both: false,
+			line: b.line,
+			span: b.span,
+			order: b.order
+		});
+	}
+	if (columnDefs.length || rowDefs.length) {
+		const colIds = columnDefs.map((c) => uniqueId(slug(c.label)));
+		columnDefs.forEach((c, k) => {
+			nodeIndex.set(colIds[k], doc.nodes.length);
+			doc.nodes.push({
+				id: colIds[k],
+				shape: "text",
+				label: c.label,
+				role: "column",
+				line: c.span.line,
+				span: c.span,
+				order: 0
+			});
+		});
+		doc.columns = colIds;
+		for (const r of rowDefs) {
+			const rid = uniqueId(slug(r.label));
+			doc.rows.push(rid);
+			nodeIndex.set(rid, doc.nodes.length);
+			doc.nodes.push({
+				id: rid,
+				shape: "text",
+				label: r.label,
+				role: "row",
+				line: r.line,
+				span: r.span,
+				order: r.order
+			});
+			if (r.cells.length !== colIds.length) report("error", "E-ROW-CELLS", `Row "${r.label}" has ${r.cells.length} cell${r.cells.length === 1 ? "" : "s"} but there ${colIds.length === 1 ? "is 1 column" : `are ${colIds.length} columns`}.`, r.span);
+			r.cells.slice(0, colIds.length).forEach((c, k) => {
+				const id = `${rid}.${colIds[k]}`;
+				nodeIndex.set(id, doc.nodes.length);
+				doc.nodes.push({
+					id,
+					shape: "text",
+					label: c.text ?? "",
+					cell: {
+						mark: c.mark,
+						win: c.win,
+						row: rid,
+						column: colIds[k]
+					},
+					line: r.line,
+					span: r.span,
+					order: r.order
+				});
+			});
+		}
+	}
+	const WHAT = {
+		columns: "columns and row lines",
+		candles: "Chart lines (candles, prices, level, buy …)",
+		axis: "axis lines",
+		set: "set lines",
+		quadrants: "quadrants",
+		activate: "activate and deactivate",
+		"note over": "note over"
+	};
+	for (const [word, at] of layoutWordAt) {
+		const where = LAYOUT_WORDS[word];
+		if (where.includes(doc.layout)) continue;
+		const want = where.map((l) => ` layout ${l} `).join(" or ");
+		report("warning", "W-WRONG-LAYOUT", `${WHAT[word] ?? `"${word}"`} only ${WHAT[word] ? "draw" : "works"} with ${want}, and this is  layout ${doc.layout}.`, at, layoutLine ? `Change the layout line, or remove this line.` : `Add  layout ${where[0]}  at the top, or remove this line.`, layoutLine ? void 0 : {
+			span: {
+				line: 1,
+				from: 0,
+				to: 0
+			},
+			text: `layout ${where[0]}\n`
+		});
+	}
+	if (doc.layout === "venn") for (const n of doc.nodes) {
+		if (!n.inside) continue;
+		const seen = /* @__PURE__ */ new Set();
+		for (const name of n.inside) {
+			if (seen.has(name)) report("error", "E-SET-TWICE", `"${name}" is named twice in  in ${n.inside.join(" & ")}.`, n.span);
+			seen.add(name);
+			if (!doc.sets.includes(name)) {
+				const c = closest(name, doc.sets);
+				report("error", "E-UNKNOWN-SET", `There is no set called "${name}".`, n.span, c ? `Did you mean "${c}"?` : doc.sets.length ? `Sets: ${doc.sets.join(", ")}.` : "Declare it first:  set name \"Label\"", wordFix(n.span, name, c));
+			}
+		}
+		n.inside = [...seen].filter((x) => doc.sets.includes(x));
+	}
+	if (doc.layout === "quadrant") {
+		const names = doc.quadrants.flatMap((q) => [q, slug(q)]);
+		for (const n of doc.nodes) {
+			if (n.at && (n.at[0] < 0 || n.at[0] > 1 || n.at[1] < 0 || n.at[1] > 1)) {
+				report("error", "E-QUADRANT-RANGE", "In a quadrant,  at x,y  takes numbers from 0 to 1, with 0,0 at the bottom left.", n.span);
+				n.at = [Math.min(1, Math.max(0, n.at[0])), Math.min(1, Math.max(0, n.at[1]))];
+			}
+			if (n.inside) {
+				const name = n.inside[0];
+				if (!names.includes(name) && !names.includes(slug(name))) {
+					const c = closest(name, doc.quadrants);
+					report("error", "E-UNKNOWN-QUADRANT", `There is no square called "${name}".`, n.span, c ? `Did you mean "${c}"?` : doc.quadrants.length ? `Squares: ${doc.quadrants.join(", ")}.` : "Name them first:  quadrants \"A\", \"B\", \"C\", \"D\"", wordFix(n.span, name, c));
+					n.inside = void 0;
+				}
+			}
+		}
+	}
+	for (const f of frameStack) {
+		report("error", "E-UNCLOSED-FRAME", `This ${f.kind} frame is never closed.`, f.span, "Add a line with just } after its last message.", closeAtEnd());
+		f.end = ++order;
+	}
+	for (const f of doc.frames) {
+		if (doc.layout !== "sequence") report("error", "E-FRAME-LAYOUT", `${f.kind} frames only draw in  layout sequence.`, f.span, "Use a group to box things in other layouts.");
+		const inside = (o) => o > f.order && o < f.end;
+		if (!doc.edges.some((e) => inside(e.order)) && !doc.annotations.some((a) => inside(a.order))) report("warning", "W-EMPTY-FRAME", `This ${f.kind} frame has no messages in it.`, f.span);
+	}
+	for (const { group, span } of groupStack) report("error", "E-UNCLOSED-GROUP", `Group "${group.id}" is never closed.`, span, "Add a line with just } after its last member.", closeAtEnd());
+	const dropped = /* @__PURE__ */ new Set();
+	doc.groups = doc.groups.filter((g) => {
+		if (nodeIndex.has(g.id)) {
+			report("error", "E-GROUP-NAME-TAKEN", `"${g.id}" is both a node and a group. Give the group another name.`, g.span);
+			dropped.add(g.id);
+			return false;
+		}
+		const hasChildGroup = doc.groups.some((c) => c.parent === g.id);
+		if (!g.members.length && !hasChildGroup) {
+			report("warning", "W-EMPTY-GROUP", `Group "${g.id}" has nothing in it.`, g.span);
+			dropped.add(g.id);
+			return false;
+		}
+		return true;
+	});
+	if (dropped.size) {
+		const parentOf = new Map(doc.groups.map((g) => [g.id, g.parent]));
+		for (const n of doc.nodes) if (n.group && dropped.has(n.group)) n.group = void 0;
+		for (const g of doc.groups) if (g.parent && dropped.has(g.parent)) g.parent = parentOf.get(g.parent);
+	}
+	const groupIds = new Set(doc.groups.map((g) => g.id));
+	const ids = () => [...nodeIndex.keys(), ...groupIds];
+	doc.annotations = doc.annotations.filter((a) => {
+		if (a.targetKind === "edge") {
+			const [from, to] = a.target.split("->");
+			let idx = doc.edges.findIndex((e) => e.from === from && e.to === to);
+			if (idx === -1) idx = doc.edges.findIndex((e) => e.from === to && e.to === from);
+			if (idx === -1) {
+				report("error", "E-UNKNOWN-TARGET", `There is no arrow between "${from}" and "${to}".`, a.span);
+				return false;
+			}
+			a.edgeIndex = idx;
+			if ((a.kind === "underline" || a.kind === "strike") && !doc.edges[idx].label) {
+				report("warning", "W-NO-LABEL", `That arrow has no label to ${a.kind}.`, a.span);
+				return false;
+			}
+			return true;
+		}
+		if (a.target.includes("&") && !nodeIndex.has(a.target)) {
+			const parts = a.target.split("&");
+			const bad = parts.find((x) => !doc.sets.includes(x));
+			if (bad === void 0 && new Set(parts).size === parts.length) {
+				a.targetKind = "region";
+				if (a.kind !== "highlight" && a.kind !== "circle") {
+					report("warning", "W-REGION-MARK", `Only  highlight  and  circle  work on an overlap such as "${a.target}".`, a.span);
+					return false;
+				}
+				return true;
+			}
+			const c = bad ? closest(bad, doc.sets) : void 0;
+			report("error", "E-UNKNOWN-SET", `"${a.target}" is not an overlap of declared sets.`, a.span, c ? `Did you mean "${c}"?` : void 0, bad ? wordFix(a.span, bad, c) : void 0);
+			return false;
+		}
+		if (groupIds.has(a.target) && !nodeIndex.has(a.target)) {
+			a.targetKind = "group";
+			return true;
+		}
+		const missing = (a.over ?? [a.target]).find((id) => !nodeIndex.has(id));
+		if (missing === void 0) return true;
+		const c = closest(missing, ids());
+		report("error", "E-UNKNOWN-TARGET", `There is no node called "${missing}".`, a.span, c ? `Did you mean "${c}"?` : void 0, wordFix(a.span, missing, c));
+		return false;
+	});
+	for (const s of doc.steps) {
+		for (const id of s.items.filter((x) => !nodeIndex.has(x) && !groupIds.has(x))) {
+			const c = closest(id, ids());
+			report("warning", "W-STEP-UNKNOWN", `Step ${s.index} names "${id}", which is not a node.`, s.span, c ? `Did you mean "${c}"?` : void 0, wordFix(s.span, id, c));
+		}
+		s.items = s.items.filter((id) => nodeIndex.has(id) || groupIds.has(id));
+	}
+	for (const r of doc.ranges) for (const id of [r.from, r.to]) if (!nodeIndex.has(id)) {
+		const c = closest(id, ids());
+		report("error", "E-UNKNOWN-TARGET", `There is no node called "${id}".`, r.span, c ? `Did you mean "${c}"?` : void 0, wordFix(r.span, id, c));
+	}
+	doc.ranges = doc.ranges.filter((r) => nodeIndex.has(r.from) && nodeIndex.has(r.to));
+	if (doc.root && !nodeIndex.has(doc.root)) {
+		report("error", "E-UNKNOWN-TARGET", `There is no node called "${doc.root}" to use as the root.`, {
+			line: 1,
+			from: 0,
+			to: 0
+		});
+		doc.root = void 0;
+	}
+	doc.activations = doc.activations.filter((a) => {
+		if (nodeIndex.has(a.id)) return true;
+		const c = closest(a.id, ids());
+		report("error", "E-UNKNOWN-TARGET", `There is no participant called "${a.id}".`, a.span, c ? `Did you mean "${c}"?` : void 0, wordFix(a.span, a.id, c));
+		return false;
+	});
+	if (doc.autoSteps && doc.steps.length) report("warning", "W-STEPS-IGNORED", "\"steps auto\" is ignored because this file also has step lines.", doc.steps[0].span);
+	doc.steps.sort((a, b) => a.index - b.index);
+	const defined = doc.nodes.filter((n) => !n.implicit && n.role === void 0 && !n.cell).map((n) => n.id);
+	const digitsOnly = (a, b) => a.replace(/\d+/g, "#") === b.replace(/\d+/g, "#");
+	for (const n of doc.nodes) {
+		if (!n.implicit || n.id.length < 4) continue;
+		const c = closest(n.id, defined);
+		if (!c || digitsOnly(c, n.id)) continue;
+		for (const e of doc.edges.filter((x) => x.from === n.id || x.to === n.id)) {
+			const fix = wordFix(e.span, n.id, c);
+			report("warning", "W-NEW-NAME", `"${n.id}" isn't defined, so it is drawn as a new box.`, fix?.span ?? e.span, `Did you mean "${c}"?`, fix);
+		}
+	}
+	const seen = /* @__PURE__ */ new Map();
+	doc.diagnostics.sort((a, b) => a.span.from - b.span.from);
+	doc.diagnostics = doc.diagnostics.filter((d) => {
+		if (!MERGED.has(d.code)) return true;
+		const key = `${d.code}\u0000${d.message}`;
+		const first = seen.get(key);
+		if (!first) {
+			seen.set(key, d);
+			return true;
+		}
+		if (first.span.from !== d.span.from) (first.related ??= []).push(d.span);
+		return false;
+	});
+	return doc;
+}
+// src/core/layouts/quadrant.ts
+/**
+* A 2×2 grid: two axes crossing in the middle, four named squares, and items
+* as dots. `at x,y` takes 0 to 1 with 0,0 at the bottom left; `in "Name"`
+* drops an item in a square. Only labels move to keep clear; dots never do.
+*/
+var quadrant = (doc) => {
+	const scene = emptyScene(doc, "quadrant", {
+		tilt: .6,
+		stickyTilt: 3,
+		jitterX: 0,
+		jitterY: 0
+	});
+	const { px, family, weight } = textMetrics(doc);
+	const items = inOrder(doc);
+	const { axis, ends } = doc.chart;
+	const W = 520;
+	const H = 440;
+	const x0 = 60;
+	const y0 = 50 + (axis.y ? measure(axis.y, px, family, weight).h + 8 : 0);
+	const xm = 320;
+	const ym = y0 + H / 2;
+	const P = (x, y) => [x0 + x * W, y0 + (1 - y) * H];
+	const axisStep = { step: 1 };
+	scene.decorations.push({
+		kind: "line",
+		points: [[54, ym], [590, ym]],
+		arrow: true,
+		width: 2,
+		owner: axisStep
+	});
+	scene.decorations.push({
+		kind: "line",
+		points: [[xm, y0 + H + 6], [xm, y0 - 10]],
+		arrow: true,
+		width: 2,
+		owner: axisStep
+	});
+	const small = px * .8;
+	const taken = [];
+	const text = (x, y, t, size, opts = {}) => {
+		const m = measure(t, size, family, opts.bold ? Math.min(700, weight + 200) : weight);
+		scene.decorations.push({
+			kind: "text",
+			x,
+			y,
+			text: t,
+			px: size,
+			bold: opts.bold,
+			anchor: opts.anchor,
+			color: opts.color,
+			owner: { step: opts.step ?? 1 }
+		});
+		const bx = opts.anchor === "start" ? x : x - m.w / 2;
+		taken.push({
+			x: bx - 4,
+			y: y - m.h / 2 - 2,
+			w: m.w + 8,
+			h: m.h + 4
+		});
+		return m;
+	};
+	if (axis.x) {
+		const m = measure(axis.x, px, family, weight);
+		text(580 - m.w / 2, ym + m.h / 2 + 12, axis.x, px, { bold: true });
+	}
+	if (axis.y) text(xm, y0 - 18 - measure(axis.y, px, family, weight).h / 2, axis.y, px, { bold: true });
+	if (ends.x) {
+		text(64, ym + 16, ends.x[0], small, {
+			anchor: "start",
+			color: "gray"
+		});
+		if (!axis.x) text(580 - measure(ends.x[1], small, family, weight).w / 2, ym + 16, ends.x[1], small, { color: "gray" });
+		else text(580 - measure(ends.x[1], small, family, weight).w / 2, ym - 16, ends.x[1], small, { color: "gray" });
+	}
+	if (ends.y) {
+		text(330, y0 + H - 6, ends.y[0], small, {
+			anchor: "start",
+			color: "gray"
+		});
+		text(330, y0 + 12, ends.y[1], small, {
+			anchor: "start",
+			color: "gray"
+		});
+	}
+	const dots = /* @__PURE__ */ new Map();
+	const inSquare = /* @__PURE__ */ new Map();
+	const unplaced = [];
+	for (const d of items) if (d.at) dots.set(d.id, P(d.at[0], d.at[1]));
+	else if (d.inside) {
+		const k = doc.quadrants.findIndex((q) => q === d.inside[0] || slug(q) === slug(d.inside[0]));
+		if (k >= 0) inSquare.set(k, [...inSquare.get(k) ?? [], d]);
+		else unplaced.push(d);
+	} else unplaced.push(d);
+	for (const [k, list] of inSquare) {
+		const qx = k % 2 === 0 ? 190 : 450;
+		const qy = k < 2 ? y0 + H / 4 : y0 + 3 * H / 4;
+		list.forEach((d, j) => {
+			const t = list.length === 1 ? 0 : j / (list.length - 1) - .5;
+			dots.set(d.id, [qx - 30 + j % 2 * 24, qy + 10 + t * (H / 2 - 90)]);
+		});
+	}
+	if (unplaced.length) warn(scene, "W-QUADRANT-UNPLACED", `${unplaced.map((d) => `"${d.id}"`).join(", ")} ${unplaced.length === 1 ? "has" : "have"} no place, so ${unplaced.length === 1 ? "it sits" : "they sit"} under the grid.`, "Add  at x,y  or  in \"Square\"");
+	let ux = x0;
+	let uy = y0 + H + 50;
+	let rowH = 0;
+	for (const d of unplaced) {
+		const sz = sizeDef(doc, {
+			...d,
+			shape: "text"
+		});
+		const w = sz.w + 40;
+		if (ux > x0 && ux + w > 580) {
+			ux = x0;
+			uy += rowH + 16;
+			rowH = 0;
+		}
+		rowH = Math.max(rowH, sz.h);
+		dots.set(d.id, [ux + 6, uy + sz.h / 2]);
+		ux += w;
+	}
+	const quadOf = (p) => (p[1] < ym ? 0 : 2) + (p[0] < xm ? 0 : 1);
+	const dotList = [...dots.values()];
+	doc.quadrants.forEach((q, k) => {
+		const size = px * 1.15;
+		const m = measure(q, size, family, weight);
+		const left = k % 2 === 0;
+		const sq0 = left ? x0 : xm;
+		const outer = left ? sq0 + 14 : sq0 + W / 2 - 14 - m.w;
+		const inner = left ? sq0 + W / 2 - 30 - m.w : sq0 + 30;
+		const xsTry = [
+			outer,
+			sq0 + W / 4 - m.w / 2,
+			inner
+		];
+		const y = k < 2 ? y0 + 22 : y0 + H - 22;
+		const clash = (x) => dotList.filter(([dx, dy]) => dx > x - 16 && dx < x + m.w + 16 && Math.abs(dy - y) < m.h / 2 + 14).length;
+		const x = xsTry.reduce((b, c) => clash(c) < clash(b) ? c : b);
+		text(x, y, q, size, {
+			anchor: "start",
+			color: "gray",
+			step: k + 2
+		});
+	});
+	const dotBoxes = [...dots.values()].map(([x, y]) => ({
+		x: x - 6,
+		y: y - 6,
+		w: 12,
+		h: 12
+	}));
+	const axisBoxes = [{
+		x: x0,
+		y: ym - 2,
+		w: W,
+		h: 4
+	}, {
+		x: 318,
+		y: y0,
+		w: 4,
+		h: H
+	}];
+	const step = /* @__PURE__ */ new Map();
+	for (const d of items) {
+		const p = dots.get(d.id);
+		const def = {
+			...d,
+			shape: "text"
+		};
+		const s = sizeDef(doc, def);
+		const spots = [
+			[p[0] + 12 + s.w / 2, p[1]],
+			[p[0] - 12 - s.w / 2, p[1]],
+			[p[0], p[1] - 8 - s.h / 2],
+			[p[0], p[1] + 8 + s.h / 2],
+			[p[0] + 12 + s.w / 2, p[1] - s.h / 2],
+			[p[0] - 12 - s.w / 2, p[1] + s.h / 2]
+		];
+		let best = spots[0];
+		let bestCost = Infinity;
+		spots.forEach((c, k) => {
+			const box = {
+				x: c[0] - s.w / 2 - 6,
+				y: c[1] - s.h / 2 - 2,
+				w: s.w + 12,
+				h: s.h + 4
+			};
+			const cost = k + [
+				...taken,
+				...dotBoxes,
+				...axisBoxes
+			].reduce((t, o) => t + overlapArea(box, o), 0);
+			if (cost < bestCost) {
+				bestCost = cost;
+				best = c;
+			}
+		});
+		placeNode(scene, doc, def, best[0], best[1], s);
+		taken.push({
+			x: best[0] - s.w / 2,
+			y: best[1] - s.h / 2,
+			w: s.w,
+			h: s.h
+		});
+		scene.decorations.push({
+			kind: "disc",
+			cx: p[0],
+			cy: p[1],
+			r: 5,
+			color: d.color,
+			solid: true,
+			owner: { node: d.id }
+		});
+		step.set(d.id, quadOf(p) + 2);
+	}
+	scene.autoSteps = { nodes: step };
+	fitScene(scene);
+	return scene;
+};
 // src/core/layouts/sequence.ts
 /**
 * Who talks to whom, in order. Participants are nodes, left to right as
 * written, each with a lifeline. Arrows are messages, top to bottom in source
 * order; notes sit at the row where they are written. `activate x` and
-* `deactivate x` draw a narrow box on x's lifeline.
+* `deactivate x` draw a narrow box on x's lifeline. Frames (`loop`, `opt`,
+* `alt` … `else`, `par` … `and`) box in the messages written inside them.
 */
 var sequence = (doc) => {
 	const scene = emptyScene(doc, "sequence", {
@@ -30070,8 +32827,28 @@ var sequence = (doc) => {
 				kind: "act",
 				i
 			}
-		}))
+		})),
+		...doc.frames.flatMap((f) => [...f.branches.map((br, b) => ({
+			order: br.order,
+			row: {
+				kind: "branch",
+				f,
+				b
+			}
+		})), {
+			order: f.end,
+			row: {
+				kind: "end",
+				f
+			}
+		}])
 	].sort((a, b) => a.order - b.order);
+	const tabPx = labelPx * .95;
+	const tabH = measure("Hg", tabPx, family, weight).h + 10;
+	const frameTop = /* @__PURE__ */ new Map();
+	const dividers = /* @__PURE__ */ new Map();
+	const spans = [];
+	const frameBoxes = [];
 	let y = 30 + headerH + 30;
 	const edgeStep = /* @__PURE__ */ new Map();
 	const markStep = /* @__PURE__ */ new Map();
@@ -30100,6 +32877,12 @@ var sequence = (doc) => {
 				sceneEdge.points = [[xs[a] + dir * 4, y], [xs[b] - dir * 8, y]];
 			}
 			sceneEdge.fixed = true;
+			const exs = sceneEdge.points.map((p) => p[0]);
+			spans.push({
+				order: e.order,
+				x0: Math.min(...exs),
+				x1: Math.max(...exs) + (a === b ? 8 : 0)
+			});
 			sceneEdge.bend = b >= a ? -20 : 20;
 			step++;
 			edgeStep.set(row.i, step);
@@ -30111,6 +32894,35 @@ var sequence = (doc) => {
 			const text = wrapText(a.text);
 			const m = measure(text, px * .86, family, weight);
 			y += 6;
+			if (a.over) {
+				const ks = a.over.map((id) => index.get(id) ?? k);
+				const lo = Math.min(...ks);
+				const hi = Math.max(...ks);
+				const cx = (xs[lo] + xs[hi]) / 2;
+				const w = Math.max(m.w + 24, xs[hi] - xs[lo] + 70);
+				const h = m.h + 14;
+				scene.labels.set(`note:${row.i}`, {
+					key: `note:${row.i}`,
+					text,
+					px: px * .86,
+					box: {
+						x: cx - w / 2,
+						y,
+						w,
+						h
+					},
+					card: true
+				});
+				spans.push({
+					order: a.order,
+					x0: cx - w / 2,
+					x1: cx + w / 2
+				});
+				markStep.set(row.i, step);
+				y += h + 14;
+				lastY = y;
+				continue;
+			}
 			scene.labels.set(`note:${row.i}`, {
 				key: `note:${row.i}`,
 				text,
@@ -30123,8 +32935,53 @@ var sequence = (doc) => {
 				},
 				anchor: [xs[k] + 5, y + m.h / 2]
 			});
+			spans.push({
+				order: a.order,
+				x0: xs[k],
+				x1: xs[k] + 30 + m.w
+			});
 			markStep.set(row.i, step);
 			y += m.h + 14;
+		} else if (row.kind === "branch") {
+			const { f, b } = row;
+			const label = f.branches[b].label;
+			if (b === 0) {
+				y += 10;
+				frameTop.set(f, y);
+				y += tabH + 4;
+			} else {
+				y += 12;
+				dividers.set(f, [...dividers.get(f) ?? [], {
+					y,
+					label,
+					order: f.branches[b].order
+				}]);
+				y += label ? measure(label, tabPx, family, weight).h + 6 : 6;
+			}
+		} else if (row.kind === "end") {
+			const f = row.f;
+			y += 12;
+			const inside = spans.filter((sp) => sp.order > f.order && sp.order < f.end);
+			const pad = 22;
+			let x0 = inside.length ? Math.min(...inside.map((sp) => sp.x0)) - pad : xs[0] - 60;
+			let x1 = inside.length ? Math.max(...inside.map((sp) => sp.x1)) + pad : xs[0] + 60;
+			const head = measure(f.kind, tabPx, family, Math.min(700, weight + 200)).w + 18;
+			const guard = f.branches[0].label ? measure(`[${f.branches[0].label}]`, tabPx, family, weight).w + 20 : 0;
+			if (x1 - x0 < head + guard + 24) x1 = x0 + head + guard + 24;
+			x0 = Math.max(8, x0);
+			frameBoxes.push({
+				f,
+				x0,
+				x1,
+				top: frameTop.get(f) ?? y - 30,
+				bottom: y
+			});
+			spans.push({
+				order: f.order,
+				x0,
+				x1
+			});
+			y += 8;
 		} else {
 			const act = doc.activations[row.i];
 			if (act.on) active.set(act.id, y);
@@ -30162,6 +33019,80 @@ var sequence = (doc) => {
 			},
 			fill: "rgba(127,127,127,0.18)",
 			owner: { node: id }
+		});
+	}
+	const firstEdgeIn = (from, to) => {
+		let best;
+		doc.edges.forEach((e, i) => {
+			if (e.order > from && e.order < to && (best === void 0 || e.order < doc.edges[best].order)) best = i;
+		});
+		return best === void 0 ? void 0 : { edge: best };
+	};
+	for (const { f, x0, x1, top, bottom } of frameBoxes) {
+		const owner = firstEdgeIn(f.order, f.end) ?? (people[0] ? { node: people[0].id } : void 0);
+		const head = measure(f.kind, tabPx, family, Math.min(700, weight + 200)).w + 18;
+		const ink = [
+			{
+				kind: "box",
+				box: {
+					x: x0,
+					y: top,
+					w: x1 - x0,
+					h: bottom - top
+				},
+				frame: true
+			},
+			{
+				kind: "line",
+				points: [
+					[x0, top + tabH],
+					[x0 + head, top + tabH],
+					[x0 + head + 9, top + tabH - 9],
+					[x0 + head + 9, top]
+				],
+				width: 1.4,
+				straight: true
+			},
+			{
+				kind: "text",
+				x: x0 + head / 2 + 1,
+				y: top + tabH / 2,
+				text: f.kind,
+				px: tabPx,
+				bold: true
+			}
+		];
+		if (f.branches[0].label) ink.push({
+			kind: "text",
+			x: x0 + head + 20,
+			y: top + tabH / 2,
+			text: `[${f.branches[0].label}]`,
+			px: tabPx,
+			anchor: "start"
+		});
+		for (const d of dividers.get(f) ?? []) {
+			const next = f.branches.find((br) => br.order > d.order)?.order ?? f.end;
+			const own = firstEdgeIn(d.order, next) ?? owner;
+			ink.push({
+				kind: "line",
+				points: [[x0, d.y], [x1, d.y]],
+				dashed: true,
+				width: 1.3,
+				owner: own
+			});
+			if (d.label) ink.push({
+				kind: "text",
+				x: x0 + 12,
+				y: d.y + measure(d.label, tabPx, family, weight).h / 2 + 5,
+				text: `[${d.label}]`,
+				px: tabPx,
+				anchor: "start",
+				owner: own
+			});
+		}
+		for (const d of ink) scene.decorations.push({
+			owner,
+			...d
 		});
 	}
 	people.forEach((d, k) => {
@@ -30273,7 +33204,7 @@ var stack = (doc) => {
 		cursor += (across ? w : h) + gap;
 	}
 	const right = 60 + layerW;
-	for (const r of doc.ranges.filter((x) => x.kind === "brace")) {
+	for (const r of doc.ranges) {
 		const a = scene.nodes.get(r.from);
 		const b = scene.nodes.get(r.to);
 		if (!a || !b) continue;
@@ -30338,6 +33269,84 @@ var stack = (doc) => {
 		for (const c of childrenOf(l.id)) scene.autoSteps.nodes.set(c.id, k + 1);
 	});
 	fitScene(scene);
+	return scene;
+};
+// src/core/layouts/state.ts
+/**
+* State machines. States are round boxes placed by the flow engine, ranked
+* from the start dots (`start x`) so the happy path reads in one direction.
+* `final x` adds a bullseye. Groups are composite states. Self-loops and
+* arrows both ways between two states are handled by the router.
+*/
+var state = (doc) => {
+	const styled = (d) => d.shape === "box" ? {
+		...d,
+		shape: "round"
+	} : d;
+	const nodes = doc.nodes.map(styled);
+	const scene = flow({
+		...doc,
+		nodes
+	});
+	scene.layout = "state";
+	scene.humanise = {
+		tilt: 2.4,
+		stickyTilt: 6,
+		jitterX: 10,
+		jitterY: 8
+	};
+	scene.defs = new Map(nodes.filter((n, k) => n !== doc.nodes[k]).map((n) => [n.id, n]));
+	const starts = doc.nodes.filter((n) => n.shape === "dot").map((n) => n.id);
+	const states = doc.nodes.filter((n) => n.shape !== "dot" && n.shape !== "bullseye");
+	const out = /* @__PURE__ */ new Map();
+	doc.edges.forEach((e, i) => out.set(e.from, [...out.get(e.from) ?? [], i]));
+	const warn = (code, message, hint, span = {
+		line: 1,
+		from: 0,
+		to: 0
+	}) => scene.warnings.push({
+		code,
+		severity: "warning",
+		message,
+		hint,
+		span
+	});
+	let roots = starts;
+	if (!starts.length && states.length) {
+		warn("W-STATE-NO-START", "This state machine has no start.", `Add  start ${states[0].id}  to mark where it begins.`);
+		roots = [[...states].sort((a, b) => a.order - b.order)[0].id];
+	}
+	const nodeStep = /* @__PURE__ */ new Map();
+	const edgeStep = /* @__PURE__ */ new Map();
+	let step = 1;
+	let frontier = roots;
+	for (const r of roots) nodeStep.set(r, 1);
+	while (frontier.length) {
+		const next = [];
+		for (const id of frontier) for (const i of out.get(id) ?? []) {
+			const to = doc.edges[i].to;
+			if (!nodeStep.has(to)) {
+				nodeStep.set(to, ++step);
+				next.push(to);
+			}
+			edgeStep.set(i, nodeStep.get(to));
+		}
+		frontier = next;
+	}
+	for (const s of starts) {
+		const first = (out.get(s) ?? []).map((i) => doc.edges[i].to)[0];
+		if (first && nodeStep.has(first)) nodeStep.set(s, nodeStep.get(first));
+	}
+	const unreachable = states.filter((n) => !nodeStep.has(n.id));
+	if (unreachable.length && (starts.length || roots.length)) warn("W-STATE-UNREACHABLE", `Nothing leads to ${unreachable.map((n) => `"${n.id}"`).join(", ")} from the start.`, "Add an arrow into it, or another start line.", unreachable[0].span);
+	for (const n of doc.nodes) if (!nodeStep.has(n.id)) nodeStep.set(n.id, ++step);
+	doc.edges.forEach((e, i) => {
+		if (!edgeStep.has(i)) edgeStep.set(i, Math.max(nodeStep.get(e.from), nodeStep.get(e.to)));
+	});
+	scene.autoSteps = {
+		nodes: nodeStep,
+		edges: edgeStep
+	};
 	return scene;
 };
 // src/core/layouts/timeline.ts
@@ -30468,7 +33477,7 @@ var timeline = (doc) => {
 		});
 	}
 	const far = axis + reach + maxAcross + 30;
-	doc.ranges.filter((r) => r.kind === "span").forEach((r, j) => {
+	doc.ranges.forEach((r, j) => {
 		const ka = events.findIndex((e) => e.id === r.from);
 		const kb = events.findIndex((e) => e.id === r.to);
 		if (ka < 0 || kb < 0) return;
@@ -30510,6 +33519,446 @@ var timeline = (doc) => {
 	fitScene(scene);
 	return scene;
 };
+// src/core/layouts/tree.ts
+/**
+* A hierarchy drawn the formal way: org charts, taxonomies, file trees. The
+* tree comes from outline bullets, or from arrows; nodes with no parent are
+* roots, and several roots make a forest side by side. Every level keeps the
+* same shape. `direction down` (default) puts children below their parent,
+* `direction right` beside it. `branches elbow` (default) draws org-chart
+* connectors; `branches straight` draws direct lines.
+*/
+var tree = (doc) => {
+	const scene = emptyScene(doc, "tree", {
+		tilt: 1.2,
+		stickyTilt: 4,
+		jitterX: 0,
+		jitterY: 0
+	});
+	const nodes = inOrder(doc);
+	const right = doc.direction === "right" && doc.directionSet === true;
+	const parentOf = /* @__PURE__ */ new Map();
+	if (nodes.some((n) => n.bullet)) {
+		for (const n of nodes) if (n.bullet?.parent) parentOf.set(n.id, n.bullet.parent);
+	} else for (const e of doc.edges) if (!parentOf.has(e.to) && e.to !== e.from) parentOf.set(e.to, e.from);
+	for (const n of nodes) {
+		const seen = /* @__PURE__ */ new Set([n.id]);
+		let cur = parentOf.get(n.id);
+		while (cur !== void 0) {
+			if (seen.has(cur)) {
+				const p = parentOf.get(n.id);
+				parentOf.delete(n.id);
+				const edge = doc.edges.find((e) => e.from === p && e.to === n.id);
+				scene.warnings.push({
+					code: "E-TREE-CYCLE",
+					severity: "error",
+					message: `A tree can't loop back: "${n.id}" is above "${p}" and below it.`,
+					hint: "Use  layout flow  or  layout state  for diagrams with loops.",
+					span: edge?.span ?? n.span
+				});
+				break;
+			}
+			seen.add(cur);
+			cur = parentOf.get(cur);
+		}
+	}
+	const kids = /* @__PURE__ */ new Map();
+	for (const n of nodes) {
+		const p = parentOf.get(n.id);
+		if (p !== void 0) kids.set(p, [...kids.get(p) ?? [], n]);
+	}
+	const children = (id) => kids.get(id) ?? [];
+	const roots = nodes.filter((n) => !parentOf.has(n.id));
+	const branchEdge = /* @__PURE__ */ new Set();
+	for (const e of scene.edges) {
+		if (parentOf.get(e.def.to) !== e.def.from) continue;
+		if (e.def.label || e.def.kind !== "solid" || e.def.both) e.style = "arrow";
+		else {
+			e.style = "hidden";
+			branchEdge.add(e.index);
+		}
+	}
+	const level = /* @__PURE__ */ new Map();
+	const walk = (id, l) => {
+		level.set(id, l);
+		for (const c of children(id)) walk(c.id, l + 1);
+	};
+	for (const r of roots) walk(r.id, 0);
+	const defs = new Map(nodes.map((n) => [n.id, n]));
+	const size = new Map(nodes.map((n) => [n.id, sizeDef(doc, n)]));
+	const deep = (id) => right ? size.get(id).w : size.get(id).h;
+	const across = (id) => right ? size.get(id).h : size.get(id).w;
+	const levels = Math.max(0, ...level.values()) + 1;
+	const levelSize = Array.from({ length: levels }, () => 0);
+	for (const [id, l] of level) levelSize[l] = Math.max(levelSize[l], deep(id));
+	const gapAcross = right ? 14 : 28;
+	const gapDeep = right ? 56 : 62;
+	const levelPos = [];
+	let pos = 0;
+	for (let l = 0; l < levels; l++) {
+		levelPos.push(pos + levelSize[l] / 2);
+		pos += levelSize[l] + gapDeep;
+	}
+	const memo = /* @__PURE__ */ new Map();
+	const extent = (id) => {
+		const hit = memo.get(id);
+		if (hit !== void 0) return hit;
+		const cs = children(id);
+		const sum = cs.reduce((t, c) => t + extent(c.id), 0) + Math.max(0, cs.length - 1) * gapAcross;
+		const v = Math.max(across(id), sum);
+		memo.set(id, v);
+		return v;
+	};
+	const centre = /* @__PURE__ */ new Map();
+	const place = (id, start) => {
+		const cs = children(id);
+		const total = cs.reduce((t, c) => t + extent(c.id), 0) + Math.max(0, cs.length - 1) * gapAcross;
+		let cursor = start + (extent(id) - total) / 2;
+		for (const c of cs) {
+			place(c.id, cursor);
+			cursor += extent(c.id) + gapAcross;
+		}
+		const a = cs.length ? (centre.get(cs[0].id)[right ? 1 : 0] + centre.get(cs[cs.length - 1].id)[right ? 1 : 0]) / 2 : start + extent(id) / 2;
+		const d = levelPos[level.get(id)];
+		centre.set(id, right ? [d, a] : [a, d]);
+	};
+	let start = 0;
+	for (const r of roots) {
+		place(r.id, start);
+		start += extent(r.id) + gapAcross * 2.5;
+	}
+	const margin = 40;
+	let minX = Infinity;
+	let minY = Infinity;
+	for (const [id, [x, y]] of centre) {
+		minX = Math.min(minX, x - size.get(id).w / 2);
+		minY = Math.min(minY, y - size.get(id).h / 2);
+	}
+	for (const [id, [x, y]] of centre) placeNode(scene, doc, defs.get(id), x + margin - minX, y + margin - minY, size.get(id));
+	for (const p of nodes) {
+		const cs = children(p.id).filter((c) => {
+			const e = scene.edges.find((x) => x.def.from === p.id && x.def.to === c.id);
+			return !e || branchEdge.has(e.index);
+		});
+		const a = scene.nodes.get(p.id);
+		if (!a || !cs.length) continue;
+		const out = right ? [a.cx + a.w / 2, a.cy] : [a.cx, a.cy + a.h / 2];
+		const ends = cs.map((c) => {
+			const b = scene.nodes.get(c.id);
+			return {
+				id: c.id,
+				end: right ? [b.cx - b.w / 2, b.cy] : [b.cx, b.cy - b.h / 2]
+			};
+		});
+		if (doc.branches === "straight") {
+			for (const { id, end } of ends) scene.decorations.push({
+				kind: "line",
+				points: [out, end],
+				width: 1.7,
+				owner: { node: id }
+			});
+			continue;
+		}
+		const k = right ? 0 : 1;
+		const bus = (out[k] + Math.min(...ends.map((e) => e.end[k]))) / 2;
+		const at = (along, depth) => right ? [depth, along] : [along, depth];
+		const j = right ? 1 : 0;
+		const trunk = at(out[j], bus);
+		scene.decorations.push({
+			kind: "line",
+			points: [out, trunk],
+			width: 1.7,
+			straight: true,
+			owner: { node: ends[0].id }
+		});
+		const sorted = [...ends].sort((x, y) => x.end[j] - y.end[j]);
+		for (let i = 0; i < sorted.length; i++) {
+			const { id, end } = sorted[i];
+			let from = out[j];
+			if (end[j] < out[j] && i + 1 < sorted.length && sorted[i + 1].end[j] < out[j]) from = sorted[i + 1].end[j];
+			if (end[j] > out[j] && i > 0 && sorted[i - 1].end[j] > out[j]) from = sorted[i - 1].end[j];
+			const pts = Math.abs(end[j] - from) < .5 ? [at(end[j], bus), end] : [
+				at(from, bus),
+				at(end[j], bus),
+				end
+			];
+			scene.decorations.push({
+				kind: "line",
+				points: pts,
+				width: 1.7,
+				straight: true,
+				owner: { node: id }
+			});
+		}
+	}
+	for (const e of scene.edges) {
+		if (e.style === "hidden" || parentOf.get(e.def.to) === e.def.from) continue;
+		const a = scene.nodes.get(e.def.from);
+		const b = scene.nodes.get(e.def.to);
+		if (!a || !b || a === b || level.get(e.def.from) !== level.get(e.def.to)) continue;
+		e.route = right ? [[Math.max(a.cx + a.w / 2, b.cx + b.w / 2) + 34, (a.cy + b.cy) / 2]] : [[(a.cx + b.cx) / 2, Math.max(a.cy + a.h / 2, b.cy + b.h / 2) + 34]];
+	}
+	scene.autoSteps = { nodes: new Map([...level].map(([id, l]) => [id, l + 1])) };
+	fitScene(scene);
+	return scene;
+};
+// src/core/layouts/venn.ts
+var INKS = [
+	"blue",
+	"orange",
+	"green"
+];
+var FILLS = [
+	"blue",
+	"orange",
+	"green"
+];
+/** Which circles a point is in, as a bit mask. */
+var membership = (p, cs) => cs.reduce((m, c, k) => Math.hypot(p[0] - c.cx, p[1] - c.cy) < c.r ? m | 1 << k : m, 0);
+/** How far a point is from the nearest circle edge. */
+var clearance = (p, cs) => Math.min(...cs.map((c) => Math.abs(Math.hypot(p[0] - c.cx, p[1] - c.cy) - c.r)));
+/** Circles for two or three sets with radius r, centres a radius apart. */
+function arrange(n, r) {
+	const d = r * (n === 3 ? 1.05 : 1.1);
+	if (n === 1) return [{
+		cx: r,
+		cy: r,
+		r
+	}];
+	if (n === 2) return [{
+		cx: r,
+		cy: r,
+		r
+	}, {
+		cx: r + d,
+		cy: r,
+		r
+	}];
+	return [
+		{
+			cx: r,
+			cy: r,
+			r
+		},
+		{
+			cx: r + d,
+			cy: r,
+			r
+		},
+		{
+			cx: r + d / 2,
+			cy: r + d * .866,
+			r
+		}
+	];
+}
+/** Is a w×h box centred on p wholly inside region `mask`? */
+function fits(p, w, h, mask, cs) {
+	for (const fx of [
+		-.5,
+		-.25,
+		0,
+		.25,
+		.5
+	]) for (const fy of [
+		-.5,
+		0,
+		.5
+	]) if (membership([p[0] + fx * w, p[1] + fy * h], cs) !== mask) return false;
+	return true;
+}
+/** The point in a region farthest from any circle edge, found on a grid. */
+function pole(mask, cs) {
+	const minX = Math.min(...cs.map((c) => c.cx - c.r));
+	const maxX = Math.max(...cs.map((c) => c.cx + c.r));
+	const minY = Math.min(...cs.map((c) => c.cy - c.r));
+	const maxY = Math.max(...cs.map((c) => c.cy + c.r));
+	const step = (maxX - minX) / 60;
+	let best;
+	let bestC = -1;
+	for (let x = minX; x <= maxX; x += step) for (let y = minY; y <= maxY; y += step) {
+		if (membership([x, y], cs) !== mask) continue;
+		const c = clearance([x, y], cs);
+		if (c > bestC + .01) {
+			bestC = c;
+			best = [x, y];
+		}
+	}
+	return best;
+}
+/**
+* Overlapping sets. `set a "Label"` declares a circle (two or three of them);
+* items say where they belong with `in a & b`. Items with no `in` sit outside
+* every circle. The radius grows until every region holds its items.
+*/
+var venn = (doc) => {
+	const scene = emptyScene(doc, "venn", {
+		tilt: .8,
+		stickyTilt: 3,
+		jitterX: 0,
+		jitterY: 0
+	});
+	const sets = doc.sets;
+	if (sets.length < 2) warn(scene, "W-VENN-SETS", sets.length ? "A venn diagram needs at least two sets." : "This venn diagram has no sets.", "Add  set a \"A\"  and  set b \"B\"");
+	const n = Math.max(1, Math.min(3, sets.length));
+	const setNodes = sets.map((id) => doc.nodes.find((d) => d.id === id));
+	const items = inOrder(doc).filter((d) => d.role !== "set");
+	const maskOf = (d) => (d.inside ?? []).reduce((m, id) => sets.indexOf(id) >= 0 && sets.indexOf(id) < 3 ? m | 1 << sets.indexOf(id) : m, 0);
+	const styled = new Map(items.map((d) => [d.id, {
+		...d,
+		shape: "text"
+	}]));
+	const size = new Map(items.map((d) => [d.id, sizeDef(doc, styled.get(d.id))]));
+	const byMask = /* @__PURE__ */ new Map();
+	for (const d of items) byMask.set(maskOf(d), [...byMask.get(maskOf(d)) ?? [], d]);
+	const block = (mask) => {
+		const list = byMask.get(mask) ?? [];
+		return {
+			w: Math.max(54, ...list.map((d) => size.get(d.id).w)),
+			h: Math.max(30, list.reduce((t, d) => t + size.get(d.id).h, 0))
+		};
+	};
+	const masks = Array.from({ length: (1 << n) - 1 }, (_, k) => k + 1);
+	let r = 110;
+	let circles = arrange(n, r);
+	let poles = /* @__PURE__ */ new Map();
+	for (let tries = 0; tries < 16; tries++) {
+		circles = arrange(n, r);
+		poles = new Map(masks.map((m) => [m, pole(m, circles)]));
+		if (masks.every((m) => poles.get(m) && fits(poles.get(m), block(m).w + 8, block(m).h + 6, m, circles))) break;
+		if (tries === 15) warn(scene, "W-VENN-CROWDED", "Some regions are too full for their items to fit inside.", "Shorten the items, or move some out.");
+		r *= 1.12;
+	}
+	const nameSize = setNodes.map((d) => sizeDef(doc, {
+		...d,
+		size: "large"
+	}));
+	const ox = 40 + Math.max(0, ...nameSize.map((s) => s.w)) * .5;
+	const oy = 40 + Math.max(0, ...nameSize.map((s) => s.h)) + 10;
+	circles = circles.map((c) => ({
+		...c,
+		cx: c.cx + ox,
+		cy: c.cy + oy
+	}));
+	for (const [m, p] of poles) poles.set(m, [p[0] + ox, p[1] + oy]);
+	const mid = [circles.reduce((t, c) => t + c.cx, 0) / circles.length, circles.reduce((t, c) => t + c.cy, 0) / circles.length];
+	const step = /* @__PURE__ */ new Map();
+	circles.forEach((c, k) => {
+		const id = sets[k];
+		if (!id) return;
+		const def = setNodes[k];
+		const color = def.color ?? INKS[k];
+		scene.decorations.push({
+			kind: "disc",
+			cx: c.cx,
+			cy: c.cy,
+			r: c.r,
+			color,
+			fill: def.fill ?? FILLS[k],
+			owner: { node: id }
+		});
+		let dx = c.cx - mid[0];
+		let dy = c.cy - mid[1] - (n === 2 ? c.r * .9 : 0);
+		const len = Math.hypot(dx, dy) || 1;
+		dx /= len;
+		dy /= len;
+		const s = nameSize[k];
+		const at = [c.cx + dx * (c.r + 6), c.cy + dy * (c.r + 6)];
+		placeNode(scene, doc, {
+			...def,
+			color,
+			size: "large"
+		}, at[0] + dx * s.w / 2, at[1] + dy * s.h / 2, s);
+		step.set(id, 1);
+	});
+	const right = Math.max(...circles.map((c) => c.cx + c.r));
+	for (const [mask, list] of byMask) {
+		const b = block(mask);
+		const p = mask === 0 ? [right + 40 + b.w / 2, Math.max(...circles.map((c) => c.cy + c.r)) - b.h / 2] : poles.get(mask) ?? mid;
+		let y = p[1] - b.h / 2;
+		for (const d of list) {
+			const s = size.get(d.id);
+			placeNode(scene, doc, styled.get(d.id), p[0], y + s.h / 2, s);
+			y += s.h;
+		}
+	}
+	if (byMask.has(0)) {
+		const all = [...scene.nodes.values()];
+		const fx = Math.min(...circles.map((c) => c.cx - c.r), ...all.map((x) => x.cx - x.w / 2)) - 20;
+		const fy = Math.min(...circles.map((c) => c.cy - c.r), ...all.map((x) => x.cy - x.h / 2)) - 16;
+		const fr = Math.max(...circles.map((c) => c.cx + c.r), ...all.map((x) => x.cx + x.w / 2)) + 20;
+		const fb = Math.max(...circles.map((c) => c.cy + c.r), ...all.map((x) => x.cy + x.h / 2)) + 16;
+		scene.decorations.unshift({
+			kind: "box",
+			box: {
+				x: fx,
+				y: fy,
+				w: fr - fx,
+				h: fb - fy
+			},
+			frame: true
+		});
+	}
+	const order = [...masks].sort((a, b) => bits(a) - bits(b) || (byMask.get(b)?.length ?? 0) - (byMask.get(a)?.length ?? 0) || a - b);
+	const stepOfMask = /* @__PURE__ */ new Map();
+	order.forEach((m) => {
+		if (bits(m) === 1) stepOfMask.set(m, Math.log2(m) + 1);
+	});
+	let next = n + 1;
+	for (const m of order) if (!stepOfMask.has(m)) stepOfMask.set(m, next++);
+	stepOfMask.set(0, next);
+	sets.forEach((id, k) => step.set(id, k + 1));
+	for (const d of items) step.set(d.id, stepOfMask.get(maskOf(d)) ?? next);
+	scene.autoSteps = { nodes: step };
+	regionMarks(doc, scene, circles, poles, stepOfMask, byMask);
+	fitScene(scene);
+	return scene;
+};
+var bits = (m) => (m & 1) + (m >> 1 & 1) + (m >> 2 & 1);
+/** `highlight a&b` hatches that overlap; `circle a&b` rings it. */
+function regionMarks(doc, scene, circles, poles, stepOfMask, byMask) {
+	doc.annotations.forEach((a) => {
+		if (a.targetKind !== "region") return;
+		const mask = a.target.split("&").reduce((m, id) => m | 1 << doc.sets.indexOf(id), 0);
+		const p = poles.get(mask);
+		if (!p) return;
+		const owner = { step: a.at ?? stepOfMask.get(mask) };
+		if (a.kind === "highlight") scene.decorations.push({
+			kind: "region",
+			in: circles.filter((_, k) => mask & 1 << k),
+			out: circles.filter((_, k) => !(mask & 1 << k)),
+			fill: a.color ?? "yellow",
+			owner
+		});
+		else if (a.kind === "circle") {
+			const items = (byMask.get(mask) ?? []).map((d) => scene.nodes.get(d.id)).filter(Boolean);
+			const box = items.length ? {
+				x: Math.min(...items.map((x) => x.cx - x.w / 2)),
+				y: Math.min(...items.map((x) => x.cy - x.h / 2)),
+				w: 0,
+				h: 0
+			} : {
+				x: p[0] - 30,
+				y: p[1] - 20,
+				w: 60,
+				h: 40
+			};
+			if (items.length) {
+				box.w = Math.max(...items.map((x) => x.cx + x.w / 2)) - box.x;
+				box.h = Math.max(...items.map((x) => x.cy + x.h / 2)) - box.y;
+			}
+			scene.decorations.push({
+				kind: "ring",
+				cx: box.x + box.w / 2,
+				cy: box.y + box.h / 2,
+				rx: box.w / 2 + 16,
+				ry: box.h / 2 + 12,
+				color: "mark",
+				owner
+			});
+		}
+	});
+}
 // src/core/layouts/index.ts
 /** Every layout by name. New layouts register here. */
 var LAYOUTS = {
@@ -30520,7 +33969,12 @@ var LAYOUTS = {
 	timeline,
 	compare,
 	mindmap,
-	sequence
+	sequence,
+	chart,
+	tree,
+	state,
+	venn,
+	quadrant
 };
 /**
 * Everything before ink: place (the layout), humanise, frame groups, make
@@ -30536,1151 +33990,6 @@ function layout(doc) {
 	routeEdges(scene, doc, rand);
 	placeLabels(scene, doc);
 	return scene;
-}
-// src/core/syntax/suggest.ts
-/** "Did you mean" suggestions by edit distance. */
-function distance(a, b) {
-	const m = a.length;
-	const n = b.length;
-	const row = Array.from({ length: n + 1 }, (_, j) => j);
-	for (let i = 1; i <= m; i++) {
-		let prev = row[0];
-		row[0] = i;
-		for (let j = 1; j <= n; j++) {
-			const tmp = row[j];
-			row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
-			prev = tmp;
-		}
-	}
-	return row[n];
-}
-/** The closest candidate, if it is close enough to be a likely typo. */
-function closest(word, candidates) {
-	const w = word.toLowerCase();
-	let best;
-	let bestD = Infinity;
-	for (const c of candidates) {
-		const d = distance(w, c.toLowerCase());
-		if (d < bestD) {
-			bestD = d;
-			best = c;
-		}
-	}
-	const limit = w.length <= 3 ? 1 : w.length <= 6 ? 2 : 3;
-	return bestD > 0 && bestD <= limit ? best : void 0;
-}
-function didYouMean(word, candidates) {
-	const c = closest(word, candidates);
-	return c ? `Did you mean "${c}"?` : void 0;
-}
-// src/core/syntax/tokens.ts
-var ARROWS = [
-	"<~>",
-	"<->",
-	"-->",
-	"->",
-	"~>"
-];
-var IDENT = /^[A-Za-z_][\w]*(?:-[\w]+)*/;
-var NUMBER = /^\d+(?:\.\d+)?(?![A-Za-z_])/;
-var WORD = /^(?:[^\s:,="{}@.]|\.(?!\.))+/;
-function unescape(s) {
-	return s.replace(/\\(.)/g, (_, c) => c === "n" ? "\n" : c);
-}
-/** Tokenizes one line. `offset` is where the line starts in the whole source. */
-function tokenizeLine(text, line, offset = 0) {
-	const out = [];
-	let i = 0;
-	const push = (type, start, end, value, error) => {
-		const raw = text.slice(start, end);
-		out.push({
-			type,
-			text: raw,
-			value: value ?? raw,
-			from: offset + start,
-			to: offset + end,
-			line,
-			error
-		});
-	};
-	const firstNonSpace = text.search(/\S/);
-	while (i < text.length) {
-		const c = text[i];
-		if (c === " " || c === "	" || c === "\r") {
-			i++;
-			continue;
-		}
-		if (c === "#" && (i === 0 || /\s/.test(text[i - 1]))) {
-			push("comment", i, text.length);
-			break;
-		}
-		if (c === "\"") {
-			let j = i + 1;
-			while (j < text.length && text[j] !== "\"") j += text[j] === "\\" ? 2 : 1;
-			if (j >= text.length) {
-				push("string", i, text.length, unescape(text.slice(i + 1)), "This text is missing its closing quote.");
-				break;
-			}
-			push("string", i, j + 1, unescape(text.slice(i + 1, j)));
-			i = j + 1;
-			continue;
-		}
-		if (text.startsWith("..", i)) {
-			push("dots", i, i + 2);
-			i += 2;
-			continue;
-		}
-		const arrow = ARROWS.find((a) => text.startsWith(a, i));
-		if (arrow) {
-			push("arrow", i, i + arrow.length);
-			i += arrow.length;
-			continue;
-		}
-		if (c === "-" && i === firstNonSpace && /\s/.test(text[i + 1] ?? "")) {
-			push("bullet", i, i + 1);
-			i++;
-			continue;
-		}
-		const single = {
-			":": "colon",
-			",": "comma",
-			"=": "equals",
-			"{": "lbrace",
-			"}": "rbrace"
-		};
-		if (single[c]) {
-			push(single[c], i, i + 1);
-			i++;
-			continue;
-		}
-		const rest = text.slice(i);
-		let m;
-		if (c === "@" && (m = rest.match(/^@(\d+)/))) {
-			push("at", i, i + m[0].length, m[1]);
-			i += m[0].length;
-			continue;
-		}
-		if (m = rest.match(NUMBER)) {
-			push("number", i, i + m[0].length);
-			i += m[0].length;
-			continue;
-		}
-		if (m = rest.match(IDENT)) {
-			push("ident", i, i + m[0].length);
-			i += m[0].length;
-			continue;
-		}
-		m = rest.match(WORD);
-		const len = m ? m[0].length : 1;
-		push("word", i, i + len);
-		i += len;
-	}
-	return out;
-}
-/** Tokenizes a whole source, one token list per line. */
-function tokenize(source) {
-	const lines = source.split("\n");
-	const out = [];
-	let offset = 0;
-	lines.forEach((text, i) => {
-		out.push(tokenizeLine(text, i + 1, offset));
-		offset += text.length + 1;
-	});
-	return out;
-}
-// src/core/syntax/parser.ts
-var SHAPES = [
-	"box",
-	"round",
-	"circle",
-	"diamond",
-	"cloud",
-	"db",
-	"sticky",
-	"person",
-	"icon",
-	"text"
-];
-var SHAPE_ALIASES = {
-	rect: "box",
-	rectangle: "box",
-	square: "box",
-	pill: "round",
-	oval: "circle",
-	ellipse: "circle",
-	decision: "diamond",
-	database: "db",
-	cylinder: "db",
-	note: "sticky",
-	stick: "person",
-	user: "person",
-	label: "text"
-};
-var MARKS = [
-	"circle",
-	"underline",
-	"strike",
-	"highlight",
-	"note",
-	"cross",
-	"check"
-];
-var SETTINGS = [
-	"title",
-	"layout",
-	"direction",
-	"paper",
-	"pen",
-	"hand",
-	"mess",
-	"seed",
-	"steps",
-	"inkling",
-	"root",
-	"center",
-	"footer",
-	"colors",
-	"gap"
-];
-var KEYWORDS = [
-	...SETTINGS,
-	"step",
-	"group",
-	"cycle",
-	"columns",
-	"row",
-	"span",
-	"brace",
-	"activate",
-	"deactivate",
-	...MARKS
-];
-/** Options written as key=value, and which statements take them. */
-var NODE_OPTIONS = [
-	"color",
-	"fill",
-	"pen",
-	"size",
-	"icon",
-	"gap"
-];
-var EDGE_OPTIONS = ["color", "pen"];
-var isId = (t) => !!t && (t.type === "ident" || t.type === "string");
-/** Names that marks and steps may point at: also numbers (timeline dates). */
-var isRef = (t) => isId(t) || t?.type === "number";
-/** A slug for ids made from text: lower case, words joined by hyphens. */
-var slug = (text) => text.toLowerCase().replace(/\n/g, " ").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "") || "item";
-var humanize = (id) => id.replace(/[-_]+/g, " ");
-var shapeNames = [...SHAPES, ...Object.keys(SHAPE_ALIASES)];
-/** Parses Inkling source. Never throws: problems become diagnostics and the line is skipped. */
-function parse(source) {
-	const doc = {
-		...DEFAULTS,
-		nodes: [],
-		edges: [],
-		annotations: [],
-		steps: [],
-		groups: [],
-		autoSteps: false,
-		columns: [],
-		rows: [],
-		ranges: [],
-		colors: false,
-		activations: [],
-		footer: true,
-		diagnostics: []
-	};
-	const nodeIndex = /* @__PURE__ */ new Map();
-	const groupIndex = /* @__PURE__ */ new Map();
-	const groupStack = [];
-	const lines = source.split("\n");
-	let order = 0;
-	const report = (severity, code, message, span, hint, fix) => doc.diagnostics.push({
-		code,
-		severity,
-		message,
-		span,
-		hint,
-		fix: fix !== void 0 ? {
-			span,
-			text: fix
-		} : void 0
-	});
-	const tokSpan = (t) => ({
-		line: t.line,
-		from: t.from,
-		to: t.to
-	});
-	const suggest = (t, candidates) => {
-		const c = closest(t.value, candidates);
-		return c ? {
-			hint: `Did you mean "${c}"?`,
-			fix: c
-		} : {
-			hint: void 0,
-			fix: void 0
-		};
-	};
-	const currentGroup = () => groupStack[groupStack.length - 1]?.group;
-	/** Outline bullets, turned into nodes once the layout is known. */
-	const bullets = [];
-	/** Compare rows as written, turned into nodes at the end. */
-	const rowDefs = [];
-	const columnDefs = [];
-	/** Puts a node in a group. Implicit joins never move a node out of a group it already has. */
-	const joinGroup = (id, group, explicit) => {
-		if (!group) return;
-		const node = doc.nodes[nodeIndex.get(id)];
-		if (node.group && node.group !== group.id && !explicit) return;
-		if (node.group && node.group !== group.id) {
-			const old = groupIndex.get(node.group);
-			if (old) old.members = old.members.filter((m) => m !== id);
-		}
-		node.group = group.id;
-		if (!group.members.includes(id)) group.members.push(id);
-	};
-	const ensureNode = (id, span, line) => {
-		if (nodeIndex.has(id)) return;
-		nodeIndex.set(id, doc.nodes.length);
-		doc.nodes.push({
-			id,
-			shape: "box",
-			label: humanize(id),
-			line,
-			span,
-			order,
-			implicit: true
-		});
-		joinGroup(id, currentGroup(), false);
-	};
-	tokenize(source).forEach((all, i) => {
-		const lineNo = i + 1;
-		const text = lines[i];
-		const comment = all.find((t) => t.type === "comment");
-		const toks = all.filter((t) => t.type !== "comment");
-		if (!toks.length) return;
-		const span = {
-			line: lineNo,
-			from: toks[0].from,
-			to: toks[toks.length - 1].to
-		};
-		const err = (code, message, at = span, hint, fix) => report("error", code, message, at, hint, fix);
-		const warn = (code, message, at = span, hint) => report("warning", code, message, at, hint);
-		const broken = toks.find((t) => t.error);
-		if (broken) {
-			err("E-UNCLOSED-STRING", broken.error, tokSpan(broken), "Add a \" at the end of the text.");
-			return;
-		}
-		const lineOffset = toks[0].from - text.search(/\S/);
-		/** Raw text after token `t` up to the end of the line (before any comment). */
-		const restAfter = (t) => text.slice(t.to - lineOffset, comment ? comment.from - lineOffset : text.length).trim();
-		const unquote = (s) => {
-			const t = s.trim();
-			return (t.length >= 2 && t.startsWith("\"") && t.endsWith("\"") ? t.slice(1, -1) : t).replace(/\\(.)/g, (_, c) => c === "n" ? "\n" : c);
-		};
-		/** Reads `key=value` options from the end of a token list, or reports a problem and returns null. */
-		const takeOptions = (list, allowed) => {
-			const opts = {};
-			let end = list.length;
-			while (end >= 3 && list[end - 2].type === "equals") {
-				const key = list[end - 3];
-				const value = list[end - 1];
-				if (key.type !== "ident") break;
-				if (!allowed.includes(key.value)) {
-					const s = suggest(key, allowed);
-					err("E-UNKNOWN-OPTION", `There is no "${key.value}" option here.`, tokSpan(key), s.hint ?? `Options: ${allowed.join(", ")}.`, s.fix);
-					return null;
-				}
-				opts[key.value] = value;
-				end -= 3;
-			}
-			return {
-				opts,
-				rest: list.slice(0, end)
-			};
-		};
-		/** Checks an option's value against what it accepts. */
-		const checkOption = (key, value) => {
-			if (key === "gap") return true;
-			const list = {
-				color: Object.keys(INKS),
-				fill: Object.keys(COLORS),
-				pen: Object.keys(PENS),
-				size: Object.keys(SIZES),
-				icon: ICON_NAMES
-			}[key];
-			if (list && !list.includes(value.value)) {
-				const s = suggest(value, list);
-				err("E-BAD-OPTION", `"${value.value}" is not a ${key}.`, tokSpan(value), s.hint ?? `Try: ${list.join(", ")}.`, s.fix);
-				return false;
-			}
-			return true;
-		};
-		if (toks[0].type === "rbrace") {
-			if (!groupStack.length) err("E-UNEXPECTED", "This } does not close a group.", span);
-			else groupStack.pop();
-			if (toks.length > 1) err("E-UNEXPECTED", "Put anything after } on its own line.", {
-				line: lineNo,
-				from: toks[1].from,
-				to: span.to
-			});
-			return;
-		}
-		const [t0, t1] = toks;
-		const firstIsWord = t0.type === "ident";
-		const notDefinition = !t1 || t1.type !== "colon" && t1.type !== "arrow";
-		if (t0.type === "bullet") {
-			order++;
-			const lead = text.slice(0, text.search(/\S/)).replace(/\t/g, "  ").length;
-			const level = Math.floor(lead / 2);
-			let body = text.slice(t0.to - lineOffset, comment ? comment.from - lineOffset : text.length).trim();
-			let as;
-			const asMatch = body.match(/\s+as\s+([A-Za-z_][\w-]*)$/);
-			if (asMatch) {
-				as = asMatch[1];
-				body = body.slice(0, asMatch.index).trim();
-			}
-			body = body.replace(/^"(.*)"$/, "$1").replace(/\\n/g, "\n");
-			if (!body) {
-				err("E-EMPTY-BULLET", "This bullet has no text.", span);
-				return;
-			}
-			let parent;
-			for (let k = bullets.length - 1; k >= 0; k--) if (bullets[k].level < level) {
-				parent = k;
-				break;
-			}
-			if (level > 0 && parent === void 0) warn("W-BULLET-INDENT", "This bullet is indented but has no bullet above it.", span);
-			bullets.push({
-				text: body,
-				as,
-				level: parent === void 0 ? 0 : level,
-				parent,
-				span,
-				line: lineNo,
-				order,
-				group: currentGroup()
-			});
-			return;
-		}
-		if (firstIsWord && t0.value === "cycle" && notDefinition) {
-			order++;
-			const ids = [];
-			let ccw = false;
-			for (const t of toks.slice(1)) {
-				if (t.type === "comma") continue;
-				if (t.type === "ident" && t.value === "counterclockwise") ccw = true;
-				else if (isId(t)) ids.push(t.value);
-				else {
-					err("E-UNEXPECTED", `I don't understand "${t.text}" in a cycle. List names separated by commas.`, tokSpan(t));
-					return;
-				}
-			}
-			if (ids.length < 2) {
-				err("E-BAD-CYCLE", "A cycle needs at least two names, like  cycle a, b, c", span);
-				return;
-			}
-			if (doc.cycle) warn("W-SECOND-CYCLE", "Only one cycle is drawn; this one adds arrows only.", span);
-			else doc.cycle = {
-				ids,
-				counterclockwise: ccw
-			};
-			ids.forEach((id) => ensureNode(id, span, lineNo));
-			ids.forEach((from, k) => {
-				const to = ids[(k + 1) % ids.length];
-				doc.edges.push({
-					from,
-					to,
-					kind: "solid",
-					both: false,
-					line: lineNo,
-					span,
-					order
-				});
-			});
-			return;
-		}
-		if (firstIsWord && t0.value === "columns" && notDefinition) {
-			order++;
-			for (const t of toks.slice(1)) {
-				if (t.type === "comma") continue;
-				if (isId(t) || t.type === "number") columnDefs.push({
-					label: t.value,
-					span: tokSpan(t)
-				});
-				else {
-					err("E-UNEXPECTED", `I don't understand "${t.text}" in columns. List names separated by commas.`, tokSpan(t));
-					return;
-				}
-			}
-			return;
-		}
-		if (firstIsWord && t0.value === "row" && isRef(t1) && toks[2]?.type === "colon") {
-			order++;
-			const cells = [];
-			let cur = null;
-			for (const t of toks.slice(3)) {
-				if (t.type === "comma") {
-					if (cur) cells.push(cur);
-					cur = null;
-					continue;
-				}
-				if (t.type === "word" && t.text === "!" && cur) {
-					cur.win = true;
-					continue;
-				}
-				if (cur) {
-					err("E-UNEXPECTED", `Put a comma between cells, before "${t.text}".`, tokSpan(t));
-					return;
-				}
-				if (t.type === "ident" && [
-					"yes",
-					"no",
-					"partly"
-				].includes(t.value)) cur = {
-					mark: t.value,
-					win: false
-				};
-				else if (t.type === "string" || t.type === "number" || t.type === "ident") cur = {
-					text: t.value,
-					win: false
-				};
-				else {
-					err("E-UNEXPECTED", `I don't understand "${t.text}" in a row. Use quoted text, yes, no or partly.`, tokSpan(t));
-					return;
-				}
-			}
-			if (cur) cells.push(cur);
-			rowDefs.push({
-				label: t1.value,
-				cells,
-				span,
-				line: lineNo,
-				order
-			});
-			return;
-		}
-		if (firstIsWord && (t0.value === "span" || t0.value === "brace") && notDefinition) {
-			order++;
-			const m = restAfter(t0).match(/^(.+?)\s*\.\.\s*(.+?)(?:\s+"((?:[^"\\]|\\.)*)")?$/);
-			if (!m) {
-				err("E-BAD-RANGE", `Write it as  ${t0.value} first..last "label"`, span);
-				return;
-			}
-			const strip = (x) => x.trim().replace(/^"(.*)"$/, "$1");
-			doc.ranges.push({
-				kind: t0.value,
-				from: strip(m[1]),
-				to: strip(m[2]),
-				label: m[3]?.replace(/\\n/g, "\n"),
-				line: lineNo,
-				span
-			});
-			return;
-		}
-		if (firstIsWord && (t0.value === "activate" || t0.value === "deactivate") && isId(t1) && notDefinition) {
-			order++;
-			doc.activations.push({
-				id: t1.value,
-				on: t0.value === "activate",
-				order,
-				span
-			});
-			return;
-		}
-		if (firstIsWord && t0.value === "group" && notDefinition) {
-			order++;
-			if (!isId(t1)) {
-				err("E-BAD-GROUP", "Write a group as  group name \"Label\" {", span);
-				return;
-			}
-			let k = 2;
-			const labelTok = toks[k]?.type === "string" ? toks[k++] : void 0;
-			if (toks[k]?.type !== "lbrace") {
-				err("E-BAD-GROUP", "A group needs a { after its name, then its members, then a } line.", span);
-				return;
-			}
-			k++;
-			if (groupIndex.has(t1.value)) {
-				err("E-DUPLICATE-GROUP", `There is already a group called "${t1.value}".`, tokSpan(t1));
-				return;
-			}
-			const parent = currentGroup();
-			if (parent?.parent) {
-				err("E-GROUP-TOO-DEEP", "Groups can sit inside one other group, not deeper.", span);
-				return;
-			}
-			const group = {
-				id: t1.value,
-				label: labelTok ? labelTok.value : humanize(t1.value),
-				members: [],
-				parent: parent?.id,
-				line: lineNo,
-				span,
-				order
-			};
-			groupIndex.set(group.id, group);
-			doc.groups.push(group);
-			const inner = toks.slice(k);
-			if (inner.length && inner[inner.length - 1].type === "rbrace") for (const t of inner.slice(0, -1)) {
-				if (t.type === "comma") continue;
-				if (!isId(t)) {
-					err("E-UNEXPECTED", `I don't understand "${t.text}" in a group. List names separated by commas.`, tokSpan(t));
-					return;
-				}
-				ensureNode(t.value, span, lineNo);
-				joinGroup(t.value, group, true);
-			}
-			else if (inner.length) err("E-UNEXPECTED", "After { either list members and close with } on the same line, or start the next line.", tokSpan(inner[0]));
-			else groupStack.push({
-				group,
-				span
-			});
-			return;
-		}
-		if (firstIsWord && SETTINGS.includes(t0.value) && notDefinition) {
-			order++;
-			const key = t0.value;
-			if (!t1) {
-				err("E-MISSING-VALUE", `"${key}" needs a value.`, span);
-				return;
-			}
-			if (key === "title") {
-				doc.title = unquote(restAfter(t0));
-				return;
-			}
-			const extra = toks[2];
-			if (extra) err("E-UNEXPECTED", `"${key}" takes one value. I don't understand "${extra.text}" here.`, {
-				line: lineNo,
-				from: extra.from,
-				to: span.to
-			});
-			const v = t1.value;
-			if (key === "center") {
-				doc.center = unquote(restAfter(t0));
-				return;
-			}
-			if (key === "root") {
-				doc.root = v;
-				return;
-			}
-			if (key === "footer" || key === "colors") {
-				if (v !== "on" && v !== "off") {
-					err("E-BAD-SWITCH", `Write  ${key} on  or  ${key} off.`, tokSpan(t1));
-					return;
-				}
-				if (key === "footer") doc.footer = v === "on";
-				else doc.colors = v === "on";
-				return;
-			}
-			if (key === "gap") {
-				const n = Number(v);
-				if (t1.type === "number" && n >= 0 && n <= 200) doc.gap = n;
-				else err("E-BAD-GAP", "Gap is a number of pixels from 0 to 200.", tokSpan(t1));
-				return;
-			}
-			if (key === "layout" && LAYOUT_NAMES.includes(v)) {
-				doc.layout = v;
-				return;
-			}
-			if (key === "steps") {
-				if (v === "auto") doc.autoSteps = true;
-				else err("E-BAD-STEPS", "Write  steps auto  to make each node its own step.", tokSpan(t1));
-				return;
-			}
-			if (key === "inkling") {
-				doc.version = Number(v);
-				if (v !== "1") warn("W-VERSION", `This file says Inkling ${v}; this renderer reads version 1.`, tokSpan(t1));
-				return;
-			}
-			const options = {
-				layout: [
-					"right",
-					"down",
-					...LAYOUT_NAMES
-				],
-				direction: ["right", "down"],
-				paper: Object.keys(PAPERS),
-				pen: Object.keys(PENS),
-				hand: Object.keys(HANDS)
-			};
-			if (options[key]) {
-				if (!options[key].includes(v)) {
-					const s = suggest(t1, options[key]);
-					const what = key === "layout" ? `No layout called "${v}". Layouts: ${LAYOUT_NAMES.join(", ")}; or right / down for the direction.` : key === "direction" ? `Direction can be "right" or "down", not "${v}".` : `No ${key === "hand" ? "handwriting" : key} called "${v}".`;
-					err(`E-UNKNOWN-${key === "direction" ? "LAYOUT" : key.toUpperCase()}`, what, tokSpan(t1), s.hint ?? `Try: ${options[key].join(", ")}.`, s.fix);
-					return;
-				}
-				if (key === "layout" || key === "direction") {
-					doc.direction = v;
-					doc.directionSet = true;
-				} else doc[key] = v;
-				return;
-			}
-			const n = Number(v);
-			if (key === "mess") {
-				if (t1.type === "number" && n >= 0 && n <= 1) doc.mess = n;
-				else err("E-BAD-MESS", "Mess is a number from 0 (tidy) to 1 (chaotic).", tokSpan(t1));
-				return;
-			}
-			if (key === "seed") {
-				if (t1.type === "number" && Number.isInteger(n)) doc.seed = n;
-				else err("E-BAD-SEED", "Seed is a whole number, such as 7.", tokSpan(t1));
-				return;
-			}
-		}
-		if (firstIsWord && t0.value === "step" && t1?.type === "number") {
-			order++;
-			let k = 2;
-			if (toks[k]?.type === "colon") k++;
-			const items = [];
-			let caption;
-			for (; k < toks.length; k++) {
-				const t = toks[k];
-				if (t.type === "comma") continue;
-				if (t.type === "string" && k === toks.length - 1) caption = t.value;
-				else if (t.type === "ident" || t.type === "string" || t.type === "number") items.push(t.value);
-				else {
-					err("E-UNEXPECTED", `I don't understand "${t.text}" in a step. List names separated by commas, then an optional "caption".`, tokSpan(t));
-					return;
-				}
-			}
-			doc.steps.push({
-				index: Number(t1.value),
-				items,
-				caption,
-				line: lineNo,
-				span
-			});
-			return;
-		}
-		let markToks = toks;
-		if (toks[2]?.type === "word" && toks[2].text.startsWith(".") && toks[2].from === toks[1].to) {
-			const joined = {
-				...toks[1],
-				type: "ident",
-				text: toks[1].text + toks[2].text,
-				value: toks[1].value + toks[2].text,
-				to: toks[2].to
-			};
-			markToks = [
-				toks[0],
-				joined,
-				...toks.slice(3)
-			];
-		}
-		const onArrow = markToks[2]?.type === "arrow" && isRef(markToks[3]);
-		if (firstIsWord && MARKS.includes(t0.value) && isRef(markToks[1]) && notDefinition && (markToks[2]?.type !== "arrow" || onArrow)) {
-			order++;
-			const kind = t0.value;
-			const t1m = markToks[1];
-			const target = onArrow ? `${t1m.value}->${markToks[3].value}` : t1m.value;
-			let text;
-			let at;
-			let color;
-			for (const t of markToks.slice(onArrow ? 4 : 2)) if (t.type === "string" && text === void 0) text = t.value;
-			else if (t.type === "at") at = Number(t.value);
-			else if (t.type === "ident" && COLORS[t.value]) color = t.value;
-			else {
-				const s = t.type === "ident" ? suggest(t, Object.keys(COLORS)) : {
-					hint: void 0,
-					fix: void 0
-				};
-				err("E-UNEXPECTED", `I don't understand "${t.text}" here.`, tokSpan(t), s.hint, s.fix);
-				return;
-			}
-			if (kind === "note" && !text) {
-				err("E-NOTE-NEEDS-TEXT", `A note needs text, like  note ${target} "remember this"`, span);
-				return;
-			}
-			doc.annotations.push({
-				kind,
-				target,
-				targetKind: onArrow ? "edge" : "node",
-				text,
-				color,
-				at,
-				line: lineNo,
-				span,
-				order
-			});
-			return;
-		}
-		const colonAt = toks.findIndex((t) => t.type === "colon");
-		const headAll = colonAt === -1 ? toks : toks.slice(0, colonAt);
-		if (headAll.some((t) => t.type === "arrow")) {
-			order++;
-			const headOpts = takeOptions(headAll, EDGE_OPTIONS);
-			if (!headOpts) return;
-			const head = headOpts.rest;
-			let opts = headOpts.opts;
-			if (!(head.length >= 3 && head.length % 2 === 1 && head.every((t, k) => k % 2 === 0 ? isId(t) : t.type === "arrow"))) {
-				const bad = head.find((t, k) => k % 2 === 0 ? !isId(t) : t.type !== "arrow");
-				if (bad && bad.type === "word") err("E-BAD-NAME", `"${bad.text}" is not a valid name. Use letters, digits, - or _, or put it in quotes.`, tokSpan(bad));
-				else err("E-ARROW-NEEDS-ENDS", "An arrow needs a name on both sides, like \"a -> b\".", span);
-				return;
-			}
-			let label;
-			if (colonAt !== -1) {
-				const after = toks.slice(colonAt + 1);
-				if (after[0]?.type === "string") {
-					label = after[0].value;
-					const tail = takeOptions(after.slice(1), EDGE_OPTIONS);
-					if (!tail) return;
-					if (tail.rest.length) {
-						err("E-UNEXPECTED", `I don't understand "${tail.rest[0].text}" after the label.`, tokSpan(tail.rest[0]));
-						return;
-					}
-					opts = {
-						...opts,
-						...tail.opts
-					};
-				} else {
-					let end = after.length;
-					while (end >= 3 && after[end - 2].type === "equals" && after[end - 3].type === "ident" && EDGE_OPTIONS.includes(after[end - 3].value)) end -= 3;
-					const tail = takeOptions(after.slice(end), EDGE_OPTIONS);
-					if (!tail) return;
-					opts = {
-						...opts,
-						...tail.opts
-					};
-					const startCol = toks[colonAt].to - lineOffset;
-					const endCol = end < after.length ? after[end].from - lineOffset : comment ? comment.from - lineOffset : text.length;
-					label = unquote(text.slice(startCol, endCol)) || void 0;
-				}
-			}
-			for (const [k, v] of Object.entries(opts)) if (!checkOption(k, v)) return;
-			for (let k = 0; k + 2 < head.length; k += 2) {
-				const from = head[k].value;
-				const op = head[k + 1].value;
-				const to = head[k + 2].value;
-				ensureNode(from, span, lineNo);
-				ensureNode(to, span, lineNo);
-				const kind = op.includes("~") ? "squiggle" : op === "-->" ? "dashed" : "solid";
-				doc.edges.push({
-					from,
-					to,
-					kind,
-					both: op.startsWith("<"),
-					label: k + 2 === head.length - 1 && label ? label : void 0,
-					color: opts.color?.value,
-					pen: opts.pen?.value,
-					line: lineNo,
-					span,
-					order
-				});
-			}
-			return;
-		}
-		if (isId(t0) && t1?.type === "colon") {
-			order++;
-			const id = t0.value;
-			const parsed = takeOptions(toks.slice(2), NODE_OPTIONS);
-			if (!parsed) return;
-			const { opts } = parsed;
-			let body = parsed.rest;
-			let at;
-			let near;
-			const placeAt = body.findIndex((t) => t.type === "ident" && [
-				"at",
-				"below",
-				"above",
-				"left",
-				"right"
-			].includes(t.value) && (t.value !== "at" || body[body.indexOf(t) + 1]?.type === "number"));
-			if (placeAt !== -1) {
-				const p = body.slice(placeAt);
-				const word = p[0].value;
-				if (word === "at") {
-					if (p.length === 4 && p[1].type === "number" && p[2].type === "comma" && p[3].type === "number") at = [Number(p[1].value), Number(p[3].value)];
-					else {
-						err("E-BAD-PLACE", "Write a position as  at 200,120", {
-							line: lineNo,
-							from: p[0].from,
-							to: span.to
-						});
-						return;
-					}
-				} else {
-					const hasOf = p[1]?.type === "ident" && p[1].value === "of";
-					const target = hasOf ? p[2] : p[1];
-					const needsOf = word === "left" || word === "right";
-					if (!isId(target) || p.length !== (hasOf ? 3 : 2) || needsOf && !hasOf) {
-						err("E-BAD-PLACE", `Write it as  ${needsOf ? `${word} of other` : `${word} other`}`, {
-							line: lineNo,
-							from: p[0].from,
-							to: span.to
-						});
-						return;
-					}
-					near = {
-						side: word,
-						of: target.value,
-						gap: opts.gap ? Number(opts.gap.value) : void 0
-					};
-				}
-				body = body.slice(0, placeAt);
-			}
-			if (opts.gap && opts.gap.type !== "number") {
-				err("E-BAD-OPTION", "gap is a number of pixels.", tokSpan(opts.gap));
-				return;
-			}
-			let k = 0;
-			let shapeTok;
-			let iconTok;
-			let labelTok;
-			let fillTok;
-			if (body[k]?.type === "ident") shapeTok = body[k++];
-			if (shapeTok?.value === "icon" && body[k]?.type === "ident") iconTok = body[k++];
-			if (body[k]?.type === "string") labelTok = body[k++];
-			if (body[k]?.type === "ident") fillTok = body[k++];
-			if (k < body.length) {
-				err("E-BAD-NODE", `Write a node as  ${id}: box "Label"`, span, `I don't understand "${body[k].text}" here.`);
-				return;
-			}
-			if (shapeTok && !shapeNames.includes(shapeTok.value)) {
-				if (!labelTok && !fillTok && COLORS[shapeTok.value]) {
-					fillTok = shapeTok;
-					shapeTok = void 0;
-				} else {
-					const s = suggest(shapeTok, shapeNames);
-					err("E-UNKNOWN-SHAPE", `No shape called "${shapeTok.value}".`, tokSpan(shapeTok), s.hint ?? `Try: ${SHAPES.join(", ")}.`, s.fix);
-					return;
-				}
-			}
-			if (fillTok && !COLORS[fillTok.value]) {
-				const s = suggest(fillTok, Object.keys(COLORS));
-				err("E-UNKNOWN-COLOR", `No colour called "${fillTok.value}".`, tokSpan(fillTok), s.hint ?? `Try: ${Object.keys(COLORS).join(", ")}.`, s.fix);
-				return;
-			}
-			if (shapeTok?.value === "icon" && iconTok && !ICON_NAMES.includes(iconTok.value)) {
-				const s = suggest(iconTok, ICON_NAMES);
-				err("E-UNKNOWN-ICON", `No icon called "${iconTok.value}".`, tokSpan(iconTok), s.hint ?? `Icons: ${ICON_NAMES.join(", ")}.`, s.fix);
-				return;
-			}
-			for (const [key, v] of Object.entries(opts)) if (!checkOption(key, v)) return;
-			let shape = shapeTok ? SHAPE_ALIASES[shapeTok.value] ?? shapeTok.value : "box";
-			if (opts.icon && !shapeTok) shape = "icon";
-			const icon = shape === "icon" ? iconTok?.value ?? opts.icon?.value : void 0;
-			if (shape === "icon" && !icon) {
-				err("E-ICON-NEEDS-NAME", `Name the icon, like  ${id}: icon server "Label"`, span, `Icons: ${ICON_NAMES.join(", ")}.`);
-				return;
-			}
-			const def = {
-				id,
-				shape,
-				label: labelTok ? labelTok.value : humanize(id),
-				fill: fillTok?.value ?? opts.fill?.value,
-				color: opts.color?.value,
-				pen: opts.pen?.value,
-				size: opts.size?.value,
-				icon,
-				at,
-				near,
-				line: lineNo,
-				span,
-				order
-			};
-			const existing = nodeIndex.get(id);
-			if (existing !== void 0) {
-				const prev = doc.nodes[existing];
-				if (!prev.implicit) err("E-DUPLICATE-NODE", `"${id}" is already defined on line ${prev.line}.`, tokSpan(t0), "Rename one of them, or delete this line.");
-				def.group = prev.group;
-				doc.nodes[existing] = def;
-			} else {
-				nodeIndex.set(id, doc.nodes.length);
-				doc.nodes.push(def);
-			}
-			joinGroup(id, currentGroup(), true);
-			return;
-		}
-		err("E-UNKNOWN-LINE", "I don't understand this line.", span, firstIsWord ? didYouMean(t0.value, KEYWORDS) : void 0);
-	});
-	const bulletIds = [];
-	const taken = /* @__PURE__ */ new Set([...nodeIndex.keys()]);
-	const uniqueId = (base) => {
-		let id = base;
-		for (let n = 2; taken.has(id) && !doc.nodes[nodeIndex.get(id)]?.implicit; n++) id = `${base}-${n}`;
-		taken.add(id);
-		return id;
-	};
-	for (const b of bullets) {
-		let label = b.text;
-		let date;
-		if (doc.layout === "timeline") {
-			const m = b.text.match(/^([^:]+):\s*([\s\S]+)$/);
-			if (m) {
-				date = m[1].trim();
-				label = m[2].trim();
-			}
-		}
-		const id = b.as ?? uniqueId(slug(date ?? label));
-		bulletIds.push(id);
-		const parent = b.parent !== void 0 ? bulletIds[b.parent] : void 0;
-		const existing = nodeIndex.get(id);
-		if (existing !== void 0) {
-			const n = doc.nodes[existing];
-			if (n.implicit) n.label = label;
-			n.bullet = {
-				level: b.level,
-				parent
-			};
-			n.date = date;
-			n.implicit = false;
-		} else {
-			nodeIndex.set(id, doc.nodes.length);
-			doc.nodes.push({
-				id,
-				shape: "box",
-				label,
-				date,
-				bullet: {
-					level: b.level,
-					parent
-				},
-				line: b.line,
-				span: b.span,
-				order: b.order
-			});
-			joinGroup(id, b.group, true);
-		}
-		if (parent && (doc.layout === "flow" || doc.layout === "free")) doc.edges.push({
-			from: parent,
-			to: id,
-			kind: "solid",
-			both: false,
-			line: b.line,
-			span: b.span,
-			order: b.order
-		});
-	}
-	if (columnDefs.length || rowDefs.length) {
-		const colIds = columnDefs.map((c) => uniqueId(slug(c.label)));
-		columnDefs.forEach((c, k) => {
-			nodeIndex.set(colIds[k], doc.nodes.length);
-			doc.nodes.push({
-				id: colIds[k],
-				shape: "text",
-				label: c.label,
-				role: "column",
-				line: c.span.line,
-				span: c.span,
-				order: 0
-			});
-		});
-		doc.columns = colIds;
-		for (const r of rowDefs) {
-			const rid = uniqueId(slug(r.label));
-			doc.rows.push(rid);
-			nodeIndex.set(rid, doc.nodes.length);
-			doc.nodes.push({
-				id: rid,
-				shape: "text",
-				label: r.label,
-				role: "row",
-				line: r.line,
-				span: r.span,
-				order: r.order
-			});
-			if (r.cells.length !== colIds.length) report("error", "E-ROW-CELLS", `Row "${r.label}" has ${r.cells.length} cell${r.cells.length === 1 ? "" : "s"} but there ${colIds.length === 1 ? "is 1 column" : `are ${colIds.length} columns`}.`, r.span);
-			r.cells.slice(0, colIds.length).forEach((c, k) => {
-				const id = `${rid}.${colIds[k]}`;
-				nodeIndex.set(id, doc.nodes.length);
-				doc.nodes.push({
-					id,
-					shape: "text",
-					label: c.text ?? "",
-					cell: {
-						mark: c.mark,
-						win: c.win,
-						row: rid,
-						column: colIds[k]
-					},
-					line: r.line,
-					span: r.span,
-					order: r.order
-				});
-			});
-		}
-		if (doc.layout !== "compare") report("warning", "W-NOT-USED", "columns and row lines only draw with  layout compare.", rowDefs[0]?.span ?? columnDefs[0].span);
-	}
-	for (const { group, span } of groupStack) report("error", "E-UNCLOSED-GROUP", `Group "${group.id}" is never closed.`, span, "Add a line with just } after its last member.");
-	const dropped = /* @__PURE__ */ new Set();
-	doc.groups = doc.groups.filter((g) => {
-		if (nodeIndex.has(g.id)) {
-			report("error", "E-GROUP-NAME-TAKEN", `"${g.id}" is both a node and a group. Give the group another name.`, g.span);
-			dropped.add(g.id);
-			return false;
-		}
-		const hasChildGroup = doc.groups.some((c) => c.parent === g.id);
-		if (!g.members.length && !hasChildGroup) {
-			report("warning", "W-EMPTY-GROUP", `Group "${g.id}" has nothing in it.`, g.span);
-			dropped.add(g.id);
-			return false;
-		}
-		return true;
-	});
-	if (dropped.size) {
-		const parentOf = new Map(doc.groups.map((g) => [g.id, g.parent]));
-		for (const n of doc.nodes) if (n.group && dropped.has(n.group)) n.group = void 0;
-		for (const g of doc.groups) if (g.parent && dropped.has(g.parent)) g.parent = parentOf.get(g.parent);
-	}
-	const groupIds = new Set(doc.groups.map((g) => g.id));
-	const ids = () => [...nodeIndex.keys(), ...groupIds];
-	doc.annotations = doc.annotations.filter((a) => {
-		if (a.targetKind === "edge") {
-			const [from, to] = a.target.split("->");
-			let idx = doc.edges.findIndex((e) => e.from === from && e.to === to);
-			if (idx === -1) idx = doc.edges.findIndex((e) => e.from === to && e.to === from);
-			if (idx === -1) {
-				report("error", "E-UNKNOWN-TARGET", `There is no arrow between "${from}" and "${to}".`, a.span);
-				return false;
-			}
-			a.edgeIndex = idx;
-			if ((a.kind === "underline" || a.kind === "strike") && !doc.edges[idx].label) {
-				report("warning", "W-NO-LABEL", `That arrow has no label to ${a.kind}.`, a.span);
-				return false;
-			}
-			return true;
-		}
-		if (groupIds.has(a.target) && !nodeIndex.has(a.target)) {
-			a.targetKind = "group";
-			return true;
-		}
-		if (nodeIndex.has(a.target)) return true;
-		const c = closest(a.target, ids());
-		report("error", "E-UNKNOWN-TARGET", `There is no node called "${a.target}".`, a.span, c ? `Did you mean "${c}"?` : void 0);
-		return false;
-	});
-	for (const s of doc.steps) {
-		for (const id of s.items.filter((x) => !nodeIndex.has(x) && !groupIds.has(x))) {
-			const c = closest(id, ids());
-			report("warning", "W-STEP-UNKNOWN", `Step ${s.index} names "${id}", which is not a node.`, s.span, c ? `Did you mean "${c}"?` : void 0);
-		}
-		s.items = s.items.filter((id) => nodeIndex.has(id) || groupIds.has(id));
-	}
-	for (const r of doc.ranges) for (const id of [r.from, r.to]) if (!nodeIndex.has(id)) {
-		const c = closest(id, ids());
-		report("error", "E-UNKNOWN-TARGET", `There is no node called "${id}".`, r.span, c ? `Did you mean "${c}"?` : void 0);
-	}
-	doc.ranges = doc.ranges.filter((r) => nodeIndex.has(r.from) && nodeIndex.has(r.to));
-	if (doc.root && !nodeIndex.has(doc.root)) {
-		report("error", "E-UNKNOWN-TARGET", `There is no node called "${doc.root}" to use as the root.`, {
-			line: 1,
-			from: 0,
-			to: 0
-		});
-		doc.root = void 0;
-	}
-	doc.activations = doc.activations.filter((a) => {
-		if (nodeIndex.has(a.id)) return true;
-		report("error", "E-UNKNOWN-TARGET", `There is no participant called "${a.id}".`, a.span);
-		return false;
-	});
-	if (doc.autoSteps && doc.steps.length) report("warning", "W-STEPS-IGNORED", "\"steps auto\" is ignored because this file also has step lines.", doc.steps[0].span);
-	doc.steps.sort((a, b) => a.index - b.index);
-	doc.diagnostics.sort((a, b) => a.span.from - b.span.from);
-	return doc;
 }
 // src/core/parse.ts
 /**
@@ -31784,6 +34093,34 @@ function toBase64(buf) {
 	for (let i = 0; i < bytes.length; i += 32768) bin += String.fromCharCode(...bytes.subarray(i, i + 32768));
 	return typeof btoa === "function" ? btoa(bin) : globalThis.Buffer.from(bin, "binary").toString("base64");
 }
+/** True when the bytes are a font file (TrueType, OpenType, WOFF or WOFF2), not an error page. */
+function isFont(buf) {
+	const b = new Uint8Array(buf.slice(0, 4));
+	const tag = String.fromCharCode(...b);
+	return buf.byteLength > 100 && (b[0] === 0 && b[1] === 1 && b[2] === 0 && b[3] === 0 || [
+		"OTTO",
+		"true",
+		"wOFF",
+		"wOF2"
+	].includes(tag));
+}
+/** Fetches a URL, trying once more on failure, and checks the answer before using it. */
+async function fetchChecked(doFetch, url, read, valid) {
+	let problem = "";
+	for (let attempt = 0; attempt < 2; attempt++) try {
+		const res = await doFetch(url);
+		if (!res.ok) {
+			problem = `HTTP ${res.status}`;
+			continue;
+		}
+		const value = await read(res);
+		if (valid(value)) return value;
+		problem = "the answer was not a font";
+	} catch (e) {
+		problem = e instanceof Error ? e.message : String(e);
+	}
+	throw new Error(`Could not download fonts from ${url.split("?")[0]} (${problem}).`);
+}
 async function embedFonts(svg, options = {}) {
 	const doFetch = options.fetch ?? globalThis.fetch;
 	const cssUrl = options.cssUrl ?? googleCss;
@@ -31808,11 +34145,11 @@ async function embedFonts(svg, options = {}) {
 	for (const [family, { weights, chars }] of used) {
 		if (!Object.values(HANDS).some((h) => h.family === family)) continue;
 		const text = [...chars].join("");
-		const css = await (await doFetch(cssUrl(family, [...weights].sort(), text))).text();
+		const css = await fetchChecked(doFetch, cssUrl(family, [...weights].sort(), text), (r) => r.text(), (t) => t.includes("@font-face"));
 		for (const block of css.match(/@font-face\s*{[^}]*}/g) ?? []) {
 			const url = block.match(/url\(([^)]+)\)/)?.[1]?.replace(/['"]/g, "");
 			if (!url) continue;
-			const data = toBase64(await (await doFetch(url)).arrayBuffer());
+			const data = toBase64(await fetchChecked(doFetch, url, (r) => r.arrayBuffer(), isFont));
 			const format = url.includes(".woff2") ? "woff2" : url.includes(".woff") ? "woff" : "truetype";
 			faces.push(block.replace(/src:[^;]+;/, `src: url(data:font/${format};base64,${data}) format('${format}');`));
 		}
@@ -31843,7 +34180,7 @@ function format(source) {
 			return;
 		}
 		blank = false;
-		if (body[0]?.type === "rbrace" && body.length === 1) depth = Math.max(0, depth - 1);
+		if (body[0]?.type === "rbrace") depth = Math.max(0, depth - 1);
 		const pad = "  ".repeat(depth);
 		let text;
 		if (!body.length) text = "";
@@ -31875,11 +34212,433 @@ function join(toks) {
 	toks.forEach((t, k) => {
 		const prev = toks[k - 1];
 		if (k > 0) {
-			if (!(t.type === "colon" || t.type === "comma" || t.type === "equals" || prev.type === "equals")) s += " ";
+			if (!(t.type === "colon" || t.type === "comma" || t.type === "equals" || prev.type === "equals" || t.type === "dots" || prev.type === "dots")) s += " ";
 		}
 		s += t.text;
 	});
 	return s;
+}
+// src/core/syntax/reference.ts
+var row = (code, what, keys = []) => ({
+	code,
+	what,
+	keys
+});
+var REFERENCE = [
+	{
+		group: "Things",
+		rows: [
+			row("api: box \"API\"", "A node. Shapes: box, round, circle, diamond, cloud, db, sticky, person, text, dot, bullseye. Also rect, square, ellipse, database.", [
+				"box",
+				"round",
+				"circle",
+				"diamond",
+				"cloud",
+				"db",
+				"sticky",
+				"person",
+				"text",
+				"dot",
+				"bullseye",
+				"rect",
+				"rectangle",
+				"square",
+				"pill",
+				"oval",
+				"ellipse",
+				"decision",
+				"database",
+				"cylinder",
+				"note",
+				"stick",
+				"user",
+				"label"
+			].map((s) => `shape:${s}`)),
+			row("\"Load balancer\" -> api", "Put a name in quotes to use spaces."),
+			row("api: box \"API\" yellow", "Add a colour to fill it with pencil hatching."),
+			row("api: icon server \"API\"", "An icon instead of a shape: person, server, database, cloud, phone, laptop, lock, key, mail, file, folder, gear, chart, globe, clock, bell, cart, card, chat, search, star, heart, bolt, bug, rocket, book, camera, code, link, check.", ["shape:icon", "opt:icon"]),
+			row("api: box \"API\" color=red pen=marker size=large", "Options: ink color (red, blue, green, orange, purple, pink, gray, black), pen, size (small, normal, large), fill, icon.", [
+				"opt:color",
+				"opt:pen",
+				"opt:size",
+				"opt:fill"
+			]),
+			row("db: db \"Orders\\nDB\"", "\\n breaks a label onto two lines.")
+		]
+	},
+	{
+		group: "Arrows",
+		rows: [
+			row("a -> b", "A plain arrow. Names you have not defined become boxes.", ["arrow:->"]),
+			row("a --> b", "Dashed, for replies and optional paths.", ["arrow:-->"]),
+			row("a ~> b", "Squiggly, for \"asks around\" or \"eventually\".", ["arrow:~>"]),
+			row("a <-> b", "Both ways. <~> is both ways and squiggly.", ["arrow:<->", "arrow:<~>"]),
+			row("a -> b -> c : \"label\"", "Chain arrows. The label goes on the last one."),
+			row("a -> b : \"label\" color=red", "Arrows take color and pen options too.")
+		]
+	},
+	{
+		group: "Marks a teacher would make",
+		rows: [
+			row("circle api", "Loops around a node. The pen overshoots where it starts.", ["kw:circle"]),
+			row("underline api", "Two quick strokes under the label.", ["kw:underline"]),
+			row("strike api", "Crosses the label out.", ["kw:strike"]),
+			row("highlight api pink", "A highlighter swipe. Yellow unless you name a colour.", ["kw:highlight"]),
+			row("note api \"slow!\"", "A margin note with an arrow. It finds free space.", ["kw:note"]),
+			row("check api / cross api", "A tick or a cross on the corner.", ["kw:check", "kw:cross"]),
+			row("circle api @3", "Draws the mark during step 3 instead of with the node."),
+			row("circle api -> db", "Marks work on arrows too: circle, note, highlight, check, cross, and underline or strike for labelled arrows."),
+			row("circle backend", "And on groups.")
+		]
+	},
+	{
+		group: "Grouping",
+		rows: [
+			row("group backend \"Backend\" {", "Start a group. Nodes defined inside, and new names used in arrows inside, belong to it. End with a } line.", ["kw:group"]),
+			row("group edge \"Edge\" { cdn, lb }", "Or list members on one line."),
+			row("group inner { … } inside a group", "Groups can sit inside one other group.")
+		]
+	},
+	{
+		group: "Layouts",
+		rows: [
+			row("layout flow", "Boxes and arrows, ranked automatically (the default). direction right or down.", ["layout:flow"]),
+			row("- Item\n  - Child as id", "Outline bullets work in every layout. Indent two spaces per level; \"as\" names the node."),
+			row("layout free", "You place things: a: box at 200,120, b: box below a, c: box right of a gap=80.", ["layout:free", "opt:gap"]),
+			row("layout stack", "Bullets become layers top to bottom; children sit inside. direction right makes a pipeline. span a..b \"label\" draws a bracket beside a run of layers. gap 10.", ["layout:stack", "kw:gap"]),
+			row("layout cycle", "cycle a, b, c, d puts them round a circle with arrows; add counterclockwise to turn the other way. center \"text\".", [
+				"layout:cycle",
+				"kw:cycle",
+				"kw:center"
+			]),
+			row("layout timeline", "- 1969: Moon landing. Number or ISO dates are spaced to scale; long gaps get a break. span a..b \"label\" brackets a stretch of time. direction down.", ["layout:timeline"]),
+			row("span a..b \"label\"", "A bracket over a run of things, with a label: dates on a timeline, layers in a stack. brace is the old name for it.", ["kw:span", "kw:brace"]),
+			row("layout compare", "columns \"A\", \"B\", then row \"Label\": yes, no, partly, \"text\". A ! after a cell circles it. Cells are named row.column.", [
+				"layout:compare",
+				"kw:columns",
+				"kw:row"
+			]),
+			row("layout mindmap", "The first bullet is the centre. colors on gives each branch its own ink. root x picks the centre for arrows. direction down makes an org chart.", [
+				"layout:mindmap",
+				"kw:colors",
+				"kw:root"
+			]),
+			row("layout sequence", "Nodes are participants left to right; arrows are messages top to bottom. activate x / deactivate x. footer off.", [
+				"layout:sequence",
+				"kw:activate",
+				"kw:deactivate",
+				"kw:footer"
+			]),
+			row("loop \"every 5s\" {\n  a -> b\n}", "Sequence frames box messages in: loop, opt, alt and par, with an optional \"condition\". Up to three deep.", ["kw:loop", "kw:opt"]),
+			row("alt \"ok\" {\n  …\n} else \"error\" {\n  …\n}", "alt takes any number of else branches; par takes and branches:  par { … } and { … }", [
+				"kw:alt",
+				"kw:else",
+				"kw:par",
+				"kw:and"
+			]),
+			row("note over a, b \"text\"", "In a sequence: a note card centred on one lifeline, or spanning two.", ["kw:note over"]),
+			row("layout tree", "A hierarchy, such as an org chart. Bullets or arrows; several roots draw side by side. direction right grows sideways. branches straight for direct lines.", ["layout:tree", "kw:branches"]),
+			row("layout state", "A state machine. States are round boxes; arrows are transitions with a label such as \"click [ok] / save\". Groups are composite states.", ["layout:state"]),
+			row("layout venn", "set dogs \"Dogs\" declares a circle (two or three). Items say where they belong:  - Fur in dogs & cats. Items with no in sit outside.", ["layout:venn", "kw:set"]),
+			row("highlight dogs&cats", "In a venn, highlight or circle an overlap by joining set names with &."),
+			row("layout quadrant", "A 2×2 grid. axis x \"Effort\" low..high, axis y \"Impact\" low..high, quadrants \"A\", \"B\", \"C\", \"D\" (top left, top right, bottom left, bottom right).", [
+				"layout:quadrant",
+				"kw:quadrants",
+				"kw:axis"
+			]),
+			row("- Dark mode at 0.2,0.8\n- Rewrite in \"Money pit\"", "Quadrant items: at x,y from 0 to 1 (0,0 is bottom left), or in a named square."),
+			row("start idle\nfinal done", "A filled dot with an arrow into idle, and a bullseye after done. Also shapes on their own: s: dot, e: bullseye.", ["kw:start", "kw:final"]),
+			row("layout chart", "Prices and the marks traders draw. candles open high low close, … · prices 100 102 101 … · line \"50-day\" orange 99 100 … · xlabels Mon Tue …", [
+				"layout:chart",
+				"kw:candles",
+				"kw:prices",
+				"kw:line",
+				"kw:xlabels"
+			]),
+			row("level 104 \"resistance\"\nzone 98..100 \"support\"", "A dashed line, or a hatched band, across the chart. Add a colour name after the label.", ["kw:level", "kw:zone"]),
+			row("buy 8 105 \"breakout\"\nstop 102.5\ntarget 112.5", "An arrow at bar 8 (bars count from 1) and price 105; sell points down. Stop and target lines run from the trade, with the reward to risk.", [
+				"kw:buy",
+				"kw:sell",
+				"kw:stop",
+				"kw:target"
+			]),
+			row("trend 2 99 9 106 \"uptrend\"", "A ruler line through two bar, price points.", ["kw:trend"]),
+			row("curve \"long call\" 80,-5 100,-5 130,25", "x,y points on a number line instead of bars: payoff diagrams. axis x \"price\" and axis y \"profit\" name the axes.", ["kw:curve"]),
+			row("gap: text \"gap up\" at 5,108", "In a chart, at means bar,price, so circles, highlights and notes can point at the chart.")
+		]
+	},
+	{
+		group: "Telling it as a story",
+		rows: [
+			row("steps auto", "Every node becomes its own step, in the order you wrote them.", ["kw:steps"]),
+			row("step 2: backend", "A step can name a group: all of its members appear then."),
+			row("step 1: a, b \"caption\"", "Reveal order. Arrows appear once both ends exist.", ["kw:step"]),
+			row("title \"How X works\"", "A handwritten heading with an underline.", ["kw:title"])
+		]
+	},
+	{
+		group: "The look",
+		rows: [
+			row("paper notebook", "notebook, graph, whiteboard, napkin, blank, chalkboard, blueprint.", ["kw:paper"]),
+			row("pen ballpoint", "ballpoint, marker, pencil, felt, chalk.", ["kw:pen"]),
+			row("hand caveat", "caveat, kalam, patrick, gochi, architect.", ["kw:hand"]),
+			row("mess 0.4", "0 is tidy, 1 is chaotic. Moves nodes, tilts them, wobbles letters.", ["kw:mess"]),
+			row("seed 7", "The same seed always draws the same wobble.", ["kw:seed"]),
+			row("layout down", "right (default) or down.", [
+				"kw:direction",
+				"layout:right",
+				"layout:down"
+			]),
+			row("inkling 1", "Optional first line: the language version this file is written for.", ["kw:inkling"])
+		]
+	}
+];
+/** The row that explains `key` (such as kw:circle or shape:box), if any. */
+function lookup(key) {
+	for (const g of REFERENCE) for (const r of g.rows) if (r.keys.includes(key)) return r;
+}
+// src/core/complete.ts
+/**
+* Editor help that works in any editor: completion, hover, symbols and
+* go-to-definition. Framework-free; the playground's CodeMirror extension
+* and the language server (bin/inkling-lsp.mjs) are thin adapters over it.
+*/
+var items = (list, kind, detail) => list.map((label) => ({
+	label,
+	kind,
+	detail: detail?.(label)
+}));
+/** Values a setting takes, by setting name. */
+var SETTING_VALUES = {
+	paper: () => items(Object.keys(PAPERS), "value", (k) => PAPERS[k].label),
+	pen: () => items(Object.keys(PENS), "value", (k) => PENS[k].label),
+	hand: () => items(Object.keys(HANDS), "value", (k) => HANDS[k].label),
+	layout: () => items(LAYOUT_NAMES, "value", (k) => lookup(`layout:${k}`)?.what.split(".")[0]),
+	direction: () => items(["right", "down"], "value"),
+	steps: () => items(["auto"], "value"),
+	branches: () => items(["elbow", "straight"], "value"),
+	footer: () => items(["on", "off"], "value"),
+	colors: () => items(["on", "off"], "value")
+};
+/** Values a key=value option takes. */
+var OPTION_VALUES = {
+	color: () => Object.keys(INKS$1),
+	fill: () => Object.keys(COLORS),
+	pen: () => Object.keys(PENS),
+	size: () => Object.keys(SIZES),
+	icon: () => ICON_NAMES
+};
+/** The line around `offset`: its text, where it starts, and the part before the cursor. */
+function lineAt(source, offset) {
+	const start = source.lastIndexOf("\n", offset - 1) + 1;
+	const endAt = source.indexOf("\n", offset);
+	const end = endAt === -1 ? source.length : endAt;
+	return {
+		start,
+		end,
+		text: source.slice(start, end),
+		before: source.slice(start, offset),
+		number: source.slice(0, start).split("\n").length
+	};
+}
+/** Ids a mark, arrow or step can name. */
+function names(doc) {
+	const seen = /* @__PURE__ */ new Set();
+	const out = [];
+	for (const n of doc.nodes) if (!seen.has(n.id) && /^[A-Za-z_][\w-]*$/.test(n.id) && !n.cell) {
+		seen.add(n.id);
+		out.push({
+			label: n.id,
+			kind: "name",
+			detail: n.label && n.label !== n.id ? n.label.replace(/\n/g, " ") : void 0
+		});
+	}
+	for (const g of doc.groups) if (!seen.has(g.id)) {
+		seen.add(g.id);
+		out.push({
+			label: g.id,
+			kind: "name",
+			detail: `group ${g.label}`
+		});
+	}
+	return out;
+}
+/** Statement words, with the file's own layout words first and other layouts' words last. */
+function keywords(layout) {
+	return [...new Set(KEYWORDS)].filter((k) => k !== "inkling" && !DEPRECATED[k]).map((k) => {
+		const where = LAYOUT_WORDS[k];
+		const r = lookup(`kw:${k}`);
+		return {
+			label: k,
+			kind: "keyword",
+			detail: where ? `layout ${where.join(" / ")}` : void 0,
+			doc: r?.what,
+			boost: where ? where.includes(layout) ? 2 : -1 : 0
+		};
+	});
+}
+/** What can be typed at `offset`. Null when nothing fits. */
+function complete(source, offset, options = {}) {
+	const line = lineAt(source, offset);
+	const word = line.before.match(/[\w-]*$/)[0];
+	const from = offset - word.length;
+	const head = line.before.slice(0, line.before.length - word.length);
+	const all = tokenizeLine(line.before, 1, 0);
+	if (all.some((t) => t.type === "comment") || all.some((t) => t.type === "string" && t.error)) return null;
+	const toks = tokenizeLine(head, 1, 0).filter((t) => t.type !== "comment");
+	let parsed;
+	const doc = () => parsed ??= parse(source);
+	const result = (list) => list.length ? {
+		from,
+		to: offset,
+		items: list
+	} : null;
+	const last = toks[toks.length - 1];
+	const first = toks[0];
+	const inList = (() => {
+		const k = toks.map((t) => t.type === "ident" && t.value === "in").lastIndexOf(true);
+		if (k === -1) return void 0;
+		const tail = toks.slice(k + 1);
+		if (!tail.length) return { named: [] };
+		if (last?.type === "word" && /^&+$/.test(last.text)) return { named: tail.filter((t) => t.type === "ident").map((t) => t.value) };
+	})();
+	const markWord = first?.type === "ident" && MARKS.includes(first.value) ? first.value : void 0;
+	if (!word && !options.explicit) {
+		if (!(!!last && (last.type === "equals" || toks.length === 1 && first?.type === "ident" && !!SETTING_VALUES[first.value] || toks.length === 2 && last.type === "colon" || !!inList && (doc().layout === "venn" || doc().layout === "quadrant")))) return null;
+	}
+	if (!toks.length) return result([...keywords(doc().layout), ...names(doc())]);
+	if (last.type === "equals" && toks[toks.length - 2]?.type === "ident") return result(items(OPTION_VALUES[toks[toks.length - 2].value]?.() ?? [], "value"));
+	if (toks.length === 1 && first.type === "ident" && SETTING_VALUES[first.value]) return result(SETTING_VALUES[first.value]());
+	if (toks.length === 2 && last.type === "colon" && (first.type === "ident" || first.type === "string")) return result([...items(SHAPES, "shape", (s) => s === "icon" ? "then an icon name" : void 0), ...items(Object.keys(COLORS), "color", () => "fill")]);
+	if (last.type === "ident" && last.value === "icon") return result(items(ICON_NAMES, "icon"));
+	if (inList) {
+		const d = doc();
+		if (d.layout === "venn") return result(items(d.sets.filter((s) => !inList.named.includes(s)), "name", (s) => d.nodes.find((n) => n.id === s)?.label));
+		if (d.layout === "quadrant" && !inList.named.length) return result(d.quadrants.map((q) => ({
+			label: q,
+			kind: "name",
+			insert: `"${q}"`
+		})));
+	}
+	const listOfNames = (first.value === "step" || first.value === "cycle" || first.value === "note" && toks[1]?.value === "over") && (last.type === "colon" || last.type === "comma" || last.value === "over" || first.value === "cycle" && toks.length === 1);
+	if (last.type === "arrow" || markWord && toks.length === 1 || listOfNames || (first.value === "activate" || first.value === "deactivate") && toks.length === 1) {
+		const d = doc();
+		const regions = markWord && d.layout === "venn" && (markWord === "highlight" || markWord === "circle") ? d.sets.flatMap((a, i) => d.sets.slice(i + 1).map((b) => ({
+			label: `${a}&${b}`,
+			kind: "name",
+			detail: "overlap"
+		}))) : [];
+		return result([...names(d), ...regions]);
+	}
+	if (markWord === "highlight" && toks.length === 2) return result(items(Object.keys(COLORS), "color"));
+	if (toks[1]?.type === "colon" && !toks.some((t) => t.type === "arrow") && toks.length >= 3) return result([...items(Object.keys(COLORS), "color", () => "fill"), ...NODE_OPTIONS.map((o) => ({
+		label: `${o}=`,
+		kind: "option",
+		doc: lookup(`opt:${o}`)?.what
+	}))]);
+	if (toks.some((t) => t.type === "arrow") && last.type !== "colon") return result(EDGE_OPTIONS.map((o) => ({
+		label: `${o}=`,
+		kind: "option",
+		doc: lookup(`opt:${o}`)?.what
+	})));
+	return null;
+}
+var show = (code, what) => `\`\`\`inkling\n${code}\n\`\`\`\n${what}`;
+/** Help for the word at `offset`: a statement, shape, option, setting value or node. */
+function hover(source, offset) {
+	const line = lineAt(source, offset);
+	const toks = tokenizeLine(line.text, line.number, line.start).filter((t) => t.type !== "comment");
+	const i = toks.findIndex((t) => offset >= t.from && offset <= t.to && t.type !== "comma");
+	if (i === -1) return null;
+	const t = toks[i];
+	const out = (text) => text ? {
+		from: t.from,
+		to: t.to,
+		text
+	} : null;
+	const fromRow = (key) => {
+		const r = lookup(key);
+		return r ? show(r.code, r.what) : void 0;
+	};
+	const first = toks[0];
+	const prev = toks[i - 1];
+	const next = toks[i + 1];
+	const isArrowLine = toks.some((x) => x.type === "arrow");
+	if (t.type === "arrow") return out(fromRow(`arrow:${t.value}`));
+	if (i === 1 && first.value === "note" && t.value === "over") return out(fromRow("kw:note over"));
+	if (i === 0 && t.type === "ident" && KEYWORDS.includes(t.value) && next?.type !== "colon" && next?.type !== "arrow") {
+		if (t.value === "layout") return out(show("layout flow", `Picks how things are placed: ${LAYOUT_NAMES.join(", ")}. Or right / down for the direction.`));
+		if (t.value === "note" && next?.value === "over") return out(fromRow("kw:note over"));
+		const old = DEPRECATED[t.value];
+		if (old) return out(`\`${t.value}\` is the old name for \`${old.use}\` (deprecated in ${old.since}). It still works.\n\n${fromRow(`kw:${old.use}`)}`);
+		return out(fromRow(`kw:${t.value}`));
+	}
+	if (i === 1 && first.type === "ident" && SETTINGS.includes(first.value)) {
+		const v = t.value;
+		if (first.value === "layout") return out(fromRow(`layout:${v}`));
+		if (first.value === "paper" && PAPERS[v]) return out(`**${PAPERS[v].label}** paper.\n\n${fromRow("kw:paper")}`);
+		if (first.value === "pen" && PENS[v]) return out(`**${PENS[v].label}** pen.\n\n${fromRow("kw:pen")}`);
+		if (first.value === "hand" && HANDS[v]) return out(`**${HANDS[v].label}** handwriting.\n\n${fromRow("kw:hand")}`);
+		return out(fromRow(`kw:${first.value}`));
+	}
+	if (t.type === "ident" && next?.type === "equals") return out(fromRow(`opt:${t.value}`));
+	if (t.type === "ident" && prev?.type === "colon" && !isArrowLine && SHAPES.concat(Object.keys(SHAPE_ALIASES)).includes(t.value)) {
+		const alias = SHAPE_ALIASES[t.value];
+		return out(`${alias ? `\`${t.value}\` is another name for \`${alias}\`.\n\n` : ""}${fromRow(`shape:${t.value}`)}`);
+	}
+	if (t.type === "ident" && COLORS[t.value] && i > 1) return out(`The colour **${t.value}**.`);
+	if (t.type === "ident" || t.type === "string") {
+		const doc = parse(source);
+		const n = doc.nodes.find((x) => x.id === t.value);
+		if (n) {
+			const def = source.slice(n.span.from, n.span.to).split("\n")[0];
+			return out(`${show(def, `${n.implicit ? "Not defined, so drawn as a box." : `Defined on line ${n.line}.`}`)}`);
+		}
+		const g = doc.groups.find((x) => x.id === t.value);
+		if (g) return out(show(source.slice(g.span.from, g.span.to), `A group with ${g.members.length} member${g.members.length === 1 ? "" : "s"}, defined on line ${g.line}.`));
+	}
+	return null;
+}
+/** Nodes, groups, sets, frames and steps, in source order, for outline views. */
+function symbols(source) {
+	const doc = parse(source);
+	return [
+		...doc.nodes.filter((n) => !n.implicit && !n.cell).map((n) => ({
+			name: n.id,
+			kind: n.role === "set" ? "set" : "node",
+			detail: n.label.replace(/\n/g, " ") || void 0,
+			span: n.span
+		})),
+		...doc.groups.map((g) => ({
+			name: g.id,
+			kind: "group",
+			detail: g.label,
+			span: g.span
+		})),
+		...doc.frames.map((f) => ({
+			name: f.kind,
+			kind: "frame",
+			detail: f.branches[0]?.label,
+			span: f.span
+		})),
+		...doc.steps.map((s) => ({
+			name: `step ${s.index}`,
+			kind: "step",
+			detail: s.caption,
+			span: s.span
+		}))
+	].sort((a, b) => a.span.from - b.span.from);
+}
+/** Where the name at `offset` is defined: a node's definition line, or a group's. */
+function definition(source, offset) {
+	const line = lineAt(source, offset);
+	const t = tokenizeLine(line.text, line.number, line.start).find((x) => offset >= x.from && offset <= x.to && (x.type === "ident" || x.type === "string"));
+	if (!t) return null;
+	const doc = parse(source);
+	const n = doc.nodes.find((x) => x.id === t.value);
+	if (n) return n.span;
+	const g = doc.groups.find((x) => x.id === t.value);
+	return g ? g.span : null;
 }
 // src/core/index.ts
 function render(source, overrides = {}, options = {}) {
@@ -32052,7 +34811,10 @@ function renderDiagram(source, options = {}) {
 		idPrefix: idPrefix ?? hashId(JSON.stringify([source, overrides]))
 	});
 	const svg = drawing.svg;
-	for (const item of drawing.items) for (const p of item.pieces) if (p.mode === "clip" && p.clip) p.clip.setAttribute("width", String((p.clipW ?? 0) + 40));
+	for (const item of drawing.items) for (const p of item.pieces) if (p.mode === "clip" && p.clip) {
+		p.clip.setAttribute("x", String((p.clipX ?? 0) - 40));
+		p.clip.setAttribute("width", String((p.clipW ?? 0) + 80));
+	}
 	if (fontCss !== void 0) {
 		const style = svg.querySelector("defs > style");
 		if (style) {
@@ -32091,4 +34853,4 @@ function renderToSVG(source, options = {}) {
 }
 /** The handwriting font stylesheet the SVGs import by default. */
 var DEFAULT_FONT_CSS = FONT_CSS_URL;
-export { COLORS, DEFAULT_FONT_CSS, FONT_CSS_URL, HANDS, LAYOUTS, PAPERS, PENS, SETTING_KEYS, checkScene, describe, describeLines, embedFonts, format, isSettingKey, layout, parse, readOverrides, renderDiagram, renderToSVG, setDirective };
+export { COLORS, DEFAULT_FONT_CSS, FONT_CSS_URL, HANDS, LAYOUTS, PAPERS, PENS, REFERENCE, SETTING_KEYS, checkScene, complete, definition, describe, describeLines, embedFonts, format, hover, isSettingKey, layout, parse, readOverrides, renderDiagram, renderToSVG, setDirective, symbols };

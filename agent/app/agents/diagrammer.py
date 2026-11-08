@@ -231,3 +231,76 @@ async def make_mermaid(spec: str, *, model=None, context: str = "") -> dict:
 
 def public(result: dict) -> str:
     return json.dumps({"kind": result["kind"], "title": result["title"], "source": result["source"]})
+
+
+# ---- one Inkling drawing, deterministic loop ------------------------------------------------------
+
+MAX_DRAWING_ATTEMPTS = 3
+_INKLING_FENCE = re.compile(r"```[ \t]*(?:inkling)?[ \t]*\n(.*?)```", re.S)
+_LOOK = re.compile(r"^\s*(paper|pen|hand|mess|seed)\b.*$\n?", re.M)
+
+
+def extract_inkling(reply: str) -> str:
+    """The drawing in a reply, without the look lines: the app picks paper and pen from the reader's theme."""
+    m = _INKLING_FENCE.search(reply)
+    return _LOOK.sub("", (m.group(1) if m else reply)).strip() + "\n"
+
+
+def drawing_problems(source: str) -> list[str]:
+    """Every reason not to show a drawing: checker errors and warnings, and the house rules."""
+    from app import inkling
+
+    result = inkling.check(source)
+    lines = [ln for ln in inkling.format_check(result).splitlines()[1:]]
+    return lines + inkling.source_problems(source)
+
+
+async def make_drawing(spec: str, *, layout: str = "", model=None, max_tries: int = MAX_DRAWING_ATTEMPTS,
+                       context: str = "") -> dict:
+    """Returns {"kind": "inkling", "ok", "title", "source", "attempts", "errors", "usage"}. `ok` is True when
+    the source passed the checker and the house rules; otherwise the source is the last draft."""
+    from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
+    from app import inkling
+
+    if model is None:
+        from app.agents.llm import chat_model
+
+        model = chat_model("low", max_tokens=6000)
+    model = model.with_config(metadata={"emit-messages": False, "emit-tool-calls": False})
+    want = f"\nUse `layout {layout}`.\n" if layout in inkling.LAYOUTS else ""
+    ask = (
+        f"Draw this as an Inkling diagram:\n\n{spec.strip()}\n{want}"
+        + (f"\nWhat the course says about it (use its names and numbers):\n{context.strip()}\n" if context.strip() else "")
+        + "\nReply with only the source in one ```inkling fenced block. Start it with a `title` line."
+    )
+    messages: list = [SystemMessage(content=config.prompt("drawing")), HumanMessage(content=ask)]
+    errors: list[str] = []
+    usage = {"inputTokens": 0, "outputTokens": 0}
+    source = ""
+    for attempt in range(1, max_tries + 1):
+        reply = await model.ainvoke(messages)
+        u = getattr(reply, "usage_metadata", None) or {}
+        usage["inputTokens"] += int(u.get("input_tokens") or 0)
+        usage["outputTokens"] += int(u.get("output_tokens") or 0)
+        source = extract_inkling(_text(reply))
+        problems = await asyncio.to_thread(drawing_problems, source)
+        if not problems:
+            return {"kind": "inkling", "ok": True, "title": inkling.title(source) or spec.strip().splitlines()[0][:80],
+                    "source": source, "attempts": attempt, "errors": errors, "usage": usage}
+        report = "\n".join(problems)
+        errors.append(report)
+        messages += [
+            reply if isinstance(reply, AIMessage) else AIMessage(content=_text(reply)),
+            HumanMessage(content=f"The checker says:\n{report}\n\nFix every line and reply with the whole corrected "
+                         "source in one ```inkling block."),
+        ]
+    return {"kind": "inkling", "ok": False, "title": inkling.title(source) or spec.strip().splitlines()[0][:80],
+            "source": source, "attempts": max_tries, "errors": errors, "usage": usage}
+
+
+def public_drawing(result: dict) -> str:
+    if not result["ok"]:
+        return json.dumps({"kind": "none", "title": result["title"],
+                           "note": "The drawing did not pass the checker. Explain it in words instead."})
+    return json.dumps({"kind": "inkling", "title": result["title"], "source": result["source"]})

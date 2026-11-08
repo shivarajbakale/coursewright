@@ -395,6 +395,21 @@
         "Chromium: Course options -> Download as EPUB -> 'Preparing book…' -> 633,911-byte .epub saved, toast, menu closes",
         "make check green"
       ]
+    },
+    {
+      "id": "tutor-inkling-drawings",
+      "priority": 29,
+      "area": "Tutor",
+      "title": "Tutor draws Inkling diagrams",
+      "user_visible_behavior": "The tutor calls make_drawing to draw a checked Inkling diagram in the chat, in any of Inkling 1.0's 13 layouts.",
+      "status": "in_progress",
+      "verification": [
+        "pytest test_tutor_drawing",
+        "vitest tutor-drawing",
+        "make check"
+      ],
+      "evidence": [],
+      "plan": "none: a new tool result in the tutor chat's existing diagram card; no new screen"
     }
   ]
 }

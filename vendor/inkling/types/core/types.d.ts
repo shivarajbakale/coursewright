@@ -1,5 +1,5 @@
 /** The parsed form of an Inkling source file. */
-export type Shape = 'box' | 'round' | 'circle' | 'diamond' | 'cloud' | 'db' | 'sticky' | 'person' | 'icon' | 'text';
+export type Shape = 'box' | 'round' | 'circle' | 'diamond' | 'cloud' | 'db' | 'sticky' | 'person' | 'icon' | 'text' | 'dot' | 'bullseye';
 export type Size = 'small' | 'normal' | 'large';
 export type EdgeKind = 'solid' | 'dashed' | 'squiggle';
 export type AnnotationKind = 'circle' | 'underline' | 'strike' | 'highlight' | 'note' | 'cross' | 'check';
@@ -45,8 +45,10 @@ export interface NodeDef {
         row: string;
         column: string;
     };
-    /** Compare: this node is a column heading or a row label. */
-    role?: 'column' | 'row';
+    /** Compare: a column heading or row label. Venn: a set's name. */
+    role?: 'column' | 'row' | 'set';
+    /** Venn: the sets an item is in (`in a & b`). Quadrant: the square it is in (`in "Quick wins"`). */
+    inside?: string[];
     line: number;
     /** The statement that defines it. For a node made by an arrow, that arrow line. */
     span: Span;
@@ -70,12 +72,34 @@ export interface AnnotationDef {
     kind: AnnotationKind;
     /** A node id, a group id, or "a->b" for an arrow. */
     target: string;
-    targetKind: 'node' | 'group' | 'edge';
+    /** `region` is a venn overlap, written `a&b`. */
+    targetKind: 'node' | 'group' | 'edge' | 'region';
     /** For arrow targets: index into Doc.edges, set once the arrow is found. */
     edgeIndex?: number;
     text?: string;
     color?: string;
     at?: number;
+    /** Sequence: `note over a, b`, centred on these lifelines instead of beside one. */
+    over?: string[];
+    line: number;
+    span: Span;
+    order: number;
+}
+export type FrameKind = 'loop' | 'opt' | 'alt' | 'par';
+/** Sequence: a box round some messages, such as `loop "every 5s" { … }`. */
+export interface FrameDef {
+    kind: FrameKind;
+    /** The first branch is the frame's own label; `else` and `and` add more. */
+    branches: {
+        label?: string;
+        order: number;
+        line: number;
+        span: Span;
+    }[];
+    /** Statement order of the closing }. */
+    end: number;
+    /** 0 for a frame at the top, 1 inside one frame, and so on. */
+    depth: number;
     line: number;
     span: Span;
     order: number;
@@ -92,12 +116,66 @@ export interface GroupDef {
 }
 /** `span a..b "label"` on a timeline, or `brace a..b "label"` on a stack. */
 export interface RangeDef {
+    /** Always 'span' since 1.0; `brace` lines are read as spans. */
     kind: 'span' | 'brace';
     from: string;
     to: string;
     label?: string;
     line: number;
     span: Span;
+}
+/** One chart statement's position in the source, for diagnostics and linking. */
+interface ChartItem {
+    line: number;
+    label?: string;
+    color?: string;
+}
+/**
+ * Chart layout: price data and the marks traders draw on it. Bars are counted
+ * from 1. A chart either has bars (candles or price lines) or x,y curves (a
+ * payoff diagram), whose x axis is a number line.
+ */
+export interface ChartDef {
+    /** Open, high, low, close per bar. */
+    candles: [number, number, number, number][];
+    /** `prices` and `line`: one value per bar. `curve`: x,y points. */
+    lines: (ChartItem & {
+        values?: number[];
+        points?: [number, number][];
+    })[];
+    levels: (ChartItem & {
+        price: number;
+    })[];
+    zones: (ChartItem & {
+        from: number;
+        to: number;
+    })[];
+    trades: (ChartItem & {
+        side: 'buy' | 'sell';
+        bar: number;
+        price: number;
+    })[];
+    stops: (ChartItem & {
+        price: number;
+    })[];
+    targets: (ChartItem & {
+        price: number;
+    })[];
+    trends: (ChartItem & {
+        a: [number, number];
+        b: [number, number];
+    })[];
+    /** Labels under the bars or along the x axis, from the first bar on. */
+    xlabels: string[];
+    axis: {
+        x?: string;
+        y?: string;
+    };
+    /** Words at the two ends of an axis: `axis x "Effort" low..high`. */
+    ends: {
+        x?: [string, string];
+        y?: [string, string];
+    };
 }
 export interface StepDef {
     index: number;
@@ -119,6 +197,8 @@ export interface Diagnostic {
         text: string;
     };
     span: Span;
+    /** Other places with the same cause, such as every use of one misspelt name. */
+    related?: Span[];
 }
 export type Direction = 'right' | 'down';
 export interface Settings {
@@ -166,9 +246,20 @@ export interface Doc extends Settings {
         order: number;
         span: Span;
     }[];
+    /** Venn: set ids in declaration order. */
+    sets: string[];
+    /** Quadrant: names of the four squares, top left, top right, bottom left, bottom right. */
+    quadrants: string[];
+    /** Sequence: loop, opt, alt and par frames, outer frames first. */
+    frames: FrameDef[];
     /** Sequence: repeat participants at the bottom. */
     footer: boolean;
+    /** Tree: elbow (org chart) or straight connectors. */
+    branches: 'elbow' | 'straight';
     /** Stack: space between layers, in pixels. */
     gap?: number;
+    /** Chart: prices, levels, trades. */
+    chart: ChartDef;
     diagnostics: Diagnostic[];
 }
+export {};

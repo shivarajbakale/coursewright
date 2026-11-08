@@ -27,7 +27,9 @@ const HELP = `Usage: inkling <command> [files…] [options]
 Commands:
   render <files…>   Draw each file as SVG. Writes name.svg next to name.inkling,
                     or to -o <file> for a single input (-o - for stdout).
-  check <files…>    Print problems as file:line: message. Exits 1 if any are errors.
+  check <files…>    Print problems as file:line: message, then the line with a caret
+                    under the problem and the fix. Exits 1 if any are errors.
+                    --brief prints only the file:line: message lines.
   format <files…>   Print tidied source, or rewrite the files with --write.
                     --check exits 1 if any file is not formatted.
 
@@ -68,6 +70,7 @@ function parseArgs(argv) {
     else if (name === 'embed-fonts') out.flags.embedFonts = true;
     else if (name === 'write' || name === 'w') out.flags.write = true;
     else if (name === 'check') out.flags.check = true;
+    else if (name === 'brief') out.flags.brief = true;
     else if (name === 'q' || name === 'quiet') out.flags.quiet = true;
     else if (name === 'h' || name === 'help') out.flags.help = true;
     else fail(`Unknown option ${a}. See --help.`);
@@ -127,6 +130,27 @@ const read = (f) => (f === '-' ? readFileSync(0, 'utf8') : readFileSync(f, 'utf8
 const label = (f) => (f === '-' ? '<stdin>' : f);
 const line = (f, d) => `${label(f)}:${d.span.line}: ${d.severity}: ${d.message}${d.hint ? ` ${d.hint}` : ''} [${d.code}]`;
 
+/** The source line under a problem, a caret under its span, then the fix and other places, the way compilers print them. */
+function context(source, d) {
+  const lines = source.split('\n');
+  const text = lines[d.span.line - 1];
+  if (text === undefined || (d.span.from === 0 && d.span.to === 0 && d.span.line === 1 && !text.trim())) return [];
+  const start = lines.slice(0, d.span.line - 1).reduce((n, l) => n + l.length + 1, 0);
+  const no = String(d.span.line);
+  const pad = ' '.repeat(no.length);
+  const col = Math.max(0, Math.min(text.length, d.span.from - start));
+  const end = Math.max(col + 1, Math.min(text.length, d.span.to - start));
+  const out = [`  ${no} | ${text}`, `  ${pad} | ${' '.repeat(col)}${'^'.repeat(end - col)}`];
+  if (d.fix) {
+    const was = source.slice(d.fix.span.from, d.fix.span.to);
+    const t = d.fix.text;
+    const what = t.includes('\n') ? `add the line "${t.trim()}"${d.fix.span.from === 0 ? ' at the top' : ' at the end'}` : was ? `change "${was}" to "${t}"` : `insert ${t === '"' ? "'\"'" : `"${t}"`}`;
+    out.push(`  ${pad} = fix: ${what}`);
+  }
+  if (d.related?.length) out.push(`  ${pad} = also on line${d.related.length === 1 ? '' : 's'} ${d.related.map((r) => r.line).join(', ')}`);
+  return out;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.command === '-v' || args.command === '--version') {
@@ -155,6 +179,7 @@ async function main() {
         if (d.severity === 'error') errors++;
         else warnings++;
         console.log(line(f, d));
+        if (!args.flags.brief) for (const l of context(source, d)) console.log(l);
       }
     }
     if (!args.flags.quiet) console.error(`${files.length} file${files.length === 1 ? '' : 's'} checked: ${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}.`);

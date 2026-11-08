@@ -24,7 +24,10 @@ VENDOR_DIR = config.AGENT_DIR / "vendor" / "inkling"
 CLI = VENDOR_DIR / "bin" / "inkling.mjs"
 TIMEOUT_SECONDS = 30
 MAX_PER_LESSON = 2
-LAYOUTS = ("flow", "free", "stack", "cycle", "timeline", "compare", "mindmap", "sequence")
+LAYOUTS = (
+    "flow", "free", "stack", "cycle", "timeline", "compare", "mindmap", "sequence",
+    "chart", "tree", "state", "venn", "quadrant",
+)
 
 # ```inkling [options]\n ... \n``` on lines of their own.
 FENCE = re.compile(r"^```inkling\b(?P<info>[^\n]*)\n(?P<body>.*?)^```[ \t]*$", re.M | re.S)

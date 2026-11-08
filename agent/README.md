@@ -98,7 +98,7 @@ Dockerfile, start.sh, litestream.yml, fly.toml   deployment (see Deploy)
   again before it lands. Materialise loads `diagrams/<key>.flow` (kind
   `flow`, preferred) or `.mmd` (kind `mermaid`) into the `diagrams` table, titled from the request.
 - **Tutor**: `create_deep_agent` with `search_course`, `read_chapter`, `read_notes`, `get_progress`,
-  `make_flow`, `make_quiz`, `CopilotKitMiddleware` and `WebSearchToggle`, wrapped in
+  `make_drawing`, `make_flow`, `make_quiz`, `CopilotKitMiddleware` and `WebSearchToggle`, wrapped in
   `copilotkit.LangGraphAGUIAgent`, mounted with `ag_ui_langgraph.add_langgraph_fastapi_endpoint(app, agent,
   "/agents/tutor")`. Frontend tools sent in the AG-UI `tools` field land in `state.copilotkit.actions`; the
   middleware adds them to the model's tools and intercepts their calls so they run in the browser (the prompt
@@ -109,6 +109,10 @@ Dockerfile, start.sh, litestream.yml, fly.toml   deployment (see Deploy)
   Tool results (JSON strings):
   - `search_course` -> `{"query", "hits": [{"n", "chunkId", "title", "chapterId", "courseId", "text"}]}`
     (plus `"note"` when empty); the answer cites `[n]`.
+  - `make_drawing(spec, layout)` -> `{"kind": "inkling", "title", "source"}`, or `{"kind": "none", "title",
+    "note"}`; the source passed the Inkling checker with no warnings and the house rules (title, steps),
+    3 tries. The prompt (`app/prompts/drawing.md`) has one checked example per layout, all 13 of Inkling
+    1.0, and `test_tutor_drawing` keeps them clean.
   - `make_flow(spec)` -> `{"kind": "flow"|"mermaid", "title", "source"}`; a flow source passed the checker
     (3 tries, then Mermaid).
   - `make_quiz(concept_or_chapter, n)` -> `{"questions": [{"prompt", "options": [...], "answer": <0-based>,

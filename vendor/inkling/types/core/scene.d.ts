@@ -52,11 +52,15 @@ export interface PlacedLabel {
     box: Box;
     /** Where a note's arrow should point, when not at its target's edge (a lifeline). */
     anchor?: Pt;
+    /** Drawn as a note card with no arrow (a sequence note over lifelines). */
+    card?: boolean;
 }
 /** What a decoration belongs to, so it appears in the right step. */
 export interface Owner {
     node?: string;
     edge?: number;
+    /** With `steps auto`: the step this belongs to, when it has no node or arrow (a chart's levels). */
+    step?: number;
 }
 /** Extra ink a layout needs that is not a node or an arrow. */
 export type Decoration = ({
@@ -66,7 +70,8 @@ export type Decoration = ({
     arrow?: boolean;
     width?: number;
     color?: 'ink' | 'mark' | string;
-    smooth?: boolean;
+    smooth?: boolean; /** Straight segments between the points (data), never a curve through them. */
+    straight?: boolean;
 } | {
     kind: 'brace';
     from: Pt;
@@ -91,7 +96,11 @@ export type Decoration = ({
     kind: 'box';
     box: Box;
     dashed?: boolean;
-    fill?: string;
+    fill?: string; /** Ink name for the outline. */
+    color?: string; /** Hatch the fill instead of painting it. */
+    hachure?: boolean; /** No outline, only the fill. */
+    bare?: boolean; /** Only the outline matters to labels: they may sit inside (a sequence frame). */
+    frame?: boolean;
 } | {
     kind: 'ring';
     cx: number;
@@ -103,6 +112,31 @@ export type Decoration = ({
     kind: 'zigzag';
     at: Pt;
     vertical: boolean;
+}
+/** A venn set: a circle in its own ink, hatched with its own colour. */
+ | {
+    kind: 'disc';
+    cx: number;
+    cy: number;
+    r: number;
+    color?: string;
+    fill?: string; /** Filled with its ink: a dot. */
+    solid?: boolean;
+}
+/** A venn overlap, hatched: inside every `in` circle and outside every `out` one. */
+ | {
+    kind: 'region';
+    in: {
+        cx: number;
+        cy: number;
+        r: number;
+    }[];
+    out: {
+        cx: number;
+        cy: number;
+        r: number;
+    }[];
+    fill: string;
 }) & {
     owner?: Owner;
 };
