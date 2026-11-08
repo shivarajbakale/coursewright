@@ -23,6 +23,7 @@ const ICONS = {
   play: 'M8 5.5v13l10-6.5z',
   pause: 'M9 5v14M15 5v14',
   replay: 'M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4',
+  expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
 } as const;
 
 export type IconName = keyof typeof ICONS;

@@ -22,6 +22,9 @@ interface TutorState extends TutorContextValue {
   setHighlight: (text: string | null) => void;
   /** A prompt waiting to be sent when the chat mounts. */
   pending: string | null;
+  /** The side panel's conversation; null until the learner starts a new one (the agent's own thread). */
+  panelThreadId: string | null;
+  newPanelThread: () => void;
   setContext: (ctx: Partial<TutorContextValue>) => void;
   openPanel: () => void;
   closePanel: () => void;
@@ -39,6 +42,8 @@ export const useTutor = create<TutorState>((set, get) => ({
   highlight: null,
   setHighlight: (highlight) => set({ highlight }),
   pending: null,
+  panelThreadId: null,
+  newPanelThread: () => set({ panelThreadId: crypto.randomUUID() }),
   setContext: (ctx) => set(ctx),
   openPanel: () => set({ panelOpen: true }),
   closePanel: () => set({ panelOpen: false }),

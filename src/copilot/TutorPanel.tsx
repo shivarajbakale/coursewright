@@ -1,6 +1,6 @@
 import { ActionIcon, Badge, Box, Group, Stack, Text, Tooltip } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import { Maximize2, X } from 'lucide-react';
+import { Maximize2, MessageSquarePlus, X } from 'lucide-react';
 import { TutorChat } from './TutorCopilot';
 import { useTutor } from './tutorStore';
 
@@ -10,7 +10,7 @@ import { useTutor } from './tutorStore';
  * one on screen.
  */
 export function TutorPanel() {
-  const { chapterId, noteId, selection, closePanel } = useTutor();
+  const { chapterId, noteId, selection, closePanel, panelThreadId, newPanelThread } = useTutor();
   const scope = chapterId ? 'This chapter' : noteId ? 'This note' : 'All courses';
 
   return (
@@ -30,6 +30,11 @@ export function TutorPanel() {
           </Badge>
         </Group>
         <Group gap={4}>
+          <Tooltip label="New conversation">
+            <ActionIcon variant="subtle" onClick={newPanelThread} aria-label="New conversation">
+              <MessageSquarePlus size={16} />
+            </ActionIcon>
+          </Tooltip>
           <Tooltip label="Open full tutor">
             <ActionIcon variant="subtle" component={Link} to="/tutor" aria-label="Open full tutor" onClick={closePanel}>
               <Maximize2 size={16} />
@@ -50,7 +55,7 @@ export function TutorPanel() {
         </Box>
       )}
       <Box style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <TutorChat compact />
+        <TutorChat key={panelThreadId ?? 'first'} threadId={panelThreadId ?? undefined} compact />
       </Box>
     </Stack>
   );

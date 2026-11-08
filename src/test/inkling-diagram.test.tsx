@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { BlockEditor } from '@shivarajbakale/blocks';
 import { InklingDiagram } from '@/components/diagrams/InklingDiagram';
@@ -30,6 +30,24 @@ describe('Inkling explainers on the desktop', () => {
     expect(await screen.findByRole('img', { name: 'The loop. The model thinks. Then it acts' })).toBeInTheDocument();
     expect(screen.getByText('2. Then it acts')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Previous step' })).toBeEnabled();
+  });
+
+  it('opens large, steps with the arrow keys and closes', async () => {
+    render(
+      <MantineProvider>
+        <InklingDiagram source={SOURCE} />
+      </MantineProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Open large' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(await within(dialog).findByRole('img', { name: 'The loop. The model thinks. Then it acts' })).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Open large' })).toBeNull();
+    fireEvent.keyDown(window, { key: 'ArrowLeft' });
+    expect(await within(dialog).findByText('1. The model thinks')).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Fill the screen' }));
+    expect(within(dialog).getByRole('button', { name: 'Back to a window' })).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    await screen.findAllByRole('button', { name: 'Open large' });
   });
 
   it('shows the source when the drawing has a mistake', async () => {

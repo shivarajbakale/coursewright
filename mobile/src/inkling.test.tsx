@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { fontWait } from '@/lib/inkling';
 import { parseChapter } from './markdown/parse';
 import { Inkling } from './diagrams/Inkling';
@@ -20,6 +20,16 @@ describe('explainers in the reader', () => {
     expect(await screen.findByRole('img', { name: 'The loop. The model thinks. Then it acts' })).toBeInTheDocument();
     expect(screen.getByText('2. Then it acts')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Draw it again' })).toBeInTheDocument();
+  });
+
+  it('opens full screen and closes again', async () => {
+    render(<Inkling source={SOURCE} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Open full screen' }));
+    const close = await screen.findByRole('button', { name: 'Close full screen' });
+    await waitFor(() => expect(screen.getAllByRole('img', { name: 'The loop. The model thinks. Then it acts' })).toHaveLength(2));
+    expect(screen.getAllByRole('button', { name: 'Open full screen' })).toHaveLength(1);
+    fireEvent.click(close);
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Close full screen' })).toBeNull());
   });
 
   it('shows the text when the drawing has a mistake', async () => {

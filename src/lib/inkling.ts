@@ -61,7 +61,7 @@ export const fontWait = { ms: 2500 };
 const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * Draws `source` into a new child of `host` and returns a controller; `destroy` removes that child. The drawing starts
+ * Draws `source` into a new child of `host` and returns a controller (`fill`: as large as the screen allows); `destroy` removes that child. The drawing starts
  * finished; it plays from the start once, the first time half of it scrolls into view, unless the reader
  * asked for reduced motion. Throws with the first error message when the source has a mistake.
  */
@@ -70,6 +70,7 @@ export async function mountExplainer(
   source: string,
   paper: Paper,
   onChange: (s: ExplainerState) => void,
+  { fill = false }: { fill?: boolean } = {},
 ): Promise<Explainer> {
   const ink = await loadInkling();
   const error = ink.parse(source).diagnostics.find((d) => d.severity === 'error');
@@ -109,7 +110,11 @@ export async function mountExplainer(
   svg.removeAttribute('width');
   svg.removeAttribute('height');
   svg.style.display = 'block';
-  svg.style.width = `min(100%, ${w}px, calc(70vh * ${(w / h).toFixed(4)}))`;
+  // Full screen (`fill`) lets it grow past its own size, up to the height the screen leaves for it.
+  const ratio = (w / h).toFixed(4);
+  svg.style.width = fill
+    ? `min(100%, calc((100dvh - 150px) * ${ratio}))`
+    : `min(100%, ${w}px, calc(70vh * ${ratio}))`;
   svg.style.height = 'auto';
   svg.style.aspectRatio = `${w} / ${h}`;
   svg.style.margin = '0 auto';

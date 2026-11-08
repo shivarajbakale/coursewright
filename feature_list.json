@@ -79,32 +79,6 @@
       "notes": "Spec: FEATURE-PLAN.md (outline-review.feature-plan.json)"
     },
     {
-      "id": "teach-from-zero",
-      "priority": 14,
-      "area": "Course builder",
-      "title": "Courses start from zero and teach one concept per lesson",
-      "user_visible_behavior": "Every course starts from the same floor whatever the learner's level, and teaches one concept per short lesson titled '<concept>: <plain words>', in an order where each lesson rests only on earlier ones. Each lesson ends with 'What you have now' and a 'Your map so far' diagram.",
-      "status": "passing",
-      "plan": "none: agent pipeline and prompts only, no screen changes (lessons render through the existing chapter page and its diagram cards)",
-      "verification": [
-        "agent pytest",
-        "teaching eval baseline vs new build",
-        "a real build on the Mac mini",
-        "make check"
-      ],
-      "evidence": [
-        "cd agent && uv run pytest: 84 passed (curriculum checks, lesson term checks, dependency waves, beginner reader + revision rounds, failed revision keeps the draft, level never reaches curriculum or writer)",
-        "Baseline (evals/teaching.py on the deployed Agentic RAG course, exported via evals/export_course.py): 14 chapters, 14/14 vague titles, 17 forward references, 2 sentences assuming experience; beginner reader stuck 18 times in chapter 1, 12.64 per chapter",
-        "Local build, same brief, MiniMax-M3, after the fixes: 80 lessons in 12 modules, one concept each, 119 prerequisite links, opens with 'Language model: a program that predicts what comes next in text'; 4.08M tokens, ~35 min including one Continue after a failed revision (now tolerated)",
-        "Same eval on it: 1/80 vague titles, 0 forward references, 0 assuming experience, 11 later names used early; beginner reader stuck 5 times in lesson 1, 5.46 per lesson (was 12.64), blind answer rate 0.99; accuracy check corrected 7 of 80",
-        "Every lesson carries a code-drawn 'Your map so far' Mermaid diagram with the real prerequisite edges (rendered through the existing chapter diagram card)",
-        "Deployed to the Mac mini (npm run deploy, health 200); fresh unattended build of the same brief there: ready, 84 lessons in 6 modules, 4.37M tokens, no errors; opens with 'Language models: programs that predict likely continuations of text'",
-        "Context packs, planned terms, 8 lessons at a time, 1 revision round (local, same brief, MiniMax-M3): 83 lessons in 23.3 min (was ~40-70), 3.09M tokens (was 4.1-4.4M plus ~0.4M untracked indexing calls, now none); lesson prompt ~1.5k tokens (was ~7.5k)",
-        "Same eval: 0/83 vague titles, 0 forward references, 0 later names used early (was 11), beginner reader stuck 0 times in lesson 1, 6.59 per lesson (5.46 with two revision rounds; 12.64 for the old course)"
-      ],
-      "notes": "Rules in agent/app/jobs/pedagogy.py; measured by agent/evals/teaching.py"
-    },
-    {
       "id": "agent-authored-courses",
       "priority": 15,
       "area": "Course authoring",
@@ -425,6 +399,20 @@
       "evidence": [
         "make check green; live walk-through answered"
       ]
+    },
+    {
+      "id": "drawing-large-panel-threads",
+      "priority": 31,
+      "area": "Reading",
+      "title": "Drawings open large; sidebar tutor starts new threads",
+      "user_visible_behavior": "Every Inkling drawing has Open large (modal, fill screen, arrow keys); phone reader full screen. Tutor sidebar: New conversation.",
+      "status": "in_progress",
+      "plan": "none: one button each on existing surfaces",
+      "verification": [
+        "vitest",
+        "live"
+      ],
+      "evidence": []
     }
   ]
 }
