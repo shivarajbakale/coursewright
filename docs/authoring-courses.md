@@ -38,7 +38,7 @@ make course-import DIR=courses/bloom-filters ARGS="--server http://localhost:812
 make course-schema                                    # JSON Schemas of the three JSON files
 ```
 
-The same commands, from `agent/`: `uv run python -m app.cli check|import|schema ...`. `check --json`
+The same commands, from `agent/`: `uv run python -m app.cli check|import|schema|export-epub ...`. `check --json`
 gives a machine-readable report, and `--strict` fails on warnings as well as errors.
 
 - **Local import** writes to the database the agent service uses (`CW_DB_PATH`, by default

@@ -86,6 +86,25 @@ export function useDeleteCourse() {
   });
 }
 
+/** Download a finished course as an EPUB book and save it with the name the server gives. */
+export function useDownloadCourseEpub() {
+  return useMutation({
+    mutationFn: (id: string) => courseService.downloadEpub(id),
+    onSuccess: ({ blob, filename }) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Book downloaded');
+    },
+    onError: () => toast.error('Could not build the book. Try again.'),
+  });
+}
+
 /** Ask a finished course for more: plans new modules on top of it. */
 export function useExtendCourse(id: string) {
   const qc = useQueryClient();

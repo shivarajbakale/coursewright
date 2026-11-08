@@ -1,29 +1,30 @@
 <!-- feature-plan:v1 — generated, do not hand-edit.
-     Regenerate with: node scripts/feature-plan.mjs course-extend-ui.feature-plan.json -->
+     Regenerate with: node scripts/feature-plan.mjs course-epub-export.feature-plan.json -->
 
-# Extend a finished course from its page
+# Download a course as an EPUB book
 
-`course-extend-ui` · 2 surfaces
+`course-epub-export` · 1 surface
 
 ## Problem
 
-Courses can now grow (POST /api/courses/:id/extend: plan new modules on top of what the course teaches, review, then write only them), but only through the API. The owner should be able to say 'also teach X' on a finished course, review the new modules the same way as a new outline, and keep reading the course while the new part is written.
+A course can only be read inside Coursewright. The owner wants to take one course to an e-reader (Apple Books, Kobo, Kindle via Send to Kindle) and read it offline, as a book: the lessons in order, the drawings, the questions and the projects.
 
 ## Not in this feature
 
-- Editing or rewriting existing lessons: an extension only appends modules.
-- Extending courses imported from a folder (no builder plan): the menu item is hidden for them.
-- The phone and iPad reader: it shows the new modules once written, with no extend action.
+- Moving Flowmovie diagrams: an EPUB cannot play them; the book prints each diagram's step-by-step text instead.
+- The learner's own notes, progress and tutor chats: the book holds only the course.
+- PDF or other formats, and exporting several courses at once.
+- The phone and iPad reader app: export is on the web course page only.
 
 ## Surfaces
 
-### Course page: Extend this course · `/courses/:courseId`
+### Course page: Download as EPUB · `/courses/:courseId`
 
-Archetype: `detail` — Ask for more of a finished course, and see where that request stands.
+Archetype: `detail` — Save the whole course as one EPUB file.
 
-**Peak** — typing 'also teach options and execution' and seeing it start planning new modules on top of the course
+**Peak** — choosing 'Download as EPUB' and the browser saving 'build-domain-expert-agents-on-pi.epub' a moment later
 
-**End** — back on the course page, a quiet banner says the new modules are being planned, waiting for review, or being written, with a link
+**End** — the book opens in Apple Books with the title page, a module-by-module contents and every drawing in place
 
 **Desktop @1440**
 
@@ -31,20 +32,18 @@ Archetype: `detail` — Ask for more of a finished course, and see where that re
 ┌────────────────────────────────────────────────────────────────────────────┐
 │ ▨ Acme      ⌕ Search…                                       ⌘K   ◐   ⬤     │
 ├───────────────┬────────────────────────────────────────────────────────────┤
-│ Dashboard     │ Course page: Extend this course                            │
+│ Dashboard     │ Course page: Download as EPUB                              │
 │ Customers     │                                                            │
 │ Inbox         │ ┌────────────────────────────────────────────────────────┐ │
-│ Team          │ │ Extension banner (only while one is in progress)       │ │
+│ Team          │ │ Header (as today)                                      │ │
 │ Billing       │ │ ────────────────────────────────────────────────────── │ │
-│ Settings      │ │ Planning  Planning new modules on top of this course…… │ │
-│ Course page: …│ │ Review    8 new modules are ready for you to review. … │ │
-│               │ │ Writing   Writing 77 new lessons. You can keep readin… │ │
-│               │ └────────────────────────────────────────────────────────┘ │
+│ Settings      │ │ Course options ⋯  Extend this course · Download as EP… │ │
+│ Course page: …│ └────────────────────────────────────────────────────────┘ │
 │               │                                                            │
 │               │ ┌────────────────────────────────────────────────────────┐ │
-│               │ │ Modules (as today)                                     │ │
+│               │ │ Outline and progress (as today, unchanged)             │ │
 │               │ │ ────────────────────────────────────────────────────── │ │
-│               │ │ Course options ⋯    Extend this course · Delete course │ │
+│               │ │ Modules     the course's modules and lessons, as today │ │
 │               │ └────────────────────────────────────────────────────────┘ │
 │               │                                                            │
 │               │ ────────────────────────────────────────────────────────── │
@@ -56,12 +55,10 @@ Archetype: `detail` — Ask for more of a finished course, and see where that re
 
 ```
 ┌──────────────────────────┐
-│ ☰  Course page: Exte…⌕   │
+│ ☰  Course page: Down…⌕   │
 ├──────────────────────────┤
 │ ┌──────────────────────┐ │
-│ │ Planning  Planning … │ │
-│ │ Review    8 new mod… │ │
-│ │ Writing   Writing 7… │ │
+│ │ Course options ⋯  E… │ │
 │ └──────────────────────┘ │
 └──────────────────────────┘
 ```
@@ -71,104 +68,25 @@ Archetype: `detail` — Ask for more of a finished course, and see where that re
 ```
         loading                     empty                      error
 ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ No extension in      │   │ ⚠                    │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ progress: no banner. │   │ The extension's      │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │                      │   │ planning failed: the │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │                      │   │ banner says          │
-│                      │   │                      │   │ 'Planning the new    │
-│                      │   │                      │   │ modules failed' with │
-│                      │   │                      │   │ Try again (sends the │
-│                      │   │                      │   │ same request) and    │
-│                      │   │                      │   │ Dismiss.             │
-│                      │   │                      │   │                      │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ A course that is     │   │ ⚠                    │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ still being written  │   │ A red notification:  │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ has no lessons yet:  │   │ 'Could not build the │
+│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ the item is disabled │   │ book. Try again.'    │
+│                      │   │ with the hint        │   │ The course page is   │
+│                      │   │ 'Available when the  │   │ unchanged.           │
+│                      │   │ course is ready'.    │   │                      │
 │                      │   │                      │   │ [ Try again ]        │
 └──────────────────────┘   └──────────────────────┘   └──────────────────────┘
  Skeleton mirrors rows       one CTA, 3 lines max      retry, never raw text
 ```
 
-Success: When the new modules are written the banner goes and they appear at the end of the outline.
+Success: The browser saves <course-title>.epub; a green notification says 'Book downloaded'.
 
 Held to:
 
 - B5 — exactly one <h1>, and it names the subject
 - B5 — content in at least two declared sections (data-section)
 - B5 — the primary action is pinned outside the scroll region
-
-### Progress and review (the build page, reused) · `/courses/:courseId/building`
-
-Archetype: `sequence` — Follow the extension and approve its outline, exactly as a new course's.
-
-**Peak** — the new modules listed under the existing ones, reshaped by asking, then 'Write these modules'
-
-**End** — the writing progress, with a link back to read the course meanwhile
-
-**Desktop @1440**
-
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│ ▨ Acme      ⌕ Search…                                       ⌘K   ◐   ⬤     │
-├───────────────┬────────────────────────────────────────────────────────────┤
-│ Dashboard     │ Progress and review (the build page…                       │
-│ Customers     │                                                            │
-│ Inbox         │                   Step 1 of 2 — Progress                   │
-│ Team          │        ######################......................        │
-│ Billing       │                                                            │
-│ Settings      │        ┌──────────────────────────────────────────┐        │
-│ Progress and …│        │ Steps  Researching → Mapping the new co… │        │
-│               │        └──────────────────────────────────────────┘        │
-│               │                                                            │
-│               │        [ Back ]                            [ Next ]        │
-└───────────────┴────────────────────────────────────────────────────────────┘
-```
-
-**Mobile @390** — design intent; the probe measures 1280 / 1440 / 1920 only.
-
-```
-┌──────────────────────────┐
-│ ☰  Progress and revi…⌕   │
-├──────────────────────────┤
-│ ┌──────────────────────┐ │
-│ │ Steps  Researching … │ │
-│ └──────────────────────┘ │
-└──────────────────────────┘
-```
-
-**States**
-
-```
-        loading                     empty                      error
-┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ No extension for     │   │ ⚠                    │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ this course: the     │   │ A failed step shows  │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ page shows the       │   │ its message with Try │
-│ ▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓     │   │ course's last build, │   │ again, as a failed   │
-│                      │   │ as today.            │   │ build does today.    │
-│                      │   │                      │   │                      │
-│                      │   │                      │   │ [ Try again ]        │
-└──────────────────────┘   └──────────────────────┘   └──────────────────────┘
- Skeleton mirrors rows       one CTA, 3 lines max      retry, never raw text
-```
-
-Success: Approving starts writing; 'Read the course meanwhile' links back to the course page.
-
-Held to:
-
-- B7 — exactly one step on screen at a time
-- B7 — progress is declared and sits in the top half
-- B7 — a back affordance exists (data-back) and never destroys an answer
-
-## Overlays
-
-```
-          dialog · extend
-┌────────────────────────────────┐
-│ Extend this course           ✕ │
-│ ────────────────────────────── │
-│ What should it add?  [ Advanc… │
-│ ────────────────────────────── │
-│ [ Cancel ] [ Plan new modules …│
-└────────────────────────────────┘
-```
 
 ## Components
 
@@ -179,44 +97,53 @@ the choices between families live in
 
 | Surface | Control | Why this one | Not |
 | --- | --- | --- | --- |
-| course | `Menu item 'Extend this course' in the existing Course options menu, opening a Modal with a Textarea` | a rare, deliberate action; the menu already holds the course's other whole-course action (Delete) and keeps the header to one primary button | `a second header button (competes with Continue) and a page of its own (one field does not need one)` |
-| course | `Alert banner above the modules while an extension is planning, waiting for review, or writing` | the course stays readable during an extension, so the page must say what is happening without blocking it | `redirecting to the build page as a new course does (it would hide a readable course)` |
-| review | `The existing build page and OutlineReview, with existing modules collapsed and labelled` | one review flow for new courses and extensions; the outline chat already edits only the new modules | `a separate extension review screen` |
+| course | `Menu item 'Download as EPUB' with a BookDown icon in the existing Course options menu` | a rare whole-course action like Extend and Delete; the menu keeps the header to one primary button | `a header button (competes with Continue) and a dialog with format options (there is one format)` |
+| course | `Mantine notifications for success and failure` | the download happens in the background and needs only a short confirmation | `an Alert on the page (it would stay after the download is done)` |
+
+## Data model
+
+- **EPUB book (built on request, not stored)**
+  - `undefined`: undefined
+  - `undefined`: undefined
+  - `undefined`: undefined
+  - `undefined`: undefined
+  - `undefined`: undefined
 
 ## API endpoints
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| POST | `/api/courses/:id/extend` | no | start planning (exists) |
-| GET | `/api/courses/:id` | no | adds extension: {status: planning|review|writing|failed, jobId, modules} (new field) |
-| GET/POST | `/api/courses/:id/plan, /plan/chat, /plan/approve` | no | review and approve (exist) |
+| GET | `/api/courses/:id/export.epub` | no | builds and returns the EPUB (application/epub+zip, Content-Disposition attachment); 404 for an unknown course, 409 while the course is not ready |
 
 ## Integration points
 
 ```
-  CoursePage      ──▶  useExtendCourse → courseService.extend, then navigate to /courses/:id/building   (MSW handler for extend)
-  GeneratingPage  ──▶  follows the course's current job even when the course is ready   (today it treats ready + job as done)
-  OutlineReview   ──▶  knows which modules are new from plan.extension.from   (button reads 'Write these modules')
+  CoursePage                ──▶  useDownloadCourseEpub → coursewrightService.downloadEpub (axios, responseType blob) → saves the file   (MSW handler returns a small fixture EPUB)
+  agent/app/api/courses.py  ──▶  agent/app/epub.py build_epub(course detail, chapters, projects)   (stdlib zipfile; markdown-it-py for markdown; inkling render via the vendored CLI under Node, falling back to the drawing's title when Node is missing)
+  agent/app/cli.py          ──▶  export-epub <folder> -o book.epub   (same builder for a course folder, so authored courses can be checked as books before import)
 ```
 
 ## Blast radius
 
 ```
-new (1)
-  └── src/pages/Course/ExtendCourseModal.tsx
+new (3)
+  ├── agent/app/epub.py
+  ├── agent/tests/test_epub.py
+  └── src/mocks/fixtures/course.epub (tiny)
 
-changed (4)
+changed (3)
   ├── src/pages/Course/CoursePage.tsx
-  ├── src/pages/Generating/GeneratingPage.tsx, OutlineReview.tsx
-  ├── src/api/services/coursewrightService.ts, src/api/types, src/hooks/useCoursewright.ts, src/mocks
-  └── agent/app/api/common.py (course detail: extension), agent/app/api/plans.py (plan_out: extension.from)
+  ├── src/api/services/coursewrightService.ts, src/hooks/useCoursewright.ts, src/mocks handlers
+  └── agent/app/api/courses.py (new route), agent/app/cli.py (export-epub), agent/pyproject.toml (markdown-it-py)
 ```
 
 ## Verification plan
 
-- [ ] `vitest: menu item opens the modal, extend posts and navigates; banner per state; review collapses existing modules`
+- [ ] `pytest: the book is a valid EPUB 3 zip (mimetype first and stored, container.xml, opf manifest lists every file, nav lists every lesson), every lesson present, Inkling SVG embedded, questions and answers present`
+- [ ] `epubcheck on the domain-experts-on-pi book if available, else open it in Apple Books`
+- [ ] `vitest: menu item calls the service, shows loading, success and error notifications; disabled while the course is not ready`
 - [ ] `make check`
-- [ ] `WebKit against the Mac mini: extend a small course end to end`
+- [ ] `Download from the running app against the Mac mini and open the file`
 - [ ] `ux-prepass` — all seven boxes, `npm run ui-lint` green is the evidence for item 7
 
 ---

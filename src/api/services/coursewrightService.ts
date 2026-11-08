@@ -66,6 +66,13 @@ export const courseService = {
   resume: (id: string) => post<{ course: CourseSummary; jobId: string }>(`/courses/${id}/resume`, {}),
   /** Plan new modules after a finished course's last one; they wait for review like a new outline. */
   extend: (id: string, request: string) => post<{ jobId: string }>(`/courses/${id}/extend`, { request }),
+  /** The whole course as an EPUB book, built by the agent service on request. */
+  downloadEpub: async (id: string): Promise<{ blob: Blob; filename: string }> => {
+    const res = await apiClient.get<Blob>(`/courses/${id}/export.epub`, { responseType: 'blob' });
+    const disposition = String(res.headers['content-disposition'] ?? '');
+    const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'course.epub';
+    return { blob: res.data, filename };
+  },
 };
 
 /** The outline review: a build that stopped after its outline, waiting for you. */

@@ -307,6 +307,17 @@ export const coursewrightHandlers = [
     return ok(detail);
   }),
 
+  // The book itself is built by the agent; the mock returns a few bytes under the real headers.
+  http.get('/api/courses/:id/export.epub', ({ params }) => {
+    const c = params.id === RAFT_ID ? { status: 'ready', title: 'Raft' } : extraCourses.find((x) => x.id === params.id);
+    if (!c) return HttpResponse.json({ message: 'Course not found' }, { status: 404 });
+    if (c.status !== 'ready') return HttpResponse.json({ message: 'The course is not ready yet' }, { status: 409 });
+    const name = String(c.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'course';
+    return new HttpResponse(new Blob(['application/epub+zip'], { type: 'application/epub+zip' }), {
+      headers: { 'Content-Type': 'application/epub+zip', 'Content-Disposition': `attachment; filename="${name}.epub"` },
+    });
+  }),
+
   http.post('/api/courses/:id/resume', ({ params }) => {
     const c = extraCourses.find((x) => x.id === params.id);
     if (!c) return HttpResponse.json({ message: 'Course not found' }, { status: 404 });

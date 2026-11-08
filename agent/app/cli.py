@@ -4,6 +4,7 @@
     uv run python -m app.cli import <folder> [--replace] [--strict] [--server URL]
     uv run python -m app.cli schema
     uv run python -m app.cli prose-report <folder or lessons.json>... [--json]
+    uv run python -m app.cli export-epub <folder> [-o book.epub]
 
 `check` exits 1 when the folder has errors (or, with --strict, warnings). `import` checks first, then writes
 the course into the local database (CW_DB_PATH, default agent/data/coursewright.db) or, with --server, sends
@@ -73,6 +74,21 @@ def cmd_prose_report(args) -> int:
     return 0
 
 
+def cmd_export_epub(args) -> int:
+    from app import epub
+    from app.materialise import MaterialiseError
+
+    try:
+        book = epub.book_from_folder(Path(args.folder))
+    except MaterialiseError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    out = Path(args.out or book.filename)
+    out.write_bytes(epub.build_epub(book))
+    print(f"Wrote {out} ({book.lesson_count} lessons, {out.stat().st_size // 1024} KB)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m app.cli", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -94,6 +110,10 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("sources", nargs="+", help="course folders, or a JSON list of {course, md}")
     r.add_argument("--json", action="store_true")
     r.set_defaults(fn=cmd_prose_report)
+    e = sub.add_parser("export-epub", help="build an EPUB book from a course folder")
+    e.add_argument("folder")
+    e.add_argument("-o", "--out", help="output file (default: <course-title>.epub)")
+    e.set_defaults(fn=cmd_export_epub)
     args = ap.parse_args(argv)
     return args.fn(args)
 

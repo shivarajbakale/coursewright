@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from app.api.common import course_detail, get_course_summary, list_courses, not_found, ok
@@ -214,6 +214,25 @@ def get_course(course_id: str):
     if not detail:
         raise not_found("Course not found")
     return ok(detail)
+
+
+@router.get("/courses/{course_id}/export.epub")
+def export_epub(course_id: str):
+    from app import epub
+
+    with db() as conn:
+        try:
+            book = epub.book_from_db(conn, course_id)
+        except epub.NotReady:
+            raise HTTPException(409, "The course is not ready yet") from None
+    if not book:
+        raise not_found("Course not found")
+    data = epub.build_epub(book)
+    return Response(
+        content=data,
+        media_type="application/epub+zip",
+        headers={"Content-Disposition": f'attachment; filename="{book.filename}"'},
+    )
 
 
 @router.delete("/courses/{course_id}")

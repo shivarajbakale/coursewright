@@ -1,0 +1,127 @@
+{
+  "feature": {
+    "id": "course-epub-export",
+    "title": "Download a course as an EPUB book",
+    "problem": "A course can only be read inside Coursewright. The owner wants to take one course to an e-reader (Apple Books, Kobo, Kindle via Send to Kindle) and read it offline, as a book: the lessons in order, the drawings, the questions and the projects.",
+    "nonGoals": [
+      "Moving Flowmovie diagrams: an EPUB cannot play them; the book prints each diagram's step-by-step text instead.",
+      "The learner's own notes, progress and tutor chats: the book holds only the course.",
+      "PDF or other formats, and exporting several courses at once.",
+      "The phone and iPad reader app: export is on the web course page only."
+    ]
+  },
+  "surfaces": [
+    {
+      "id": "course",
+      "name": "Course page: Download as EPUB",
+      "route": "/courses/:courseId",
+      "archetype": "detail",
+      "moments": {
+        "peak": "choosing 'Download as EPUB' and the browser saving 'build-domain-expert-agents-on-pi.epub' a moment later",
+        "end": "the book opens in Apple Books with the title page, a module-by-module contents and every drawing in place"
+      },
+      "purpose": "Save the whole course as one EPUB file.",
+      "panels": [
+        {
+          "id": "modules",
+          "kind": "detail",
+          "title": "Header (as today)",
+          "fields": [
+            {
+              "label": "Course options \u22ef",
+              "value": "Extend this course \u00b7 Download as EPUB \u00b7 Delete course"
+            }
+          ]
+        },
+        {
+          "id": "outline",
+          "kind": "detail",
+          "title": "Outline and progress (as today, unchanged)",
+          "fields": [
+            {
+              "label": "Modules",
+              "value": "the course's modules and lessons, as today"
+            }
+          ]
+        }
+      ],
+      "states": {
+        "loading": "While the book is built the menu item shows 'Preparing book\u2026' with a loader and cannot be chosen twice.",
+        "empty": "A course that is still being written has no lessons yet: the item is disabled with the hint 'Available when the course is ready'.",
+        "error": "A red notification: 'Could not build the book. Try again.' The course page is unchanged.",
+        "success": "The browser saves <course-title>.epub; a green notification says 'Book downloaded'."
+      }
+    }
+  ],
+  "overlays": [],
+  "components": [
+    {
+      "surface": "course",
+      "control": "Menu item 'Download as EPUB' with a BookDown icon in the existing Course options menu",
+      "why": "a rare whole-course action like Extend and Delete; the menu keeps the header to one primary button",
+      "rejected": "a header button (competes with Continue) and a dialog with format options (there is one format)"
+    },
+    {
+      "surface": "course",
+      "control": "Mantine notifications for success and failure",
+      "why": "the download happens in the background and needs only a short confirmation",
+      "rejected": "an Alert on the page (it would stay after the download is done)"
+    }
+  ],
+  "entities": [
+    {
+      "name": "EPUB book (built on request, not stored)",
+      "fields": [
+        "title page: course title, summary, module and lesson counts",
+        "contents (nav.xhtml and toc.ncx): modules, then their lessons",
+        "one XHTML file per lesson: markdown to XHTML, code blocks kept, Inkling drawings rendered to SVG (final frame), Flowmovie and Mermaid diagrams as their titles and step text",
+        "'Check yourself' questions at the end of each lesson, answers and explanations after them",
+        "projects appendix: brief, starter files, milestones and rubric per module project"
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/courses/:id/export.epub",
+      "auth": false,
+      "purpose": "builds and returns the EPUB (application/epub+zip, Content-Disposition attachment); 404 for an unknown course, 409 while the course is not ready"
+    }
+  ],
+  "integration": [
+    {
+      "from": "CoursePage",
+      "to": "useDownloadCourseEpub \u2192 coursewrightService.downloadEpub (axios, responseType blob) \u2192 saves the file",
+      "note": "MSW handler returns a small fixture EPUB"
+    },
+    {
+      "from": "agent/app/api/courses.py",
+      "to": "agent/app/epub.py build_epub(course detail, chapters, projects)",
+      "note": "stdlib zipfile; markdown-it-py for markdown; inkling render via the vendored CLI under Node, falling back to the drawing's title when Node is missing"
+    },
+    {
+      "from": "agent/app/cli.py",
+      "to": "export-epub <folder> -o book.epub",
+      "note": "same builder for a course folder, so authored courses can be checked as books before import"
+    }
+  ],
+  "blastRadius": {
+    "new": [
+      "agent/app/epub.py",
+      "agent/tests/test_epub.py",
+      "src/mocks/fixtures/course.epub (tiny)"
+    ],
+    "changed": [
+      "src/pages/Course/CoursePage.tsx",
+      "src/api/services/coursewrightService.ts, src/hooks/useCoursewright.ts, src/mocks handlers",
+      "agent/app/api/courses.py (new route), agent/app/cli.py (export-epub), agent/pyproject.toml (markdown-it-py)"
+    ]
+  },
+  "verification": [
+    "pytest: the book is a valid EPUB 3 zip (mimetype first and stored, container.xml, opf manifest lists every file, nav lists every lesson), every lesson present, Inkling SVG embedded, questions and answers present",
+    "epubcheck on the domain-experts-on-pi book if available, else open it in Apple Books",
+    "vitest: menu item calls the service, shows loading, success and error notifications; disabled while the course is not ready",
+    "make check",
+    "Download from the running app against the Mac mini and open the file"
+  ]
+}

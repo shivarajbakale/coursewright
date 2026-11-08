@@ -7,6 +7,7 @@ import {
   Group,
   Menu,
   ActionIcon,
+  Loader,
   Progress,
   Skeleton,
   Stack,
@@ -18,6 +19,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { cwKeys } from '@/hooks/useCoursewright';
 import {
   ArrowRight,
+  BookDown,
   Circle,
   CircleCheck,
   Hammer,
@@ -36,7 +38,7 @@ import { Reveal } from '@/components/reveal';
 import { ButtonLink, NavLinkLink } from '@/components/links';
 import { ErrorState } from '@/components/state-panel';
 import { MermaidDiagram } from '@/components/diagrams/MermaidDiagram';
-import { useCourse, useDeleteCourse } from '@/hooks/useCoursewright';
+import { useCourse, useDeleteCourse, useDownloadCourseEpub } from '@/hooks/useCoursewright';
 import { useTutor } from '@/copilot/tutorStore';
 import type { CourseDetail, CourseExtension } from '@/api/types';
 import { ExtendCourseModal } from './ExtendCourseModal';
@@ -68,7 +70,9 @@ export function CoursePage() {
   const course = useCourse(courseId);
   const navigate = useNavigate();
   const remove = useDeleteCourse();
+  const book = useDownloadCourseEpub();
   const [extending, setExtending] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const setContext = useTutor(s => s.setContext);
 
   useEffect(() => {
@@ -152,7 +156,7 @@ export function CoursePage() {
               {c.chaptersDone === 0 ? 'Start' : 'Continue'}
             </ButtonLink>
           )}
-          <Menu position="bottom-end">
+          <Menu position="bottom-end" opened={optionsOpen} onChange={setOptionsOpen}>
             <Menu.Target>
               <ActionIcon variant="default" size="lg" aria-label="Course options">
                 <MoreHorizontal size={16} />
@@ -167,6 +171,27 @@ export function CoursePage() {
                   Extend this course
                 </Menu.Item>
               )}
+              <Menu.Item
+                leftSection={book.isPending ? <Loader size={14} /> : <BookDown size={14} />}
+                disabled={c.status !== 'ready' || book.isPending}
+                closeMenuOnClick={false}
+                onClick={() => book.mutate(courseId, { onSettled: () => setOptionsOpen(false) })}
+              >
+                {book.isPending ? (
+                  'Preparing book…'
+                ) : c.status === 'ready' ? (
+                  'Download as EPUB'
+                ) : (
+                  <Stack gap={0}>
+                    <Text size="sm" inherit>
+                      Download as EPUB
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      Available when the course is ready
+                    </Text>
+                  </Stack>
+                )}
+              </Menu.Item>
               <Menu.Item color="red" leftSection={<Trash2 size={14} />} onClick={confirmDelete}>
                 Delete course
               </Menu.Item>
