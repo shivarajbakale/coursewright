@@ -402,13 +402,16 @@
       "area": "Tutor",
       "title": "Tutor draws Inkling diagrams",
       "user_visible_behavior": "The tutor calls make_drawing to draw a checked Inkling diagram in the chat, in any of Inkling 1.0's 13 layouts.",
-      "status": "in_progress",
+      "status": "passing",
       "verification": [
         "pytest test_tutor_drawing",
         "vitest tutor-drawing",
         "make check"
       ],
-      "evidence": [],
+      "evidence": [
+        "pytest 5 + vitest 2 new; make check green",
+        "live: 6/6 layouts drawn first try; /tutor chat drew a state diagram"
+      ],
       "plan": "none: a new tool result in the tutor chat's existing diagram card; no new screen"
     }
   ]
