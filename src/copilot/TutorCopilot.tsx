@@ -33,6 +33,8 @@ export const TUTOR_AGENT = 'tutor';
 
 /** The agent service answers `{"message": ...}`; show that, not the HTTP wrapper. */
 function tutorErrorMessage(raw: string): string {
+  if (/recursion limit/i.test(raw))
+    return 'The tutor took too many steps on this question. Ask about a narrower part of it.';
   const match = /\{"message":"([^"]+)"\}/.exec(raw);
   return `The tutor couldn't answer: ${match ? match[1] : raw}`;
 }

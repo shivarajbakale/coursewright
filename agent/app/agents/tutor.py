@@ -253,9 +253,35 @@ async def make_drawing(
 # ---- reading a GitHub codebase (app/codebase.py; outlines by tree-sitter in app/code_outline.py) ----------
 
 
-async def _code_call(coro) -> str:
+MAX_CODE_LOOKS = 10
+# Each tool call is two graph steps (the model's turn and the tool); ag_ui_langgraph stamps LangGraph's
+# default of 25 on every run unless the agent passes its own, which ends a code walk-through mid-way.
+RECURSION_LIMIT = 120
+CODE_TOOL_NAMES = {"repo_tree", "file_outline", "read_repo_file", "search_repo", "find_definition"}
+ENOUGH = json.dumps({"error": f"That is {MAX_CODE_LOOKS} looks at the code for this question, the limit. Answer now "
+                              "with what you have read, say what you did not get to, and offer to look further."})
+
+
+def code_looks(runtime: ToolRuntime | None) -> int:
+    """Codebase tool results since the learner's last message."""
+    messages = list(((getattr(runtime, "state", None) or {}).get("messages")) or [])
+    n = 0
+    for m in reversed(messages):
+        kind = getattr(m, "type", None) or (m.get("type") if isinstance(m, dict) else None)
+        if kind == "human":
+            break
+        name = getattr(m, "name", None) or (m.get("name") if isinstance(m, dict) else None)
+        if kind == "tool" and name in CODE_TOOL_NAMES:
+            n += 1
+    return n
+
+
+async def _code_call(coro, runtime: ToolRuntime | None = None) -> str:
     from app.codebase import CodebaseError
 
+    if code_looks(runtime) >= MAX_CODE_LOOKS:
+        coro.close()
+        return ENOUGH
     try:
         return json.dumps(await coro, ensure_ascii=False)
     except CodebaseError as e:
@@ -265,7 +291,10 @@ async def _code_call(coro) -> str:
 
 
 @tool
-async def repo_tree(repo: str, path: str = "") -> str:
+async def repo_tree(
+    repo: str, path: str = "",
+    runtime: ToolRuntime = None,  # type: ignore[assignment]
+) -> str:
     """List a public GitHub repository's folders and files: the files directly in `path` and each folder
     below with its file count. Start here to find your way around a codebase.
 
@@ -276,11 +305,14 @@ async def repo_tree(repo: str, path: str = "") -> str:
     """
     from app import codebase
 
-    return await _code_call(codebase.tree(repo, path))
+    return await _code_call(codebase.tree(repo, path), runtime)
 
 
 @tool
-async def file_outline(repo: str, path: str) -> str:
+async def file_outline(
+    repo: str, path: str,
+    runtime: ToolRuntime = None,  # type: ignore[assignment]
+) -> str:
     """The classes, functions, methods and types in a source file with their line ranges (tree-sitter;
     Python, JavaScript, TypeScript, Go, Rust, Java). Use it before reading a long file, then read only the
     lines you need.
@@ -290,11 +322,14 @@ async def file_outline(repo: str, path: str) -> str:
     """
     from app import codebase
 
-    return await _code_call(codebase.outline(repo, path))
+    return await _code_call(codebase.outline(repo, path), runtime)
 
 
 @tool
-async def read_repo_file(repo: str, path: str, start_line: int = 1, end_line: int = 0) -> str:
+async def read_repo_file(
+    repo: str, path: str, start_line: int = 1, end_line: int = 0,
+    runtime: ToolRuntime = None,  # type: ignore[assignment]
+) -> str:
     """Read lines of a file in a public GitHub repository, numbered; at most 400 lines a call.
 
     Args:
@@ -305,11 +340,14 @@ async def read_repo_file(repo: str, path: str, start_line: int = 1, end_line: in
     """
     from app import codebase
 
-    return await _code_call(codebase.read_file(repo, path, start_line, end_line))
+    return await _code_call(codebase.read_file(repo, path, start_line, end_line), runtime)
 
 
 @tool
-async def search_repo(repo: str, query: str, path: str = "") -> str:
+async def search_repo(
+    repo: str, query: str, path: str = "",
+    runtime: ToolRuntime = None,  # type: ignore[assignment]
+) -> str:
     """Find the lines in a public GitHub repository that contain some text (case-insensitive, plain text).
     Large repositories are searched in their likeliest files only: pass a folder `path` to search it fully.
 
@@ -318,11 +356,14 @@ async def search_repo(repo: str, query: str, path: str = "") -> str:
     """
     from app import codebase
 
-    return await _code_call(codebase.search(repo, query, path))
+    return await _code_call(codebase.search(repo, query, path), runtime)
 
 
 @tool
-async def find_definition(repo: str, name: str, path: str = "") -> str:
+async def find_definition(
+    repo: str, name: str, path: str = "",
+    runtime: ToolRuntime = None,  # type: ignore[assignment]
+) -> str:
     """Find where a class, function, method or type is defined in a public GitHub repository, by tree-sitter.
 
     Args:
@@ -334,7 +375,7 @@ async def find_definition(repo: str, name: str, path: str = "") -> str:
     """
     from app import codebase
 
-    return await _code_call(codebase.find_definition(repo, name, path))
+    return await _code_call(codebase.find_definition(repo, name, path), runtime)
 
 
 CODE_TOOLS = [repo_tree, file_outline, read_repo_file, search_repo, find_definition]
@@ -491,6 +532,7 @@ async def init_tutor(checkpointer) -> None:
 
     tutor_agent.agent = LangGraphAGUIAgent(
         name="tutor",
+        config={"recursion_limit": RECURSION_LIMIT},
         description="Answers questions from the learner's courses and notes, with citations.",
         graph=build_tutor_graph(checkpointer),
     )

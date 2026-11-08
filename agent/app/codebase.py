@@ -207,6 +207,10 @@ async def read_file(repo_text: str, path: str, start_line: int = 1, end_line: in
     text = await file_text(index["repo"], index["ref"], p, index["sizes"].get(p, 0))
     all_lines = text.splitlines()
     start = max(1, int(start_line or 1))
+    if start > len(all_lines):
+        raise CodebaseError(f"{p} has {len(all_lines)} lines; line {start} is past the end.")
+    if end_line and int(end_line) < start:
+        raise CodebaseError(f"end_line {end_line} is before start_line {start}: give the range in order.")
     end = int(end_line or 0) or start + MAX_READ_LINES - 1
     end = min(end, start + MAX_READ_LINES - 1, len(all_lines))
     numbered = "\n".join(f"{i}\t{all_lines[i - 1]}" for i in range(start, end + 1))

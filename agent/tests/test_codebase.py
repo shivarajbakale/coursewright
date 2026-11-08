@@ -136,3 +136,36 @@ def test_tutor_tools_turn_problems_into_plain_errors(github):
     assert "not found" in out["error"]
     ok = json.loads(run(tutor.file_outline.coroutine("acme/demo", "tools.py")))
     assert ok["symbols"][0]["name"] == "Registry"
+
+
+def test_a_read_range_out_of_order_is_refused(github):
+    with pytest.raises(codebase.CodebaseError, match="before start_line"):
+        run(codebase.read_file("acme/demo", "agent.ts", 10, 5))
+    with pytest.raises(codebase.CodebaseError, match="past the end"):
+        run(codebase.read_file("acme/demo", "agent.ts", 500))
+
+
+def test_the_tutor_stops_looking_after_ten_looks(github):
+    from types import SimpleNamespace
+
+    from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+
+    from app.agents import tutor
+
+    def state(n: int) -> SimpleNamespace:
+        msgs = [HumanMessage("earlier"), *[ToolMessage("x", tool_call_id=f"o{i}", name="read_repo_file") for i in range(9)],
+                HumanMessage("how does it end a run?"), AIMessage("looking")]
+        msgs += [ToolMessage("x", tool_call_id=f"t{i}", name="search_repo") for i in range(n)]
+        msgs += [ToolMessage("x", tool_call_id="d", name="make_drawing")]
+        return SimpleNamespace(state={"messages": msgs}, context=None)
+
+    assert tutor.code_looks(state(9)) == 9  # looks before the learner's last message don't count
+    assert "src/" in run(tutor.repo_tree.coroutine("acme/demo", "", state(9)))
+    out = json.loads(run(tutor.repo_tree.coroutine("acme/demo", "", state(tutor.MAX_CODE_LOOKS))))
+    assert "Answer now" in out["error"]
+
+
+def test_the_tutor_run_allows_a_long_walk_through():
+    from app.agents import tutor
+
+    assert tutor.RECURSION_LIMIT >= 4 * (tutor.MAX_CODE_LOOKS + 5)
