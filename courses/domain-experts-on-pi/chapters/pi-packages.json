@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "pi-agent-core holds the loop but no model call. What happens when a program starts it without a function that calls a model?",
+      "options": [
+        "It stops with an error that asks for a stream function",
+        "It calls the first model service it finds",
+        "It reads the last session file and continues",
+        "It writes the answer from its own memory"
+      ],
+      "answer": 0,
+      "explanation": "pi-agent-core depends only on pi-ai and carries no list of model services. It refuses to run until you pass streamFn or call setDefaultStreamFn().",
+      "conceptKeys": [
+        "pi-packages"
+      ]
+    },
+    {
+      "prompt": "A program installs pi-coding-agent and nothing else. Which packages does it get?",
+      "options": [
+        "Only pi-coding-agent, because it is the top package",
+        "pi-coding-agent and pi-ai, but not pi-agent-core",
+        "pi-coding-agent, pi-agent-core and pi-ai",
+        "None, because a package cannot depend on another package"
+      ],
+      "answer": 2,
+      "explanation": "pi-coding-agent depends on pi-agent-core, and pi-agent-core depends on pi-ai. Installing the top package brings the whole stack.",
+      "conceptKeys": [
+        "pi-packages"
+      ]
+    },
+    {
+      "prompt": "Which package holds the pi command, the sessions, the system prompt and the tools?",
+      "options": [
+        "pi-ai",
+        "pi-coding-agent",
+        "pi-agent-core",
+        "The mcp and codemode helper packages"
+      ],
+      "answer": 1,
+      "explanation": "pi-coding-agent is the top layer. It adds the command, the sessions, the system prompt and the tools on top of the loop and the model layer.",
+      "conceptKeys": [
+        "pi-packages"
+      ]
+    }
+  ],
+  "diagrams": []
+}

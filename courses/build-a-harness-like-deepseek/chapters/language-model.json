@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A model computes mat 0.40, floor 0.25, sofa 0.15 and 0.20 for all other words. What happens next?",
+      "options": [
+        "It always writes \"mat\", because it has the highest probability",
+        "It picks one word, with \"mat\" chosen about 4 times in 10",
+        "It writes all three words in order of probability",
+        "It asks the user which word to use"
+      ],
+      "answer": 1,
+      "explanation": "The model picks from the list, and a likely word is picked more often. With 0.40, \"mat\" is picked about 4 times in 10, not every time.",
+      "conceptKeys": [
+        "language-model"
+      ]
+    },
+    {
+      "prompt": "Why can a language model give a wrong answer in a confident tone?",
+      "options": [
+        "It looks the answer up in an old database",
+        "It copies the answer from the question",
+        "It writes the text that plausibly follows the question, without checking a source",
+        "It picks the least likely word on purpose"
+      ],
+      "answer": 2,
+      "explanation": "An answer is a likely continuation of the question. The model does not look anything up, so a plausible but wrong continuation reads as confidently as a right one.",
+      "conceptKeys": [
+        "language-model"
+      ]
+    },
+    {
+      "prompt": "How does a language model differ from a phone keyboard that suggests the next word?",
+      "options": [
+        "The model looks at the whole passage before the cursor, not one or two words",
+        "The model never uses probabilities",
+        "The keyboard learned from more text than the model",
+        "The model can only predict punctuation"
+      ],
+      "answer": 0,
+      "explanation": "Both predict a likely next piece, but the model considers the whole passage so far. Because of this, it can continue a question with a fitting answer.",
+      "conceptKeys": [
+        "language-model"
+      ]
+    }
+  ],
+  "diagrams": []
+}

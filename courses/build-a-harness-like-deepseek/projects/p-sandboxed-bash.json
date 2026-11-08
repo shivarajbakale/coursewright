@@ -1,0 +1,90 @@
+{
+  "title": "Sandboxed file and bash tools for mini-dsh",
+  "brief": "Give mini-dsh the tools it needs to do real work, and a fence around them. Write read, write and edit tools that store a version for each file a session reads and refuse stale or unread edits. Write a bash tool that starts bash -c in the workspace with an environment cleaned of secrets and DSH_ names, a timeout and an output cap, and that reports a non-zero exit as information, not as an error. Then add sandbox modes: resolve each call's policy from the session's last sandbox/mode event, fence file writes with realpath and the write roots, and wrap every confined command in sandbox-exec on macOS or bwrap on Linux, refusing with SANDBOX_UNAVAILABLE when neither works. Add the one-call escalation with sandbox_permissions and justification through the ApprovalService from the tool pipeline project, and a /permission command with two presets. Write in your README what the sandbox does not stop: reading any file your user can read, and the network. dsh's SAFETY.md says the same about its own sandbox, which has not been audited.",
+  "starter": [
+    {
+      "path": "mini-dsh/src/fs-tools.ts",
+      "note": "New. read, write and edit built with defineTool; a per-session version map; exactly-once old_string; mayWrite before every change."
+    },
+    {
+      "path": "mini-dsh/src/subprocess.ts",
+      "note": "New. cleanEnv (drops /KEY|PASSWORD|SECRET|TOKEN/i and DSH_*) and run(program, args, options) with cwd, env, timeoutMs, maxBytes and signal."
+    },
+    {
+      "path": "mini-dsh/src/shell.ts",
+      "note": "New. The bash tool: exit code and output as its value, [exit code: N] in the rendered text, the sandbox denial line when the runner's text appears."
+    },
+    {
+      "path": "mini-dsh/src/sandbox.ts",
+      "note": "New. SandboxMode, writeRoots, mayWrite, resolvePolicy, confine (Seatbelt profile or bwrap arguments) and approveEscalation."
+    },
+    {
+      "path": "mini-dsh/src/presets.ts",
+      "note": "New. The preset table, currentPreset with custom, setPreset, and a /permission command."
+    },
+    {
+      "path": "mini-dsh/test/sandbox.test.ts",
+      "note": "New. Tests in a temporary workspace; confine tests check the argument list, and a live test runs only where sandbox-exec or bwrap exists."
+    }
+  ],
+  "hints": [
+    "Compute a file's version from stat as mtimeMs and size, and store it under sessionId and path. Store the new version after every successful write or edit, or the second edit in a row fails.",
+    "Build the child environment from cleanEnv first and add NO_COLOR, TERM=dumb and PAGER=cat after it. Test it by running bash -c env with DEEPSEEK_API_KEY set in the parent and checking it is absent.",
+    "In mayWrite, call realpath on the target's folder, not on the target, because a file you are about to create does not exist yet. On macOS remember that /tmp is really /private/tmp.",
+    "Test confine by comparing argument lists, not by running them; then add one live test per platform that writes outside the roots and checks for Operation not permitted or Read-only file system.",
+    "In approveEscalation, check that the mode is strictly wider before you ask anyone, and pass the approved mode only into this call's policy. A test runs a second call without sandbox_permissions and checks it is confined again."
+  ],
+  "rubric": [
+    {
+      "criterion": "read stores a version per session and path; edit and write refuse an unread or changed file, and old_string must appear exactly once",
+      "chapterKey": "file-tools"
+    },
+    {
+      "criterion": "bash runs in the workspace with secrets and DSH_ names removed, applies a 120000 ms default and 600000 ms cap and a 64000-byte cap, and reports a non-zero exit in a normal result",
+      "chapterKey": "shell-tool"
+    },
+    {
+      "criterion": "Each call's policy comes from the session's last sandbox/mode event or the default, write roots follow the three modes, realpath stops link escapes, and the README states that reads and the network are not confined",
+      "chapterKey": "sandbox-modes"
+    },
+    {
+      "criterion": "Confined commands run under sandbox-exec or bwrap with profiles that deny writes outside the roots, denials are reported to the model, and no usable runner gives SANDBOX_UNAVAILABLE instead of an unconfined run",
+      "chapterKey": "sandbox-backend"
+    },
+    {
+      "criterion": "A denied call can be retried with sandbox_permissions and justification; only a strictly wider mode is asked about, allowed-once widens that call only, and a no is final",
+      "chapterKey": "escalation"
+    },
+    {
+      "criterion": "/permission switches between two presets by writing permission/preset and only the changed setting events, and settings that match no preset report custom",
+      "chapterKey": "permission-presets"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "File tools with versions",
+      "body": "Write read, write and edit. In a temporary workspace, read app.ts, change it from the test, and check that the model's edit is refused and succeeds after a second read.",
+      "checkCmd": "npx tsx test/sandbox.test.ts --only fs"
+    },
+    {
+      "title": "A bash tool with a clean environment",
+      "body": "Write cleanEnv, run and the bash tool. Check that env output lacks DEEPSEEK_API_KEY, that sleep 5 with timeoutMs 1000 stops after about 1 s, and that exit 1 gives a normal result ending in [exit code: 1].",
+      "checkCmd": "npx tsx test/sandbox.test.ts --only bash"
+    },
+    {
+      "title": "Modes and write roots",
+      "body": "Add SandboxMode, writeRoots, mayWrite and resolvePolicy, and fence the file tools. Under workspace-write a write to the workspace passes, a write to a link that points outside fails, and under read-only every write fails.",
+      "checkCmd": "npx tsx test/sandbox.test.ts --only modes"
+    },
+    {
+      "title": "Confined commands",
+      "body": "Add confine and use it in the bash tool for read-only and workspace-write. echo hi > ~/outside.txt must be denied with the sandbox denial line, and a host without a runner must give SANDBOX_UNAVAILABLE.",
+      "checkCmd": "npx tsx test/sandbox.test.ts --only confine"
+    },
+    {
+      "title": "Escalation and presets",
+      "body": "Add approveEscalation and /permission. An approved retry to danger-full-access runs once and the next call is confined again; /permission danger-full-access writes 3 events, and a second identical switch writes none.",
+      "checkCmd": "npx tsx test/sandbox.test.ts --only escalate"
+    }
+  ]
+}

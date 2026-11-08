@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why must the base pack load before the domain packs?",
+      "options": [
+        "Handlers run in load order, and the first blocking tool_call handler ends the chain, so base gates run first",
+        "pi refuses to start without a base pack in front",
+        "Domain packs cannot register tools unless the base loaded first",
+        "Entries appended by the base are sent to the model only if it loads first"
+      ],
+      "answer": 0,
+      "explanation": "Handlers run in load order. When the base loads first, its gates run before any domain gate, and a block ends the chain.",
+      "conceptKeys": [
+        "base-pack"
+      ]
+    },
+    {
+      "prompt": "The run log uses pi.appendEntry. Where does the data go?",
+      "options": [
+        "Into the system prompt as a new section",
+        "Into the session file, without being sent to the model",
+        "Into the next tool result",
+        "Into the agent folder settings"
+      ],
+      "answer": 1,
+      "explanation": "appendEntry stores data in the session without sending it to the model, so a log costs no tokens.",
+      "conceptKeys": [
+        "base-pack"
+      ]
+    },
+    {
+      "prompt": "You change the house rules text in packs/base/extension.ts. What happens to the SQL, Kubernetes and quant experts?",
+      "options": [
+        "Nothing, until each pack copies the new text",
+        "All three get the new rule, because each loads the base",
+        "Only the expert you run first",
+        "They all fail, because the base changed"
+      ],
+      "answer": 1,
+      "explanation": "Every expert loads the base pack, so one fix reaches all of them. That is the reason for a shared base.",
+      "conceptKeys": [
+        "base-pack"
+      ]
+    }
+  ],
+  "diagrams": []
+}

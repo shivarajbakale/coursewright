@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The build ends while the agent is in the middle of a turn. How does the notice arrive?",
+      "options": [
+        "As a followup that opens a new turn at once",
+        "As an inject that joins the next step of the current turn",
+        "As a steer that cancels the current step",
+        "It is dropped because the agent is busy"
+      ],
+      "answer": 1,
+      "explanation": "A busy owner gets the notice as an inject, so the next step claims it without opening a turn.",
+      "conceptKeys": [
+        "background-job",
+        "agent-inbox"
+      ]
+    },
+    {
+      "prompt": "The build writes 300 KiB of log and the buffer cap is 256 KiB. What is kept?",
+      "options": [
+        "The first 256 KiB",
+        "The newest 256 KiB",
+        "All 300 KiB, because the cap is a warning",
+        "Nothing, because the job failed"
+      ],
+      "answer": 1,
+      "explanation": "The ring drops the oldest chunks when the total passes the cap, so the newest 256 KiB stay.",
+      "conceptKeys": [
+        "background-job"
+      ]
+    },
+    {
+      "prompt": "Why does bash with run_in_background return a job id instead of the output?",
+      "options": [
+        "The output is secret",
+        "The command still runs, so the step can end and the model can read the output later by id",
+        "Background commands produce no output",
+        "The id is shorter than the output"
+      ],
+      "answer": 1,
+      "explanation": "Returning the id at once lets the step finish. The model reads the output later with job_output, or from the notice.",
+      "conceptKeys": [
+        "background-job"
+      ]
+    }
+  ],
+  "diagrams": []
+}

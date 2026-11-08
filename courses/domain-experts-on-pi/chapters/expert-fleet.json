@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "In the traced task, why does the router hand the 12 numbers to the quant expert instead of the SQL expert calling it?",
+      "options": [
+        "The SQL expert cannot produce numbers",
+        "Each expert stays inside its own limits, and the router logs both steps",
+        "The quant expert reads the database file",
+        "pi forbids sessions from sharing text"
+      ],
+      "answer": 1,
+      "explanation": "The router does the handoff, so each expert's guards cover only its own work and the chain is logged.",
+      "conceptKeys": [
+        "expert-fleet"
+      ]
+    },
+    {
+      "prompt": "A user reports that a pod question went to the SQL expert. What is the best next step?",
+      "options": [
+        "Raise the model temperature",
+        "Find the line in decisions.jsonl and turn the task into a new golden task",
+        "Remove the SQL expert",
+        "Delete the router log"
+      ],
+      "answer": 1,
+      "explanation": "The log shows the task, the choice and the reason. A wrong route becomes a new golden task, so the fix is tested.",
+      "conceptKeys": [
+        "expert-fleet"
+      ]
+    },
+    {
+      "prompt": "A change makes the SQL pack pass more tasks but use three times the tokens. What should you do before shipping?",
+      "options": [
+        "Ship it, since more tasks pass",
+        "Compare lift and cost by expert and decide if the trade-off is worth it",
+        "Ignore tokens, because they do not affect users",
+        "Remove the evals"
+      ],
+      "answer": 1,
+      "explanation": "Pass rate alone hides cost. Comparing lift and cost by expert shows the trade-off before you ship.",
+      "conceptKeys": [
+        "expert-fleet"
+      ]
+    }
+  ],
+  "diagrams": []
+}

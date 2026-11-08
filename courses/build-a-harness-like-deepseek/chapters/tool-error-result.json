@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "count_lines throws because notes.txt is missing. What does the program send to the model?",
+      "options": [
+        "Nothing; it ends the turn",
+        "A new user question asking for the right path",
+        "A tool_result with the same call id, the error text and is_error true",
+        "A tool_result with content 0"
+      ],
+      "answer": 2,
+      "explanation": "The failure goes back as a result for the same call, marked is_error. The model can then read the cause and try another path.",
+      "conceptKeys": [
+        "tool-error-result",
+        "tool-result"
+      ]
+    },
+    {
+      "prompt": "The model request itself fails because the API key is wrong. Should the program send it to the model as a tool error result?",
+      "options": [
+        "No, the model cannot fix it, so the error ends the turn and goes to the user",
+        "Yes, every exception becomes a tool error result",
+        "Yes, so the model can choose a new key",
+        "No, the program should retry forever"
+      ],
+      "answer": 0,
+      "explanation": "Only a failure inside a tool goes back to the model. A wrong API key is a failure of the program, which the model cannot fix.",
+      "conceptKeys": [
+        "tool-error-result"
+      ]
+    },
+    {
+      "prompt": "Why is \"Error: ENOENT: no such file or directory, open 'notes.txt'\" a better message than \"Error\"?",
+      "options": [
+        "Longer messages use fewer tokens",
+        "The API rejects short error messages",
+        "is_error only works with long messages",
+        "The model only gets the text, so the cause and the path help it choose the next request"
+      ],
+      "answer": 3,
+      "explanation": "The model decides from the text it reads. Naming the missing path lets it try docs/notes.txt instead of repeating the same call.",
+      "conceptKeys": [
+        "tool-error-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

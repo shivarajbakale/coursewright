@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "You run an expert with PI_CODING_AGENT_DIR=agents/sql. Where do its sessions go?",
+      "options": [
+        "~/.pi/agent/sessions",
+        "agents/sql/sessions",
+        "The current working folder",
+        "They are not saved"
+      ],
+      "answer": 1,
+      "explanation": "The variable moves the whole agent folder, so the sessions go to agents/sql/sessions.",
+      "conceptKeys": [
+        "agent-dir"
+      ]
+    },
+    {
+      "prompt": "After you move the agent folder, pi reports no saved login. Why?",
+      "options": [
+        "auth.json moved with the folder, so the new folder has none",
+        "The model was deleted",
+        "The environment variable disables logins",
+        "sessions/ replaced auth.json"
+      ],
+      "answer": 0,
+      "explanation": "auth.json lives in the agent folder, so a new folder starts without it. Give the key through DEEPSEEK_API_KEY.",
+      "conceptKeys": [
+        "agent-dir"
+      ]
+    },
+    {
+      "prompt": "What is an environment variable?",
+      "options": [
+        "A line in settings.json",
+        "A named value a program reads from where it runs, set as NAME=value",
+        "A file called env.json in the agent folder",
+        "A flag that must come last in a command"
+      ],
+      "answer": 1,
+      "explanation": "An environment variable is a named value that a program reads from its environment. You set it as NAME=value before the command.",
+      "conceptKeys": [
+        "agent-dir"
+      ]
+    }
+  ],
+  "diagrams": []
+}

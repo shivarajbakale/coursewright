@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A tool result in the record turns out to be wrong. What does an append-only log do about it?",
+      "options": [
+        "It edits the old fact so the record shows the right value",
+        "It removes the old fact and appends the right one",
+        "It appends a new fact with the right value and keeps the old one",
+        "It clears the record and starts the turn again"
+      ],
+      "answer": 2,
+      "explanation": "Old facts never change. The correction goes at the end, so the record shows both the wrong answer and the fix in the order they happened.",
+      "conceptKeys": [
+        "append-only-log"
+      ]
+    },
+    {
+      "prompt": "Why does all() return a copy of the list instead of the list itself?",
+      "options": [
+        "So a caller cannot remove or reorder facts in the real record",
+        "Because a copy is faster to read than the original",
+        "Because Object.freeze only works on copies",
+        "So the model receives a smaller request"
+      ],
+      "answer": 0,
+      "explanation": "Freezing protects each fact, but the list itself could still be changed. Returning a copy means only append() can change the real list.",
+      "conceptKeys": [
+        "append-only-log"
+      ]
+    },
+    {
+      "prompt": "In the bank statement picture, what stands for the agent's current chat history?",
+      "options": [
+        "One line of the statement",
+        "The bank's rule about refunds",
+        "The balance, which comes from adding up the lines",
+        "The monthly printout"
+      ],
+      "answer": 2,
+      "explanation": "The balance is not stored on its own; it comes from reading every line. In the same way, the agent works out its history by reading every fact in its record.",
+      "conceptKeys": [
+        "append-only-log"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "After a crash, call_2 has a tool/call event but no tool/result. What should the made-up result tell the model?",
+      "options": [
+        "That the tool succeeded, so the model can continue",
+        "That the outcome is unknown, so it should check before retrying",
+        "That the tool never started, so it can retry at once",
+        "Nothing; the result should be empty"
+      ],
+      "answer": 1,
+      "explanation": "The tool/call was flushed before the tool ran, so the tool may have changed something. The model must check before it repeats a write.",
+      "conceptKeys": [
+        "orphaned-tool-call"
+      ]
+    },
+    {
+      "prompt": "Why must the missing results be appended before the step/end closer?",
+      "options": [
+        "Because sequence numbers must go down",
+        "Because the provider refuses a tool call whose result does not come right after it",
+        "Because step/end deletes pending calls",
+        "Because the model reads only the last event"
+      ],
+      "answer": 1,
+      "explanation": "The provider needs every tool call answered in the next user message. Writing the results inside the step keeps each call next to its answer.",
+      "conceptKeys": [
+        "orphaned-tool-call"
+      ]
+    },
+    {
+      "prompt": "What would be lost if mini-dsh did not flush before running a tool?",
+      "options": [
+        "The tool results would not reach the model",
+        "The program could not tell a call that started from one that never started",
+        "The closers would get the wrong sequence numbers",
+        "The header line would be missing"
+      ],
+      "answer": 1,
+      "explanation": "The tool/call on disk is the proof that the tool may have run. Without the flush, a started call could look the same as one that never began.",
+      "conceptKeys": [
+        "orphaned-tool-call",
+        "jsonl-storage"
+      ]
+    }
+  ],
+  "diagrams": []
+}

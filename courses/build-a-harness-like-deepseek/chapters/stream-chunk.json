@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A stream has sent the tool-call delta '{\"path\":' and nothing more for that block. Why does the program not parse the arguments yet?",
+      "options": [
+        "The arguments arrive only in the usage piece",
+        "The slice is not valid JSON until the remaining slices arrive",
+        "Tool arguments are never JSON",
+        "The finish piece must come first"
+      ],
+      "answer": 1,
+      "explanation": "Tool arguments stream as slices of one JSON string. '{\"path\":' is half of '{\"path\":\"notes.txt\"}', so it can only be parsed once the block ends.",
+      "conceptKeys": [
+        "stream-chunk"
+      ]
+    },
+    {
+      "prompt": "Two text deltas arrive with index 0, and a tool-call delta arrives with index 1. What does the index tell the program?",
+      "options": [
+        "The order in which the pieces must be shown",
+        "How many tokens each piece holds",
+        "Which block of the reply each piece belongs to",
+        "Which provider sent the piece"
+      ],
+      "answer": 2,
+      "explanation": "The index ties each piece to one block. Pieces with index 0 build the text block, and pieces with index 1 build the tool-call block.",
+      "conceptKeys": [
+        "stream-chunk"
+      ]
+    },
+    {
+      "prompt": "DeepSeek ends a reply with the stop reason end_turn. What does the loop in mini-dsh see?",
+      "options": [
+        "A finish piece with kind stop",
+        "A finish piece with kind end_turn",
+        "A usage piece with no finish piece",
+        "A block-end piece with kind stop"
+      ],
+      "answer": 0,
+      "explanation": "The code that reads DeepSeek converts its names into the shared list, so end_turn becomes a finish piece with kind stop and the loop never sees DeepSeek's own names.",
+      "conceptKeys": [
+        "stream-chunk"
+      ]
+    }
+  ],
+  "diagrams": []
+}

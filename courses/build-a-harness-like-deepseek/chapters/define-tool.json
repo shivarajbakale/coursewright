@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The model calls count_lines with {\"path\": 42}. What happens?",
+      "options": [
+        "The body runs and fails when readFile gets a number",
+        "The argument check fails, the body never runs, and the model gets an error result naming /path",
+        "The harness converts 42 to the string \"42\" and runs the body",
+        "The harness drops the call and sends nothing back"
+      ],
+      "answer": 1,
+      "explanation": "defineTool checks the arguments against the compiled schema before the body. A mismatch throws, so the loop returns a tool error result that names the wrong field.",
+      "conceptKeys": [
+        "define-tool"
+      ]
+    },
+    {
+      "prompt": "Why does the body of count_lines return the number 42 instead of the text \"42 lines\"?",
+      "options": [
+        "Because the model cannot read text in a tool result",
+        "Because numbers use fewer tokens than text",
+        "So other code can use the value directly, and text is made from it in one place by render",
+        "Because JSON Schema does not allow strings as output"
+      ],
+      "answer": 2,
+      "explanation": "The value is data of a declared shape. The render function turns it into text for the model, so no caller ever has to parse a sentence to get the number back.",
+      "conceptKeys": [
+        "define-tool"
+      ]
+    },
+    {
+      "prompt": "Where does the \"required\" list in the schema the model sees come from?",
+      "options": [
+        "From each parameter marked required: true in the one definition",
+        "From a second schema written by hand",
+        "From the model's first call",
+        "From the description text"
+      ],
+      "answer": 0,
+      "explanation": "toJsonSchema collects every parameter with required: true into the required list, so the schema and the check come from the same description.",
+      "conceptKeys": [
+        "define-tool"
+      ]
+    }
+  ],
+  "diagrams": []
+}

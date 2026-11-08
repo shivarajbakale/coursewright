@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "In the traced request, which step writes the JSONL file before the model sees the request?",
+      "options": [
+        "The SDK server, when it reads the line",
+        "The checkpoint policy, on llm/stream before the call",
+        "The DeepSeek adapter, after the reply",
+        "The loop, at turn/end only"
+      ],
+      "answer": 1,
+      "explanation": "session-checkpoint-policy listens on llm/stream and flushes the session before each model call, so the request can be rebuilt after a crash.",
+      "conceptKeys": [
+        "whole-harness",
+        "jsonl-storage"
+      ]
+    },
+    {
+      "prompt": "The sdk-minimal profile mounts no approval row. A tool call reaches an ask decision. What happens?",
+      "options": [
+        "The call runs, because nobody refused it",
+        "The harness waits forever",
+        "The call is denied, because nobody can answer",
+        "The SDK client approves it"
+      ],
+      "answer": 2,
+      "explanation": "An ask needs a person. With no approval service to answer it, the pipeline fails closed and denies the call.",
+      "conceptKeys": [
+        "whole-harness",
+        "approval"
+      ]
+    },
+    {
+      "prompt": "How does one layer, such as the compaction plugin, reach the agent loop?",
+      "options": [
+        "Through services and events on the shared context",
+        "By editing agent.ts",
+        "By calling the SDK server",
+        "By reading the JSONL file"
+      ],
+      "answer": 0,
+      "explanation": "Each layer is a plugin. Compaction listens on the agent/pre-step hook, so it changes the loop's behaviour without touching the loop's code.",
+      "conceptKeys": [
+        "whole-harness"
+      ]
+    }
+  ],
+  "diagrams": []
+}

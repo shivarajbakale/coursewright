@@ -1,0 +1,102 @@
+{
+  "title": "A guarded tool pipeline for mini-dsh",
+  "brief": "Replace mini-dsh's plain tool calls with the same pipeline dsh uses. Write defineTool, which compiles a parameter map to JSON Schema, checks every call's arguments and validates the returned value against output.schema. Move tools into a ToolsService that plugins register on through effects. Then write the pipeline in mini-dsh/src/pipeline.ts: schedule each reply's calls in safe parallel groups, run the tools/pre-execute waterfall and the guards, send asks to an ApprovalService that fails closed and records approval/asked and approval/decided, wrap the body in the tools/execute waterfall with a timeout plugin, and run tools/post-execute with a spill plugin last. When you finish, a policy written as one plugin can stop, ask about, time-limit, redact or shorten any tool call without the tool knowing, and every outcome the model sees is in the session record.",
+  "starter": [
+    {
+      "path": "mini-dsh/src/tools.ts",
+      "note": "Existing tools service. Add defineTool, toJsonSchema, validate, isConcurrencySafe and timeoutMs, and make register return a disposer."
+    },
+    {
+      "path": "mini-dsh/src/batch.ts",
+      "note": "New. runBatch(calls, tools, maxParallel = 10): safe groups in model order, results in call order."
+    },
+    {
+      "path": "mini-dsh/src/pipeline.ts",
+      "note": "New. prepare (pre-execute waterfall, ask, guards), dispatch (tools/execute waterfall around the body), postExecute (tools/post-execute waterfall)."
+    },
+    {
+      "path": "mini-dsh/src/approval.ts",
+      "note": "New. ApprovalService with policy ask or never, the approval/request waterfall and the audit pair of events."
+    },
+    {
+      "path": "mini-dsh/plugins/timeout.ts",
+      "note": "New. A tools/execute listener that swaps in a deadline signal and returns a timeout error only when its own timer fired."
+    },
+    {
+      "path": "mini-dsh/plugins/spill.ts",
+      "note": "New. A prepended tools/post-execute listener that saves results over maxInlineTokens to a file and keeps the start, the end and a notice."
+    },
+    {
+      "path": "mini-dsh/test/pipeline.test.ts",
+      "note": "New. Pipeline tests with a fake adapter and fake tools; no network."
+    }
+  ],
+  "hints": [
+    "Write validate first and test it alone: a missing required field, a wrong type and an extra field on an open object should give 2 problems and no problem respectively.",
+    "In runBatch, count a call as safe only when isConcurrencySafe returns exactly true, and wrap the call in try/catch. Use Promise.all per group so results keep call order even when a later call finishes first.",
+    "Give the pre-execute waterfall a default of allow, and run guards only after an allow. A test with a careless listener that returns allow without next shows why the guard must come last.",
+    "Make every non-grant approval outcome a deny with its own reason. The end of the approval/request chain returns unavailable, so a headless run with no answerer fails closed without special code.",
+    "Register the spill listener with prepend and call next() before you measure, so it cuts the content every other post-execute listener already decided on."
+  ],
+  "rubric": [
+    {
+      "criterion": "defineTool compiles parameters to JSON Schema, rejects invalid arguments before the body with an error result, and fails a value that does not match output.schema",
+      "chapterKey": "define-tool"
+    },
+    {
+      "criterion": "Tools register through effects, a stopped plugin's tools disappear from the next step, duplicate names fail, and schemas() exposes only name, description and parameters",
+      "chapterKey": "tool-registry"
+    },
+    {
+      "criterion": "Calls run in parallel only when isConcurrencySafe returns exactly true, at most maxParallel at once, and results always come back in model order",
+      "chapterKey": "batch-scheduling"
+    },
+    {
+      "criterion": "The tools/pre-execute waterfall returns allow, deny or ask, a deny becomes an Error: result without running the body, and guards run after an allow and can only deny",
+      "chapterKey": "pre-execute"
+    },
+    {
+      "criterion": "An ask goes to ApprovalService; only allowed-once runs the call, missing or throwing answerers give unavailable, policy never rejects, and every ask writes approval/asked and approval/decided",
+      "chapterKey": "approval"
+    },
+    {
+      "criterion": "The timeout plugin wraps the body through tools/execute, aborts a body that honours its signal at timeoutMs, restores the old signal, and reports the timeout only when its own timer fired",
+      "chapterKey": "around-execute"
+    },
+    {
+      "criterion": "tools/post-execute can accept, replace content, block with feedback or add contexts, and the recorded tool/result holds what the model sees",
+      "chapterKey": "post-execute"
+    },
+    {
+      "criterion": "A result over maxInlineTokens is saved to a file and replaced by its start, its end and a notice with the path, and a failed save keeps the content",
+      "chapterKey": "output-spill"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Typed tools on a shared service",
+      "body": "Write defineTool, toJsonSchema and validate, and move count_lines and read_file onto ToolsService. A test sends {\"path\": 42} and checks that the body never ran and the result names /path.",
+      "checkCmd": "npx tsx test/pipeline.test.ts --only define"
+    },
+    {
+      "title": "Safe parallel groups",
+      "body": "Write runBatch. With three reads that each take 100 ms and one bash call, the reads must overlap and finish together, bash must start after them, and results must come back in call order.",
+      "checkCmd": "npx tsx test/pipeline.test.ts --only batch"
+    },
+    {
+      "title": "Deny, ask and guard",
+      "body": "Add prepare and ApprovalService. Deny rm -rf with a listener, guard writes to /etc, and check that a headless ask is denied as unavailable and leaves one approval/asked and one approval/decided in the record.",
+      "checkCmd": "npx tsx test/pipeline.test.ts --only prepare"
+    },
+    {
+      "title": "Timeout and post-execute",
+      "body": "Add the tools/execute and tools/post-execute waterfalls, the timeout plugin and a redaction listener. A fake fetch that takes 8 s must time out at 5 s, and a result with sk- followed by 24 letters must be recorded as [redacted key].",
+      "checkCmd": "npx tsx test/pipeline.test.ts --only wrap"
+    },
+    {
+      "title": "Spill large results",
+      "body": "Add the spill plugin with maxInlineTokens 1000. A 2,000,000-character result must leave a file with the full text and a model-facing slip of 1600 characters at each end plus the notice.",
+      "checkCmd": "npx tsx test/pipeline.test.ts --only spill"
+    }
+  ]
+}

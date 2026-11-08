@@ -1,0 +1,98 @@
+{
+  "title": "A context manager for mini-dsh",
+  "brief": "Give mini-dsh the context layer that keeps a long session useful. You build a system prompt service that sorts plugin sections, two pre-step listeners (a time note and AGENTS.md), a token meter with the dsh threshold formula, a safe cut, a surface replacement that leaves the record untouched, and recovery from a too-large request. Every test runs without a real model: a scripted callModel returns fixed summaries and, when asked, a CONTEXT_WINDOW_EXCEEDED error. When you finish, a session can run for hours: old messages turn into one summary in the model's view, and the record still holds every fact.",
+  "starter": [
+    {
+      "path": "mini-dsh/src/prompt.ts",
+      "note": "SystemPrompt with section() and render(): sort by order, then by name; drop empty text; join with a blank line."
+    },
+    {
+      "path": "mini-dsh/src/runtime-context.ts",
+      "note": "agent/pre-step listener that adds a time-context user message at most every 600,000 ms."
+    },
+    {
+      "path": "mini-dsh/src/instructions.ts",
+      "note": "Reads AGENTS.md at turn 1, step 1; a tools/result listener records touched paths; the next pre-step adds an updated note when the text changed."
+    },
+    {
+      "path": "mini-dsh/src/meter.ts",
+      "note": "estimateMessage() (4 characters per token, 4 per block, 4 per role), measure(), thresholdTokens(W, reply, headroom)."
+    },
+    {
+      "path": "mini-dsh/src/compaction.ts",
+      "note": "selectRange(), compactRange() with compaction/start, compaction/summary, a replacing user/message and compaction/end, and the agent/request-error listener."
+    },
+    {
+      "path": "mini-dsh/src/session.ts",
+      "note": "append() learns surfaceOp 'append' or { op: 'replace', startSeq, endSeq }, and keeps surface and replaceCount."
+    },
+    {
+      "path": "mini-dsh/test/context.test.ts",
+      "note": "Scripted callModel and a fixed clock; one test per milestone."
+    }
+  ],
+  "hints": [
+    "Sort with a.order - b.order first and compare names only on a tie, so the start order of plugins never changes the bytes.",
+    "Use a fake clock in tests: pass now() into the time listener instead of calling Date.now() inside it.",
+    "Check your threshold with W = 10,000, reply = 1,000, headroom = 2,000: the answer is 7,000, and the amount to keep is 1,440.",
+    "balancedBefore() only needs a set of open call ids: add on tool_use, delete on tool_result, and the cut is safe when the set is empty.",
+    "Build the derived history from session.surface, never from the whole log, or the summary will appear beside the messages it replaced."
+  ],
+  "rubric": [
+    {
+      "criterion": "Sections render in order and name order, empty sections leave no blank lines, and a disposer removes a section.",
+      "chapterKey": "prompt-sections"
+    },
+    {
+      "criterion": "The time note is a logged user message at the end of the history and respects the 10-minute interval.",
+      "chapterKey": "runtime-context"
+    },
+    {
+      "criterion": "AGENTS.md is added at the first step and again only after a successful tool changed its text.",
+      "chapterKey": "project-instructions"
+    },
+    {
+      "criterion": "The meter starts from reported usage and the threshold is floor(min(W * 0.8, W - reply - headroom)).",
+      "chapterKey": "token-meter"
+    },
+    {
+      "criterion": "The selected range never includes the system prompt and never separates a tool call from its result.",
+      "chapterKey": "safe-cut"
+    },
+    {
+      "criterion": "A summary replaces the range in the surface while every earlier record event stays unchanged, bracketed by start and end events.",
+      "chapterKey": "surface-replacement"
+    },
+    {
+      "criterion": "A CONTEXT_WINDOW_EXCEEDED error leads to at most one retry, and only after replaceCount rose.",
+      "chapterKey": "overflow-recovery"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Sorted prompt sections",
+      "body": "Register read (1100), identity (-1000) and bash (1000) in that order and check render() returns identity, bash, read. Dispose bash and check it is gone.",
+      "checkCmd": "npx tsx test/context.test.ts prompt"
+    },
+    {
+      "title": "Time note and AGENTS.md",
+      "body": "With a fake clock at 09:00:00, 09:00:05 and 09:12:00, check two time notes. Edit AGENTS.md through the edit tool and check one updated note at the next step.",
+      "checkCmd": "npx tsx test/context.test.ts runtime"
+    },
+    {
+      "title": "Meter and threshold",
+      "body": "Check thresholdTokens(10000, 1000, 2000) is 7000, and that 5,200 reported plus a 6,000-character result measures 6,708.",
+      "checkCmd": "npx tsx test/context.test.ts meter"
+    },
+    {
+      "title": "Safe cut and replacement",
+      "body": "Use the eight messages from the lesson: the range is messages 1 to 3, and after compactRange() the surface is [0, 10, 4, 5, 6, 7] with 12 events in the log.",
+      "checkCmd": "npx tsx test/context.test.ts compaction"
+    },
+    {
+      "title": "Overflow recovery",
+      "body": "Script one CONTEXT_WINDOW_EXCEEDED error: the step retries once and succeeds. Script two in a row: the turn ends with the error after one retry.",
+      "checkCmd": "npx tsx test/context.test.ts overflow"
+    }
+  ]
+}

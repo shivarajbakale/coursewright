@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The program crashes while flushing a batch. What does the file look like?",
+      "options": [
+        "Every line is lost, because the file was open",
+        "Every line before the last one is complete JSON, and the last line may be cut off",
+        "The header line is damaged",
+        "The batch is written twice"
+      ],
+      "answer": 1,
+      "explanation": "Each flush only adds lines at the end. A crash can cut the line being written, but the lines above it were already complete.",
+      "conceptKeys": [
+        "jsonl-storage"
+      ]
+    },
+    {
+      "prompt": "Why does runStep flush before a tool runs, not only before a model call?",
+      "options": [
+        "Because the tool reads the session file",
+        "Because a tool can change files, so the record of its call must be on disk first",
+        "Because the model needs the tool result on disk",
+        "Because flushing makes the tool run faster"
+      ],
+      "answer": 1,
+      "explanation": "If the program dies while the tool changes the world, the file must still show that the call started. Flushing first puts the tool/call event on disk.",
+      "conceptKeys": [
+        "jsonl-storage"
+      ]
+    },
+    {
+      "prompt": "Why is JSONL a better fit for this record than one JSON array in a file?",
+      "options": [
+        "A new event is one added line, so nothing older must be written again",
+        "JSON arrays cannot hold events",
+        "JSONL files are read by the model directly",
+        "JSONL removes the need for sequence numbers"
+      ],
+      "answer": 0,
+      "explanation": "With one array, every change rewrites the whole file. With JSONL, adding an event appends one line, which matches an append-only log.",
+      "conceptKeys": [
+        "jsonl-storage",
+        "append-only-log"
+      ]
+    }
+  ],
+  "diagrams": []
+}

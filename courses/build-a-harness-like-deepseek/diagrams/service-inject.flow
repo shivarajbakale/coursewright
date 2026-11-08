@@ -1,0 +1,24 @@
+title A plugin waits for a service
+
+deepseek "DeepSeek adapter"
+store    "Context store"
+loop     "Agent loop plugin" state waiting
+fake     "Test adapter"
+
+llm1 at deepseek
+llm2 at fake
+
+# The loop plugin needs llm, and the store has none, so it waits.
+pause "The loop plugin lists llm in inject. Its fiber stays pending."
+
+# The DeepSeek adapter provides llm, so the loop can start.
+llm1 -> store "provide puts the service in the store and refreshes every fiber."
+loop : running "Every name in inject now exists, so the fiber loads and becomes active."
+
+# The adapter is disposed: the loop stops first, then llm leaves.
+loop : waiting "Dependents unload while the service still exists, then go back to pending."
+llm1 -> deepseek "The provide disposer removes llm from the store."
+
+# A test adapter provides llm, and the same loop starts again.
+llm2 -> store "A test can provide a different llm under the same name."
+loop : running "The loop code did not change. It now talks to the test adapter."

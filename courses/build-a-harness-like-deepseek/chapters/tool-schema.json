@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The schema requires a string field path. Which arguments fit it?",
+      "options": [
+        "{ \"file\": \"notes.txt\" }",
+        "{ \"path\": 42 }",
+        "{ }",
+        "{ \"path\": \"notes.txt\" }"
+      ],
+      "answer": 3,
+      "explanation": "Only this one has the required path field, and its value is a string. The others miss path or give it the wrong type.",
+      "conceptKeys": [
+        "tool-schema"
+      ]
+    },
+    {
+      "prompt": "Why does the description of a tool matter?",
+      "options": [
+        "The program runs the description as code",
+        "The model chooses a tool only from its name and description",
+        "The API rejects descriptions shorter than 50 characters",
+        "The description sets the type of each argument"
+      ],
+      "answer": 1,
+      "explanation": "The model never sees the tool's code. It decides from the name and the description, so a clear description leads to the right choice.",
+      "conceptKeys": [
+        "tool-schema"
+      ]
+    },
+    {
+      "prompt": "Your program offers 20 tools. What is one cost of that?",
+      "options": [
+        "Every schema is part of the input, so it uses tokens and room in the context window in every request",
+        "The model can only use the first tool in the list",
+        "Each tool needs its own API key",
+        "The reply stops streaming"
+      ],
+      "answer": 0,
+      "explanation": "The tool schemas travel in every request as tokens. More tools mean more input tokens and less room for the conversation.",
+      "conceptKeys": [
+        "tool-schema",
+        "context-window"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "When does the goal driver send the next round?",
+      "options": [
+        "Every 60 seconds while the goal is active",
+        "When the agent becomes idle, the goal is active and no other prompt waits",
+        "After every step of a turn",
+        "Only when a person types continue"
+      ],
+      "answer": 1,
+      "explanation": "The driver reacts to the idle status. It checks the goal and the inbox, so it never interrupts a turn or a person's message.",
+      "conceptKeys": [
+        "goal-driver",
+        "agent-inbox"
+      ]
+    },
+    {
+      "prompt": "A goal has maxGoalRounds 3 and 3 rounds have started without success. What does the driver do at the next idle moment?",
+      "options": [
+        "It sends round 4",
+        "It marks the goal blocked with round-limit",
+        "It marks the goal complete",
+        "It deletes the goal"
+      ],
+      "answer": 1,
+      "explanation": "roundsStarted equals the cap, so the driver blocks the goal instead of sending another round.",
+      "conceptKeys": [
+        "goal-driver"
+      ]
+    },
+    {
+      "prompt": "Why does only the model mark a goal complete, and not the driver?",
+      "options": [
+        "The driver cannot read session events",
+        "The driver only sees status and rounds; judging the work needs the model to check the evidence",
+        "Completion must be approved by a subagent",
+        "The cap marks every goal complete"
+      ],
+      "answer": 1,
+      "explanation": "The driver knows when the agent is idle, not whether the objective is met. The model checks the evidence and calls update_goal.",
+      "conceptKeys": [
+        "goal-driver"
+      ]
+    }
+  ],
+  "diagrams": []
+}

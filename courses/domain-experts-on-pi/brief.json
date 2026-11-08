@@ -1,0 +1,6 @@
+{
+  "topic": "Building domain-specific expert agents on the pi coding agent (github.com/earendil-works/pi, v1.5.0)",
+  "goal": "Understand how pi is built from its source, then build a shared base pack and three domain experts on it (an SQL analyst, a Kubernetes operator and a quant researcher), each with its own prompt, skills, tools, guards, container and eval suite, reached through one router that sends each task to the right expert.",
+  "pace": "one to two months; from the basics to a working fleet of experts, about 52 lessons",
+  "answers": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the classifier get a tool with an enum parameter instead of answering in free text?",
+      "options": [
+        "Free text is blocked by pi",
+        "The answer must be one of sql, k8s, quant or unsure so code can act on it",
+        "An enum makes the model cheaper per token",
+        "A tool lets the model see the log"
+      ],
+      "answer": 1,
+      "explanation": "Code needs a name from a fixed set. The enum forces the model's answer into that set.",
+      "conceptKeys": [
+        "router"
+      ]
+    },
+    {
+      "prompt": "A task says \"Why is the web pod restarting?\". What does the router do first?",
+      "options": [
+        "Calls the classifier",
+        "Matches a rule on pod and sends it to the Kubernetes expert",
+        "Asks the user",
+        "Sends it to all three experts"
+      ],
+      "answer": 1,
+      "explanation": "Rules run first and cost no model call. The word pod matches the Kubernetes rule.",
+      "conceptKeys": [
+        "router"
+      ]
+    },
+    {
+      "prompt": "Why does the router write every decision to router/decisions.jsonl?",
+      "options": [
+        "So pi can load the file as a skill",
+        "So wrong routing can be found and turned into golden tasks",
+        "So the classifier remembers old tasks",
+        "Because pi requires a log before it runs an expert"
+      ],
+      "answer": 1,
+      "explanation": "Each line holds the task, the choice and the reason. A wrong choice becomes a test case for the router.",
+      "conceptKeys": [
+        "router"
+      ]
+    }
+  ],
+  "diagrams": []
+}

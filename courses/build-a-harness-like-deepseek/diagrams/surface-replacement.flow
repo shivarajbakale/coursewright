@@ -1,0 +1,32 @@
+title Replacing old messages with a summary
+
+surface "Model's view"
+request "Summary request"
+model "DeepSeek"
+record "Record events" counter 8
+
+surface -> request -> model -> surface
+
+range at surface
+
+# The view is too large, so messages 1 to 3 must become shorter.
+pause "Messages 1 to 3 cost 2,150 tokens. The record already holds 8 events."
+
+# The start marker goes into the record before any other work.
+record +1 "compaction/start is seq 8. It does not join the view."
+
+# The old range goes out in one request, after the same system prompt.
+range -> request : waiting "The same start bytes as the last step give a cache hit."
+range -> model : running "A final user message asks for a structured summary."
+
+# The model writes a summary that is smaller than the range.
+new summary at model
+range : done "250 tokens replace 2,150, so the summary is accepted."
+
+# The summary is recorded, then takes the place of the range in the view.
+summary -> surface 1200ms "seq 10 replaces seqs 1 to 3; the view is now 0, 10, 4, 5, 6, 7."
+record +2
+remove range
+
+# The end marker comes last, so a crash leaves a start without an end.
+record +1 "compaction/end is seq 11. All 12 events remain in the record."

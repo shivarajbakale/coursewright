@@ -1,0 +1,38 @@
+title One turn, three steps
+
+user  "You"
+prog  "Your program"
+model "The model"
+tool  "count_lines"
+steps "Steps in this turn" counter 0
+
+user -> prog -> model
+prog -> tool
+
+q at user
+
+# One question is one turn. Answering it can take several model requests.
+pause "Question: do notes.txt and todo.txt have the same number of lines? The step limit is 10."
+
+# The question starts the turn.
+q -> prog : waiting
+
+# Step 1: the model asks for the first count.
+steps +1
+q -> model : running "Request 1 sends 1 message."
+q -> prog : waiting "Reply: a tool call for count_lines on notes.txt."
+q -> tool : running
+q -> prog : waiting "Result: 42."
+
+# Step 2: the model asks for the second count.
+steps +1
+q -> model : running "Request 2 sends 3 messages."
+q -> prog : waiting "Reply: a tool call for count_lines on todo.txt."
+q -> tool : running
+q -> prog : waiting "Result: 17."
+
+# Step 3: the model answers in text, so the turn ends.
+steps +1
+q -> model : running "Request 3 sends 5 messages."
+q -> prog : waiting "Stop reason end_turn: no tool call this time."
+q -> user : done "No: notes.txt has 42 lines and todo.txt has 17."

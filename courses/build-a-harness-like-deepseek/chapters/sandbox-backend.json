@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "On macOS in workspace-write mode, a command reads ~/.ssh/id_rsa and sends it to a web server with curl. What happens?",
+      "options": [
+        "The kernel refuses the read",
+        "The kernel refuses the network request",
+        "The harness refuses to start the command",
+        "It succeeds, because the profile allows everything except writes outside the roots"
+      ],
+      "answer": 3,
+      "explanation": "The Seatbelt profile starts with (allow default) and denies only file writes. Reading and the network stay open, so the mode does not stop this.",
+      "conceptKeys": [
+        "sandbox-backend"
+      ]
+    },
+    {
+      "prompt": "A Linux host has neither bwrap nor Landlock, and the session is in workspace-write mode. What does the harness do with a bash call?",
+      "options": [
+        "Runs the command without confinement and logs a warning",
+        "Refuses with SANDBOX_UNAVAILABLE, so the command does not run",
+        "Switches the session to read-only",
+        "Runs the command in danger-full-access mode"
+      ],
+      "answer": 1,
+      "explanation": "The backend fails closed. Running unconfined would break the promise the mode makes, so the call is refused.",
+      "conceptKeys": [
+        "sandbox-backend"
+      ]
+    },
+    {
+      "prompt": "How does the model learn that a command's write was refused by the sandbox, and not by a normal file permission?",
+      "options": [
+        "The tool matches the runner's denial text in stderr and adds a sandbox denial line to the result",
+        "The kernel sends the model a message",
+        "The command exits with a special code that only sandboxes use",
+        "The harness asks a person to explain"
+      ],
+      "answer": 0,
+      "explanation": "Each runner has a known denial text, such as Operation not permitted for Seatbelt. When it appears, the tool adds the [sandbox: file access denied ...] line.",
+      "conceptKeys": [
+        "sandbox-backend"
+      ]
+    }
+  ],
+  "diagrams": []
+}

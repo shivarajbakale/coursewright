@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The pack folder is mounted with :ro. What does that protect against?",
+      "options": [
+        "The expert changing its own extension and rules",
+        "The model API reading the pack",
+        "The container using the network",
+        "pi writing the session log"
+      ],
+      "answer": 0,
+      "explanation": "A read-only mount cannot be changed from inside. The expert cannot edit its own pack, but the agent folder stays read-write for the session log.",
+      "conceptKeys": [
+        "expert-container"
+      ]
+    },
+    {
+      "prompt": "Why does the container keep an open network?",
+      "options": [
+        "Docker cannot close the network",
+        "The expert needs to reach the model API",
+        "Read-only mounts need the network",
+        "pi downloads its pack at each start"
+      ],
+      "answer": 1,
+      "explanation": "The model API is reached over the network, so the network stays open. Anything sent over it could also carry data out, which is a remaining leak.",
+      "conceptKeys": [
+        "expert-container"
+      ]
+    },
+    {
+      "prompt": "A container is started with -e DEEPSEEK_API_KEY and nothing else for the environment. What can a bash command inside see of your host variables?",
+      "options": [
+        "All of them, because bash inherits the host environment",
+        "Only DEEPSEEK_API_KEY",
+        "None, because the key is hidden from bash",
+        "Only variables that start with PI_"
+      ],
+      "answer": 1,
+      "explanation": "A container gets only the variables you pass with -e. The key is still visible to every command inside, which is why environment variables remain a leak.",
+      "conceptKeys": [
+        "expert-container"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The harness has DEEPSEEK_API_KEY, PATH and DSH_PROFILE in its environment. Which of them does the command's process receive?",
+      "options": [
+        "All three",
+        "Only PATH",
+        "PATH and DSH_PROFILE",
+        "Only DEEPSEEK_API_KEY"
+      ],
+      "answer": 1,
+      "explanation": "DEEPSEEK_API_KEY matches the secret pattern and DSH_PROFILE starts with DSH_, so both are removed. PATH passes through so programs can be found.",
+      "conceptKeys": [
+        "shell-tool"
+      ]
+    },
+    {
+      "prompt": "npm test exits with code 1 because one test fails. What kind of result does the model get?",
+      "options": [
+        "An error result, because the exit code is not 0",
+        "No result, because the command failed",
+        "An approval request",
+        "A normal result with the output and an [exit code: 1] line"
+      ],
+      "answer": 3,
+      "explanation": "The tool ran the command and reported what happened. A failing test is information, so the result is a normal one that shows the exit code.",
+      "conceptKeys": [
+        "shell-tool"
+      ]
+    },
+    {
+      "prompt": "Why does the bash tool not declare itself safe to run in parallel?",
+      "options": [
+        "Because a command can change any file, so it must run alone",
+        "Because bash cannot run twice at once",
+        "Because it has a timeout",
+        "Because its output can be large"
+      ],
+      "answer": 0,
+      "explanation": "Overlapping calls are only safe when they cannot interfere. A command can do anything, so each bash call runs alone.",
+      "conceptKeys": [
+        "shell-tool"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "In PTC mode, the model calls read directly instead of through run_code. What happens?",
+      "options": [
+        "The read runs as usual",
+        "The call fails, with a message to call read from inside a run_code program",
+        "The harness wraps it in a program automatically",
+        "The session switches back to normal mode"
+      ],
+      "answer": 1,
+      "explanation": "Only run_code is callable directly. Other tools are reachable only from inside a program.",
+      "conceptKeys": [
+        "run-code"
+      ]
+    },
+    {
+      "prompt": "Why does the history stay small when a program reads 40 files?",
+      "options": [
+        "The program deletes the files after reading",
+        "The files are compressed before they reach the model",
+        "Only the value the program returns or prints becomes the tool result",
+        "The model reads the files from its memory"
+      ],
+      "answer": 2,
+      "explanation": "The file texts stay inside the program. The model gets only the returned value, here about 10 tokens.",
+      "conceptKeys": [
+        "run-code",
+        "context-window"
+      ]
+    },
+    {
+      "prompt": "In the trace, how many model steps does counting lines in 40 files take with a program?",
+      "options": [
+        "2",
+        "40",
+        "41",
+        "1"
+      ],
+      "answer": 0,
+      "explanation": "Step 1 sends the program and step 2 answers from its result. All 41 tool calls happen inside the program.",
+      "conceptKeys": [
+        "run-code"
+      ]
+    }
+  ],
+  "diagrams": []
+}

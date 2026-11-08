@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "The model adds a fourth todo in the middle of the task. Why does nothing break?",
+      "options": [
+        "Each call sends the whole list, so no change depends on the old item numbers",
+        "The harness merges the new todo into the old list",
+        "The tool rejects lists longer than three",
+        "The fourth todo goes into the next turn"
+      ],
+      "answer": 0,
+      "explanation": "A whole-list write does not refer to the old list, so adding, removing or reordering items is the same kind of call.",
+      "conceptKeys": [
+        "todo-list"
+      ]
+    },
+    {
+      "prompt": "A screen opens the session after four todo_write calls in one turn. What does it show?",
+      "options": [
+        "The first list, because the record keeps it first",
+        "All four lists merged together",
+        "The fourth list, because the newest write wins",
+        "Nothing, until the model calls the tool again"
+      ],
+      "answer": 2,
+      "explanation": "The projection reads the events in order and keeps the latest todo/write, so the fourth list is shown.",
+      "conceptKeys": [
+        "todo-list",
+        "derived-history"
+      ]
+    },
+    {
+      "prompt": "With one todo allowed in progress, the model marks two as in_progress. What happens?",
+      "options": [
+        "The second one is silently changed to pending",
+        "The tool throws, and the model reads an error result and tries again",
+        "Both are saved and the screen shows a warning",
+        "The turn ends at once"
+      ],
+      "answer": 1,
+      "explanation": "checkTodos rejects the list. The failure returns as a tool error result, so the model can send a corrected list.",
+      "conceptKeys": [
+        "todo-list",
+        "tool-error-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

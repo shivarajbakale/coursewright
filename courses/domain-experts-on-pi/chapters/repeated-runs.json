@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A task passes 3 of 5 runs with nothing changed between runs. What should you do?",
+      "options": [
+        "Report 60% and move on",
+        "Treat it as flaky and read the sessions of the failed runs to find why",
+        "Delete the task",
+        "Run it once more and keep that result"
+      ],
+      "answer": 1,
+      "explanation": "Mixed results with no change mean the task is flaky. The failed sessions show which mistake the model makes.",
+      "conceptKeys": [
+        "repeated-runs"
+      ]
+    },
+    {
+      "prompt": "With 5 runs per task, which pass counts mark a task as flaky?",
+      "options": [
+        "Only 0",
+        "Only 5",
+        "1, 2, 3 or 4",
+        "Any count"
+      ],
+      "answer": 2,
+      "explanation": "A flaky task has some passes and some fails: between 1 and runs minus 1. 0 is steady failure and 5 is steady success.",
+      "conceptKeys": [
+        "repeated-runs"
+      ]
+    },
+    {
+      "prompt": "Why does the runner alternate which arm goes first?",
+      "options": [
+        "To save tokens",
+        "So neither arm always gets the same time slot, which could bias the result",
+        "To make the control pass more often",
+        "Because pi requires it"
+      ],
+      "answer": 1,
+      "explanation": "If one arm always ran first, a change in the service over time could favour it. Alternating spreads that effect over both arms.",
+      "conceptKeys": [
+        "repeated-runs"
+      ]
+    }
+  ],
+  "diagrams": []
+}

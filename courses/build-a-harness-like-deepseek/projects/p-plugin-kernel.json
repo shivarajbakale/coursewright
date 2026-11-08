@@ -1,0 +1,110 @@
+{
+  "title": "A plugin kernel for mini-dsh",
+  "brief": "Write a tiny Cordis-like kernel in mini-dsh/src/kernel.ts and rebuild mini-dsh on it. The kernel has a Context with a prototype chain and a symbol-keyed service store, fibers with six states, effects whose disposers run in reverse, inject lists that keep a plugin pending, four event modes plus a waterfall, isolate realms and agent scopes. Then move the DeepSeek adapter, the tools and the agent loop out of main.ts into three plugins, list them as config rows in a profile, and make a saved patch remount only the row it changed. When you finish, no file imports another part directly: every part reads what it needs from the context, so a test or a second model can replace any one of them from a patch file.",
+  "starter": [
+    {
+      "path": "mini-dsh/src/kernel.ts",
+      "note": "New. Context (extend, get, provide, effect, plugin, isolate, on, emit, parallel, serial, bail, waterfall), Fiber and createScope."
+    },
+    {
+      "path": "mini-dsh/src/llm.ts",
+      "note": "Existing DeepSeek adapter. Wrap it in mini-dsh/plugins/deepseek.ts, which provides llm and sends each request through the llm/request waterfall."
+    },
+    {
+      "path": "mini-dsh/src/tools.ts",
+      "note": "Existing tool functions. Wrap them in mini-dsh/plugins/tools.ts, which provides tools with register(def) and list(scope)."
+    },
+    {
+      "path": "mini-dsh/src/loop.ts",
+      "note": "Existing agent loop. Wrap it in mini-dsh/plugins/loop.ts with inject: ['llm', 'tools']; it reads both from ctx and imports neither file."
+    },
+    {
+      "path": "mini-dsh/src/loader.ts",
+      "note": "New. loadRows, applyPatches, composeProfile and reload (compare rows by id). Uses the yaml package."
+    },
+    {
+      "path": "mini-dsh/profiles/agent/profile.json",
+      "note": "New. Lists bundles/core; patch.yml beside it holds your own patches."
+    },
+    {
+      "path": "mini-dsh/test/kernel.test.ts",
+      "note": "New. Tests for the kernel with a fake adapter; no network."
+    }
+  ],
+  "hints": [
+    "Start with extend and the store. Write a test that a child reads the root's service through the prototype and that a child's own property never appears on the root.",
+    "Make provide, on and plugin all go through effect, so there is one place where disposers are recorded. Then dispose only has to run fiber.disposers in reverse.",
+    "refresh is the heart of inject: call it on every fiber after any provide and after any provide disposer. A pending fiber that is ready starts; an active fiber that is not ready unloads and goes back to pending.",
+    "In waterfall, copy the listener list before you shift from it, and give each listener its own next with a called flag, so calling next twice throws.",
+    "For reload, a row changed if JSON.stringify of the old and new row differ. Dispose that fiber and mount the row again; leave fibers of unchanged ids alone."
+  ],
+  "rubric": [
+    {
+      "criterion": "Context.extend uses Object.create, a child reads the root's services, and a child's own properties never reach the parent",
+      "chapterKey": "plugin-context"
+    },
+    {
+      "criterion": "ctx.plugin returns a Fiber that moves pending, loading, active (or failed with the error kept), unloading, disposed, and a disposed fiber never restarts",
+      "chapterKey": "plugin-lifecycle"
+    },
+    {
+      "criterion": "provide, on and plugin are effects; disposing a fiber runs its disposers in reverse and disposes child fibers",
+      "chapterKey": "effect-disposer"
+    },
+    {
+      "criterion": "A plugin with inject stays pending until every named service exists, unloads when one leaves, and loads again when it returns, in any mount order",
+      "chapterKey": "service-inject"
+    },
+    {
+      "criterion": "emit, parallel, serial and bail behave as taught; serial and bail stop at the first value that is not null, false or undefined",
+      "chapterKey": "event-modes"
+    },
+    {
+      "criterion": "waterfall passes next as the last argument, a listener that skips next replaces the result, and calling next twice throws",
+      "chapterKey": "waterfall-hook"
+    },
+    {
+      "criterion": "ctx.isolate(name) lets a subtree provide its own service under a taken name, while the parent and other names are unchanged",
+      "chapterKey": "isolate-realm"
+    },
+    {
+      "criterion": "createScope tags a child context; tools and listeners registered through it reach that agent only, and untagged ones reach every agent",
+      "chapterKey": "agent-scope"
+    },
+    {
+      "criterion": "The plugin tree is a YAML list of rows, and applyPatches inserts rows or replaces whole keys of one row by id",
+      "chapterKey": "config-rows"
+    },
+    {
+      "criterion": "composeProfile applies bundles, then the profile patch, then a command-line patch over an empty list; reload remounts only changed rows",
+      "chapterKey": "profiles-bundles"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Context, fibers and disposers",
+      "body": "Write Context.extend, get, provide, effect and plugin, and the Fiber states. A test mounts a plugin that provides llm and starts a timer, disposes it, and checks that the timer stopped before llm left the store.",
+      "checkCmd": "npx tsx test/kernel.test.ts --only lifecycle"
+    },
+    {
+      "title": "Services that plugins wait for",
+      "body": "Add inject and refresh. Mount the loop plugin before a fake adapter, check that it is pending, then active, then pending again after the adapter is disposed, and active with a second fake adapter.",
+      "checkCmd": "npx tsx test/kernel.test.ts --only inject"
+    },
+    {
+      "title": "Events and the waterfall",
+      "body": "Add on, emit, parallel, serial, bail and waterfall. Route every model request through llm/request and add a budget listener that refuses max_tokens above 8192 without calling next.",
+      "checkCmd": "npx tsx test/kernel.test.ts --only events"
+    },
+    {
+      "title": "Realms and agent scopes",
+      "body": "Add isolate and createScope. Run a coder and a reviewer agent with fake adapters: the coder's apply_edit tool and counter listener must not reach the reviewer, and an isolated llm must not change the root's.",
+      "checkCmd": "npx tsx test/kernel.test.ts --only scope"
+    },
+    {
+      "title": "mini-dsh from a profile",
+      "body": "Move the adapter, tools and loop into plugins, list them in bundles/core/rows.yml, and start mini-dsh from profiles/agent. Saving patch.yml with a new max_tokens remounts only the llm row.",
+      "checkCmd": "npx tsx test/profile.test.ts"
+    }
+  ]
+}

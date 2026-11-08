@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "An expert must never run more than 20 turns. pi has no step limit. Where does the cap go?",
+      "options": [
+        "In a setting called maxTurns in pi's loop",
+        "In a finishTurn hook that returns { action: \"end\" } after 20 turns",
+        "In the tool schema of each tool",
+        "In the system prompt only, as a request to the model"
+      ],
+      "answer": 1,
+      "explanation": "pi's loop has no maxTurns or maxSteps. A finishTurn hook can return { action: \"end\" }, so the expert counts turns there.",
+      "conceptKeys": [
+        "pi-loop"
+      ]
+    },
+    {
+      "prompt": "A model reply is cut off by the output-token limit and contains a tool call. What does pi do with that call?",
+      "options": [
+        "It runs the call with the arguments it has",
+        "It runs the call twice to be safe",
+        "It fails the call with an error, because the arguments may be incomplete",
+        "It ends the whole run at once"
+      ],
+      "answer": 2,
+      "explanation": "A cut-off reply may hold half-written arguments. pi marks the call as failed, not run, and the model can try again.",
+      "conceptKeys": [
+        "pi-loop"
+      ]
+    },
+    {
+      "prompt": "What does an abort do to a run?",
+      "options": [
+        "It asks the model to write a shorter answer",
+        "It waits until the current turn ends and then stops",
+        "It removes the last message from the session file",
+        "It cancels the run from outside, and the signal reaches the model call and every tool"
+      ],
+      "answer": 3,
+      "explanation": "An abort uses one AbortController per run. Its signal reaches the model call and each tool, so both can stop early.",
+      "conceptKeys": [
+        "pi-loop"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "What does a faux-provider test check?",
+      "options": [
+        "Whether the real model chooses the right tool",
+        "Whether your tools, gates and rewrites behave correctly when the model says a known thing",
+        "Whether the model writes good English",
+        "How much a run costs"
+      ],
+      "answer": 1,
+      "explanation": "The replies are scripted, so the model decides nothing. The test checks the pack's own code against known replies.",
+      "conceptKeys": [
+        "faux-provider"
+      ]
+    },
+    {
+      "prompt": "A test queues one reply, and the session then makes a second model call. What happens?",
+      "options": [
+        "The first reply is played again",
+        "The faux provider returns an error saying no more responses are queued",
+        "The session asks a real provider",
+        "The test passes without a result"
+      ],
+      "answer": 1,
+      "explanation": "When the queue is empty, the reply is the error \"No more faux responses queued\". It tells you that you scripted too few replies.",
+      "conceptKeys": [
+        "faux-provider"
+      ]
+    },
+    {
+      "prompt": "Why do you still need golden tasks with a real model if faux tests pass?",
+      "options": [
+        "Faux tests are slower",
+        "Faux tests cannot run a gate",
+        "A scripted model never decides anything, so faux tests say nothing about the expert's judgement",
+        "Golden tasks do not need a fixture"
+      ],
+      "answer": 2,
+      "explanation": "Faux replies are fixed in advance. Only a real model shows whether the expert picks the right tool and refuses the right requests.",
+      "conceptKeys": [
+        "faux-provider"
+      ]
+    }
+  ],
+  "diagrams": []
+}

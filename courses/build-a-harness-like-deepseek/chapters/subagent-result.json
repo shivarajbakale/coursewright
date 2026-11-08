@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the child's answer arrive as an inbox message and not as the subagent tool's result?",
+      "options": [
+        "Tool results cannot hold text",
+        "The tool returned the child's name long before the child finished",
+        "The parent's model cannot read tool results from children",
+        "Inbox messages skip the session record"
+      ],
+      "answer": 1,
+      "explanation": "The subagent tool returns at once, so its call is closed. The answer comes later, through the parent's inbox.",
+      "conceptKeys": [
+        "subagent-result",
+        "subagent"
+      ]
+    },
+    {
+      "prompt": "The child settles while the parent is in the middle of turn 1. What happens to the notice?",
+      "options": [
+        "It is a followup and waits for turn 2",
+        "It is a steer and joins the next step of turn 1",
+        "It is dropped because the parent is busy",
+        "It replaces the parent's current request"
+      ],
+      "answer": 1,
+      "explanation": "A busy parent receives a steer, so the notice joins the next step of the turn that runs now.",
+      "conceptKeys": [
+        "subagent-result",
+        "agent-inbox"
+      ]
+    },
+    {
+      "prompt": "What part of the child's work does the parent receive?",
+      "options": [
+        "Every tool result the child read",
+        "The child's reasoning and its final reply",
+        "The content of the child's last non-empty assistant message",
+        "A summary the parent's model writes from the child's file"
+      ],
+      "answer": 2,
+      "explanation": "Settlement takes the newest non-empty assistant message and nothing else, so the child must put its evidence in that reply.",
+      "conceptKeys": [
+        "subagent-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

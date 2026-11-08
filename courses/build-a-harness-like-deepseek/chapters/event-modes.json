@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "Three listeners handle a serial event. The first returns undefined and the second returns 'stop'. What happens to the third?",
+      "options": [
+        "It runs, and its answer replaces 'stop'",
+        "It runs at the same time as the second",
+        "It runs only if the second listener throws",
+        "It does not run, because the second listener answered"
+      ],
+      "answer": 3,
+      "explanation": "serial waits for each listener in order and returns the first value that is not null, false or undefined. 'stop' is an answer, so the third listener never runs.",
+      "conceptKeys": [
+        "event-modes"
+      ]
+    },
+    {
+      "prompt": "A logger listens on an event sent with emit and returns a promise. What does the sender do with it?",
+      "options": [
+        "It awaits the promise before going on",
+        "It ignores it: emit waits for no listener and drops return values",
+        "It returns the promise to its caller",
+        "It throws, because emit listeners must be synchronous"
+      ],
+      "answer": 1,
+      "explanation": "emit calls every listener and moves on. It never waits and never collects a value, so the logger's promise is dropped.",
+      "conceptKeys": [
+        "event-modes"
+      ]
+    },
+    {
+      "prompt": "Why does the kernel register listeners through effect?",
+      "options": [
+        "So a listener is removed when the plugin that added it stops",
+        "So listeners run in parallel",
+        "So a listener can return a value",
+        "So the sender knows each listener's name"
+      ],
+      "answer": 0,
+      "explanation": "on returns a disposer, and the fiber runs it when the plugin unloads. A stopped plugin therefore never hears another event.",
+      "conceptKeys": [
+        "event-modes",
+        "effect-disposer"
+      ]
+    }
+  ],
+  "diagrams": []
+}

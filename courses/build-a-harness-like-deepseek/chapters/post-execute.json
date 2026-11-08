@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A read returns text with an API key, and a post-execute listener replaces the key with [redacted key]. What does the session record hold?",
+      "options": [
+        "The original text, because the record keeps everything the body returned",
+        "Both versions, side by side",
+        "Nothing, because redacted results are not recorded",
+        "The redacted text, because the record holds what the model sees"
+      ],
+      "answer": 3,
+      "explanation": "Post-execute runs before the tool/result event is written. The recorded result is the model-facing one, after the replacement.",
+      "conceptKeys": [
+        "post-execute"
+      ]
+    },
+    {
+      "prompt": "A lint plugin returns block with the feedback \"line 3: missing )\" after a write. What does the model receive?",
+      "options": [
+        "An error result whose text is \"line 3: missing )\"",
+        "The original successful result and a separate warning",
+        "Nothing until the next turn",
+        "A request to approve the write"
+      ],
+      "answer": 0,
+      "explanation": "Block turns the result into an error, and its content is the feedback, so the model reads exactly what to fix.",
+      "conceptKeys": [
+        "post-execute"
+      ]
+    },
+    {
+      "prompt": "Why are added contexts placed after all of the step's tool results instead of right after each one?",
+      "options": [
+        "Because contexts are larger than results",
+        "So every tool call stays directly next to its own result in the record",
+        "Because the model ignores messages between results",
+        "So contexts can be deleted later"
+      ],
+      "answer": 1,
+      "explanation": "A call and its result must stay together. Putting the extra messages after the whole step keeps that pairing intact.",
+      "conceptKeys": [
+        "post-execute"
+      ]
+    }
+  ],
+  "diagrams": []
+}

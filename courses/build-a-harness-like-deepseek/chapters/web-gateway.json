@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The page sends POST /api/session/delete, but no service marked a delete method as remote. What happens?",
+      "options": [
+        "The gateway guesses the closest method",
+        "The request reaches the session service anyway",
+        "The server answers 404, because only listed remote methods can be called",
+        "The agent is deleted"
+      ],
+      "answer": 2,
+      "explanation": "The gateway looks up namespace and method in its table of remote methods. A method nobody listed has no handler, so the request is refused.",
+      "conceptKeys": [
+        "web-gateway"
+      ]
+    },
+    {
+      "prompt": "Why does the page call a generated stub instead of writing fetch calls by hand?",
+      "options": [
+        "The stub comes from the list of remote methods, so names and argument shapes match the server",
+        "Fetch does not work in browsers",
+        "The stub runs the agent inside the browser",
+        "Stubs skip the gateway"
+      ],
+      "answer": 0,
+      "explanation": "The build writes one function per remote method from the server's own list, so a renamed method or a changed argument is caught at build time.",
+      "conceptKeys": [
+        "web-gateway"
+      ]
+    },
+    {
+      "prompt": "A page opens the follow stream after the agent has run for 2 minutes. How does it get the earlier events?",
+      "options": [
+        "It cannot; it sees only new events",
+        "The stream first sends the events already in the record, then new events and frames",
+        "It replays the live frames",
+        "It calls prompt again"
+      ],
+      "answer": 1,
+      "explanation": "The record holds every committed event, so the follow stream starts with them and then continues with new events and live frames.",
+      "conceptKeys": [
+        "web-gateway",
+        "live-event-stream"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A model has a window of 1,000,000 tokens and pi uses reserveTokens 16384. At which context size does pi start to compact?",
+      "options": [
+        "Above 983,616 tokens",
+        "Above 1,000,000 tokens",
+        "Above 20,000 tokens",
+        "Above 16,384 tokens"
+      ],
+      "answer": 0,
+      "explanation": "The trigger is contextTokens above the window minus the reserve: 1,000,000 - 16,384 = 983,616.",
+      "conceptKeys": [
+        "pi-compaction"
+      ]
+    },
+    {
+      "prompt": "After a compaction, what is true of the session file?",
+      "options": [
+        "The older entries are deleted to save space",
+        "The older entries are moved to a second file",
+        "The older entries are rewritten as the summary",
+        "Nothing is deleted; a compaction entry is added"
+      ],
+      "answer": 3,
+      "explanation": "The summary is saved as a compaction entry. The old entries stay in the file, and only what the model sees changes.",
+      "conceptKeys": [
+        "pi-compaction"
+      ]
+    },
+    {
+      "prompt": "Why does pi never cut at a tool result?",
+      "options": [
+        "Tool results are too large to summarise",
+        "A tool call and its result must stay together",
+        "Tool results are not saved in the log",
+        "The summary must start with a tool result"
+      ],
+      "answer": 1,
+      "explanation": "If the cut fell between a call and its result, the kept part could hold a result with no call, or a call with no result.",
+      "conceptKeys": [
+        "pi-compaction"
+      ]
+    }
+  ],
+  "diagrams": []
+}

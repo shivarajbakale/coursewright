@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A plugin provides llm, then starts a timer that calls the adapter. When the plugin stops, which disposer runs first?",
+      "options": [
+        "The one that removes llm, because it was registered first",
+        "Both at once, because they belong to one fiber",
+        "The timer's, because disposers run in reverse order",
+        "Neither, until the program exits"
+      ],
+      "answer": 2,
+      "explanation": "The fiber runs disposers from the last registration to the first. The timer stops before llm leaves the store, so no tick finds the adapter missing.",
+      "conceptKeys": [
+        "effect-disposer"
+      ]
+    },
+    {
+      "prompt": "Why does the kernel's plugin method register an effect that disposes the child fiber?",
+      "options": [
+        "So the child plugin stops when the plugin that mounted it stops",
+        "So the child starts faster",
+        "So the child can read its parent's services",
+        "So the child cannot fail"
+      ],
+      "answer": 0,
+      "explanation": "The child's disposer goes on the parent's list. Disposing the parent therefore disposes the child too, and nothing stays running by accident.",
+      "conceptKeys": [
+        "effect-disposer"
+      ]
+    },
+    {
+      "prompt": "In dsh, two teardown steps are async and must run one after the other. What does the Cordis tutorial advise?",
+      "options": [
+        "Register them as two separate effects in the right order",
+        "Put both steps in one disposer and await them there",
+        "Call the disposers yourself before unloading",
+        "Mark the second effect as prepend"
+      ],
+      "answer": 1,
+      "explanation": "Cordis starts disposers in reverse order but awaits async ones together, so two effects can overlap. One disposer that awaits both steps keeps them in sequence.",
+      "conceptKeys": [
+        "effect-disposer"
+      ]
+    }
+  ],
+  "diagrams": []
+}

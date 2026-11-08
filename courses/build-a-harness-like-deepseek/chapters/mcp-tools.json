@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "Why are server tools registered on the tool registry, not called by the client directly?",
+      "options": [
+        "So they pass the same pre-execute, approval and post-execute checks as built-in tools",
+        "Because the client cannot send tools/call",
+        "So the server can see the model's history",
+        "Because MCP forbids direct calls"
+      ],
+      "answer": 0,
+      "explanation": "A registered tool runs through the same pipeline as every other tool, so an outside program gets no fewer checks.",
+      "conceptKeys": [
+        "mcp-tools",
+        "pre-execute"
+      ]
+    },
+    {
+      "prompt": "Server docs offers search.pages. Why does its public name end with a 12-character hash?",
+      "options": [
+        "Every MCP tool name ends with a hash",
+        "The name is longer than 64 characters",
+        "Cleaning the dot to _ could make it equal to the name of a tool called search_pages",
+        "The hash is the server's password"
+      ],
+      "answer": 2,
+      "explanation": "Cleaning changed the name, so two different raw names could print the same public name. The hash of server and raw name keeps them apart.",
+      "conceptKeys": [
+        "mcp-tools"
+      ]
+    },
+    {
+      "prompt": "Registering the third of five server tools fails. What does the model see?",
+      "options": [
+        "The first two tools",
+        "All five tools",
+        "Four tools, without the failed one",
+        "None of that server's tools"
+      ],
+      "answer": 3,
+      "explanation": "The loop disposes the tools it already registered, so a server's tools appear all together or not at all.",
+      "conceptKeys": [
+        "mcp-tools",
+        "effect-disposer"
+      ]
+    }
+  ],
+  "diagrams": []
+}

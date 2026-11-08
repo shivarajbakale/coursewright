@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A request uses 200 tokens for instructions, 40 for the question and 600 for earlier turns. The window holds 1,000 tokens. How many tokens are left for the reply?",
+      "options": [
+        "840",
+        "200",
+        "160",
+        "40"
+      ],
+      "answer": 2,
+      "explanation": "The first three parts use 200 + 40 + 600 = 840 tokens. The window has 1,000, so 1,000 - 840 = 160 tokens remain for the reply.",
+      "conceptKeys": [
+        "context-window"
+      ]
+    },
+    {
+      "prompt": "A conversation grows past the window, and the program drops the oldest turns before it sends the request. What does the model know about those turns?",
+      "options": [
+        "It remembers them from earlier requests.",
+        "It sees them but cannot answer them.",
+        "It cannot see them, because they are not in the window.",
+        "It asks the program for a copy."
+      ],
+      "answer": 2,
+      "explanation": "The model knows only its training and what sits in the window now. A turn that the program removes never reaches it.",
+      "conceptKeys": [
+        "context-window"
+      ]
+    },
+    {
+      "prompt": "pi's catalogue gives DeepSeek V4.1 Flash `contextWindow: 1000000` and `maxTokens: 384000`. What does `maxTokens` limit?",
+      "options": [
+        "The size of the whole window",
+        "The largest reply the model may write",
+        "The number of requests per minute",
+        "The number of tokens in the instructions"
+      ],
+      "answer": 1,
+      "explanation": "`maxTokens` is the largest reply. The reply counts against the same window as the instructions and the conversation, so it may take at most 384,000 of the 1,000,000 tokens.",
+      "conceptKeys": [
+        "context-window"
+      ]
+    }
+  ],
+  "diagrams": []
+}

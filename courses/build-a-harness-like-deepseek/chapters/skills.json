@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the model see only names and descriptions, not the full text of every skill?",
+      "options": [
+        "The full texts would fill much of the window on every request, though most tasks use none of them",
+        "The model cannot read Markdown",
+        "The full texts are secret",
+        "The catalogue is faster to write to disk"
+      ],
+      "answer": 0,
+      "explanation": "With three skills, the full texts are 9,600 tokens while the catalogue is about 120. The model loads only the skill it needs.",
+      "conceptKeys": [
+        "skills",
+        "context-window"
+      ]
+    },
+    {
+      "prompt": "The model calls skill with a name that is not in the catalogue. What happens?",
+      "options": [
+        "The harness returns an empty text",
+        "The harness invents instructions",
+        "The tool throws, so the model gets an error result it can read",
+        "The session stops"
+      ],
+      "answer": 2,
+      "explanation": "execute throws for an unknown name. The pipeline turns that into an error result, so the model can try a listed name.",
+      "conceptKeys": [
+        "skills",
+        "tool-error-result"
+      ]
+    },
+    {
+      "prompt": "What must a SKILL.md file have for the harness to list it?",
+      "options": [
+        "A tool schema",
+        "A name and a description in its YAML header",
+        "At least 500 characters of text",
+        "An MCP server"
+      ],
+      "answer": 1,
+      "explanation": "The catalogue is built from the name and description in the header, so a file without them is ignored.",
+      "conceptKeys": [
+        "skills"
+      ]
+    }
+  ],
+  "diagrams": []
+}

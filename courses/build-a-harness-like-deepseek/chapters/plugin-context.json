@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A child context made with extend({ label: 'loop' }) calls child.get('llm'). Where does the adapter come from?",
+      "options": [
+        "A copy of the store that extend made for the child",
+        "The root's store, found through the child's prototype",
+        "A new store that the child creates on first read",
+        "Nowhere: a child can only read its own properties"
+      ],
+      "answer": 1,
+      "explanation": "The child has no store of its own, so JavaScript looks in its prototype, the root, and finds the one shared store there.",
+      "conceptKeys": [
+        "plugin-context"
+      ]
+    },
+    {
+      "prompt": "After child = root.extend({ label: 'loop' }), what is root.label?",
+      "options": [
+        "'loop', because the child shares its properties with the root",
+        "An error, because the root has no prototype",
+        "undefined, because own properties of a child never reach the parent",
+        "'root', the default label"
+      ],
+      "answer": 2,
+      "explanation": "extend puts label on the new child object only. The parent is not changed, so reading label on the root finds nothing.",
+      "conceptKeys": [
+        "plugin-context"
+      ]
+    },
+    {
+      "prompt": "Why does the loop gain from calling ctx.get('llm') instead of importing llm.ts?",
+      "options": [
+        "The code that builds the context can put a different adapter under the same name",
+        "The request to DeepSeek becomes faster",
+        "The model no longer needs the message history",
+        "The loop no longer needs a tool list"
+      ],
+      "answer": 0,
+      "explanation": "The loop names the ability, not the file. A test or a second provider can provide its own llm service and the loop does not change.",
+      "conceptKeys": [
+        "plugin-context"
+      ]
+    }
+  ],
+  "diagrams": []
+}

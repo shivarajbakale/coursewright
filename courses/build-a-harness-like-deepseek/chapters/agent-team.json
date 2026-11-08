@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "agent-2 read task-1 at revision 1, but agent-1 has since claimed it. What happens when agent-2 claims with expectedRevision 1?",
+      "options": [
+        "agent-2 becomes a second owner",
+        "The claim fails because the current revision is 2",
+        "agent-1 loses the task to agent-2",
+        "The board waits until agent-1 finishes"
+      ],
+      "answer": 1,
+      "explanation": "Compare-and-set changes the task only if its revision still equals what the caller read. It is now 2, so the claim throws.",
+      "conceptKeys": [
+        "agent-team"
+      ]
+    },
+    {
+      "prompt": "Why does every change increase the revision by one?",
+      "options": [
+        "So an agent can tell that a task changed after it read it",
+        "So the board can count how many agents exist",
+        "So old tasks are deleted after ten changes",
+        "So the model knows how long a task took"
+      ],
+      "answer": 0,
+      "explanation": "A new revision on every change means a stale read always shows a different number, and the check catches it.",
+      "conceptKeys": [
+        "agent-team"
+      ]
+    },
+    {
+      "prompt": "The lead adds a task that agent-1 should start. What must the lead also do?",
+      "options": [
+        "Nothing, because the board wakes every member",
+        "Send agent-1 a message, because a board change wakes nobody",
+        "Restart agent-1 so it reads the board",
+        "Claim the task for agent-1 and complete it"
+      ],
+      "answer": 1,
+      "explanation": "Board changes do not add inbox messages or start idle agents, so the lead sends an explicit message.",
+      "conceptKeys": [
+        "agent-team",
+        "agent-inbox"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A stream sends block-end for index 0 with the text 'Hello.', and then a stray text delta ' extra' for index 0. What does blocks() return for block 0?",
+      "options": [
+        "'Hello. extra'",
+        "' extra'",
+        "An error, because the stream is faulty",
+        "'Hello.'"
+      ],
+      "answer": 3,
+      "explanation": "The first block-end wins and closes the block. A delta for a closed index is ignored, so the block stays 'Hello.'.",
+      "conceptKeys": [
+        "block-assembler"
+      ]
+    },
+    {
+      "prompt": "A reply ends with finish kind max-tokens while a tool call's arguments are '{\"path\":\"no'. What does the assembler keep?",
+      "options": [
+        "The text blocks only, because the cut-off tool call is unsafe to run",
+        "The tool call, with the arguments as they are",
+        "Nothing, because the reply failed",
+        "The tool call, with empty arguments"
+      ],
+      "answer": 0,
+      "explanation": "The model stopped at its output limit, so the arguments are incomplete. Running a call the program cannot read is unsafe, so tool calls are dropped and the text stays.",
+      "conceptKeys": [
+        "block-assembler"
+      ]
+    },
+    {
+      "prompt": "In the pigeonhole picture, what is the pigeonhole?",
+      "options": [
+        "One stream chunk",
+        "The finish reason",
+        "One block that is still being built, found by its index",
+        "The whole reply"
+      ],
+      "answer": 2,
+      "explanation": "Each pigeonhole collects the pieces for one flat number. In the assembler, each partial collects the deltas for one index until the block is whole.",
+      "conceptKeys": [
+        "block-assembler"
+      ]
+    }
+  ],
+  "diagrams": []
+}

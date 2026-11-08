@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "While step 2 runs, you send a steer. When does the model first see it?",
+      "options": [
+        "Inside the request that step 2 already sent",
+        "In the request of the next step of the same turn",
+        "Only in the first step of the next turn",
+        "Never, because a running turn rejects new input"
+      ],
+      "answer": 1,
+      "explanation": "A sent request cannot change, so the steer waits in the next-step list. The next step of the same turn claims it.",
+      "conceptKeys": [
+        "agent-inbox"
+      ]
+    },
+    {
+      "prompt": "The model ends step 3 in text, but the next-step list holds one message. What does the loop do?",
+      "options": [
+        "It ends the turn and drops the message",
+        "It ends the turn and starts a new turn with the message",
+        "It keeps the turn open and runs another step that claims the message",
+        "It cancels the turn and reports an error"
+      ],
+      "answer": 2,
+      "explanation": "A turn the model would end stays open while the next-step list is not empty, so one more step runs with that message.",
+      "conceptKeys": [
+        "agent-inbox",
+        "turn-and-step"
+      ]
+    },
+    {
+      "prompt": "How does inject differ from steer?",
+      "options": [
+        "Inject puts the message in the next-turn list",
+        "Inject writes the message to the record and steer does not",
+        "Inject does not wake an idle loop; the message waits for the next step that runs",
+        "Inject replaces every message already waiting"
+      ],
+      "answer": 2,
+      "explanation": "Both add to the next-step list. Steer also wakes the loop, while inject waits for a step that runs for another reason.",
+      "conceptKeys": [
+        "agent-inbox"
+      ]
+    }
+  ],
+  "diagrams": []
+}

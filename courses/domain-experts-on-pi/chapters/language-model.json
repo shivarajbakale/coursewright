@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "At each step, what does a language model produce?",
+      "options": [
+        "The whole reply at once",
+        "One likely next token",
+        "A corrected copy of the prompt",
+        "A list of sources"
+      ],
+      "answer": 1,
+      "explanation": "A model predicts one likely next token, adds it to the text, and then predicts again.",
+      "conceptKeys": [
+        "language-model"
+      ]
+    },
+    {
+      "prompt": "Why must a program surround a language model to get work done?",
+      "options": [
+        "The model runs too slowly on its own",
+        "The model cannot read a prompt by itself",
+        "The model has no goal and only continues text",
+        "The model forgets the token it last wrote"
+      ],
+      "answer": 2,
+      "explanation": "A model only continues the text it receives. It has no goal or memory, so a program must give it a task and a way to act.",
+      "conceptKeys": [
+        "language-model"
+      ]
+    },
+    {
+      "prompt": "The prompt is \"The capital of France is\". The model returns \" Paris\". What text does the model read at the next step?",
+      "options": [
+        "The capital of France is Paris",
+        "Paris",
+        "Paris is the capital of France",
+        "The capital of France is"
+      ],
+      "answer": 0,
+      "explanation": "Each new token joins the text, and the longer text goes back to the model for the next prediction.",
+      "conceptKeys": [
+        "language-model"
+      ]
+    }
+  ],
+  "diagrams": []
+}

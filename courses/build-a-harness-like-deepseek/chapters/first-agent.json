@@ -1,0 +1,50 @@
+{
+  "questions": [
+    {
+      "prompt": "In the run, why did the program look in the docs folder?",
+      "options": [
+        "The code tells it to look in docs when a file is missing",
+        "The step limit sends it there",
+        "The model read the results of list_files and chose to look there",
+        "readFile searches every folder by itself"
+      ],
+      "answer": 2,
+      "explanation": "The program only runs what the model asks for. The model read the error and the file lists, and chose docs/notes.txt.",
+      "conceptKeys": [
+        "first-agent",
+        "agent-loop"
+      ]
+    },
+    {
+      "prompt": "The model keeps asking for tools and never answers in text. What does the first agent do?",
+      "options": [
+        "It stops after 10 steps and returns a note that it stopped",
+        "It runs forever",
+        "It crashes on step 11",
+        "It asks the user to press a key"
+      ],
+      "answer": 0,
+      "explanation": "MAX_STEPS is 10, so the for loop ends after 10 steps and returns the note. This caps the requests one turn can make.",
+      "conceptKeys": [
+        "first-agent",
+        "turn-and-step"
+      ]
+    },
+    {
+      "prompt": "list_files throws because a folder does not exist. What does the model get in the next request?",
+      "options": [
+        "Nothing, because the program ends",
+        "An empty list of files",
+        "The same tool call again",
+        "A tool_result with the same call id, the error text and is_error true"
+      ],
+      "answer": 3,
+      "explanation": "The loop catches the exception and sends it back as a tool error result, so the model can try another path.",
+      "conceptKeys": [
+        "first-agent",
+        "tool-error-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

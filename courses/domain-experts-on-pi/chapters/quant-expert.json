@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the quant researcher do its arithmetic in a codemode script?",
+      "options": [
+        "The model cannot add numbers at all",
+        "The 250 closes stay in the sandbox, so the model reads only 3 numbers",
+        "Scripts are always more accurate than tools",
+        "pi blocks tools that return numbers"
+      ],
+      "answer": 1,
+      "explanation": "The script fetches the prices and does the sums. Only the summary returns, so the context window stays small.",
+      "conceptKeys": [
+        "quant-expert"
+      ]
+    },
+    {
+      "prompt": "How does the grader decide that a backtest answer is correct?",
+      "options": [
+        "It checks that the reply sounds confident",
+        "It recomputes the backtest in plain TypeScript and compares totalReturn within 0.1 percentage points",
+        "It counts the words in the reply",
+        "It asks the model to grade itself"
+      ],
+      "answer": 1,
+      "explanation": "Graders check numbers, not prose. A second calculation on the same fixture gives the right answer.",
+      "conceptKeys": [
+        "quant-expert"
+      ]
+    },
+    {
+      "prompt": "A codemode script calls tools.prices. Do the pack's schemas and gates still apply?",
+      "options": [
+        "No, scripts skip all checks",
+        "Yes, calls from scripts go through the normal tool pipeline",
+        "Only the schema applies",
+        "Only if the script asks for it"
+      ],
+      "answer": 1,
+      "explanation": "Nested calls from a script use the normal pipeline, so schemas and gates still run.",
+      "conceptKeys": [
+        "quant-expert"
+      ]
+    }
+  ],
+  "diagrams": []
+}

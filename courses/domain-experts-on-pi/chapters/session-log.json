@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A session file already holds ten lines. The harness adds an eleventh line. Why does it not edit one of the old lines?",
+      "options": [
+        "Editing an old line would move all the text after it, which is slower and can leave a half-written file",
+        "Editing an old line would change the version in the header",
+        "Editing an old line would hide the message from the model",
+        "Editing an old line would remove the tool result that follows it"
+      ],
+      "answer": 0,
+      "explanation": "New entries go at the end, so old lines stay as they are. A crash can lose the line being written, but not the lines above it. Editing in the middle would move the rest of the file.",
+      "conceptKeys": [
+        "session-log"
+      ]
+    },
+    {
+      "prompt": "A conversation stopped right after the user wrote Hello. The file holds a header and that message. How does the harness resume the conversation?",
+      "options": [
+        "It starts a new file and copies the header into it",
+        "It sends only the last line to the model",
+        "It reads the lines, rebuilds the messages and sends them to the model in file order",
+        "It asks the user to type the earlier messages again"
+      ],
+      "answer": 2,
+      "explanation": "Reading the file one line at a time gives back the message objects in the order they were written. That list becomes the history for the next request, so the conversation can continue.",
+      "conceptKeys": [
+        "session-log"
+      ]
+    },
+    {
+      "prompt": "An agent's final reply says it ran a query on the sales table. How do you find out whether it did?",
+      "options": [
+        "Read the header line for the query name",
+        "Read the log for the tool call, its arguments and the tool result",
+        "Read the system prompt for the table name",
+        "Read the final reply again for the row count"
+      ],
+      "answer": 1,
+      "explanation": "The final reply is only the agent's claim. The log records each tool call and each tool result, so it shows whether the query ran and what came back.",
+      "conceptKeys": [
+        "session-log"
+      ]
+    }
+  ],
+  "diagrams": []
+}

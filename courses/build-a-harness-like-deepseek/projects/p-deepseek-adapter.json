@@ -1,0 +1,94 @@
+{
+  "title": "A DeepSeek adapter for mini-dsh",
+  "brief": "Give mini-dsh a provider layer, so the agent loop never sees DeepSeek's own names. You define the seven shared piece types, a BlockAssembler, a registerAdapter/stream seam that turns every throw into a finish piece, and a DeepSeek adapter that writes the Anthropic-compatible Messages request (POST https://api.deepseek.com/anthropic/v1/messages, model deepseek-flash) and translates its server-sent events back into pieces. Then you add thinking with stored signatures, cache-read token counts, retries with backoff written to the session, and cancellation through one AbortSignal per turn. Every test runs without a network: a scripted adapter yields fixed pieces, and the DeepSeek tests feed fixed SSE text through translate. When you finish, swapping providers means writing one new adapter, and every retry and stop is explained by the record.",
+  "starter": [
+    {
+      "path": "mini-dsh/src/llm.ts",
+      "note": "ContentBlock, FinishReason (failure with code, message, retryAfterMs?), StreamChunk, ProviderState, GenerateOptions with signal?, LlmAdapter, registerAdapter() and the shared stream() that yields finish aborted or error instead of throwing. BlockAssembler lives here too: push(), blocks(), interruptedBlocks(), finish (default stop), usage and state."
+    },
+    {
+      "path": "mini-dsh/src/deepseek.ts",
+      "note": "toWire() (tool role to user, merge neighbours, tool_use input objects, thinking and signatures for the same model only), readEvents(), translate(), the adapter's fetch with headers and HTTP status to failure code."
+    },
+    {
+      "path": "mini-dsh/src/retry.ts",
+      "note": "policy (5 retries, 500 ms, 10,000 ms cap, 10 percent jitter), RETRYABLE codes, delayFor(retry, random) and sleep(ms, signal)."
+    },
+    {
+      "path": "mini-dsh/src/loop.ts",
+      "note": "The step reads pieces through stream(), retries with llm/retry events, and writes interrupted messages and turn/end aborted on cancel."
+    },
+    {
+      "path": "mini-dsh/test/llm.test.ts",
+      "note": "Scripted adapters, fixed SSE text, a fixed random() and a fake sleep; one flag per milestone."
+    }
+  ],
+  "hints": [
+    "Test the assembler with the ten pieces for 'Let me count.' and count_lines: blocks() must return exactly two blocks and finish must be tool-calls.",
+    "In translate, yield usage and finish only at message_stop, and throw if the events end first; the shared stream() turns that throw into a finish error.",
+    "Keep signatures in a separate array beside the blocks, and send one back only when the assistant message's source model equals the request's model.",
+    "Check delayFor with random = () => 0.5: retries 1 to 6 give 500, 1,000, 2,000, 4,000, 8,000 and 10,000 milliseconds.",
+    "Count retries with session.all(), not a variable: the llm/retry events after the last step/start are the retries already spent in this step."
+  ],
+  "rubric": [
+    {
+      "criterion": "The loop reads only the seven shared piece types; no DeepSeek event name appears outside src/deepseek.ts.",
+      "chapterKey": "stream-chunk"
+    },
+    {
+      "criterion": "BlockAssembler joins deltas by index, lets the first block-end win, ignores late deltas and drops tool calls on a max-tokens finish.",
+      "chapterKey": "block-assembler"
+    },
+    {
+      "criterion": "Providers are chosen by name through registerAdapter, a second adapter for one name is refused, and any throw reaches the loop as one finish piece.",
+      "chapterKey": "adapter-seam"
+    },
+    {
+      "criterion": "toWire and translate produce and read the Messages subset: tool results as tool_result in user messages, tool_use input objects, and stop reasons mapped to stop, tool-calls and max-tokens.",
+      "chapterKey": "deepseek-wire"
+    },
+    {
+      "criterion": "Thinking streams as reasoning pieces, signature slices are stored beside their block, and they are returned unchanged only to the same model.",
+      "chapterKey": "reasoning-block"
+    },
+    {
+      "criterion": "keepsPrefix holds for every pair of requests in a multi-step turn, and usage records cacheReadTokens from cache_read_input_tokens.",
+      "chapterKey": "prefix-caching"
+    },
+    {
+      "criterion": "Only the five retryable codes are retried, at most 5 times per step, each llm/retry event is appended before its wait, and retry-after is used when given.",
+      "chapterKey": "retry-backoff"
+    },
+    {
+      "criterion": "One AbortSignal per turn closes the fetch and ends a retry wait; kept text becomes an interrupted assistant/message and the turn ends with reason aborted.",
+      "chapterKey": "cancellation"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Shared pieces and the assembler",
+      "body": "Write the StreamChunk types and BlockAssembler. Feed the ten count_lines pieces, a stream with no block-start, a late delta after block-end and a max-tokens finish, and check the blocks each time.",
+      "checkCmd": "npx tsx test/llm.test.ts --assembler"
+    },
+    {
+      "title": "The adapter seam",
+      "body": "Write registerAdapter() and stream(). A scripted adapter yields 'Hi.' and the loop answers from it; an unknown provider and a throwing adapter both end in one finish piece with kind error.",
+      "checkCmd": "npx tsx test/llm.test.ts --seam"
+    },
+    {
+      "title": "The DeepSeek wire",
+      "body": "Write toWire(), readEvents() and translate(). Check the wire body for the count_lines history, and feed fixed SSE text for a text block, a tool_use block and a thinking block with a signature through translate.",
+      "checkCmd": "npx tsx test/llm.test.ts --deepseek"
+    },
+    {
+      "title": "Signatures and cached tokens",
+      "body": "Store the finish state on the assistant message and send thinking with its signature on the next request to the same model only. Read cache_read_input_tokens, and check keepsPrefix across a three-step turn.",
+      "checkCmd": "npx tsx test/llm.test.ts --thinking"
+    },
+    {
+      "title": "Retry and cancel",
+      "body": "A scripted adapter fails twice with RATE_LIMIT, then answers: the record holds two assistant/attempt and two llm/retry events. Then abort during a stream and during a wait, and check the interrupted message and turn/end with reason aborted.",
+      "checkCmd": "npx tsx test/llm.test.ts --retry"
+    }
+  ]
+}

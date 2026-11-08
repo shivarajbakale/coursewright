@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "What does the exec function of BashOperations decide?",
+      "options": [
+        "Which model answers",
+        "Where a bash command runs and how its output returns",
+        "Which tools the model may call",
+        "How long the session log is kept"
+      ],
+      "answer": 1,
+      "explanation": "exec receives the command and the working folder, runs the command somewhere, streams the output and returns the exit code.",
+      "conceptKeys": [
+        "bash-backend"
+      ]
+    },
+    {
+      "prompt": "You send bash commands to a container with docker exec but keep pi on the host. What is still exposed?",
+      "options": [
+        "Nothing, because commands are the only risk",
+        "The host pi process and its extensions, which run with your rights",
+        "The container's kubeconfig only",
+        "The model API only"
+      ],
+      "answer": 1,
+      "explanation": "Isolating only the tools is narrower than containing the whole process. The host pi and its extensions still run with your rights.",
+      "conceptKeys": [
+        "bash-backend"
+      ]
+    },
+    {
+      "prompt": "The sketch backend has no error handling. What can go wrong?",
+      "options": [
+        "A missing k8s-tools container is not handled for you",
+        "pi refuses to load the tool",
+        "The model sees host files",
+        "The command runs in the host shell"
+      ],
+      "answer": 0,
+      "explanation": "The sketch leaves out error handling, so a missing container or a cancelled command needs code you must add.",
+      "conceptKeys": [
+        "bash-backend"
+      ]
+    }
+  ],
+  "diagrams": []
+}

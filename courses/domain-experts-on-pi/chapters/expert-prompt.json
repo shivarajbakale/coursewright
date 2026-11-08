@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "You start pi with --system-prompt packs/sql/prompt.md. Which sections of the prompt does pi still add?",
+      "options": [
+        "Only your text",
+        "Tools, rules and docs, plus your text",
+        "The addendum, project instructions, skills and working folder",
+        "Nothing, because the flag turns off all sections"
+      ],
+      "answer": 2,
+      "explanation": "A custom prompt replaces the preamble and drops tools, rules and docs. The addendum, project_context, skills and cwd are still added.",
+      "conceptKeys": [
+        "expert-prompt"
+      ]
+    },
+    {
+      "prompt": "When is --append-system-prompt the better choice?",
+      "options": [
+        "When the expert must not act like a coding assistant",
+        "When the expert is close to a coding assistant and keeps its habits",
+        "When you want to remove the tool list",
+        "When you have no prompt file"
+      ],
+      "answer": 1,
+      "explanation": "Append keeps pi's preamble, tools, rules and docs and adds your addendum, so it suits an expert that is close to a coding assistant.",
+      "conceptKeys": [
+        "expert-prompt"
+      ]
+    },
+    {
+      "prompt": "You pass --system-prompt packs/sql/prompt.md and the file exists. What does pi do with the value?",
+      "options": [
+        "It uses the path as the prompt text",
+        "It reads the file and uses its content",
+        "It ignores the flag",
+        "It adds the file to the addendum"
+      ],
+      "answer": 1,
+      "explanation": "A flag value that is a path to an existing file is read as that file.",
+      "conceptKeys": [
+        "expert-prompt"
+      ]
+    }
+  ],
+  "diagrams": []
+}

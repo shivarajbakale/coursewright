@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A model has a window of 1,000 tokens. The input is 800 tokens, and the reply may be up to 300 tokens. What happens?",
+      "options": [
+        "It fits, because the input alone is less than 1,000",
+        "It does not fit, because 800 + 300 = 1,100 is more than 1,000",
+        "It fits, because the reply does not count",
+        "The model reads the first 1,000 tokens and ignores the rest"
+      ],
+      "answer": 1,
+      "explanation": "The input and the reply share the window. 800 + 300 = 1,100 tokens, which is more than 1,000, so the request is too large.",
+      "conceptKeys": [
+        "context-window"
+      ]
+    },
+    {
+      "prompt": "In the desk picture, why is the desk empty again for each request?",
+      "options": [
+        "The desk is too small to hold anything",
+        "The hosted model deletes files from your computer",
+        "The model keeps nothing between requests, so the program puts everything back each time",
+        "The context window grows after each request"
+      ],
+      "answer": 2,
+      "explanation": "Unlike a person, the model remembers no earlier request. The program decides what goes into the window every time it sends a request.",
+      "conceptKeys": [
+        "context-window"
+      ]
+    },
+    {
+      "prompt": "Why can an agent fill a window of 1,048,576 tokens?",
+      "options": [
+        "Each file it reads and each result it receives stays in the requests it sends after that",
+        "The window shrinks by half after every request",
+        "Each request can hold only one file",
+        "The window counts letters, not tokens"
+      ],
+      "answer": 0,
+      "explanation": "An agent working for a long time keeps adding file contents and results to what it sends. Each addition stays, so the total grows until it reaches the window.",
+      "conceptKeys": [
+        "context-window"
+      ]
+    }
+  ],
+  "diagrams": []
+}

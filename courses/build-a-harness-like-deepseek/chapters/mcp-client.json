@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does every request carry an id, and the reply the same id?",
+      "options": [
+        "So the server can refuse old requests",
+        "So several requests can wait at once and each reply finds its request",
+        "So the model can see the id",
+        "So the server knows which tool to run"
+      ],
+      "answer": 1,
+      "explanation": "Replies may come back in any order. The id matches each reply to the request that waits for it.",
+      "conceptKeys": [
+        "mcp-client"
+      ]
+    },
+    {
+      "prompt": "What does a server's tools/list reply hold for each tool?",
+      "options": [
+        "Only the tool's name",
+        "The tool's source code",
+        "A name, a description and a JSON Schema for the arguments",
+        "The last result the tool returned"
+      ],
+      "answer": 2,
+      "explanation": "The reply has the same parts as a tool schema, so the harness has all it needs to describe the tool to the model.",
+      "conceptKeys": [
+        "mcp-client",
+        "tool-schema"
+      ]
+    },
+    {
+      "prompt": "The server sends a notice that its tool list changed. What does the client do?",
+      "options": [
+        "It asks for the tool list again",
+        "It stops the server",
+        "It ignores the notice until the session restarts",
+        "It deletes every tool"
+      ],
+      "answer": 0,
+      "explanation": "A changed list means tools were added or removed, so the client sends tools/list again to stay current.",
+      "conceptKeys": [
+        "mcp-client"
+      ]
+    }
+  ],
+  "diagrams": []
+}

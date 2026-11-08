@@ -1,0 +1,1173 @@
+{
+  "title": "Build domain expert agents on pi",
+  "topic": "Building domain-specific expert agents on the pi coding agent",
+  "summary": "Starting from what an agent harness is, you learn how the open-source pi coding agent is built and which of its parts turn it into a specialist. You build a shared base pack and three experts, an SQL analyst, a Kubernetes operator and a quant researcher, each boxed in, measured with evals, and reached through one router.",
+  "colour": "teal",
+  "concepts": [
+    {
+      "key": "language-model",
+      "name": "Language model",
+      "summary": "A language model writes text by predicting one likely next piece at a time.",
+      "terms": [
+        "token",
+        "prompt"
+      ]
+    },
+    {
+      "key": "context-window",
+      "name": "The context window",
+      "summary": "A model can only read a fixed number of tokens in one request.",
+      "terms": []
+    },
+    {
+      "key": "tool-call",
+      "name": "Tool call",
+      "summary": "Instead of text, a model can reply with a request to run a named function with arguments.",
+      "terms": [
+        "tool schema",
+        "tool result"
+      ]
+    },
+    {
+      "key": "agent-loop",
+      "name": "The agent loop",
+      "summary": "A program repeats model request, tool run and result until the model answers in text.",
+      "terms": [
+        "turn"
+      ]
+    },
+    {
+      "key": "agent-harness",
+      "name": "Agent harness",
+      "summary": "The harness owns the loop, the tools, the instructions and the record, while the model only predicts.",
+      "terms": [
+        "system prompt"
+      ]
+    },
+    {
+      "key": "session-log",
+      "name": "Session log",
+      "summary": "Every message and tool result is written to a file, so a conversation can be read back and resumed.",
+      "terms": [
+        "JSONL"
+      ]
+    },
+    {
+      "key": "pi-packages",
+      "name": "Package layers",
+      "summary": "pi splits into pi-ai for models, pi-agent-core for the loop and pi-coding-agent for sessions, tools and the command line.",
+      "terms": [
+        "npm package"
+      ]
+    },
+    {
+      "key": "pi-loop",
+      "name": "The pi loop",
+      "summary": "pi's loop runs until the model makes no tool call, a hook ends the turn or the run is aborted.",
+      "terms": [
+        "hook",
+        "abort"
+      ]
+    },
+    {
+      "key": "tool-batch",
+      "name": "Tool batch",
+      "summary": "Tool calls from one reply run in parallel, and one sequential tool makes the whole batch run in order.",
+      "terms": [
+        "parallel"
+      ]
+    },
+    {
+      "key": "session-tree",
+      "name": "Session tree",
+      "summary": "Each entry names its parent, so branching only moves the leaf, and the model sees the path from root to leaf.",
+      "terms": [
+        "leaf",
+        "branch"
+      ]
+    },
+    {
+      "key": "prompt-patch",
+      "name": "Prompt patch",
+      "summary": "pi stores the prompt and the tool list as system messages, and later messages replace named sections.",
+      "terms": [
+        "section"
+      ]
+    },
+    {
+      "key": "context-projection",
+      "name": "Context projection",
+      "summary": "Some entries are logged but hidden from the model, and edits change what it sees without changing the log.",
+      "terms": [
+        "custom entry",
+        "context edit"
+      ]
+    },
+    {
+      "key": "pi-provider",
+      "name": "Provider",
+      "summary": "Every provider fills one interface, and DeepSeek runs over the OpenAI-compatible adapter with its own thinking format.",
+      "terms": [
+        "models.json",
+        "thinking level"
+      ]
+    },
+    {
+      "key": "pi-compaction",
+      "name": "Compaction",
+      "summary": "When tokens pass the window minus a reserve, pi summarises older entries and keeps about 20,000 recent tokens.",
+      "terms": [
+        "summary"
+      ]
+    },
+    {
+      "key": "domain-expert",
+      "name": "Domain expert",
+      "summary": "An expert is pi with one role, a small set of tools, its own knowledge and checks for one domain.",
+      "terms": [
+        "domain pack"
+      ]
+    },
+    {
+      "key": "expert-prompt",
+      "name": "Expert prompt",
+      "summary": "--system-prompt replaces pi's preamble, --append-system-prompt adds an addendum, and SYSTEM.md files do the same without flags.",
+      "terms": [
+        "preamble",
+        "addendum"
+      ]
+    },
+    {
+      "key": "context-files",
+      "name": "Context files",
+      "summary": "pi loads AGENTS.md or CLAUDE.md from its own folder and from every parent folder, root first.",
+      "terms": []
+    },
+    {
+      "key": "skill",
+      "name": "Skill",
+      "summary": "Only a skill's name and description sit in the prompt, and the model reads the full SKILL.md when a task needs it.",
+      "terms": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "key": "prompt-template",
+      "name": "Prompt template",
+      "summary": "A Markdown file becomes a slash command, with $1 and $@ filled from what the user types.",
+      "terms": [
+        "slash command"
+      ]
+    },
+    {
+      "key": "agent-dir",
+      "name": "Agent folder",
+      "summary": "PI_CODING_AGENT_DIR moves settings, sessions, MCP config and credentials, so each expert gets its own.",
+      "terms": [
+        "environment variable"
+      ]
+    },
+    {
+      "key": "settings-layers",
+      "name": "Settings layers",
+      "summary": "Global and project settings merge, project lists replace global ones, and project files load only when trusted.",
+      "terms": [
+        "project trust"
+      ]
+    },
+    {
+      "key": "pi-package",
+      "name": "Package",
+      "summary": "A package bundles extensions, skills, prompts and themes and installs from npm, git or a folder.",
+      "terms": [
+        "pi install"
+      ]
+    },
+    {
+      "key": "extension",
+      "name": "Extension",
+      "summary": "An extension's default export takes the pi API and registers tools, commands and event handlers.",
+      "terms": [
+        "ExtensionAPI"
+      ]
+    },
+    {
+      "key": "custom-tool",
+      "name": "Custom tool",
+      "summary": "A tool has a TypeBox schema and an execute function that returns content for the model and details for your code.",
+      "terms": [
+        "TypeBox"
+      ]
+    },
+    {
+      "key": "tight-schema",
+      "name": "Tight schema",
+      "summary": "pi checks every call against its schema first, so enums, limits and no extra fields stop bad calls early.",
+      "terms": [
+        "enum"
+      ]
+    },
+    {
+      "key": "tool-allowlist",
+      "name": "Tool allowlist",
+      "summary": "--tools and --exclude-tools choose the active tools, and a tool with a built-in's name replaces it.",
+      "terms": []
+    },
+    {
+      "key": "mcp-server",
+      "name": "MCP server",
+      "summary": "Servers in mcp.json give tools named mcp__server__tool, exposed directly, on search, through codemode or not at all.",
+      "terms": [
+        "exposure"
+      ]
+    },
+    {
+      "key": "codemode",
+      "name": "Codemode",
+      "summary": "The model writes JavaScript that runs in a QuickJS sandbox and calls tools through the normal pipeline.",
+      "terms": [
+        "QuickJS"
+      ]
+    },
+    {
+      "key": "call-gate",
+      "name": "Call gate",
+      "summary": "A tool_call handler can change the arguments or return block with a reason, and a handler that throws also blocks.",
+      "terms": [
+        "tool_call"
+      ]
+    },
+    {
+      "key": "result-rewrite",
+      "name": "Result rewrite",
+      "summary": "A tool_result handler can replace the content, details or error flag, for example to hide secrets.",
+      "terms": [
+        "tool_result"
+      ]
+    },
+    {
+      "key": "headless-approval",
+      "name": "Headless approval",
+      "summary": "With no screen, confirm returns false, so an unattended expert must deny risky calls instead of asking.",
+      "terms": [
+        "fail closed"
+      ]
+    },
+    {
+      "key": "security-boundary",
+      "name": "Security boundary",
+      "summary": "pi has no sandbox: bash is a plain spawn with your full environment, so safety comes from limiting what the process can reach.",
+      "terms": [
+        "spawn"
+      ]
+    },
+    {
+      "key": "expert-container",
+      "name": "Expert container",
+      "summary": "Running pi inside a container with only the expert's folder mounted is the strongest practical boundary.",
+      "terms": [
+        "Docker"
+      ]
+    },
+    {
+      "key": "bash-backend",
+      "name": "Bash backend",
+      "summary": "BashOperations replaces where bash runs, so commands can go over SSH or into a container.",
+      "terms": [
+        "SSH"
+      ]
+    },
+    {
+      "key": "env-scrub",
+      "name": "Environment scrub",
+      "summary": "bash passes the whole parent environment, so a spawnHook gives each command only the variables it needs.",
+      "terms": [
+        "spawnHook"
+      ]
+    },
+    {
+      "key": "golden-task",
+      "name": "Golden task",
+      "summary": "A golden task fixes the starting files and the outcome a correct expert leaves behind.",
+      "terms": [
+        "fixture"
+      ]
+    },
+    {
+      "key": "faux-provider",
+      "name": "Faux provider",
+      "summary": "pi-ai's faux provider plays scripted replies and tool calls, so tests of an expert run without a real model.",
+      "terms": []
+    },
+    {
+      "key": "outcome-grader",
+      "name": "Outcome grader",
+      "summary": "Graders check the files, query results or tool calls the expert left, not what its reply claims.",
+      "terms": [
+        "judge"
+      ]
+    },
+    {
+      "key": "eval-runner",
+      "name": "Eval runner",
+      "summary": "A runner gives each task a fresh folder and agent folder, runs pi, grades it and saves the session.",
+      "terms": []
+    },
+    {
+      "key": "lift",
+      "name": "Lift",
+      "summary": "Each task runs with and without the pack, and lift is the pass rate with it minus the pass rate without it.",
+      "terms": [
+        "pass rate",
+        "control"
+      ]
+    },
+    {
+      "key": "repeated-runs",
+      "name": "Repeated runs",
+      "summary": "Runs repeat in alternating order, and flaky or saturated results are flagged instead of averaged away.",
+      "terms": [
+        "flaky"
+      ]
+    },
+    {
+      "key": "expert-metrics",
+      "name": "Expert metrics",
+      "summary": "getSessionStats gives tokens, tool calls and cost for each run, which you tag by expert.",
+      "terms": []
+    },
+    {
+      "key": "run-mode",
+      "name": "Run mode",
+      "summary": "pi runs once and prints, streams JSON lines, stays up as an RPC process or lives inside your program, each at a different cost.",
+      "terms": [
+        "exit code"
+      ]
+    },
+    {
+      "key": "rpc-mode",
+      "name": "RPC mode",
+      "summary": "Commands and events are JSON lines over stdin and stdout, and a prompt is done at agent_settled, not when it is accepted.",
+      "terms": [
+        "stdio"
+      ]
+    },
+    {
+      "key": "sdk-session",
+      "name": "SDK session",
+      "summary": "createAgentSession takes a loader, tools, a model and a session folder, so one program can hold several experts.",
+      "terms": [
+        "SDK"
+      ]
+    },
+    {
+      "key": "base-pack",
+      "name": "Base pack",
+      "summary": "A shared package holds house rules, common guards and logging, and each domain pack adds only what differs.",
+      "terms": []
+    },
+    {
+      "key": "router",
+      "name": "Router",
+      "summary": "A router classifies a task, picks an expert, logs the choice and asks the user when it is unsure.",
+      "terms": [
+        "classifier"
+      ]
+    },
+    {
+      "key": "handoff",
+      "name": "Handoff",
+      "summary": "One expert's result becomes the next expert's task, as in the chain mode of pi's subagent example.",
+      "terms": [
+        "subagent"
+      ]
+    },
+    {
+      "key": "sql-expert",
+      "name": "The SQL analyst",
+      "summary": "A pack with a read-only query tool, schema skills and graders that compare query results.",
+      "terms": []
+    },
+    {
+      "key": "k8s-expert",
+      "name": "The Kubernetes operator",
+      "summary": "A pack whose guard allows reads, gates changes and refuses deletes, tested on a local cluster.",
+      "terms": [
+        "kubectl"
+      ]
+    },
+    {
+      "key": "quant-expert",
+      "name": "The quant researcher",
+      "summary": "A pack whose codemode scripts run backtests and whose graders check numbers, not prose.",
+      "terms": [
+        "backtest"
+      ]
+    },
+    {
+      "key": "expert-fleet",
+      "name": "The expert fleet",
+      "summary": "Router, base pack, three experts, containers and evals traced through one task.",
+      "terms": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "language-model",
+      "to": "context-window"
+    },
+    {
+      "from": "language-model",
+      "to": "tool-call"
+    },
+    {
+      "from": "tool-call",
+      "to": "agent-loop"
+    },
+    {
+      "from": "context-window",
+      "to": "agent-loop"
+    },
+    {
+      "from": "agent-loop",
+      "to": "agent-harness"
+    },
+    {
+      "from": "agent-harness",
+      "to": "session-log"
+    },
+    {
+      "from": "agent-harness",
+      "to": "pi-packages"
+    },
+    {
+      "from": "pi-packages",
+      "to": "pi-loop"
+    },
+    {
+      "from": "agent-loop",
+      "to": "pi-loop"
+    },
+    {
+      "from": "pi-loop",
+      "to": "tool-batch"
+    },
+    {
+      "from": "pi-loop",
+      "to": "session-tree"
+    },
+    {
+      "from": "session-log",
+      "to": "session-tree"
+    },
+    {
+      "from": "session-tree",
+      "to": "prompt-patch"
+    },
+    {
+      "from": "prompt-patch",
+      "to": "context-projection"
+    },
+    {
+      "from": "pi-packages",
+      "to": "pi-provider"
+    },
+    {
+      "from": "context-projection",
+      "to": "pi-compaction"
+    },
+    {
+      "from": "context-window",
+      "to": "pi-compaction"
+    },
+    {
+      "from": "pi-packages",
+      "to": "domain-expert"
+    },
+    {
+      "from": "domain-expert",
+      "to": "expert-prompt"
+    },
+    {
+      "from": "prompt-patch",
+      "to": "expert-prompt"
+    },
+    {
+      "from": "expert-prompt",
+      "to": "context-files"
+    },
+    {
+      "from": "expert-prompt",
+      "to": "skill"
+    },
+    {
+      "from": "skill",
+      "to": "prompt-template"
+    },
+    {
+      "from": "domain-expert",
+      "to": "agent-dir"
+    },
+    {
+      "from": "agent-dir",
+      "to": "settings-layers"
+    },
+    {
+      "from": "settings-layers",
+      "to": "pi-package"
+    },
+    {
+      "from": "prompt-template",
+      "to": "pi-package"
+    },
+    {
+      "from": "pi-package",
+      "to": "extension"
+    },
+    {
+      "from": "extension",
+      "to": "custom-tool"
+    },
+    {
+      "from": "tool-call",
+      "to": "custom-tool"
+    },
+    {
+      "from": "custom-tool",
+      "to": "tight-schema"
+    },
+    {
+      "from": "custom-tool",
+      "to": "tool-allowlist"
+    },
+    {
+      "from": "tool-allowlist",
+      "to": "mcp-server"
+    },
+    {
+      "from": "mcp-server",
+      "to": "codemode"
+    },
+    {
+      "from": "tight-schema",
+      "to": "call-gate"
+    },
+    {
+      "from": "call-gate",
+      "to": "result-rewrite"
+    },
+    {
+      "from": "call-gate",
+      "to": "headless-approval"
+    },
+    {
+      "from": "headless-approval",
+      "to": "security-boundary"
+    },
+    {
+      "from": "security-boundary",
+      "to": "expert-container"
+    },
+    {
+      "from": "expert-container",
+      "to": "bash-backend"
+    },
+    {
+      "from": "bash-backend",
+      "to": "env-scrub"
+    },
+    {
+      "from": "domain-expert",
+      "to": "golden-task"
+    },
+    {
+      "from": "golden-task",
+      "to": "faux-provider"
+    },
+    {
+      "from": "pi-provider",
+      "to": "faux-provider"
+    },
+    {
+      "from": "golden-task",
+      "to": "outcome-grader"
+    },
+    {
+      "from": "outcome-grader",
+      "to": "eval-runner"
+    },
+    {
+      "from": "agent-dir",
+      "to": "eval-runner"
+    },
+    {
+      "from": "eval-runner",
+      "to": "lift"
+    },
+    {
+      "from": "lift",
+      "to": "repeated-runs"
+    },
+    {
+      "from": "eval-runner",
+      "to": "expert-metrics"
+    },
+    {
+      "from": "pi-loop",
+      "to": "run-mode"
+    },
+    {
+      "from": "run-mode",
+      "to": "rpc-mode"
+    },
+    {
+      "from": "rpc-mode",
+      "to": "sdk-session"
+    },
+    {
+      "from": "extension",
+      "to": "sdk-session"
+    },
+    {
+      "from": "sdk-session",
+      "to": "base-pack"
+    },
+    {
+      "from": "pi-package",
+      "to": "base-pack"
+    },
+    {
+      "from": "base-pack",
+      "to": "router"
+    },
+    {
+      "from": "router",
+      "to": "handoff"
+    },
+    {
+      "from": "router",
+      "to": "sql-expert"
+    },
+    {
+      "from": "env-scrub",
+      "to": "sql-expert"
+    },
+    {
+      "from": "lift",
+      "to": "sql-expert"
+    },
+    {
+      "from": "sql-expert",
+      "to": "k8s-expert"
+    },
+    {
+      "from": "headless-approval",
+      "to": "k8s-expert"
+    },
+    {
+      "from": "k8s-expert",
+      "to": "quant-expert"
+    },
+    {
+      "from": "codemode",
+      "to": "quant-expert"
+    },
+    {
+      "from": "quant-expert",
+      "to": "expert-fleet"
+    },
+    {
+      "from": "handoff",
+      "to": "expert-fleet"
+    },
+    {
+      "from": "expert-metrics",
+      "to": "expert-fleet"
+    },
+    {
+      "from": "repeated-runs",
+      "to": "expert-fleet"
+    }
+  ],
+  "modules": [
+    {
+      "key": "agent-basics",
+      "title": "What an agent harness is",
+      "summary": "The few ideas every agent rests on: a model, its window, tool calls and the loop around them.",
+      "chapters": [
+        {
+          "key": "language-model",
+          "title": "Language model: a program that writes the next likely word",
+          "conceptKeys": [
+            "language-model"
+          ],
+          "summary": "A language model writes text by predicting one likely next piece at a time."
+        },
+        {
+          "key": "context-window",
+          "title": "The context window: what the model can see at once",
+          "conceptKeys": [
+            "context-window"
+          ],
+          "summary": "A model can only read a fixed number of tokens in one request."
+        },
+        {
+          "key": "tool-call",
+          "title": "Tool call: the model asks your program to act",
+          "conceptKeys": [
+            "tool-call"
+          ],
+          "summary": "Instead of text, a model can reply with a request to run a named function with arguments."
+        },
+        {
+          "key": "agent-loop",
+          "title": "The agent loop: ask, run the tool, send back, repeat",
+          "conceptKeys": [
+            "agent-loop"
+          ],
+          "summary": "A program repeats model request, tool run and result until the model answers in text."
+        },
+        {
+          "key": "agent-harness",
+          "title": "Agent harness: the program wrapped around the model",
+          "conceptKeys": [
+            "agent-harness"
+          ],
+          "summary": "The harness owns the loop, the tools, the instructions and the record, while the model only predicts."
+        },
+        {
+          "key": "session-log",
+          "title": "Session log: the record of everything the agent did",
+          "conceptKeys": [
+            "session-log"
+          ],
+          "summary": "Every message and tool result is written to a file, so a conversation can be read back and resumed."
+        }
+      ]
+    },
+    {
+      "key": "pi-basics",
+      "title": "How pi is built",
+      "summary": "The pieces of the pi coding agent that every expert reuses.",
+      "chapters": [
+        {
+          "key": "pi-packages",
+          "title": "Package layers: models, the loop and the coding agent",
+          "conceptKeys": [
+            "pi-packages"
+          ],
+          "summary": "pi splits into pi-ai for models, pi-agent-core for the loop and pi-coding-agent for sessions, tools and the command line."
+        },
+        {
+          "key": "pi-loop",
+          "title": "The pi loop: turns that stop without a step limit",
+          "conceptKeys": [
+            "pi-loop"
+          ],
+          "summary": "pi's loop runs until the model makes no tool call, a hook ends the turn or the run is aborted."
+        },
+        {
+          "key": "tool-batch",
+          "title": "Tool batch: calls run together unless one says no",
+          "conceptKeys": [
+            "tool-batch"
+          ],
+          "summary": "Tool calls from one reply run in parallel, and one sequential tool makes the whole batch run in order."
+        },
+        {
+          "key": "session-tree",
+          "title": "Session tree: entries with parents and a moving leaf",
+          "conceptKeys": [
+            "session-tree"
+          ],
+          "summary": "Each entry names its parent, so branching only moves the leaf, and the model sees the path from root to leaf."
+        },
+        {
+          "key": "prompt-patch",
+          "title": "Prompt patch: the system prompt kept as log messages",
+          "conceptKeys": [
+            "prompt-patch"
+          ],
+          "summary": "pi stores the prompt and the tool list as system messages, and later messages replace named sections."
+        },
+        {
+          "key": "context-projection",
+          "title": "Context projection: what the model sees versus what is logged",
+          "conceptKeys": [
+            "context-projection"
+          ],
+          "summary": "Some entries are logged but hidden from the model, and edits change what it sees without changing the log."
+        },
+        {
+          "key": "pi-provider",
+          "title": "Provider: one model interface with DeepSeek built in",
+          "conceptKeys": [
+            "pi-provider"
+          ],
+          "summary": "Every provider fills one interface, and DeepSeek runs over the OpenAI-compatible adapter with its own thinking format."
+        },
+        {
+          "key": "pi-compaction",
+          "title": "Compaction: summarising old turns when the window fills",
+          "conceptKeys": [
+            "pi-compaction"
+          ],
+          "summary": "When tokens pass the window minus a reserve, pi summarises older entries and keeps about 20,000 recent tokens."
+        }
+      ],
+      "projectKey": "p-pi-tour"
+    },
+    {
+      "key": "expert-anatomy",
+      "title": "What makes a domain expert",
+      "summary": "The parts of pi you change to turn a coding agent into a specialist.",
+      "chapters": [
+        {
+          "key": "domain-expert",
+          "title": "Domain expert: an agent narrowed to one job",
+          "conceptKeys": [
+            "domain-expert"
+          ],
+          "summary": "An expert is pi with one role, a small set of tools, its own knowledge and checks for one domain."
+        },
+        {
+          "key": "expert-prompt",
+          "title": "Expert prompt: replacing pi's opening and adding your own",
+          "conceptKeys": [
+            "expert-prompt"
+          ],
+          "summary": "--system-prompt replaces pi's preamble, --append-system-prompt adds an addendum, and SYSTEM.md files do the same without flags."
+        },
+        {
+          "key": "context-files",
+          "title": "Context files: AGENTS.md read from every folder above",
+          "conceptKeys": [
+            "context-files"
+          ],
+          "summary": "pi loads AGENTS.md or CLAUDE.md from its own folder and from every parent folder, root first."
+        },
+        {
+          "key": "skill",
+          "title": "Skill: a procedure the model reads when needed",
+          "conceptKeys": [
+            "skill"
+          ],
+          "summary": "Only a skill's name and description sit in the prompt, and the model reads the full SKILL.md when a task needs it."
+        },
+        {
+          "key": "prompt-template",
+          "title": "Prompt template: a saved prompt behind a slash command",
+          "conceptKeys": [
+            "prompt-template"
+          ],
+          "summary": "A Markdown file becomes a slash command, with $1 and $@ filled from what the user types."
+        },
+        {
+          "key": "agent-dir",
+          "title": "Agent folder: one settings home for each expert",
+          "conceptKeys": [
+            "agent-dir"
+          ],
+          "summary": "PI_CODING_AGENT_DIR moves settings, sessions, MCP config and credentials, so each expert gets its own."
+        },
+        {
+          "key": "settings-layers",
+          "title": "Settings layers: global settings with project overrides",
+          "conceptKeys": [
+            "settings-layers"
+          ],
+          "summary": "Global and project settings merge, project lists replace global ones, and project files load only when trusted."
+        },
+        {
+          "key": "pi-package",
+          "title": "Package: shipping an expert with pi install",
+          "conceptKeys": [
+            "pi-package"
+          ],
+          "summary": "A package bundles extensions, skills, prompts and themes and installs from npm, git or a folder."
+        }
+      ],
+      "projectKey": "p-expert-pack"
+    },
+    {
+      "key": "expert-tools",
+      "title": "Giving the expert its own tools",
+      "summary": "Writing domain tools in TypeScript and choosing exactly which tools an expert sees.",
+      "chapters": [
+        {
+          "key": "extension",
+          "title": "Extension: a function that receives pi's API",
+          "conceptKeys": [
+            "extension"
+          ],
+          "summary": "An extension's default export takes the pi API and registers tools, commands and event handlers."
+        },
+        {
+          "key": "custom-tool",
+          "title": "Custom tool: a domain action with a typed schema",
+          "conceptKeys": [
+            "custom-tool"
+          ],
+          "summary": "A tool has a TypeBox schema and an execute function that returns content for the model and details for your code."
+        },
+        {
+          "key": "tight-schema",
+          "title": "Tight schema: only safe arguments get through",
+          "conceptKeys": [
+            "tight-schema"
+          ],
+          "summary": "pi checks every call against its schema first, so enums, limits and no extra fields stop bad calls early."
+        },
+        {
+          "key": "tool-allowlist",
+          "title": "Tool allowlist: the expert sees only its own tools",
+          "conceptKeys": [
+            "tool-allowlist"
+          ],
+          "summary": "--tools and --exclude-tools choose the active tools, and a tool with a built-in's name replaces it."
+        },
+        {
+          "key": "mcp-server",
+          "title": "MCP server: an outside system pi connects to",
+          "conceptKeys": [
+            "mcp-server"
+          ],
+          "summary": "Servers in mcp.json give tools named mcp__server__tool, exposed directly, on search, through codemode or not at all."
+        },
+        {
+          "key": "codemode",
+          "title": "Codemode: one script that calls many tools",
+          "conceptKeys": [
+            "codemode"
+          ],
+          "summary": "The model writes JavaScript that runs in a QuickJS sandbox and calls tools through the normal pipeline."
+        }
+      ],
+      "projectKey": "p-domain-tools"
+    },
+    {
+      "key": "expert-guards",
+      "title": "Keeping the expert inside its limits",
+      "summary": "Checking each call, hiding what the model must not see, and boxing pi in from outside.",
+      "chapters": [
+        {
+          "key": "call-gate",
+          "title": "Call gate: blocking or changing a call before it runs",
+          "conceptKeys": [
+            "call-gate"
+          ],
+          "summary": "A tool_call handler can change the arguments or return block with a reason, and a handler that throws also blocks."
+        },
+        {
+          "key": "result-rewrite",
+          "title": "Result rewrite: changing a result before the model sees it",
+          "conceptKeys": [
+            "result-rewrite"
+          ],
+          "summary": "A tool_result handler can replace the content, details or error flag, for example to hide secrets."
+        },
+        {
+          "key": "headless-approval",
+          "title": "Headless approval: refusing when nobody can answer",
+          "conceptKeys": [
+            "headless-approval"
+          ],
+          "summary": "With no screen, confirm returns false, so an unattended expert must deny risky calls instead of asking."
+        },
+        {
+          "key": "security-boundary",
+          "title": "Security boundary: pi runs with all of your account's rights",
+          "conceptKeys": [
+            "security-boundary"
+          ],
+          "summary": "pi has no sandbox: bash is a plain spawn with your full environment, so safety comes from limiting what the process can reach."
+        },
+        {
+          "key": "expert-container",
+          "title": "Expert container: one container for each expert",
+          "conceptKeys": [
+            "expert-container"
+          ],
+          "summary": "Running pi inside a container with only the expert's folder mounted is the strongest practical boundary."
+        },
+        {
+          "key": "bash-backend",
+          "title": "Bash backend: running commands somewhere else",
+          "conceptKeys": [
+            "bash-backend"
+          ],
+          "summary": "BashOperations replaces where bash runs, so commands can go over SSH or into a container."
+        },
+        {
+          "key": "env-scrub",
+          "title": "Environment scrub: keeping keys away from commands",
+          "conceptKeys": [
+            "env-scrub"
+          ],
+          "summary": "bash passes the whole parent environment, so a spawnHook gives each command only the variables it needs."
+        }
+      ],
+      "projectKey": "p-guarded-expert"
+    },
+    {
+      "key": "expert-evals",
+      "title": "Proving an expert does its job",
+      "summary": "Tasks with known right outcomes, graders that check state, and a fair comparison with plain pi.",
+      "chapters": [
+        {
+          "key": "golden-task",
+          "title": "Golden task: a domain task with a known right outcome",
+          "conceptKeys": [
+            "golden-task"
+          ],
+          "summary": "A golden task fixes the starting files and the outcome a correct expert leaves behind."
+        },
+        {
+          "key": "faux-provider",
+          "title": "Faux provider: a scripted model inside pi",
+          "conceptKeys": [
+            "faux-provider"
+          ],
+          "summary": "pi-ai's faux provider plays scripted replies and tool calls, so tests of an expert run without a real model."
+        },
+        {
+          "key": "outcome-grader",
+          "title": "Outcome grader: a check on the files and results left behind",
+          "conceptKeys": [
+            "outcome-grader"
+          ],
+          "summary": "Graders check the files, query results or tool calls the expert left, not what its reply claims."
+        },
+        {
+          "key": "eval-runner",
+          "title": "Eval runner: every task in a fresh workspace",
+          "conceptKeys": [
+            "eval-runner"
+          ],
+          "summary": "A runner gives each task a fresh folder and agent folder, runs pi, grades it and saves the session."
+        },
+        {
+          "key": "lift",
+          "title": "Lift: the pass rate gained by adding the pack",
+          "conceptKeys": [
+            "lift"
+          ],
+          "summary": "Each task runs with and without the pack, and lift is the pass rate with it minus the pass rate without it."
+        },
+        {
+          "key": "repeated-runs",
+          "title": "Repeated runs: one run proves nothing",
+          "conceptKeys": [
+            "repeated-runs"
+          ],
+          "summary": "Runs repeat in alternating order, and flaky or saturated results are flagged instead of averaged away."
+        },
+        {
+          "key": "expert-metrics",
+          "title": "Expert metrics: tokens, tool calls and cost per domain",
+          "conceptKeys": [
+            "expert-metrics"
+          ],
+          "summary": "getSessionStats gives tokens, tool calls and cost for each run, which you tag by expert."
+        }
+      ],
+      "projectKey": "p-expert-evals"
+    },
+    {
+      "key": "many-experts",
+      "title": "Running many experts together",
+      "summary": "Driving pi from your own program and sending each task to the right expert.",
+      "chapters": [
+        {
+          "key": "run-mode",
+          "title": "Run mode: print, JSON lines, RPC or in your program",
+          "conceptKeys": [
+            "run-mode"
+          ],
+          "summary": "pi runs once and prints, streams JSON lines, stays up as an RPC process or lives inside your program, each at a different cost."
+        },
+        {
+          "key": "rpc-mode",
+          "title": "RPC mode: JSON lines to a long-running pi",
+          "conceptKeys": [
+            "rpc-mode"
+          ],
+          "summary": "Commands and events are JSON lines over stdin and stdout, and a prompt is done at agent_settled, not when it is accepted."
+        },
+        {
+          "key": "sdk-session",
+          "title": "SDK session: an expert as an object in your program",
+          "conceptKeys": [
+            "sdk-session"
+          ],
+          "summary": "createAgentSession takes a loader, tools, a model and a session folder, so one program can hold several experts."
+        },
+        {
+          "key": "base-pack",
+          "title": "Base pack: rules every expert shares",
+          "conceptKeys": [
+            "base-pack"
+          ],
+          "summary": "A shared package holds house rules, common guards and logging, and each domain pack adds only what differs."
+        },
+        {
+          "key": "router",
+          "title": "Router: sending each task to the right expert",
+          "conceptKeys": [
+            "router"
+          ],
+          "summary": "A router classifies a task, picks an expert, logs the choice and asks the user when it is unsure."
+        },
+        {
+          "key": "handoff",
+          "title": "Handoff: one expert passing work to another",
+          "conceptKeys": [
+            "handoff"
+          ],
+          "summary": "One expert's result becomes the next expert's task, as in the chain mode of pi's subagent example."
+        }
+      ],
+      "projectKey": "p-router"
+    },
+    {
+      "key": "capstone",
+      "title": "Three experts and a router",
+      "summary": "Building three real experts on the shared base and joining them behind one router.",
+      "chapters": [
+        {
+          "key": "sql-expert",
+          "title": "The SQL analyst: a database expert that can only read",
+          "conceptKeys": [
+            "sql-expert"
+          ],
+          "summary": "A pack with a read-only query tool, schema skills and graders that compare query results."
+        },
+        {
+          "key": "k8s-expert",
+          "title": "The Kubernetes operator: a cluster expert that asks before changing",
+          "conceptKeys": [
+            "k8s-expert"
+          ],
+          "summary": "A pack whose guard allows reads, gates changes and refuses deletes, tested on a local cluster."
+        },
+        {
+          "key": "quant-expert",
+          "title": "The quant researcher: a backtesting expert that works in scripts",
+          "conceptKeys": [
+            "quant-expert"
+          ],
+          "summary": "A pack whose codemode scripts run backtests and whose graders check numbers, not prose."
+        },
+        {
+          "key": "expert-fleet",
+          "title": "The expert fleet: every part joined end to end",
+          "conceptKeys": [
+            "expert-fleet"
+          ],
+          "summary": "Router, base pack, three experts, containers and evals traced through one task."
+        }
+      ],
+      "projectKey": "p-capstone"
+    }
+  ]
+}

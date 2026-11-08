@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "Bundle core inserts llm, tools and loop. Bundle shell inserts bash. Your patch.yml disables bash. How many plugins mount?",
+      "options": [
+        "4, because bundles cannot be overridden",
+        "3, because your patch applies after the bundles and wins",
+        "1, because your patch replaces the whole list",
+        "0, because the profile starts from an empty list"
+      ],
+      "answer": 1,
+      "explanation": "Layers apply in order over an empty list. The bundles make 4 rows, and your patch, applied later, disables bash, so 3 plugins mount.",
+      "conceptKeys": [
+        "profiles-bundles",
+        "config-rows"
+      ]
+    },
+    {
+      "prompt": "You change max_tokens in the llm row and save the file. What does a hot reload do?",
+      "options": [
+        "Restarts the whole program",
+        "Disposes every fiber and mounts all rows again",
+        "Disposes the llm fiber and mounts that row again; unchanged rows keep their fibers",
+        "Changes the value inside the running adapter without disposing anything"
+      ],
+      "answer": 2,
+      "explanation": "The kernel compares rows by id and touches only the row that changed. The loop, which injects llm, waits and returns on its own.",
+      "conceptKeys": [
+        "profiles-bundles"
+      ]
+    },
+    {
+      "prompt": "In dsh, why should every row carry an explicit id for hot reload?",
+      "options": [
+        "A row without one gets a new id on each read, so every edit removes and adds it",
+        "Rows without an id are never mounted",
+        "The id decides which bundle the row belongs to",
+        "HMR reads only the first row of each file"
+      ],
+      "answer": 0,
+      "explanation": "The loader compares rows by id. A generated id changes on every read, so the row looks removed and added and is remounted even when its lines did not change.",
+      "conceptKeys": [
+        "profiles-bundles"
+      ]
+    }
+  ],
+  "diagrams": []
+}

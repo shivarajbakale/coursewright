@@ -1,0 +1,106 @@
+{
+  "title": "An event-sourced session for mini-dsh",
+  "brief": "Replace the first agent's messages array with a session: an append-only list of typed events that is the only record of the conversation. Every request is built from the events, the system prompt included, so any past request can be rebuilt. The session is saved as a JSONL file that is flushed before each model call and each tool run, and a stopped program can resume it: open turns get closers and unanswered tool calls get error results, so DeepSeek accepts the next request. A format version in the header and the file name, with one migration from version 1 to version 2, keeps old files readable. You build this because every later part of mini-dsh (retries, compaction, subagents, replay tests) reads and writes this record, and it must stay correct after a crash.",
+  "starter": [
+    {
+      "path": "mini-dsh/src/session.ts",
+      "note": "Session class with append() and all(), the EventType list, messagesFrom() and requestFrom(). Start from the Log class and turn it into typed events."
+    },
+    {
+      "path": "mini-dsh/src/loop.ts",
+      "note": "The first agent's loop. Rewrite runStep so it appends events and never keeps its own messages array; call logSystemPrompt before the first step of each turn."
+    },
+    {
+      "path": "mini-dsh/src/store.ts",
+      "note": "SessionFile with create(), add() and flush(); loadEvents(), closersFor() and missingResults() for resume."
+    },
+    {
+      "path": "mini-dsh/src/format.ts",
+      "note": "FORMAT_VERSION, logName(), the migrations list and upgrade()."
+    },
+    {
+      "path": "mini-dsh/test/session.test.ts",
+      "note": "Checks for append, sequence numbers, frozen events and messagesFrom over the 11-event notes.txt turn."
+    },
+    {
+      "path": "mini-dsh/test/store.test.ts",
+      "note": "Checks for the JSONL file, flush timing, resume closers and missing tool results, using a temporary folder."
+    },
+    {
+      "path": "mini-dsh/test/format.test.ts",
+      "note": "A frozen session.v1.jsonl fixture and checks for the 1-to-2 migration and the refusal of a newer version."
+    }
+  ],
+  "hints": [
+    "Let append() set seq and time itself; callers pass only the type and the data. Use the list length for seq, so the numbers have no gaps.",
+    "To test the rule that model-visible means logged, save the messages each callModel receives in a fake model, then compare them with messagesFrom over the events that existed at that moment.",
+    "In flush(), remove a batch from pending only after appendFile and sync() succeed, so a failed write keeps its events for the next flush.",
+    "Write a crash test without killing a process: build a session, flush it, stop before step/end, then call loadEvents and closersFor on the file.",
+    "In missingResults(), a tool_use with a tool/call event means the tool may have run; without one it never started. Put the made-up results before step/end."
+  ],
+  "rubric": [
+    {
+      "criterion": "The session has no method that changes or removes an event, and stored events are frozen.",
+      "chapterKey": "append-only-log"
+    },
+    {
+      "criterion": "Every event has type, seq, time and data; seq runs from 0 with no gaps and append sets it.",
+      "chapterKey": "session-event"
+    },
+    {
+      "criterion": "The loop appends every model-visible input as an event before the request, and keeps no separate messages array.",
+      "chapterKey": "model-visible-logged"
+    },
+    {
+      "criterion": "messagesFrom turns the 11-event notes.txt turn into exactly 4 messages and joins same-role messages in a row.",
+      "chapterKey": "derived-history"
+    },
+    {
+      "criterion": "The system prompt is a system/message event, written only when its text changes, and requestFrom takes the system field from the latest one.",
+      "chapterKey": "logged-system-prompt"
+    },
+    {
+      "criterion": "The file is a header line plus one JSON event per line, flushed before each model call and each tool run.",
+      "chapterKey": "jsonl-storage"
+    },
+    {
+      "criterion": "Resume keeps every stored event, drops only a cut-off last line, and appends step/end and turn/end with reason interrupted for an open turn.",
+      "chapterKey": "session-resume"
+    },
+    {
+      "criterion": "Every tool_use without a result gets an error tool/result before step/end, worded by whether a tool/call was recorded.",
+      "chapterKey": "orphaned-tool-call"
+    },
+    {
+      "criterion": "A version 1 file is converted into a new session.v2.jsonl without changing the old file, and a newer version is refused.",
+      "chapterKey": "format-version"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Typed events in an append-only session",
+      "body": "Write Session.append() and all() with typed, frozen events and gap-free sequence numbers. Record one notes.txt turn as the 11 events from the session event lesson.",
+      "checkCmd": "npx tsx test/session.test.ts"
+    },
+    {
+      "title": "Requests built only from the session",
+      "body": "Write messagesFrom(), logSystemPrompt() and requestFrom(), and rewrite runStep so it appends events instead of pushing messages. A fake model checks that each request equals the one rebuilt from the events.",
+      "checkCmd": "npx tsx test/session.test.ts --requests"
+    },
+    {
+      "title": "The session on disk as JSONL",
+      "body": "Write SessionFile with a header line, add() and flush() with sync(), and flush before each model call and tool run. Check that the file has one line per event in seq order.",
+      "checkCmd": "npx tsx test/store.test.ts"
+    },
+    {
+      "title": "Resume after a crash",
+      "body": "Write loadEvents(), closersFor() and missingResults(). Check a file cut off during a model call and a file cut off during a tool run, and that the next request is valid.",
+      "checkCmd": "npx tsx test/store.test.ts --resume"
+    },
+    {
+      "title": "Version 2 of the file layout",
+      "body": "Add FORMAT_VERSION 2, logName() and the 1-to-2 migration that turns string tool results into text blocks. Open the frozen v1 fixture, check the new file, and check that the fixture's bytes did not change.",
+      "checkCmd": "npx tsx test/format.test.ts"
+    }
+  ]
+}

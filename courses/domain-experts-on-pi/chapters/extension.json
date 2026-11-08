@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "What does pi do with the default export of an extension file?",
+      "options": [
+        "It reads it as a settings object",
+        "It calls it as a function and passes in the ExtensionAPI",
+        "It runs it once at build time and stores the result",
+        "It sends its source text to the model"
+      ],
+      "answer": 1,
+      "explanation": "The default export must be a function. pi calls it with the ExtensionAPI, and the function registers tools, commands and handlers.",
+      "conceptKeys": [
+        "extension"
+      ]
+    },
+    {
+      "prompt": "Where should an extension start a timer that must stop when the session ends?",
+      "options": [
+        "Inside the default function, at the top",
+        "In a session_start handler, with the stop in session_shutdown",
+        "In a command handler only",
+        "In the file's import lines"
+      ],
+      "answer": 1,
+      "explanation": "Work started inside the factory is not tied to a session. A session_start handler starts it with the session, and session_shutdown stops it.",
+      "conceptKeys": [
+        "extension"
+      ]
+    },
+    {
+      "prompt": "You run pi -e packs/sql/extension.ts and type /tables. What runs?",
+      "options": [
+        "The session_start handler",
+        "The handler registered with registerCommand for tables",
+        "The model, which reads the file",
+        "Nothing, because commands need a build step"
+      ],
+      "answer": 1,
+      "explanation": "registerCommand ties the name tables to a handler. Typing the slash command runs that handler.",
+      "conceptKeys": [
+        "extension"
+      ]
+    }
+  ],
+  "diagrams": []
+}

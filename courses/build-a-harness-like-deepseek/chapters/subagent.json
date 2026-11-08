@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "Why must the prompt given to a spawned child be complete?",
+      "options": [
+        "The child starts with a fresh session and has not seen the parent's conversation",
+        "The tool cuts prompts longer than one line",
+        "The child reads the parent's history only after its first turn",
+        "The depth limit removes any prompt that refers to earlier turns"
+      ],
+      "answer": 0,
+      "explanation": "A spawned child has an empty session. Everything it needs to know must be in its first message.",
+      "conceptKeys": [
+        "subagent"
+      ]
+    },
+    {
+      "prompt": "The depth limit is 1. A child at depth 1 calls the subagent tool. What happens?",
+      "options": [
+        "A grandchild starts at depth 1",
+        "A grandchild starts at depth 2",
+        "The tool throws, and the child's model reads an error result",
+        "The parent is asked to approve the grandchild"
+      ],
+      "answer": 2,
+      "explanation": "The new depth would be 1 + 1 = 2, which is more than 1. The tool throws, so the child receives a tool error result.",
+      "conceptKeys": [
+        "subagent",
+        "tool-error-result"
+      ]
+    },
+    {
+      "prompt": "What does the subagent tool return to the parent's model?",
+      "options": [
+        "The child's whole transcript",
+        "The child's name, at once, while the child still works",
+        "The child's final answer, after the child finishes",
+        "Nothing, because the call stays open"
+      ],
+      "answer": 1,
+      "explanation": "The tool returns the name right after it sends the prompt. The parent's step ends while the child's turn runs.",
+      "conceptKeys": [
+        "subagent"
+      ]
+    }
+  ],
+  "diagrams": []
+}

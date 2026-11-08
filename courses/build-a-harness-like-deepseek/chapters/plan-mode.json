@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "While plan mode is on, the model calls bash to run the tests. What happens?",
+      "options": [
+        "Plan mode blocks the call",
+        "The call runs under the normal sandbox and approval rules",
+        "The call waits until the plan is approved",
+        "Plan mode turns off automatically"
+      ],
+      "answer": 1,
+      "explanation": "Plan mode only adds guidance. The sandbox mode and the approval policy enforce limits, and they do not read plan mode.",
+      "conceptKeys": [
+        "plan-mode"
+      ]
+    },
+    {
+      "prompt": "The person answers keep planning with some feedback. What does the model receive?",
+      "options": [
+        "A failed tool call that carries the feedback",
+        "A new turn with plan mode off",
+        "An approved result with notes",
+        "Nothing until the next turn"
+      ],
+      "answer": 0,
+      "explanation": "Keep planning makes exit_plan_mode fail with the person's feedback, so the model reads it as an error and revises the plan.",
+      "conceptKeys": [
+        "plan-mode",
+        "tool-error-result"
+      ]
+    },
+    {
+      "prompt": "Why does a selection wait for the next pre-step before it is written as a plan/mode event?",
+      "options": [
+        "Events can only be written at night",
+        "The pre-step is where the loop accepts new facts for a step, so the request and the record agree",
+        "The model must approve the selection first",
+        "A selection written at once would delete the todo list"
+      ],
+      "answer": 1,
+      "explanation": "Appending at the accepted pre-step puts the change into the record exactly when the guidance starts to apply to a request.",
+      "conceptKeys": [
+        "plan-mode",
+        "runtime-context"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The history holds two tool results in a row. How does toWire send them?",
+      "options": [
+        "As two messages with role tool",
+        "As one user message holding two tool_result blocks",
+        "As one assistant message holding two tool_use blocks",
+        "As two user messages, one per result"
+      ],
+      "answer": 1,
+      "explanation": "The wire has no tool role, so each result becomes a tool_result block in a user message. Neighbours with the same role are merged, so both results join one user message.",
+      "conceptKeys": [
+        "deepseek-wire"
+      ]
+    },
+    {
+      "prompt": "A tool call in mini-dsh holds arguments as the string '{\"path\":\"notes.txt\"}'. What does the wire's tool_use block hold?",
+      "options": [
+        "The same string in a field named arguments",
+        "The string split into slices",
+        "The parsed object { path: 'notes.txt' } in a field named input",
+        "Nothing, because DeepSeek keeps its own copy of tool calls"
+      ],
+      "answer": 2,
+      "explanation": "The wire format expects input as a JSON object, so toWire parses the raw arguments string into an object for the tool_use block.",
+      "conceptKeys": [
+        "deepseek-wire"
+      ]
+    },
+    {
+      "prompt": "Why does translate yield usage and finish only when message_stop arrives?",
+      "options": [
+        "So usage always comes before finish and nothing comes after finish",
+        "Because DeepSeek sends no usage before message_stop",
+        "Because message_delta never carries a stop reason",
+        "So the assembler can skip block-end pieces"
+      ],
+      "answer": 0,
+      "explanation": "Output tokens and the stop reason arrive in message_delta, but waiting for message_stop keeps the shared rule: usage first, then finish, then nothing.",
+      "conceptKeys": [
+        "deepseek-wire"
+      ]
+    }
+  ],
+  "diagrams": []
+}

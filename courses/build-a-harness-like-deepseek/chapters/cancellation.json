@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The user presses Ctrl+C after the text 'The file has three parts:' arrived and a tool call had started. What does the record keep?",
+      "options": [
+        "Nothing, because the turn was stopped",
+        "The text and the tool call, with a made-up result",
+        "Only the tool call, because it is the newest block",
+        "The text in an assistant/message marked interrupted, without the tool call"
+      ],
+      "answer": 3,
+      "explanation": "interruptedBlocks keeps text with real content and drops tool calls. The call never ran, and keeping it would need a made-up result.",
+      "conceptKeys": [
+        "cancellation"
+      ]
+    },
+    {
+      "prompt": "Ctrl+C arrives during a retry wait of 8,000 milliseconds. What happens?",
+      "options": [
+        "The sleep ends at once and no retry starts",
+        "The wait finishes and the retry runs",
+        "The program waits, then stops after the retry",
+        "The retry count resets to zero"
+      ],
+      "answer": 0,
+      "explanation": "The wait listens to the same AbortSignal. When the signal fires, the timer is cleared, sleep returns false and the loop ends the turn as aborted.",
+      "conceptKeys": [
+        "cancellation",
+        "retry-backoff"
+      ]
+    },
+    {
+      "prompt": "Why does mini-dsh use one AbortSignal for the whole turn?",
+      "options": [
+        "fetch can only accept one signal per program",
+        "Every part, from fetch to the retry wait, checks the same signal, so one abort stops all of them",
+        "The signal stores the text that already arrived",
+        "The provider needs the signal to stop the model"
+      ],
+      "answer": 1,
+      "explanation": "The signal is passed to fetch and to the wait. One abort() closes the connection and ends any wait, and the loop then writes the end of the turn.",
+      "conceptKeys": [
+        "cancellation"
+      ]
+    }
+  ],
+  "diagrams": []
+}

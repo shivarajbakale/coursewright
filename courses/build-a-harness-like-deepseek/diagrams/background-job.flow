@@ -1,0 +1,33 @@
+title A build that runs in the background
+
+agent  "Agent" state running
+bash   "bash tool"
+job    "Job bash-3f9a" state idle
+ring   "Output buffer" counter 0
+inbox  "Agent inbox" queue
+
+build at agent
+
+# A 10-minute build must not hold a step open.
+pause "The model wants a long build without waiting for it."
+
+# The bash tool starts a job and returns its id at once.
+build -> bash
+build -> job : running "The tool result is only the job id."
+job : running
+
+# The agent keeps working while the build prints output.
+agent : running "The model edits the docs in steps 2 to 6."
+ring +64
+ring +128
+ring +64 "The buffer keeps the newest bytes and drops the oldest past its cap."
+
+# The build ends; the harness writes a notice.
+job : done
+remove build
+new notice at job
+notice -> inbox "The agent is busy, so the notice is injected for its next step."
+
+# The next step reads the notice with the build's last output.
+notice -> agent "Step 8 sees: background job finished, status completed."
+remove notice

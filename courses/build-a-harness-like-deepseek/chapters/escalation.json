@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "In a workspace-write session, a person approves one escalated install to danger-full-access. The model then runs rm -rf ~/old without sandbox_permissions. Which mode does that command run in?",
+      "options": [
+        "danger-full-access, because the session was widened",
+        "read-only, because escalation narrows the next call",
+        "workspace-write, because the grant covered only the approved call",
+        "No mode, because it needs a new approval first"
+      ],
+      "answer": 2,
+      "explanation": "The approved mode is used for the one call that asked. The session's mode is unchanged, so the next call runs in workspace-write.",
+      "conceptKeys": [
+        "escalation"
+      ]
+    },
+    {
+      "prompt": "A session in workspace-write sends sandbox_permissions: \"read-only\". What happens?",
+      "options": [
+        "The tool fails before asking anyone, because read-only is not wider than workspace-write",
+        "A person is asked to approve read-only",
+        "The session switches to read-only",
+        "The command runs in workspace-write and ignores the field"
+      ],
+      "answer": 0,
+      "explanation": "Only a strictly wider mode can be requested. read-only is narrower, so the check fails and no approval question is sent.",
+      "conceptKeys": [
+        "escalation"
+      ]
+    },
+    {
+      "prompt": "The person answers no to an escalation. What does the error tell the model to do?",
+      "options": [
+        "Retry with a different justification",
+        "Stop and explain instead of working around the denial",
+        "Switch the session to full access",
+        "Wait and retry later"
+      ],
+      "answer": 1,
+      "explanation": "A person's no is final. The error text says the call stays denied and that the model should stop and explain.",
+      "conceptKeys": [
+        "escalation"
+      ]
+    }
+  ],
+  "diagrams": []
+}

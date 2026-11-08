@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A change makes the loop send one extra request after the text reply. The script has 2 replies. What happens in the test?",
+      "options": [
+        "The mock repeats the last reply, so the test passes",
+        "The third request throws script exhausted, so the test fails",
+        "The real model answers the third request",
+        "The loop skips the extra request"
+      ],
+      "answer": 1,
+      "explanation": "Each request takes the next entry. With 2 entries, a third request finds the script empty and throws, which shows the loop asked once too often.",
+      "conceptKeys": [
+        "mock-adapter"
+      ]
+    },
+    {
+      "prompt": "Why does the test keep the real tools and the real record, and fake only the model?",
+      "options": [
+        "The model is the only part that is costly and changes its answers, so faking only it still tests the shipped code",
+        "Tools cannot be faked",
+        "The record needs a real model",
+        "Fake tools make tests slower"
+      ],
+      "answer": 0,
+      "explanation": "The model costs money and answers differently each time. Everything after it is cheap and repeatable, so keeping it real proves that the real code works.",
+      "conceptKeys": [
+        "mock-adapter"
+      ]
+    },
+    {
+      "prompt": "What does assert on mock.requests[1] check?",
+      "options": [
+        "That the mock's text is correct",
+        "That the model counted the lines",
+        "That the loop sent the tool result for call_1 in its second request",
+        "That the script has 2 entries"
+      ],
+      "answer": 2,
+      "explanation": "The mock records each request it gets. Checking the second request shows that the loop added the right tool result, which is the loop's job.",
+      "conceptKeys": [
+        "mock-adapter",
+        "adapter-seam"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "What is the main difference between driving pi over RPC and holding it as an SDK session?",
+      "options": [
+        "The SDK session needs a separate process for each expert",
+        "With the SDK you call prompt in your own program and it resolves when the run is done",
+        "RPC cannot run more than one prompt",
+        "The SDK session cannot use extensions"
+      ],
+      "answer": 1,
+      "explanation": "An SDK session lives inside your program. The call to prompt finishes when the run is done, so you need no process and no agent_settled event.",
+      "conceptKeys": [
+        "sdk-session"
+      ]
+    },
+    {
+      "prompt": "Why does makeExpert give each expert its own SessionManager folder?",
+      "options": [
+        "So the three experts share one history",
+        "So each expert's session files stay apart, for example agents/sql/sessions",
+        "Because the model requires a different folder per prompt",
+        "To turn off the system prompt"
+      ],
+      "answer": 1,
+      "explanation": "SessionManager.create(cwd, sessionDir) keeps an expert's sessions in its own folder, so SQL sessions never mix with the others.",
+      "conceptKeys": [
+        "sdk-session"
+      ]
+    },
+    {
+      "prompt": "Your SDK expert needs codemode, and three experts run in one process. What should you know?",
+      "options": [
+        "Codemode loads by itself and has no limit",
+        "You must add createCodemodeExtension(), and the experts share a limit of 2 workers",
+        "Codemode works only over RPC",
+        "Each expert gets 2 workers of its own"
+      ],
+      "answer": 1,
+      "explanation": "SDK sessions load codemode only if you add it. Experts in one process share the limit of 2 workers unless you set PI_CODEMODE_MAX_WORKERS.",
+      "conceptKeys": [
+        "sdk-session"
+      ]
+    }
+  ],
+  "diagrams": []
+}

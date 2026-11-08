@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A headless run has an approval service but no screen that can answer. A policy returns ask for a call. What happens?",
+      "options": [
+        "The call runs, because nobody refused it",
+        "The harness waits until a person connects",
+        "The chain returns unavailable, and the call is denied with a reason saying no approval channel is available",
+        "The call is retried in the next step"
+      ],
+      "answer": 2,
+      "explanation": "With no answerer, the approval/request chain reaches its end, which returns unavailable. The pipeline fails closed and denies the call.",
+      "conceptKeys": [
+        "approval"
+      ]
+    },
+    {
+      "prompt": "A person approves bash \"git push\". The model sends the same call again in the next step. What happens?",
+      "options": [
+        "The harness asks again, because allowed-once covers one call",
+        "The call runs without asking, because the arguments match",
+        "The call is denied, because it was already run",
+        "The policy changes to never"
+      ],
+      "answer": 0,
+      "explanation": "allowed-once is the only grant and it applies to one exact call. A new call needs a new answer.",
+      "conceptKeys": [
+        "approval"
+      ]
+    },
+    {
+      "prompt": "Why does the pipeline give a different deny reason for rejected and for unavailable?",
+      "options": [
+        "Because the record can store only one kind of reason",
+        "So the model can tell a person's no apart from there being nobody to ask",
+        "Because unavailable calls are retried automatically",
+        "Because rejected calls are never written to the record"
+      ],
+      "answer": 1,
+      "explanation": "A person's no means stop and explain; no channel means nobody could answer. Distinct reasons let the model act on the right one.",
+      "conceptKeys": [
+        "approval"
+      ]
+    }
+  ],
+  "diagrams": []
+}

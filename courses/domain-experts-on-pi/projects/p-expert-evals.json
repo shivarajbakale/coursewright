@@ -1,0 +1,100 @@
+{
+  "title": "An eval runner with lift, repeats and cost",
+  "brief": "Build evals/runner.ts and prove the SQL expert works. You write golden tasks for the SQL pack, graders that check the outcome (the number, the database hash, the tools called), a fast faux-provider test for the gate, and a runner that gives every run a fresh folder and agent folder and saves the session. Then you add a control variant, repeats and metrics. When you finish, one command runs the tasks against plain pi and against the pack, repeats each five times, and prints the pass rate for both, the lift, the flaky tasks and the tokens and cost per run. The code tests run without a model, and the full run needs DEEPSEEK_API_KEY.",
+  "starter": [
+    {
+      "path": "fleet/packs/sql/evals/tasks.json",
+      "note": "New. Golden tasks with id, prompt, fixture and expect. Start with revenue-de-2025, top-customer and refuse-delete, then grow toward 20 with three refusals."
+    },
+    {
+      "path": "fleet/evals/graders.ts",
+      "note": "New. numberClose(text, expected, 0.01), dbUnchanged(before, after) using a SHA-256 of shop.db, and calledTool(messages, name)."
+    },
+    {
+      "path": "fleet/evals/runner.ts",
+      "note": "New. For each task: temp folder, copy the fixture, fresh PI_CODING_AGENT_DIR, spawn pi -p --mode json with --session-dir, parse events, grade, append to results.jsonl. Flags --variant and --repeat."
+    },
+    {
+      "path": "fleet/evals/summarize.ts",
+      "note": "New. Reads results.jsonl: pass rate per variant, lift, flaky tasks, and tokens, tool calls and cost per expert."
+    },
+    {
+      "path": "fleet/evals/test/graders.test.ts",
+      "note": "New. Grader and summary tests on canned data. No network."
+    },
+    {
+      "path": "fleet/evals/test/gate.faux.test.ts",
+      "note": "New. Queues a sql_query call with DELETE FROM orders through the faux provider and checks the gate's error. No real model."
+    },
+    {
+      "path": "fleet/data/shop.fixture.db",
+      "note": "New. A frozen copy of the database with known totals so the expected numbers are fixed. The numbers in tasks.json are made up for your fixture."
+    }
+  ],
+  "hints": [
+    "Grade the outcome, not the wording. A reply that says done proves nothing; hash the database before and after instead.",
+    "Build the final text from the last assistant message_end event in the JSON output. Treat any assistant message with stopReason error as a failed run, not a zero score, because JSON mode exits with code 0 even when the model call failed.",
+    "Pass --session-dir to keep each session as a file. With --no-session there is nothing to read back afterwards.",
+    "For the faux test, queue fauxAssistantMessage([fauxToolCall(\"sql_query\", { sql: \"DELETE FROM orders\" })], { stopReason: \"toolUse\" }) then fauxAssistantMessage(\"ok\"). pi's own wiring is in packages/coding-agent/test/suite/harness.ts in the pi repo; copy that pattern, and treat the repo as reference only.",
+    "Control runs plain pi with --tools read,bash and no extension, on a copy of the fixture. Same model, same prompt, same grader.",
+    "Withhold the headline lift if any pair is missing or errored. A partial number is worse than none.",
+    "Mark a task flaky when its passes are between 1 and runs minus 1."
+  ],
+  "rubric": [
+    {
+      "criterion": "tasks.json has tasks with a prompt, a fixture and a checkable expectation, includes easy, hard and refusal tasks, and no expectation is a sentence the model must say",
+      "chapterKey": "golden-task"
+    },
+    {
+      "criterion": "gate.faux.test.ts queues the DELETE call and asserts the tool result is an error containing Only one SELECT statement is allowed, with no real model or key",
+      "chapterKey": "faux-provider"
+    },
+    {
+      "criterion": "numberClose, dbUnchanged and calledTool decide pass or fail from the outcome, and a run with stopReason error is never scored as a pass",
+      "chapterKey": "outcome-grader"
+    },
+    {
+      "criterion": "runner.ts uses a fresh temp folder and agent folder for every run, parses the JSON events, keeps the session file and appends one line per run to results.jsonl",
+      "chapterKey": "eval-runner"
+    },
+    {
+      "criterion": "--variant control|pack runs both arms on the same tasks, summarize.ts reports the lift as treatment minus control, and an incomplete pair withholds the number",
+      "chapterKey": "lift"
+    },
+    {
+      "criterion": "--repeat runs every task several times, alternates the order of the arms, and reports passes/runs per task with flaky ones marked",
+      "chapterKey": "repeated-runs"
+    },
+    {
+      "criterion": "Each result line holds expert, task, score, tokens, toolCalls, cost and ms, and a script sums them by expert",
+      "chapterKey": "expert-metrics"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Golden tasks and graders",
+      "body": "Write tasks.json and graders.ts. The test checks numberClose against a 1% window, that dbUnchanged is false after an insert, and that calledTool finds sql_query in a canned message list.",
+      "checkCmd": "npx tsx evals/test/graders.test.ts --only graders"
+    },
+    {
+      "title": "Test the gate with the faux provider",
+      "body": "Write gate.faux.test.ts. The faux model asks for DELETE FROM orders, the gate refuses it, and the test sees the error text. It runs in under a second and costs nothing.",
+      "checkCmd": "npx tsx evals/test/gate.faux.test.ts"
+    },
+    {
+      "title": "Run one task for real",
+      "body": "Write runner.ts with one variant and one repeat. Run it on revenue-de-2025 and look at the new line in results.jsonl and the session file in the run's session folder. This step needs DEEPSEEK_API_KEY.",
+      "checkCmd": "npx tsx evals/runner.ts --variant pack --repeat 1 --only revenue-de-2025"
+    },
+    {
+      "title": "Control versus pack",
+      "body": "Add --variant control and the lift report. On a canned results file with 9 of 20 control passes and 17 of 20 pack passes, summarize.ts must print 45%, 85% and a lift of 40 points. Remove one pair and the headline must be withheld.",
+      "checkCmd": "npx tsx evals/test/graders.test.ts --only lift"
+    },
+    {
+      "title": "Repeats and cost",
+      "body": "Add --repeat and the flaky mark, then sum tokens and cost by expert. A task with 3 passes in 5 runs must be flaky. 1,000,000 input and 100,000 output tokens at the listed DeepSeek flash prices must come to 0.42 dollars. The full run needs DEEPSEEK_API_KEY: npx tsx evals/runner.ts --variant both --repeat 5.",
+      "checkCmd": "npx tsx evals/test/graders.test.ts --only repeats"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+title One program, many tool calls
+
+model    "Model"
+runcode  "run_code tool"
+process  "Program process"
+checks   "Tool checks"
+readtool "read tool"
+calls    "Tool calls" counter 0
+
+model -> runcode -> process -> checks -> readtool
+
+program at model
+
+# Counting lines in 40 files would take 41 steps one call at a time.
+pause "Here the model writes one program instead."
+
+# The model sends the program, and the harness starts a process for it.
+program -> runcode "The model sees only run_code; other tools are functions in the program."
+program -> process : running "The program runs in its own Node process."
+
+# A tool call leaves the program and passes the same checks as a direct call.
+new call1 at process
+call1 -> checks : waiting "Pre-execute and approval run as for any call."
+call1 -> readtool : running
+calls +1
+call1 -> process : done "The file text goes back to the program, not to the model."
+remove call1
+
+# The loop repeats inside the program; the model is not asked again.
+calls = 41 "glob once, then read 40 times."
+
+# Only the returned value reaches the model.
+program : done
+new answer at process
+answer -> model 1200ms "files: 40, total: 3120 is about 10 tokens."
+remove program

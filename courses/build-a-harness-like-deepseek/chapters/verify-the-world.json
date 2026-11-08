@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The agent says \"I added the line\", but the edit tool returned an error. Which check fails?",
+      "options": [
+        "None, because the answer says the line was added",
+        "Only the check of README.md",
+        "The comparison of notes.txt, and the check that no tool result is an error",
+        "The check of the final text"
+      ],
+      "answer": 2,
+      "explanation": "notes.txt still has 42 lines, so it differs from the expected copy, and the record holds an error result. The final text is never read.",
+      "conceptKeys": [
+        "verify-the-world"
+      ]
+    },
+    {
+      "prompt": "Why compare README.md, a file the task should not touch?",
+      "options": [
+        "A stray write to the wrong file must fail the test",
+        "README.md holds the expected answer",
+        "The model reads README.md first",
+        "Unchanged files are skipped by the agent"
+      ],
+      "answer": 0,
+      "explanation": "An outcome check also proves what did not change. A byte-for-byte match on README.md catches an edit to the wrong file.",
+      "conceptKeys": [
+        "verify-the-world"
+      ]
+    },
+    {
+      "prompt": "You change the task on purpose, and the expected file must change. What do you do?",
+      "options": [
+        "Delete the outcome check",
+        "Record again and update workspace.expected, so a reviewer sees the new result",
+        "Make the test read the final text instead",
+        "Edit the session file by hand to pass"
+      ],
+      "answer": 1,
+      "explanation": "The snapshot is the saved expected result. Recording again and reviewing its diff shows exactly what the agent now does differently.",
+      "conceptKeys": [
+        "verify-the-world",
+        "record-replay"
+      ]
+    }
+  ],
+  "diagrams": []
+}

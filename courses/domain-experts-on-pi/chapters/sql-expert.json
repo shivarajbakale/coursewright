@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The database is opened read-only and the gate allows only SELECT. Why keep both?",
+      "options": [
+        "They are the same check, so one is a backup copy",
+        "They are independent layers, so one still holds if the other fails",
+        "pi requires two checks for every tool",
+        "The gate makes queries faster"
+      ],
+      "answer": 1,
+      "explanation": "The gate is code that can have a bug. The read-only file is a separate layer, so a write still fails if the gate misses it.",
+      "conceptKeys": [
+        "sql-expert"
+      ]
+    },
+    {
+      "prompt": "Why does the tool list keep read, although the SQL analyst has its own tools?",
+      "options": [
+        "The skills section appears only when read or bash is available",
+        "sql_query calls read internally",
+        "pi refuses to start without read",
+        "The base pack needs read to log"
+      ],
+      "answer": 0,
+      "explanation": "pi shows skills in the prompt only if read or bash is on the tool list. Without read the analyst silently loses its skill.",
+      "conceptKeys": [
+        "sql-expert"
+      ]
+    },
+    {
+      "prompt": "In the example table, plain pi passes 9 of 20 tasks and the pack passes 17 of 20. What is the lift?",
+      "options": [
+        "8 percentage points",
+        "40 percentage points",
+        "85 percentage points",
+        "17 percentage points"
+      ],
+      "answer": 1,
+      "explanation": "The pack passes 85% and plain pi passes 45%. The difference, 40 percentage points, is the lift.",
+      "conceptKeys": [
+        "sql-expert"
+      ]
+    }
+  ],
+  "diagrams": []
+}

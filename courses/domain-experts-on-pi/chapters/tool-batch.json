@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A reply asks for three tool calls, and none carries a sequential field. In what order do the results reach the model?",
+      "options": [
+        "The order in which the calls happen to finish",
+        "The order the model asked for them",
+        "The order of the tool list in the system prompt",
+        "Any order, because pi sorts results by size"
+      ],
+      "answer": 1,
+      "explanation": "pi always sends results back in the order the model asked, even when a later call finishes first.",
+      "conceptKeys": [
+        "tool-batch"
+      ]
+    },
+    {
+      "prompt": "Four calls share one reply. One of them is marked sequential. What does pi do?",
+      "options": [
+        "It runs the three plain calls together, then the sequential one",
+        "It runs all four at the same time and repeats the sequential one",
+        "It runs all four one by one, in the order the model asked",
+        "It refuses the batch and asks the model to send one call at a time"
+      ],
+      "answer": 2,
+      "explanation": "One sequential call is enough. The whole batch then runs one by one, so the change cannot overlap with another call.",
+      "conceptKeys": [
+        "tool-batch"
+      ]
+    },
+    {
+      "prompt": "One call in a parallel batch throws an error. What happens next?",
+      "options": [
+        "The error becomes a result, the other results still arrive, and the turn continues",
+        "The turn ends at once and the session closes",
+        "pi runs the whole batch again from the start",
+        "The error is dropped and the model never learns of it"
+      ],
+      "answer": 0,
+      "explanation": "A tool that throws gives back an error result, so the model can read it and decide what to do. The other results in the batch still arrive.",
+      "conceptKeys": [
+        "tool-batch"
+      ]
+    }
+  ],
+  "diagrams": []
+}

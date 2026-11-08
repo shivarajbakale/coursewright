@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The SQL expert runs with --tools read,sql_schema,sql_query. The model asks to run bash. What happens?",
+      "options": [
+        "pi runs bash after asking you",
+        "pi runs bash in a read-only mode",
+        "The call cannot work, because bash never entered the session",
+        "The model switches to bash by itself"
+      ],
+      "answer": 2,
+      "explanation": "Tools not on the allowlist never enter the registry, so the model has no bash tool to call.",
+      "conceptKeys": [
+        "tool-allowlist"
+      ]
+    },
+    {
+      "prompt": "Why does the SQL expert keep read in its list?",
+      "options": [
+        "read is needed for sql_query to run",
+        "The skills section of the prompt needs read or bash",
+        "pi refuses to start without read",
+        "read lets the expert write files"
+      ],
+      "answer": 1,
+      "explanation": "The model opens skill files with read or bash. Without either, the skills section would point to files the model cannot open.",
+      "conceptKeys": [
+        "tool-allowlist"
+      ]
+    },
+    {
+      "prompt": "An extension registers a tool named bash. Plain bash is also built in. Which one does the session use?",
+      "options": [
+        "The built-in, because it is older",
+        "The extension tool, because it wins over the built-in",
+        "Both, run one after the other",
+        "Neither; pi reports a clash and stops"
+      ],
+      "answer": 1,
+      "explanation": "An extension tool with the same name as a built-in replaces the built-in.",
+      "conceptKeys": [
+        "tool-allowlist"
+      ]
+    }
+  ],
+  "diagrams": []
+}

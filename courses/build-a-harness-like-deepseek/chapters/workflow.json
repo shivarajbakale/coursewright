@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does agent() inside a workflow use caller delivery?",
+      "options": [
+        "So the script receives each answer and the parent's inbox gets no notices",
+        "So children skip the depth limit",
+        "So children can ask the person for approval",
+        "So the parent's model reads every child's transcript"
+      ],
+      "answer": 0,
+      "explanation": "With caller delivery the script awaits each result itself. The parent sees only the script's final return value.",
+      "conceptKeys": [
+        "workflow",
+        "subagent-result"
+      ]
+    },
+    {
+      "prompt": "In the trace, the review of b.ts fails. What does the script receive for that item?",
+      "options": [
+        "An exception that ends the whole script",
+        "null, and the script filters it out",
+        "A settlement notice",
+        "The partial review text"
+      ],
+      "answer": 1,
+      "explanation": "An ordinary child failure makes agent() resolve to null. The script decides what to do; here filter(Boolean) drops it.",
+      "conceptKeys": [
+        "workflow"
+      ]
+    },
+    {
+      "prompt": "Why is a tripped agent cap fatal instead of a null item?",
+      "options": [
+        "A cap only trips when the network fails",
+        "A broken plan must end the script loudly, not look like one failed child",
+        "Null values cannot be returned from scripts",
+        "The cap removes children that already finished"
+      ],
+      "answer": 1,
+      "explanation": "Misuse such as a tripped cap ends the whole run, so the model sees a clear error instead of a quiet gap in the results.",
+      "conceptKeys": [
+        "workflow"
+      ]
+    }
+  ],
+  "diagrams": []
+}

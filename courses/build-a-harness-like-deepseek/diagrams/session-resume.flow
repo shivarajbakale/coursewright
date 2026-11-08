@@ -1,0 +1,37 @@
+title Resuming a session after a crash
+
+loop   "Agent loop" state running
+mem    "Session in memory"
+disk   "Session file"
+resume "Resume code"
+
+loop -> mem -> disk
+disk -> resume -> disk
+
+stepStart at loop
+style interrupted #e5635e
+
+# A turn is under way when the program dies. Can the file be trusted?
+pause "Events 0 to 7 of turn 1 are already in the file."
+
+# Step 2 starts, and its event reaches the disk before the model call.
+stepStart -> mem "append gives it seq 8"
+stepStart -> disk "Flushed before the model call."
+
+# The program dies while it waits for the model.
+loop : failed "No step/end or turn/end was ever written for turn 1."
+
+# A new process reads the file back line by line.
+new events at disk
+events -> resume "9 complete lines parse; a cut-off last line would be dropped."
+
+# Resume finds turn 1 and step 2 still open, so it writes two closers.
+new stepEnd at resume
+new turnEnd at resume interrupted
+together stagger 150ms
+  stepEnd -> disk "step/end for step 2 gets seq 9."
+  turnEnd -> disk "turn/end with reason interrupted gets seq 10."
+
+# The record is balanced again, so the loop continues.
+remove events
+loop : running "The next prompt starts turn 2 at seq 11."

@@ -1,0 +1,94 @@
+{
+  "title": "Outside tools and code mode for mini-dsh",
+  "brief": "Connect mini-dsh to tools it did not write, and let the model call tools from code. You build a small MCP client that starts a tool server as a child process, registers its tools under mcp__server__tool names on the tool registry, a skills catalogue with one skill tool, and a PTC executor whose only tool is run_code. Programs run in their own Node process and reach the harness over a private JSON-lines pipe; every call they make passes the same pre-execute, approval and post-execute checks, under a call limit and 10 parallel slots. Tests use a tiny local MCP server written in the starter and a scripted model, so nothing needs the network.",
+  "starter": [
+    {
+      "path": "mini-dsh/src/mcp.ts",
+      "note": "McpClient (spawn, request with ids, line reader), publicToolName(), syncTools() with all-or-none registration."
+    },
+    {
+      "path": "mini-dsh/test/fixtures/weather-server.js",
+      "note": "A 40-line MCP server with one tool, get_forecast, that answers initialize, tools/list and tools/call, and can send a list-changed notice."
+    },
+    {
+      "path": "mini-dsh/src/skills.ts",
+      "note": "Reads .agents/skills/*/SKILL.md, registers the skill tool, and adds the catalogue in an agent/pre-step listener when it changes."
+    },
+    {
+      "path": "mini-dsh/src/ptc.ts",
+      "note": "PtcExecutor: describe() returns only run_code; execute() refuses other names and starts the program process."
+    },
+    {
+      "path": "mini-dsh/src/ptc-sdk.ts",
+      "note": "renderSdk(schemas): ToolArgsMap, ToolOutputMap, ToolCallError and tools, sorted by name, added as a prompt section."
+    },
+    {
+      "path": "mini-dsh/src/ptc-channel.ts",
+      "note": "Host side of the control pipe: invoke lines, sub-call ids, the call limit, parallel slots and tool/ptc-dispatch events."
+    },
+    {
+      "path": "mini-dsh/test/outside.test.ts",
+      "note": "One test per milestone."
+    }
+  ],
+  "hints": [
+    "Spawn the program with a fourth pipe for control messages (stdio: ['ignore', 'pipe', 'pipe', 'pipe']), so console.log output never breaks a JSON line.",
+    "Build every MCP tool definition before you dispose the old ones; register only when the list was complete.",
+    "Test publicToolName('docs', 'search.pages') against the lesson: it must end with _23d16669848f.",
+    "Send sub-calls into the same pipeline object you use for direct calls; do not write a second, shorter path.",
+    "Count a sub-call before you validate its arguments, then check the limit: Math.floor(timeoutMs / 60000 * 1024)."
+  ],
+  "rubric": [
+    {
+      "criterion": "The client matches each reply to its request by id and asks for the list again after a list-changed notice.",
+      "chapterKey": "mcp-client"
+    },
+    {
+      "criterion": "Server tools use mcp__server__tool names within 64 characters, raw names go only to the server, and registration is all or none.",
+      "chapterKey": "mcp-tools"
+    },
+    {
+      "criterion": "The catalogue lists only names and descriptions, and the skill tool returns the full text or an error for an unknown name.",
+      "chapterKey": "skills"
+    },
+    {
+      "criterion": "In PTC mode the model sees only run_code, a direct call to another tool fails with a clear message, and only the returned value reaches the model.",
+      "chapterKey": "run-code"
+    },
+    {
+      "criterion": "The prompt declares typed functions from the tool schemas, and calls cross a separate pipe as JSON lines with ids; an error reply becomes a ToolCallError.",
+      "chapterKey": "typed-sdk-channel"
+    },
+    {
+      "criterion": "Every sub-call passes the same pipeline, is logged with a parent call id, and the call limit and 10 parallel slots hold.",
+      "chapterKey": "sub-call-limits"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Talk to a tool server",
+      "body": "Start weather-server.js, send initialize and tools/list, and call get_forecast for Paris to get 'Rain, 14 °C'.",
+      "checkCmd": "npx tsx test/outside.test.ts mcp-client"
+    },
+    {
+      "title": "Server tools in the registry",
+      "body": "Register mcp__weather__get_forecast, run it through the pipeline with an ask policy for mcp__ tools, and check that a failed registration leaves no tools.",
+      "checkCmd": "npx tsx test/outside.test.ts mcp-tools"
+    },
+    {
+      "title": "Skills on request",
+      "body": "With three SKILL.md files, check the catalogue holds three lines, and that skill('release-notes') returns the body.",
+      "checkCmd": "npx tsx test/outside.test.ts skills"
+    },
+    {
+      "title": "run_code and the channel",
+      "body": "Run the line-counting program over 40 fixture files and check the result is { files: 40, total: 3120 } in two model steps.",
+      "checkCmd": "npx tsx test/outside.test.ts run-code"
+    },
+    {
+      "title": "Sub-call limits",
+      "body": "With timeoutMs 30000, check call 513 aborts the run, 25 safe reads never exceed 10 at once, and a denied bash reaches the program as ToolCallError.",
+      "checkCmd": "npx tsx test/outside.test.ts limits"
+    }
+  ]
+}

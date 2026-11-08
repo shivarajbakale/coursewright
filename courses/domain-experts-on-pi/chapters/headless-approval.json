@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "An expert runs in print mode, with no screen. A gate calls ctx.ui.confirm without checking ctx.hasUI. What does confirm return?",
+      "options": [
+        "true, because nobody objected",
+        "false, so the gate blocks, but only by accident of the stand-in",
+        "It waits until a person connects",
+        "It throws an error that stops pi"
+      ],
+      "answer": 1,
+      "explanation": "With no screen, the stand-in UI answers confirm with false. A good gate checks ctx.hasUI and decides on purpose.",
+      "conceptKeys": [
+        "headless-approval"
+      ]
+    },
+    {
+      "prompt": "What does it mean that a gate fails closed?",
+      "options": [
+        "It allows the call when it cannot get an answer",
+        "It closes the terminal after a block",
+        "It refuses the call when it cannot get an answer",
+        "It blocks every call of every tool"
+      ],
+      "answer": 2,
+      "explanation": "Failing closed means refusing when the check cannot get an answer. Failing open would allow the call instead.",
+      "conceptKeys": [
+        "headless-approval"
+      ]
+    },
+    {
+      "prompt": "Why does pi need an extension to ask for approval?",
+      "options": [
+        "pi cannot show questions in any mode",
+        "pi does not ask for approval before every tool call, so the extension builds that step",
+        "The model asks the person by itself",
+        "Approval is only possible in JSON mode"
+      ],
+      "answer": 1,
+      "explanation": "pi has no built-in ask-before-running step. An extension builds one in its tool_call handler.",
+      "conceptKeys": [
+        "headless-approval"
+      ]
+    }
+  ],
+  "diagrams": []
+}

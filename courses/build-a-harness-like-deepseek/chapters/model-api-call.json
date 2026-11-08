@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the program read the API key from an environment variable?",
+      "options": [
+        "The model reads the key to decide its answer",
+        "The key stays out of the source code, so it never goes into version control",
+        "fetch can only send headers that come from the environment",
+        "The key changes for every request"
+      ],
+      "answer": 1,
+      "explanation": "The API key is a secret that identifies your account and pays for tokens. Keeping it out of the source code keeps it out of shared files.",
+      "conceptKeys": [
+        "model-api-call"
+      ]
+    },
+    {
+      "prompt": "In the reply, where is the model's text?",
+      "options": [
+        "In the usage field",
+        "In the id field",
+        "In the anthropic-version header",
+        "In a text block inside the content list"
+      ],
+      "answer": 3,
+      "explanation": "The reply's content is a list of blocks. The model's text is in a block with type text, here \"Paris.\".",
+      "conceptKeys": [
+        "model-api-call"
+      ]
+    },
+    {
+      "prompt": "What does max_tokens: 1024 in the request body control?",
+      "options": [
+        "The reply can be at most 1,024 tokens long",
+        "The question can be at most 1,024 tokens long",
+        "The program may send at most 1,024 requests",
+        "The context window becomes 1,024 tokens"
+      ],
+      "answer": 0,
+      "explanation": "max_tokens caps how many tokens the model may write in this reply. It does not change the input or the model's context window.",
+      "conceptKeys": [
+        "model-api-call",
+        "context-window"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A session uses the danger-full-access preset. A person then switches only the sandbox mode to read-only. What does the current preset show?",
+      "options": [
+        "danger-full-access, because that was the last preset chosen",
+        "custom, because read-only with never matches no preset",
+        "workspace-write, the default",
+        "read-only, a new preset"
+      ],
+      "answer": 1,
+      "explanation": "The preset is worked out from the two settings. read-only with never is not in the table, so the report is custom.",
+      "conceptKeys": [
+        "permission-presets"
+      ]
+    },
+    {
+      "prompt": "Which value does the bash tool read to decide how to confine a command?",
+      "options": [
+        "The last permission/preset event",
+        "The preset table",
+        "The last sandbox/mode event, as before presets existed",
+        "The approval policy"
+      ],
+      "answer": 2,
+      "explanation": "The tools keep reading the setting events. A preset only writes those events; its name is for people.",
+      "conceptKeys": [
+        "permission-presets"
+      ]
+    },
+    {
+      "prompt": "A person runs /permission workspace-write in a session that already uses it. What is written to the record?",
+      "options": [
+        "Nothing, because no setting changed",
+        "Three new events",
+        "Only a permission/preset event",
+        "An error event"
+      ],
+      "answer": 0,
+      "explanation": "The switch writes only what differs. The preset and both settings already match, so no event is appended.",
+      "conceptKeys": [
+        "permission-presets"
+      ]
+    }
+  ],
+  "diagrams": []
+}

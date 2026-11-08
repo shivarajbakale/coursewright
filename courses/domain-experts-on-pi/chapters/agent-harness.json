@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Two harnesses use the same model. One offers a file-listing tool and one does not. What is different between the two agents?",
+      "options": [
+        "The model's training",
+        "The tools and instructions the harness gives the model",
+        "The number of tokens in the context window",
+        "The speed at which the model writes tokens"
+      ],
+      "answer": 1,
+      "explanation": "The model is the same, so its training and its token prediction do not change. The harness changes the tools and instructions, and that makes the agent behave differently.",
+      "conceptKeys": [
+        "agent-harness"
+      ]
+    },
+    {
+      "prompt": "What does the system prompt do?",
+      "options": [
+        "It stores every message and tool result from the conversation",
+        "It lists the functions the model may ask to run",
+        "It tells the model its role and rules at the start of each request",
+        "It runs the tool that the model asks for"
+      ],
+      "answer": 2,
+      "explanation": "The system prompt holds the instructions the harness sends first in every request, telling the model its role and its rules. The tools list and the running of tools are other parts of the harness.",
+      "conceptKeys": [
+        "agent-harness"
+      ]
+    },
+    {
+      "prompt": "Which of these jobs belongs to the harness rather than to the model?",
+      "options": [
+        "Predicting the next likely token",
+        "Deciding what the model is told and what it may do",
+        "Writing the text of the final answer",
+        "Choosing each word from the text it has read"
+      ],
+      "answer": 1,
+      "explanation": "The harness owns the instructions, the tools, the record and the limits. The model only reads text and predicts tokens, including the tokens of its answer.",
+      "conceptKeys": [
+        "agent-harness"
+      ]
+    }
+  ],
+  "diagrams": []
+}

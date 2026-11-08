@@ -1,0 +1,103 @@
+{
+  "title": "Box the expert in: gates, masks, approval and a container",
+  "brief": "Add every layer of protection around the experts. In the SQL pack you add a tool_call gate that allows one SELECT statement and a tool_result handler that masks email addresses. In the Kubernetes pack you add an approval gate that fails closed when nobody is watching. In the base pack you replace bash with a version whose spawnHook keeps only a short list of environment variables. You write a Dockerfile and a run script that mounts only what the SQL expert needs. When you finish, a DELETE is refused, emails never reach the model, a headless kube_apply is refused, the expert cannot see your API key through bash, and a container run has no access to the rest of your disk.",
+  "starter": [
+    {
+      "path": "fleet/packs/sql/extension.ts",
+      "note": "Edit. Add the tool_call gate for sql_query and the tool_result handler that masks emails. Keep the full rows in details."
+    },
+    {
+      "path": "fleet/packs/k8s/extension.ts",
+      "note": "New. Preview only: kube_apply with the headless-approval gate. It checks ctx.hasUI, then asks with ctx.ui.confirm."
+    },
+    {
+      "path": "fleet/packs/base/extension.ts",
+      "note": "New. Starts with the scrubbed bash: createBashTool with a spawnHook that keeps PATH, HOME, LANG and KUBECONFIG."
+    },
+    {
+      "path": "fleet/docker/Dockerfile",
+      "note": "New. Based on pi's own example: slim Node image, bash, ca-certificates, git, ripgrep, pi installed with --ignore-scripts, WORKDIR /workspace, ENTRYPOINT pi."
+    },
+    {
+      "path": "fleet/scripts/run-sql-container.sh",
+      "note": "New. docker run with --rm, --read-only, --tmpfs /tmp, a non-root user, -e DEEPSEEK_API_KEY, the agent folder, the pack read-only and data read-only."
+    },
+    {
+      "path": "fleet/packs/k8s/bash-backend.ts",
+      "note": "New. A sketch of BashOperations whose exec runs docker exec -i k8s-tools sh -c <command>. Error handling can be left out."
+    },
+    {
+      "path": "fleet/test/helpers/fake-pi.ts",
+      "note": "Edit. Add handler lookup by event name and a fake ctx with hasUI and ui.confirm."
+    },
+    {
+      "path": "fleet/test/guards.test.ts",
+      "note": "New. Calls the handlers directly with fake events. No network."
+    }
+  ],
+  "hints": [
+    "Test the gate with strings that try to slip past it: a leading space, WITH followed by a DELETE, and two statements joined by a semicolon. Only one SELECT or WITH statement may pass.",
+    "A gate that throws also stops the call, so it fails closed. A tool_result handler that throws lets the original result through, so test it with odd content such as an image block.",
+    "Copy the shape of the result from the event: map content blocks, keep non-text blocks as they are, and mask only the text.",
+    "In the approval gate decide on purpose. Check ctx.hasUI first, return block with a clear reason when it is false, and only then call confirm.",
+    "For the scrubbed bash, register the tool by spreading the created tool and forwarding execute. Test it by asking the expert to run env: DEEPSEEK_API_KEY must not appear.",
+    "A container does not hide environment variables you pass with -e, and the network stays open for the model API. Say that in a comment at the top of the run script."
+  ],
+  "rubric": [
+    {
+      "criterion": "The tool_call gate blocks anything but one SELECT or WITH statement with a reason the model can read, and the database is also open read-only",
+      "chapterKey": "call-gate"
+    },
+    {
+      "criterion": "The tool_result handler replaces email-like strings with [email] in content and keeps the full rows in details",
+      "chapterKey": "result-rewrite"
+    },
+    {
+      "criterion": "kube_apply is blocked with a clear reason when hasUI is false, blocked when the person declines, and allowed only on yes",
+      "chapterKey": "headless-approval"
+    },
+    {
+      "criterion": "A short note in packs/base/SECURITY.md says gates only stop what they were written to stop, and lists what the pi process can still reach",
+      "chapterKey": "security-boundary"
+    },
+    {
+      "criterion": "The run script mounts the agent folder, the pack read-only and the data read-only, uses a read-only root and a non-root user, and passes only DEEPSEEK_API_KEY",
+      "chapterKey": "expert-container"
+    },
+    {
+      "criterion": "bash-backend.ts routes commands through docker exec into a k8s-tools container instead of the host shell, and the note names what stays on the host",
+      "chapterKey": "bash-backend"
+    },
+    {
+      "criterion": "The scrubbed bash gives a command only PATH, HOME, LANG and KUBECONFIG, and a test shows DEEPSEEK_API_KEY is absent",
+      "chapterKey": "env-scrub"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "The SELECT-only gate",
+      "body": "Add the tool_call handler to the SQL extension. The test sends DELETE FROM orders, two statements joined by a semicolon, and a plain SELECT. The first two must return block true with the reason Only one SELECT statement is allowed. The last must pass.",
+      "checkCmd": "npx tsx test/guards.test.ts --only gate"
+    },
+    {
+      "title": "Mask results",
+      "body": "Add the tool_result handler. A result that holds ada@example.com must reach the model as [email], while details still holds the original rows. A result with a non-text block must pass through unchanged.",
+      "checkCmd": "npx tsx test/guards.test.ts --only mask"
+    },
+    {
+      "title": "Fail closed without a screen",
+      "body": "Write the kube_apply approval gate. With hasUI false it must block with a reason. With hasUI true and confirm returning false it blocks. With confirm returning true it returns nothing, which lets the call run.",
+      "checkCmd": "npx tsx test/guards.test.ts --only approval"
+    },
+    {
+      "title": "Scrub the environment",
+      "body": "Write the scrubbed bash in the base pack. Set a fake FLEET_SECRET in the test process, run env through the tool, and check that only the four kept names appear in the output.",
+      "checkCmd": "npx tsx test/guards.test.ts --only scrub"
+    },
+    {
+      "title": "Run in a container",
+      "body": "Build the image and run the SQL expert in it with scripts/run-sql-container.sh, asking it which tables exist. Then ask it to read a file outside the mounts and check that it cannot. This step needs Docker and DEEPSEEK_API_KEY. The test only checks that the script has every flag and that nothing but data is mounted writable.",
+      "checkCmd": "npx tsx test/guards.test.ts --only container"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A plugin that registered count_lines stops. What does the next step's request contain?",
+      "options": [
+        "The count_lines schema, because the registry keeps every tool it ever saw",
+        "No count_lines schema, because the plugin's disposer removed it from the registry",
+        "The count_lines schema marked as disabled",
+        "An error, because a step cannot run with fewer tools"
+      ],
+      "answer": 1,
+      "explanation": "The registration returned a disposer, and the plugin system runs it when the plugin stops. The next step reads the registry as it is now, which no longer has count_lines.",
+      "conceptKeys": [
+        "tool-registry"
+      ]
+    },
+    {
+      "prompt": "Why does schemas() copy only the name, description and parameters of each tool?",
+      "options": [
+        "Because the model only needs to know what a tool takes, and the body and callbacks must stay in the harness",
+        "Because JSON cannot hold more than three fields",
+        "To make the request smaller than the step limit",
+        "Because the parameters already contain the body"
+      ],
+      "answer": 0,
+      "explanation": "The model sees what a tool accepts, never how it runs. Execution and rendering code stay inside the harness.",
+      "conceptKeys": [
+        "tool-registry"
+      ]
+    },
+    {
+      "prompt": "Two plugins both try to register a tool named read. What should happen?",
+      "options": [
+        "The second one silently replaces the first",
+        "Both stay, and the model picks one",
+        "The second registration fails at once",
+        "The first one is renamed read_1"
+      ],
+      "answer": 2,
+      "explanation": "A duplicate name throws when the second plugin registers it, so one tool cannot hide another by accident. dsh refuses duplicates within one layer the same way.",
+      "conceptKeys": [
+        "tool-registry"
+      ]
+    }
+  ],
+  "diagrams": []
+}

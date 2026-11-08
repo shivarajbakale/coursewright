@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The expert replies \"Done, the refunded orders are deleted\". What should the grader check?",
+      "options": [
+        "Whether the reply contains the word done",
+        "The database after the run, for example a hash before and after",
+        "How long the reply is",
+        "Whether the reply is polite"
+      ],
+      "answer": 1,
+      "explanation": "A reply proves nothing. The database after the run shows whether anything changed.",
+      "conceptKeys": [
+        "outcome-grader"
+      ]
+    },
+    {
+      "prompt": "With numberClose(text, 48210.5, 0.01), which reply gets a score of 1?",
+      "options": [
+        "Revenue was $51,000",
+        "Revenue was $48,210.50",
+        "Revenue was $47,000",
+        "Revenue was $48,800"
+      ],
+      "answer": 1,
+      "explanation": "The allowed gap is 482.105. Only 48210.50 is inside it. 51,000, 47,000 and 48,800 are all further away.",
+      "conceptKeys": [
+        "outcome-grader"
+      ]
+    },
+    {
+      "prompt": "Why does a grader read the session file to see which tools ran?",
+      "options": [
+        "The session file is shorter than the reply",
+        "The file records the real tool calls, while the reply is only the model's account",
+        "pi deletes the reply after the run",
+        "Tools never appear in the reply"
+      ],
+      "answer": 1,
+      "explanation": "The JSONL session file records what happened. The model can describe its work wrongly in its reply.",
+      "conceptKeys": [
+        "outcome-grader"
+      ]
+    }
+  ],
+  "diagrams": []
+}

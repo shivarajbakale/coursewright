@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "On DeepSeek V4.1 Flash, a run uses 1,000,000 input tokens and 100,000 output tokens, with no cache. What does it cost?",
+      "options": [
+        "0.12 dollars",
+        "0.30 dollars",
+        "0.42 dollars",
+        "1.50 dollars"
+      ],
+      "answer": 2,
+      "explanation": "Input costs 1 times 0.3, which is 0.30. Output costs 0.1 times 1.2, which is 0.12. The total is 0.42 dollars.",
+      "conceptKeys": [
+        "expert-metrics"
+      ]
+    },
+    {
+      "prompt": "Why does each line in results.jsonl carry the expert's name?",
+      "options": [
+        "So a script can sum tokens, tool calls and cost for each expert",
+        "So pi can find the model",
+        "So the grader knows the fixture",
+        "So the line is shorter"
+      ],
+      "answer": 0,
+      "explanation": "With the name on every line, one script can group the lines by expert and compare them.",
+      "conceptKeys": [
+        "expert-metrics"
+      ]
+    },
+    {
+      "prompt": "Pack A and pack B both pass 17 of 20 tasks. Pack A uses three times the tokens. What do the metrics let you do?",
+      "options": [
+        "Conclude the packs are equal",
+        "See the trade-off and choose the cheaper pack for the same pass count",
+        "Skip the lift measurement",
+        "Prove that pack A is flaky"
+      ],
+      "answer": 1,
+      "explanation": "Pass count alone hides cost. Tokens and cost show that the same result costs three times as much.",
+      "conceptKeys": [
+        "expert-metrics"
+      ]
+    }
+  ],
+  "diagrams": []
+}

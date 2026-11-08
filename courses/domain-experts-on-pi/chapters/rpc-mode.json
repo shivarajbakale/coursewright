@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Your program sends a prompt over RPC and gets a response with disposition \"started\". What does that mean?",
+      "options": [
+        "The answer is ready to read",
+        "pi accepted the prompt and is working on it",
+        "The prompt failed and must be sent again",
+        "The session has been closed"
+      ],
+      "answer": 1,
+      "explanation": "The response to a prompt only says the work started. The work is finished when agent_settled arrives.",
+      "conceptKeys": [
+        "rpc-mode"
+      ]
+    },
+    {
+      "prompt": "Why does the ask function start listening for agent_settled before it sends the prompt?",
+      "options": [
+        "pi refuses a prompt unless someone is listening",
+        "A fast run could finish before the program listens, and it would wait forever",
+        "The event is sent twice, so the first copy must be skipped",
+        "Standard input closes if no handler exists"
+      ],
+      "answer": 1,
+      "explanation": "Events arrive as soon as they happen. A handler added after agent_settled passes will never see it.",
+      "conceptKeys": [
+        "rpc-mode"
+      ]
+    },
+    {
+      "prompt": "An extension opens a dialog without a timeout while pi runs in RPC mode. Your program never answers the extension_ui_request. What happens?",
+      "options": [
+        "pi cancels the dialog after a few seconds",
+        "The dialog is answered with yes",
+        "The expert waits for an answer that never comes",
+        "pi shuts down at once"
+      ],
+      "answer": 2,
+      "explanation": "A dialog without a timeout waits for the host. A host that ignores it leaves the expert waiting forever.",
+      "conceptKeys": [
+        "rpc-mode"
+      ]
+    }
+  ],
+  "diagrams": []
+}

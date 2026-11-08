@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The prompt stays the same for 3 turns. How many system/message events does logSystemPrompt write?",
+      "options": [
+        "One for each turn, so 3",
+        "One for each step",
+        "One, because it appends only when the text changes",
+        "None, because the prompt goes in the system field"
+      ],
+      "answer": 2,
+      "explanation": "logSystemPrompt compares the text with the latest system/message and appends only when they differ. The first turn writes it; the next two write nothing.",
+      "conceptKeys": [
+        "logged-system-prompt"
+      ]
+    },
+    {
+      "prompt": "You rebuild a request from turn 1 after the prompt changed in turn 3. Which prompt does requestFrom put in the system field?",
+      "options": [
+        "The turn 1 prompt, because only events up to that moment are read",
+        "The turn 3 prompt, because it is the newest",
+        "Both prompts joined together",
+        "No prompt, because system/message makes no message"
+      ],
+      "answer": 0,
+      "explanation": "Rebuilding uses the events that existed at that moment. The only system/message then was the turn 1 prompt, so that is the prompt the request had.",
+      "conceptKeys": [
+        "logged-system-prompt",
+        "model-visible-logged"
+      ]
+    },
+    {
+      "prompt": "What goes wrong if the prompt stays a constant passed beside the session?",
+      "options": [
+        "The model cannot read it",
+        "Requests become larger",
+        "Old requests cannot be rebuilt, because the session does not show which prompt they used",
+        "The session gets a gap in its sequence numbers"
+      ],
+      "answer": 2,
+      "explanation": "After the constant changes, nothing in the session says what the earlier requests contained. The prompt is model-visible, so it must be logged.",
+      "conceptKeys": [
+        "logged-system-prompt"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,6 @@
+{
+  "topic": "How the DeepSeek Harness (dsh) agent harness is built, from first principles",
+  "goal": "Understand every part of DeepSeek Harness from its source code and build mini-dsh, your own harness with the same architecture: a plugin kernel, an event-sourced session log, a DeepSeek model adapter, a guarded tool pipeline, a sandbox, compaction, MCP and code-mode tools, subagents, an SDK surface and replay tests.",
+  "pace": "about three months; from absolute basics to advanced, 90 lessons",
+  "answers": []
+}

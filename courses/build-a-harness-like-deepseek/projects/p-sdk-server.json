@@ -1,0 +1,90 @@
+{
+  "title": "Put mini-dsh in front of programs and browsers",
+  "brief": "Give mini-dsh its surfaces. Make every recorded event and every stream chunk observable, then build four thin layers over the same agent registry: a headless runner that runs one task and exits with a status code, a JSON-RPC server over stdio for an SDK client, an ACP bridge that answers the public protocol's methods, and a small web gateway that maps HTTP routes to remote methods. Each layer only translates; none of them changes the loop. When you finish, one agent can be driven from a shell script, from another program and from a browser.",
+  "starter": [
+    {
+      "path": "mini-dsh/src/loop.ts",
+      "note": "Emit agent/assistant-stream frames: start before the first chunk, one chunk frame per stream chunk, end with the seq of the committed assistant/message or none."
+    },
+    {
+      "path": "mini-dsh/src/watch.ts",
+      "note": "watch(ctx, agent, show): listens on session/event and agent/assistant-stream and returns one disposer for both."
+    },
+    {
+      "path": "mini-dsh/src/headless.ts",
+      "note": "runHeadless(ctx, task): fresh session-<uuid> agent, reasoning to stderr, final text to stdout, exit 0 only on a completed last turn."
+    },
+    {
+      "path": "mini-dsh/src/rpc.ts",
+      "note": "LineTransport: splits input at newlines, answers requests by id, sends notifications, turns a thrown handler into error -32603."
+    },
+    {
+      "path": "mini-dsh/src/sdk-server.ts",
+      "note": "initialize, session/prompt, session/wait, shutdown; forwards every session/event as a session.event notification."
+    },
+    {
+      "path": "mini-dsh/src/acp.ts",
+      "note": "initialize, session/new, session/prompt (answers at turn end with stopReason), session/cancel, and session/update notifications."
+    },
+    {
+      "path": "mini-dsh/src/web.ts",
+      "note": "node:http on 127.0.0.1:4100: POST /api/<namespace>/<method> with {args}, and GET /api/session/follow as server-sent events."
+    }
+  ],
+  "hints": [
+    "Register both listeners in watch() before you return, and return one function that calls both disposers, so a closed screen leaves nothing behind.",
+    "In the headless runner, keep agent.session.seq before the followup and fold only the events after it; a resumed session must not lend an old completed turn to this run.",
+    "Standard output belongs to the protocol in the SDK server and the ACP bridge. Send every log line to standard error.",
+    "In the ACP bridge, keep a set of sessions with an open prompt and refuse a second prompt for the same session instead of queueing it.",
+    "For the follow stream, send the events already in the record first and attach the live listener in the same synchronous block, so no event falls between them."
+  ],
+  "rubric": [
+    {
+      "criterion": "Every appended event goes out as session/event, and every chunk goes out as a frame that ends by naming the committed message or none",
+      "chapterKey": "live-event-stream"
+    },
+    {
+      "criterion": "The runner prints only the final text on stdout, reasoning on stderr, and exits 0 only when the last turn in its own interval completed",
+      "chapterKey": "headless-runner"
+    },
+    {
+      "criterion": "Requests get responses with the same id, notifications get none, invalid lines are ignored, and a failed handler answers -32603",
+      "chapterKey": "json-rpc-stdio"
+    },
+    {
+      "criterion": "session/prompt answers only at turn end, maps max-tokens to max_tokens and interrupted to cancelled, and allows one open prompt per session",
+      "chapterKey": "acp"
+    },
+    {
+      "criterion": "Only listed remote methods answer under /api/, other paths get 404, and the follow stream sends the record before live events",
+      "chapterKey": "web-gateway"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Two channels a screen can follow",
+      "body": "Add the three frame types to src/loop.ts and write src/watch.ts. Write test/watch.test.ts with a real DeepSeek call: ask for a one-sentence answer, collect what watch() shows, and assert that the text from the chunk frames equals the text of the committed assistant/message and that the end frame names its seq.",
+      "checkCmd": "npx tsx test/watch.test.ts"
+    },
+    {
+      "title": "A headless runner with an honest exit code",
+      "body": "Write src/headless.ts as a profile entry point that reads the task from argv. Print the final text on stdout and return the exit code from the last turn/end reason in the run's own events. Try a tiny max_tokens setting and confirm the code becomes 1.",
+      "checkCmd": "npx tsx src/headless.ts \"Reply with the single word ok\" && echo exit-0"
+    },
+    {
+      "title": "JSON-RPC over stdio",
+      "body": "Write src/rpc.ts and src/sdk-server.ts. In test/rpc.test.ts, drive the transport through two PassThrough streams: an initialize request, a session/prompt request, one invalid line, and an unknown method. Assert the response ids, at least one session.event notification, no answer to the invalid line, and error -32603 for the unknown method.",
+      "checkCmd": "npx tsx test/rpc.test.ts"
+    },
+    {
+      "title": "An ACP bridge on the same transport",
+      "body": "Write src/acp.ts over LineTransport. In test/acp.test.ts, create a session, send a prompt, and assert that tool_call, tool_call_update and agent_message_chunk updates arrive before the response, that the response carries stopReason end_turn, and that a second prompt sent while the first is open is refused.",
+      "checkCmd": "npx tsx test/acp.test.ts"
+    },
+    {
+      "title": "A web gateway with a follow stream",
+      "body": "Write src/web.ts with a remote() table and a generated client stub file in web/client.ts. Start the server, call POST /api/session/prompt through the stub, open GET /api/session/follow, and assert that the stream starts with the recorded events, then shows turn/end. Assert that POST /api/session/delete gets 404.",
+      "checkCmd": "npx tsx test/web.test.ts"
+    }
+  ]
+}

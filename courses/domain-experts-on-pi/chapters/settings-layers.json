@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Global settings.json has \"tags\": [\"a\", \"b\"]. A trusted project file has \"tags\": [\"c\"]. What is the result?",
+      "options": [
+        "[\"a\", \"b\", \"c\"]",
+        "[\"c\"]",
+        "[\"a\", \"b\"]",
+        "[\"b\", \"c\"]"
+      ],
+      "answer": 1,
+      "explanation": "A list from the project replaces the global list. Only defaultTools entries that start with + or - are the exception.",
+      "conceptKeys": [
+        "settings-layers"
+      ]
+    },
+    {
+      "prompt": "The global defaultTools is [\"read\", \"sql_schema\", \"sql_query\"] and the trusted project has [\"-read\"]. What tools are active in that folder?",
+      "options": [
+        "Only read",
+        "No tools",
+        "sql_schema and sql_query",
+        "read, sql_schema and sql_query"
+      ],
+      "answer": 2,
+      "explanation": "An entry that starts with - changes the global list instead of replacing it. It removes read.",
+      "conceptKeys": [
+        "settings-layers"
+      ]
+    },
+    {
+      "prompt": "Why does pi load project settings only when the project is trusted?",
+      "options": [
+        "The project files can load code",
+        "Settings files are too large",
+        "Trust makes the model faster",
+        "The global file would be deleted otherwise"
+      ],
+      "answer": 0,
+      "explanation": "Project settings, extensions, skills and prompts can load code, so pi asks for a yes or no first.",
+      "conceptKeys": [
+        "settings-layers"
+      ]
+    }
+  ],
+  "diagrams": []
+}

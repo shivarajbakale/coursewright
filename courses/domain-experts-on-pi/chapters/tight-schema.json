@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The model sends sql_query with limit 5000, and the schema has maximum 200. What happens?",
+      "options": [
+        "execute runs and cuts the rows to 200",
+        "execute runs, and pi logs a warning",
+        "The tool never runs and the model gets a validation error",
+        "pi changes the limit to 200 and runs the tool"
+      ],
+      "answer": 2,
+      "explanation": "The schema check comes first. A failing call returns an error result that names the problem, and the tool does not run.",
+      "conceptKeys": [
+        "tight-schema"
+      ]
+    },
+    {
+      "prompt": "Why can a schema not stop a DELETE sent in the sql field?",
+      "options": [
+        "Schemas only work on numbers",
+        "A schema checks the shape of the arguments, and a DELETE is still a valid string",
+        "pi skips the schema check for strings",
+        "The maxLength rule allows only DELETE"
+      ],
+      "answer": 1,
+      "explanation": "The schema says the field is a string under 4000 characters. A DELETE fits that shape, so telling it from a SELECT needs code.",
+      "conceptKeys": [
+        "tight-schema"
+      ]
+    },
+    {
+      "prompt": "What does additionalProperties: false do?",
+      "options": [
+        "It refuses any field the schema does not name",
+        "It makes every field optional",
+        "It lets the model add its own fields",
+        "It turns off the schema check"
+      ],
+      "answer": 0,
+      "explanation": "With additionalProperties false, a call that carries an extra field fails the check and never runs.",
+      "conceptKeys": [
+        "tight-schema"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The operator runs with nobody watching, and the model calls kube_apply. What happens?",
+      "options": [
+        "The change runs, because the model asked for it",
+        "The gate blocks it, because ctx.hasUI is false and the gate fails closed",
+        "pi asks the model to confirm",
+        "The change waits until a person comes back"
+      ],
+      "answer": 1,
+      "explanation": "With no screen there is nobody to ask. The gate returns a block with a reason instead of allowing the change.",
+      "conceptKeys": [
+        "k8s-expert"
+      ]
+    },
+    {
+      "prompt": "How does the operator refuse \"delete the cache deployment\"?",
+      "options": [
+        "A gate scans for the word delete",
+        "It has no tool that can delete, so the request cannot run",
+        "The model is told to be careful",
+        "kubectl rejects delete in a container"
+      ],
+      "answer": 1,
+      "explanation": "The pack has only kube_get and kube_apply, and no bash. A power that no tool offers cannot be used.",
+      "conceptKeys": [
+        "k8s-expert"
+      ]
+    },
+    {
+      "prompt": "In an eval, \"scale web to 3\" must pass. How does the approval gate get its yes?",
+      "options": [
+        "The gate is switched off in tests",
+        "The test host answers the dialog through RPC",
+        "The model approves its own change",
+        "The task file contains the answer"
+      ],
+      "answer": 1,
+      "explanation": "RPC hosts answer dialogs with extension_ui_response, so the test host plays the person who approves.",
+      "conceptKeys": [
+        "k8s-expert"
+      ]
+    }
+  ],
+  "diagrams": []
+}

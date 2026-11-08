@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the tool_result block carry tool_use_id call_01?",
+      "options": [
+        "The API needs it to bill the request",
+        "It names the tool to run",
+        "It pairs the result with the tool call it answers",
+        "It tells the model to stop"
+      ],
+      "answer": 2,
+      "explanation": "The call id is the ticket number. It tells the model exactly which of its tool calls this output answers, even when there are several.",
+      "conceptKeys": [
+        "tool-result"
+      ]
+    },
+    {
+      "prompt": "The program sends the tool result but leaves out the assistant message with the tool call. What goes wrong?",
+      "options": [
+        "Nothing, the result is enough",
+        "The result answers a call that is not in the conversation, so the request is invalid",
+        "The model runs count_lines a second time by itself",
+        "The result is sent to the wrong model"
+      ],
+      "answer": 1,
+      "explanation": "The model is stateless and sees only this request. A result must follow the call it answers, so the call must stay in the conversation.",
+      "conceptKeys": [
+        "tool-result",
+        "stateless-model"
+      ]
+    },
+    {
+      "prompt": "In which kind of message does the tool result go?",
+      "options": [
+        "A user message",
+        "An assistant message",
+        "The system prompt",
+        "A separate HTTP request with no messages"
+      ],
+      "answer": 0,
+      "explanation": "To the model, the result comes from outside the model, so it goes in a user message as a tool_result block.",
+      "conceptKeys": [
+        "tool-result",
+        "message-roles"
+      ]
+    }
+  ],
+  "diagrams": []
+}

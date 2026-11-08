@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "fetch_url has timeoutMs 5000 and the server answers after 8 seconds. What does the model receive, and when?",
+      "options": [
+        "The page, after 8 seconds",
+        "A timeout error, after 5 seconds, because fetch received the deadline signal",
+        "A timeout error, after 8 seconds",
+        "Nothing, because the call is dropped"
+      ],
+      "answer": 1,
+      "explanation": "The wrapper put a 5000 ms deadline on the signal that fetch watches. fetch rejects at 5 seconds, and the wrapper replaces the error with the timeout message.",
+      "conceptKeys": [
+        "around-execute"
+      ]
+    },
+    {
+      "prompt": "A tool body with timeoutMs 5000 runs a loop that never checks its signal and ends after 60 seconds. What happens?",
+      "options": [
+        "The wrapper kills the loop at 5 seconds",
+        "The harness restarts the body",
+        "The call fails before it starts",
+        "The wrapper waits until the loop ends, because the timeout depends on the body watching its signal"
+      ],
+      "answer": 3,
+      "explanation": "The timeout is cooperative. A wrapper in the same process can abort a signal but cannot stop code that never reads it.",
+      "conceptKeys": [
+        "around-execute"
+      ]
+    },
+    {
+      "prompt": "Why does the timeout wrapper put the old signal back in a finally block?",
+      "options": [
+        "So later code never sees this plugin's deadline signal",
+        "So the body can run a second time",
+        "Because AbortSignal.timeout can only be used once",
+        "To make the call faster"
+      ],
+      "answer": 0,
+      "explanation": "The deadline belongs to the wrapper. Restoring the caller's own signal means listeners that run afterwards do not see a signal that this plugin aborted.",
+      "conceptKeys": [
+        "around-execute"
+      ]
+    }
+  ],
+  "diagrams": []
+}

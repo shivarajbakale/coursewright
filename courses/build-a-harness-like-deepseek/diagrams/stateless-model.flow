@@ -1,0 +1,38 @@
+title Each request carries the whole chat
+
+prog  "Your program"
+api   "DeepSeek API"
+model "The model"
+sent  "Messages in request" counter 0
+
+prog -> api -> model
+
+r1 at prog
+
+# The model keeps nothing between requests. Watch what the program sends.
+pause "Two questions in a row: 'My name is Priya.' and then 'What is my name?'"
+
+# Request 1 carries one user message.
+sent = 1
+r1 -> api : running "The body holds 1 message: My name is Priya."
+r1 -> model
+r1 -> prog : done "Reply: Nice to meet you, Priya."
+
+# After the reply, nothing about Priya stays with the model.
+remove r1
+pause "The provider stores no conversation between requests."
+
+# Request 2 sends only the new question, so the model cannot know the name.
+new r2 at prog
+sent = 1
+r2 -> api : running
+r2 -> model
+r2 -> prog : failed "Reply: I do not know your name."
+
+# Request 2 again, now with the whole chat: question, answer, question.
+remove r2
+new r3 at prog
+sent = 3
+r3 -> api : running "user, assistant, user: 3 messages"
+r3 -> model
+r3 -> prog : done "Reply: Your name is Priya."

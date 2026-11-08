@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why is a list of allowed variable names safer than a list of banned names?",
+      "options": [
+        "Allowed names make the command run faster",
+        "A new secret is dropped by default, with no change to the code",
+        "pi only accepts allow lists",
+        "Banned names cannot contain PATH"
+      ],
+      "answer": 1,
+      "explanation": "With an allow list, any variable not named is removed, so a new secret never reaches the command.",
+      "conceptKeys": [
+        "env-scrub"
+      ]
+    },
+    {
+      "prompt": "The keep list is PATH, HOME, LANG and KUBECONFIG. The environment holds PATH, HOME, LANG and DEEPSEEK_API_KEY. What does the command receive?",
+      "options": [
+        "PATH, HOME, LANG and DEEPSEEK_API_KEY",
+        "PATH, HOME and LANG",
+        "Only PATH and HOME",
+        "KUBECONFIG with an empty value"
+      ],
+      "answer": 1,
+      "explanation": "The filter keeps names on the list that have a value. KUBECONFIG is not set, so it is dropped, and DEEPSEEK_API_KEY is not on the list.",
+      "conceptKeys": [
+        "env-scrub"
+      ]
+    },
+    {
+      "prompt": "Does pi remove API keys from the environment of bash commands by default?",
+      "options": [
+        "Yes, it removes every variable that ends in KEY",
+        "Yes, but only in print mode",
+        "No, nothing in pi strips secrets by default",
+        "Yes, the spawnHook is on by default"
+      ],
+      "answer": 2,
+      "explanation": "pi passes the parent's variables through. You must add the filter yourself.",
+      "conceptKeys": [
+        "env-scrub"
+      ]
+    }
+  ],
+  "diagrams": []
+}

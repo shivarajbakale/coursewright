@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does a child agent reject every ask instead of showing it to a person?",
+      "options": [
+        "Asks from a child are always unsafe",
+        "The person watches the parent's chat, so a child's question would wait with nobody to answer",
+        "The child has no approval service at all",
+        "The parent answers every ask for the child"
+      ],
+      "answer": 1,
+      "explanation": "Nobody watches the child's session. The policy never rejects the ask at once, and the child reports the limit in its reply.",
+      "conceptKeys": [
+        "child-isolation",
+        "approval"
+      ]
+    },
+    {
+      "prompt": "The parent switches to read-only mode one second after it delegates. Which mode does the child have?",
+      "options": [
+        "Read-only, because the child follows the parent live",
+        "The mode the parent had at delegation, because it was captured before any await",
+        "Full access, because a child has no sandbox",
+        "No mode until the child asks for one"
+      ],
+      "answer": 1,
+      "explanation": "The tool reads the parent's mode before its first await and logs it in the child's record. A later parent change belongs to the parent only.",
+      "conceptKeys": [
+        "child-isolation"
+      ]
+    },
+    {
+      "prompt": "Why does setup append the policy as events in the child's record?",
+      "options": [
+        "So the child's record alone shows what it could do, even after a resume",
+        "So the parent's model can read the policy",
+        "Because tools can only be restricted through events",
+        "So the person can change the policy from the child's chat"
+      ],
+      "answer": 0,
+      "explanation": "The events make the policy part of the child's record. A resumed child rebuilds the same limits from its own file.",
+      "conceptKeys": [
+        "child-isolation",
+        "session-event"
+      ]
+    }
+  ],
+  "diagrams": []
+}

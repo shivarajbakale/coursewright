@@ -1,0 +1,130 @@
+{
+  "title": "Your first agent: mini-dsh answers questions about files",
+  "brief": "Build the first version of mini-dsh, a small TypeScript agent on Node 22 that answers questions about the files in a folder. It calls DeepSeek's Messages endpoint with fetch (no SDK), offers two tools, count_lines and list_files, and runs the agent loop with a step limit of 10. A tool that fails sends a tool error result instead of crashing. Every later module extends these same files (src/llm.ts, src/tools.ts, src/loop.ts), so keep the names from the lessons: callModel, textOf, tools, runTool, agent, MAX_STEPS. The tests never call the real API: test/fake-model.ts replaces globalThis.fetch with scripted replies and records each request your code sends, so you can check the whole loop without an API key.",
+  "starter": [
+    {
+      "path": "mini-dsh/package.json",
+      "note": "Node 22 project with tsx as the only dev dependency; run npm install once."
+    },
+    {
+      "path": "mini-dsh/tsconfig.json",
+      "note": "Strict TypeScript, ES2022 modules, allowImportingTsExtensions."
+    },
+    {
+      "path": "mini-dsh/src/llm.ts",
+      "note": "The Block, Message, Tool and Reply types are given. callModel, textOf and streamModel are stubs that throw 'not implemented'."
+    },
+    {
+      "path": "mini-dsh/src/tools.ts",
+      "note": "An empty tools array and a runTool stub. You write both schemas and both tools."
+    },
+    {
+      "path": "mini-dsh/src/loop.ts",
+      "note": "An agent function stub and MAX_STEPS = 10."
+    },
+    {
+      "path": "mini-dsh/src/main.ts",
+      "note": "Reads the question from the command line and prints agent's answer. Complete; do not change."
+    },
+    {
+      "path": "mini-dsh/test/fake-model.ts",
+      "note": "Scripted stand-in for DeepSeek: queue replies (JSON or a server-sent event stream), then read back every request your code sent. Complete; do not change."
+    },
+    {
+      "path": "mini-dsh/test/llm.test.ts",
+      "note": "Checks the URL, the three headers, the body fields and reading the reply."
+    },
+    {
+      "path": "mini-dsh/test/stream.test.ts",
+      "note": "Feeds a stream split in awkward places and checks the text and the stop reason."
+    },
+    {
+      "path": "mini-dsh/test/tools.test.ts",
+      "note": "Checks both schemas and runTool against fixtures/, including bad arguments and an unknown tool."
+    },
+    {
+      "path": "mini-dsh/test/loop.test.ts",
+      "note": "Scripted turns: one tool call, two calls in one reply, a failing tool, and a model that never stops."
+    },
+    {
+      "path": "mini-dsh/fixtures/docs/notes.txt",
+      "note": "A 42-line text file in a docs folder, so the model must look for it."
+    }
+  ],
+  "hints": [
+    "Build the request body once and check it against the lesson: model deepseek-flash, max_tokens, system, messages, and tools only when the list is not empty.",
+    "Push the model's reply into messages as an assistant message with its content list unchanged, thinking blocks included. The next request must carry the tool_use blocks that your results answer.",
+    "Put all tool results for one reply in a single user message, one tool_result block per tool_use block, each with tool_use_id set to the call's id.",
+    "Wrap only runTool in try/catch. A failed model request is not a tool failure and must still end the turn with an exception.",
+    "In streamModel, keep a text buffer and split it on a blank line (two newlines). A network piece can end in the middle of a message, and the stream test cuts it on purpose."
+  ],
+  "rubric": [
+    {
+      "criterion": "callModel sends POST to https://api.deepseek.com/anthropic/v1/messages with x-api-key from DEEPSEEK_API_KEY, anthropic-version 2023-06-01 and content-type application/json, and throws with the status on a non-OK reply.",
+      "chapterKey": "model-api-call"
+    },
+    {
+      "criterion": "The request carries the system prompt in the top-level system field, and messages holds only user and assistant messages.",
+      "chapterKey": "message-roles"
+    },
+    {
+      "criterion": "Each request carries the whole conversation so far; the loop never sends only the newest message.",
+      "chapterKey": "stateless-model"
+    },
+    {
+      "criterion": "streamModel prints text as it arrives, handles a message split across network pieces, and returns the stop reason from message_delta.",
+      "chapterKey": "streaming"
+    },
+    {
+      "criterion": "count_lines and list_files each have a name, a description that says when to use it, and an input_schema with a required string path.",
+      "chapterKey": "tool-schema"
+    },
+    {
+      "criterion": "The loop finds every tool_use block in a reply, including two in one reply, and runs nothing the model did not ask for.",
+      "chapterKey": "tool-call"
+    },
+    {
+      "criterion": "Each tool_result carries the tool_use_id of its call and goes in the user message after the assistant message that holds the call.",
+      "chapterKey": "tool-result"
+    },
+    {
+      "criterion": "The loop ends when the stop reason is not tool_use, and stops after MAX_STEPS (10) model requests with a plain note.",
+      "chapterKey": "turn-and-step"
+    },
+    {
+      "criterion": "A thrown tool, bad arguments or an unknown tool name becomes a tool_result with is_error true and text starting with Error:, and the turn goes on.",
+      "chapterKey": "tool-error-result"
+    },
+    {
+      "criterion": "npx tsx src/main.ts answers a question about fixtures/ with a real API key, and the code keeps the lesson names (callModel, runTool, agent, MAX_STEPS).",
+      "chapterKey": "first-agent"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "One model API call",
+      "body": "Write callModel and textOf in src/llm.ts. The test queues one JSON reply and checks the URL, the headers, the body (model, max_tokens, system, messages) and that textOf returns the reply text. It also checks that a 401 reply throws.",
+      "checkCmd": "npx tsx test/llm.test.ts"
+    },
+    {
+      "title": "A streamed reply",
+      "body": "Write streamModel. The test sends a server-sent event stream cut at awkward places and checks that onText receives \"The capital\" and \" is Paris.\" and that the stop reason is end_turn.",
+      "checkCmd": "npx tsx test/stream.test.ts"
+    },
+    {
+      "title": "Two tools",
+      "body": "Write the count_lines and list_files schemas and runTool. The test checks the schemas, counts 42 lines in fixtures/docs/notes.txt, lists fixtures/docs, and expects throws for a missing path argument and an unknown tool name.",
+      "checkCmd": "npx tsx test/tools.test.ts"
+    },
+    {
+      "title": "The loop with a step limit",
+      "body": "Write agent in src/loop.ts. The test scripts a tool call followed by a text answer, then a reply with two tool calls, then a model that asks for a tool 12 times. It checks the call ids, the resent conversation, and that the loop stops after 10 requests.",
+      "checkCmd": "npx tsx test/loop.test.ts"
+    },
+    {
+      "title": "Failures the model can read",
+      "body": "Catch tool failures in the loop. The test scripts a call on a missing file and checks that the next request holds a tool_result with is_error true and the error text, and that the turn continues to the model's answer. Then run the agent once against the real API.",
+      "checkCmd": "npx tsx test/loop.test.ts --only errors && npx tsx src/main.ts \"How many lines are in notes.txt?\""
+    }
+  ]
+}

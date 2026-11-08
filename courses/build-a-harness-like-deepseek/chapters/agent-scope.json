@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "apply_edit is registered through coder.ctx and search_code on the root. What does tools.list(reviewer) return?",
+      "options": [
+        "Both tools, because they share one tools service",
+        "No tools, because the reviewer registered none",
+        "Only search_code, because apply_edit carries the coder's tag",
+        "Only apply_edit, because it was registered last"
+      ],
+      "answer": 2,
+      "explanation": "Untagged tools are in the shared table that every agent sees. apply_edit is in the coder's table, so the reviewer never sees it.",
+      "conceptKeys": [
+        "agent-scope"
+      ]
+    },
+    {
+      "prompt": "A logger on the root and a counter on coder.ctx listen to tool/finished. Each agent finishes one call. How many times does each run?",
+      "options": [
+        "Logger 2, counter 1",
+        "Logger 1, counter 1",
+        "Logger 2, counter 2",
+        "Logger 1, counter 2"
+      ],
+      "answer": 0,
+      "explanation": "An untagged listener runs for every agent, so the logger runs twice. The counter's tag is coder, so it runs only for the coder's call.",
+      "conceptKeys": [
+        "agent-scope"
+      ]
+    },
+    {
+      "prompt": "Why is a scope made as a plugin with its own fiber?",
+      "options": [
+        "So the agent can read the root's services",
+        "So the agent's tools run in parallel",
+        "So the agent can change its tag later",
+        "So disposing the scope removes every tool and listener registered through it"
+      ],
+      "answer": 3,
+      "explanation": "Registrations through the scope's context are effects on its fiber. Disposing that fiber undoes them, and other agents are not affected.",
+      "conceptKeys": [
+        "agent-scope",
+        "effect-disposer"
+      ]
+    }
+  ],
+  "diagrams": []
+}

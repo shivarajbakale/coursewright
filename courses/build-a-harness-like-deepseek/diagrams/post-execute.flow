@@ -1,0 +1,34 @@
+title One tool call through the pipeline
+
+reply  "Model reply"
+pre    "pre-execute listeners"
+ask    "Approval"
+guards "Guards"
+wrap   "tools/execute wrapper"
+body   "Tool body"
+post   "post-execute listeners"
+log    "Session record"
+
+push, rm at reply
+
+# Two calls from one reply pass the same stages in the same order.
+pause "One reply asks for bash rm -rf build and bash git push."
+
+# A deletion is denied, so its body never runs.
+rm -> pre : blocked "A policy listener returns deny."
+rm -> post "A denied call skips the body, but its error result still passes post-execute."
+rm -> log : failed "The model will read: Error: rm -rf is not allowed here."
+
+# git push needs a person's answer before it can run.
+push -> pre : waiting "The policy listener returns ask."
+push -> ask : waiting "The person answers allowed-once."
+push -> guards : running "An allowed call still meets every guard."
+
+# The body runs inside the wrapper, under a deadline.
+push -> wrap : running "The timeout wrapper adds a deadline to the call's signal."
+push -> body : running "The body watches that signal."
+push -> wrap "The body returned before the deadline, so the wrapper keeps its result."
+
+# The result is checked once more before the model sees it.
+push -> post : running "A listener may replace the result, block it or add context."
+push -> log : done "One tool/result per call, in the order the model asked."

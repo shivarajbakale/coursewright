@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The client sends request id 2 and request id 3, and the response for id 3 arrives first. What does the client do?",
+      "options": [
+        "Treats it as the answer to id 2, because it arrived first",
+        "Matches it to request 3 by its id",
+        "Sends request 2 again",
+        "Closes the pipe, because the order is wrong"
+      ],
+      "answer": 1,
+      "explanation": "Each response carries the id of its request, so the client matches answers by id, not by arrival order.",
+      "conceptKeys": [
+        "json-rpc-stdio"
+      ]
+    },
+    {
+      "prompt": "The session/prompt response arrives. What does it tell the client?",
+      "options": [
+        "The model's final answer",
+        "That the turn ended with reason completed",
+        "Only that the message was queued; events and session/wait show the rest",
+        "That the session was saved to its file"
+      ],
+      "answer": 2,
+      "explanation": "The response returns at once with a message id. The turn's progress comes later as session.event notifications.",
+      "conceptKeys": [
+        "json-rpc-stdio"
+      ]
+    },
+    {
+      "prompt": "A plugin in the server process writes a log line to standard output. What goes wrong?",
+      "options": [
+        "The client reads a line that is not a protocol message, because standard output carries the protocol",
+        "Nothing, because JSON-RPC ignores logs",
+        "The log becomes a notification",
+        "The model sees the log"
+      ],
+      "answer": 0,
+      "explanation": "Standard output is the protocol channel, one JSON message per line. Logs must go to standard error so they do not mix with messages.",
+      "conceptKeys": [
+        "json-rpc-stdio"
+      ]
+    }
+  ],
+  "diagrams": []
+}

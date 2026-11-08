@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The session has 11 events for the notes.txt turn. Why does messagesFrom return only 4 messages?",
+      "options": [
+        "Only user, assistant and tool result events become messages; markers and tool/call are skipped",
+        "The function drops the oldest events to save tokens",
+        "Each message joins exactly three events",
+        "Tool results are not sent to the model"
+      ],
+      "answer": 0,
+      "explanation": "Events 2, 3, 5 and 8 are messages the model must see. The turn and step markers and the tool/call record stay in the session only.",
+      "conceptKeys": [
+        "derived-history"
+      ]
+    },
+    {
+      "prompt": "A tool result event is followed by a user/message with the time. What does add do with them?",
+      "options": [
+        "It keeps them as two separate user messages",
+        "It drops the time because it came second",
+        "It joins them into one user message so the roles still alternate",
+        "It turns the time into an assistant message"
+      ],
+      "answer": 2,
+      "explanation": "add joins two messages in a row with the same role. Both are user messages, so they become one, and the roles stay user, assistant, user.",
+      "conceptKeys": [
+        "derived-history"
+      ]
+    },
+    {
+      "prompt": "Why is it safe that the message list is never stored?",
+      "options": [
+        "Because the model remembers the earlier messages",
+        "Because it can be rebuilt from the session at any time, so it can never disagree with the record",
+        "Because the session file stores the list for you",
+        "Because messages never change during a turn"
+      ],
+      "answer": 1,
+      "explanation": "A projection is computed from the record by a fixed rule. The same events always give the same messages, so there is no second copy to drift.",
+      "conceptKeys": [
+        "derived-history",
+        "model-visible-logged"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Where does the system prompt go in the request format DeepSeek uses?",
+      "options": [
+        "In the first user message",
+        "In the x-api-key header",
+        "In a separate system field at the top of the body",
+        "In the last assistant message"
+      ],
+      "answer": 2,
+      "explanation": "In this format the system prompt has its own system field. The messages list holds only user and assistant messages.",
+      "conceptKeys": [
+        "message-roles"
+      ]
+    },
+    {
+      "prompt": "You put an assistant message in the request that the model never wrote. What does the model do with it?",
+      "options": [
+        "It treats it as its own earlier answer, because a role is only a label in the text",
+        "It rejects the request, because it remembers its real answers",
+        "It ignores every assistant message",
+        "It treats it as the system prompt"
+      ],
+      "answer": 0,
+      "explanation": "The model keeps no record of what it said. It reads the role label and treats the text as its own earlier answer.",
+      "conceptKeys": [
+        "message-roles"
+      ]
+    },
+    {
+      "prompt": "Why does \"And of Italy?\" get the answer \"The capital of Italy is Rome.\"?",
+      "options": [
+        "The model looks up Italy in a database of capitals",
+        "The earlier messages in the same request set the topic and the pattern of the answer",
+        "The system prompt names Italy",
+        "The API key stores the earlier question"
+      ],
+      "answer": 1,
+      "explanation": "The question alone is unclear. The earlier user and assistant messages in the same request give the topic, capitals, and the sentence pattern to follow.",
+      "conceptKeys": [
+        "message-roles"
+      ]
+    }
+  ],
+  "diagrams": []
+}

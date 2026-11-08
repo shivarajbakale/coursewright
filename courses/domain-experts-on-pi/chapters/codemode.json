@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A codemode script calls prices once and returns three numbers. What enters the model's context?",
+      "options": [
+        "All 250 prices and the three numbers",
+        "Only the three numbers the script returned",
+        "Nothing, because scripts cannot return values",
+        "The script's source code only"
+      ],
+      "answer": 1,
+      "explanation": "Only what the script prints or returns goes back to the model. The prices stay in the sandbox.",
+      "conceptKeys": [
+        "codemode"
+      ]
+    },
+    {
+      "prompt": "A script calls a tool with arguments that break its schema. What happens?",
+      "options": [
+        "The schema is skipped inside scripts",
+        "The call fails the same way a direct call would",
+        "The sandbox fixes the arguments",
+        "The script gets more memory"
+      ],
+      "answer": 1,
+      "explanation": "Script calls go through pi's normal tool pipeline, so schemas and guards apply to each call.",
+      "conceptKeys": [
+        "codemode"
+      ]
+    },
+    {
+      "prompt": "Which of these can a codemode script do?",
+      "options": [
+        "Read a file with require",
+        "Call fetch on a web address",
+        "Call a tool it was given as tools.name(args)",
+        "Start a timer"
+      ],
+      "answer": 2,
+      "explanation": "The sandbox has no file system, network, timers, fetch, process or require. Its only power is calling its tools.",
+      "conceptKeys": [
+        "codemode"
+      ]
+    }
+  ],
+  "diagrams": []
+}

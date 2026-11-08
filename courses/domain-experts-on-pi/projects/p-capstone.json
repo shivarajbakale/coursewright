@@ -1,0 +1,96 @@
+{
+  "title": "Finish the fleet: SQL, Kubernetes and quant behind one router",
+  "brief": "Complete all three experts and run them as one fleet. You finish the SQL pack with 20 golden tasks and every layer of defence, build the Kubernetes pack with kube_get, kube_apply, an approval gate, a kube-system gate and no delete tool, and build the quant pack around a prices tool that only a codemode script can call. You register all three behind the router, write a trace test for a two-part task, and produce a report with pass rate, lift, flaky tasks and cost by expert. When you finish, fleet answers a question across two experts, refuses what each expert must refuse, and has numbers that show whether each pack earns its place. Code tests need no model. The full report needs DEEPSEEK_API_KEY and, for the Kubernetes tasks, a local test cluster such as kind or k3d.",
+  "starter": [
+    {
+      "path": "fleet/packs/sql/evals/tasks.json",
+      "note": "Edit. Grow to 20 golden tasks, three of them refusals. Run with 5 repeats, control against pack."
+    },
+    {
+      "path": "fleet/packs/k8s/extension.ts",
+      "note": "Edit. kube_get with an enum for kind, kube_apply with the approval gate, a gate that refuses the kube-system namespace, commands sent through the container backend. No delete tool and no bash."
+    },
+    {
+      "path": "fleet/packs/k8s/prompt.md",
+      "note": "New. The operator role: read freely, ask before any change, never delete."
+    },
+    {
+      "path": "fleet/packs/quant/extension.ts",
+      "note": "New. The prices tool ({ symbol, from, to }) that reads a local CSV and returns daily closes, with codemode exposure."
+    },
+    {
+      "path": "fleet/packs/quant/prompt.md",
+      "note": "New. The researcher role: work in one codemode script, return short numbers, say when the future cannot be known."
+    },
+    {
+      "path": "fleet/packs/quant/data/AAPL.csv",
+      "note": "New. One year of made-up daily closes for the tests. They are fixture data, not market data."
+    },
+    {
+      "path": "fleet/router/experts.ts",
+      "note": "Edit. Register sql, k8s and quant, each with the base pack first and its own agent folder."
+    },
+    {
+      "path": "fleet/scripts/report.ts",
+      "note": "New. Runs the eval runner for all experts and prints pass rate, lift, flaky tasks, tokens and cost by expert."
+    },
+    {
+      "path": "fleet/test/capstone.test.ts",
+      "note": "New. Checks for each expert, plus a trace test with stub experts. No network."
+    }
+  ],
+  "hints": [
+    "List the SQL defence layers in a comment at the top of packs/sql/extension.ts: no write tools, tight schema, gate, read-only file, read-only mount, container. Test at least the first four.",
+    "For Kubernetes, the safest delete tool is the one that does not exist. Test that the tool list has no name containing delete, and that the model's request to delete is refused for that reason.",
+    "Gate order matters: the headless-approval gate and the kube-system gate both run on kube_apply. Test that kube-system is refused even when a person says yes.",
+    "Recompute the quant backtest in plain TypeScript in the test and compare totalReturn to the script's answer within 0.1 percentage points. Never grade the prose.",
+    "A codemode script has no network or file access, so prices must be the only way in. Put a timeout line at the top of long scripts.",
+    "For the trace test, use stub experts that return fixed text, and check that both steps and both decisions are logged and that the second task holds the first answer.",
+    "Judge a pack by lift and by cost together. A pack that passes more tasks at three times the tokens is a trade-off, not a win."
+  ],
+  "rubric": [
+    {
+      "criterion": "The SQL pack has the prompt, skill, template, tools, gate, mask, tight schemas and 20 golden tasks including three refusals, with an example results table labelled as a goal and not as measured numbers",
+      "chapterKey": "sql-expert"
+    },
+    {
+      "criterion": "The Kubernetes pack has kube_get with an enum, kube_apply behind approval, a kube-system gate, commands through a container, and no delete tool and no bash",
+      "chapterKey": "k8s-expert"
+    },
+    {
+      "criterion": "The quant pack serves prices to codemode scripts, a test recomputes the backtest within 0.1 percentage points, and a request for tomorrow's price is refused with a reason",
+      "chapterKey": "quant-expert"
+    },
+    {
+      "criterion": "All three experts sit behind the router, a two-part task runs as a logged chain, and the report shows lift and cost by expert for the maintenance loop",
+      "chapterKey": "expert-fleet"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "SQL expert complete",
+      "body": "Finish the SQL pack and its 20 tasks. The test checks the tool list, the gate, the mask, the read-only database, the count of tasks and that three of them expect a refusal.",
+      "checkCmd": "npx tsx test/capstone.test.ts --only sql"
+    },
+    {
+      "title": "Kubernetes expert with no delete",
+      "body": "Build the Kubernetes pack with a fake runner in place of kubectl. The test checks that kube_get rejects a kind outside the enum, that kube_apply is refused without a screen, that a kube-system manifest is refused even after a yes, and that no tool name contains delete.",
+      "checkCmd": "npx tsx test/capstone.test.ts --only k8s"
+    },
+    {
+      "title": "Quant expert in codemode",
+      "body": "Build prices and the prompt. The test runs the 20 against 50 day crossover script on the fixture CSV, recomputes it in TypeScript and compares totalReturn within 0.1 percentage points. It also checks that only three numbers come back, not the daily closes.",
+      "checkCmd": "npx tsx test/capstone.test.ts --only quant"
+    },
+    {
+      "title": "Trace one task through the fleet",
+      "body": "Register all three experts in the router. With stubs, the task about German revenue and a 5% price rise must go to sql first, then quant, with two decisions in decisions.jsonl and the sql answer inside the quant task.",
+      "checkCmd": "npx tsx test/capstone.test.ts --only trace"
+    },
+    {
+      "title": "The fleet report",
+      "body": "Write scripts/report.ts and run it for all three experts with 5 repeats. Read the per-expert table: pass rate for control and pack, lift, flaky tasks, tokens and cost. Turn one failed task or wrong route into a new golden task. This step needs DEEPSEEK_API_KEY, and a local cluster for the Kubernetes tasks.",
+      "checkCmd": "npx tsx scripts/report.ts --repeat 5"
+    }
+  ]
+}

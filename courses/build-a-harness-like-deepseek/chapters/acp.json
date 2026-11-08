@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "An editor sends session/prompt over ACP. When does the response arrive?",
+      "options": [
+        "At once, with a message id",
+        "When the turn ends, with a stop reason",
+        "After the first tool call",
+        "Never; only updates arrive"
+      ],
+      "answer": 1,
+      "explanation": "ACP keeps session/prompt open until the turn is over and then answers with a stopReason. Progress before that comes as session/update notifications.",
+      "conceptKeys": [
+        "acp"
+      ]
+    },
+    {
+      "prompt": "The editor sends a second session/prompt for session s1 while the first is still open. What does the bridge do?",
+      "options": [
+        "Queues it behind the first",
+        "Cancels the first prompt",
+        "Refuses it, because one prompt is already in flight",
+        "Starts a second agent"
+      ],
+      "answer": 2,
+      "explanation": "Each prompt waits for its own turn end, so the bridge allows only one open prompt per session and refuses another.",
+      "conceptKeys": [
+        "acp"
+      ]
+    },
+    {
+      "prompt": "A dsh turn ends with reason max-tokens. Which stopReason does the editor get?",
+      "options": [
+        "max_tokens",
+        "end_turn",
+        "cancelled",
+        "error"
+      ],
+      "answer": 0,
+      "explanation": "The codec maps the harness reason to ACP's words: max-tokens becomes max_tokens, interrupted becomes cancelled, and the rest become end_turn.",
+      "conceptKeys": [
+        "acp"
+      ]
+    }
+  ],
+  "diagrams": []
+}

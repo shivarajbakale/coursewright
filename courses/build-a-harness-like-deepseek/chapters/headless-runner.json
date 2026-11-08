@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The model answers in text, but the last turn ended with reason max-tokens. What exit code does the runner return?",
+      "options": [
+        "0, because there is an answer to print",
+        "1, because only a completed turn returns 0",
+        "2, a special code for long answers",
+        "No code, because the runner waits for more tokens"
+      ],
+      "answer": 1,
+      "explanation": "The runner reads the last turn/end reason from the record. Only completed gives 0, so max-tokens gives 1 even though text was printed.",
+      "conceptKeys": [
+        "headless-runner"
+      ]
+    },
+    {
+      "prompt": "Why does the runner write reasoning to standard error and not to standard output?",
+      "options": [
+        "Standard error is faster",
+        "Reasoning is always an error",
+        "Standard output must hold only the final answer, so a script can read it",
+        "The model sends reasoning on a different socket"
+      ],
+      "answer": 2,
+      "explanation": "A script reads standard output as the answer. Keeping the live reasoning on standard error leaves that output clean.",
+      "conceptKeys": [
+        "headless-runner",
+        "live-event-stream"
+      ]
+    },
+    {
+      "prompt": "Why does the runner read events only from firstSeq onward?",
+      "options": [
+        "So an earlier turn in a resumed session cannot give this run its answer or result",
+        "Because older events are deleted",
+        "Because the model only sees new events",
+        "To make the record file smaller"
+      ],
+      "answer": 0,
+      "explanation": "A resumed session already has events. Only the events this run added describe this task, so an older completed turn cannot make it look successful.",
+      "conceptKeys": [
+        "headless-runner"
+      ]
+    }
+  ],
+  "diagrams": []
+}

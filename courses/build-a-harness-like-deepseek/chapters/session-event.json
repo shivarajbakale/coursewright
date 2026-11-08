@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A session has events with seq 0, 1, 2, 4. What does this tell a reader?",
+      "options": [
+        "Event 3 was ignored by the model",
+        "An event was lost, because sequence numbers never skip",
+        "Event 4 came from a different session",
+        "The record is normal, because numbers can skip after a tool call"
+      ],
+      "answer": 1,
+      "explanation": "append sets seq to the list length, so the numbers always run 0, 1, 2, 3 with no gap. A missing 3 means an event is lost.",
+      "conceptKeys": [
+        "session-event"
+      ]
+    },
+    {
+      "prompt": "Why does append copy the data through JSON before storing it?",
+      "options": [
+        "So the event takes fewer tokens",
+        "So the model can read it as JSON",
+        "So the record can always be saved and a caller's later changes cannot reach it",
+        "So two events can share one sequence number"
+      ],
+      "answer": 2,
+      "explanation": "The JSON copy is a separate object, so later changes by the caller do not change the record. Data JSON cannot hold never enters it, so the record can always be saved.",
+      "conceptKeys": [
+        "session-event"
+      ]
+    },
+    {
+      "prompt": "Why do turns and steps get their own start and end events?",
+      "options": [
+        "So a reader can tell a finished turn from one that stopped part way",
+        "Because the model needs them in every request",
+        "Because append refuses a tool result without them",
+        "To make the sequence numbers start at 1"
+      ],
+      "answer": 0,
+      "explanation": "A turn/start with no turn/end shows a turn that never finished. Without the boundary events, a reader could not tell the two cases apart.",
+      "conceptKeys": [
+        "session-event",
+        "turn-and-step"
+      ]
+    }
+  ],
+  "diagrams": []
+}

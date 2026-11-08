@@ -1,0 +1,102 @@
+{
+  "title": "Subagents, a task board and workflows for mini-dsh",
+  "brief": "Turn mini-dsh from one agent into a tree of agents. Give every agent a durable two-list inbox (followup, steer, inject), put agents in a registry keyed by session id, and add a subagent tool that starts a child with a fresh session up to a depth limit of 1. Fix each child's tools, approval policy and sandbox mode at delegation and log them in the child's own record. When a child goes idle, deliver its last non-empty assistant message to the parent as a settlement notice: a followup when the parent is idle, a steer when it is busy. Then add a shared task board that changes tasks only by compare-and-set on a revision, and a workflow tool whose script calls agent(), parallel() and pipeline() with caller delivery. You build this because it is how one agent hands focused work to others without filling its own context window, and every later surface (the event stream, the SDK, the web gateway) drives agents through this registry and inbox.",
+  "starter": [
+    {
+      "path": "mini-dsh/src/inbox.ts",
+      "note": "Inbox with nextTurn and nextStep lists, add(), claim(target) and hasPending. Record each change as an agent/inbox/spliced event."
+    },
+    {
+      "path": "mini-dsh/src/loop.ts",
+      "note": "The agent with followup, steer, inject, wake(), whenIdle() and status. The turn claims with 'next-turn' first and 'next-step' after, and stays open while nextStep is not empty."
+    },
+    {
+      "path": "mini-dsh/src/agents.ts",
+      "note": "AgentRegistry with create(), resume(), get(), list() and handles whose dispose() stops the loop, removes the entry and unwinds the agent scope."
+    },
+    {
+      "path": "mini-dsh/src/subagent.ts",
+      "note": "The subagent tool: depth check, setup(childCtx, child) for tool restriction, approval never and sandbox mode, and settle() for the notice."
+    },
+    {
+      "path": "mini-dsh/src/team.ts",
+      "note": "TaskBoard over team/task events in the lead's session: create(), list() and update() with expectedRevision; team_task_* tools."
+    },
+    {
+      "path": "mini-dsh/src/workflow.ts",
+      "note": "The workflow tool and the agent(), parallel(), pipeline() hooks, run in the separate process from programmatic tool calling, with MAX_TOTAL_AGENTS and MAX_CONCURRENT."
+    },
+    {
+      "path": "mini-dsh/test/agents.test.ts",
+      "note": "Inbox, registry, subagent, isolation and settlement checks with the mock model and a temporary session folder."
+    },
+    {
+      "path": "mini-dsh/test/team.test.ts",
+      "note": "Two agents racing for one task, owner rules, and a three-file workflow with one failed child."
+    }
+  ],
+  "hints": [
+    "Claim next-step messages before the one next-turn message, and only take a next-turn message when a turn opens; the turn ends only when the model answered in text and nextStep is empty.",
+    "Capture the parent's sandbox mode and approval state before the first await in the subagent tool: anything read later can belong to the parent's future.",
+    "Compute depth as max(depth in the session header, depth in the options) + 1, so a resumed child cannot delegate as if it were at the top.",
+    "To find the child's answer, walk its events from the end and take the newest assistant/message whose content is not empty; never include its tool results.",
+    "Keep the revision check and the append in one synchronous block, or run board updates through a single queue, so two updates cannot interleave."
+  ],
+  "rubric": [
+    {
+      "criterion": "Followup opens a turn on an idle agent, steer joins the next step of the running turn, inject waits without waking, and inbox changes survive a resume.",
+      "chapterKey": "agent-inbox"
+    },
+    {
+      "criterion": "The registry keys agents by session id, get() returns the bare agent, and only the handle from create or resume can dispose it.",
+      "chapterKey": "agent-registry"
+    },
+    {
+      "criterion": "The subagent tool returns the child's name at once, the child has a fresh session, and a call above depth 1 returns an error result.",
+      "chapterKey": "subagent"
+    },
+    {
+      "criterion": "A child sees only its allowed tools, every ask in the child is rejected, and its record holds sandbox/mode and approval/policy events with source delegation.",
+      "chapterKey": "child-isolation"
+    },
+    {
+      "criterion": "A settled child sends one subagent-settled notice with its last non-empty reply and stop reason, as a followup to an idle parent and a steer to a busy one.",
+      "chapterKey": "subagent-result"
+    },
+    {
+      "criterion": "Each task change names its expected revision, a stale revision throws, every change adds one to the revision, and board changes wake no agent.",
+      "chapterKey": "agent-team"
+    },
+    {
+      "criterion": "A workflow script's agent() returns the child's text or null, uses caller delivery so the parent inbox gets no notices, and a tripped cap ends the whole script.",
+      "chapterKey": "workflow"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "A durable inbox with steer and followup",
+      "body": "Write Inbox and the three entry methods. With the mock model, steer a message during step 1 and check that step 2 claims it, and that a followup sent during turn 1 opens turn 2. Restart from the JSONL file with one message waiting and check that it is still pending.",
+      "checkCmd": "npx tsx test/agents.test.ts --inbox"
+    },
+    {
+      "title": "A registry and the subagent tool",
+      "body": "Write AgentRegistry and the subagent tool. Check that create, get, list and dispose behave as in the agent registry trace, that a child starts with an empty session, and that a child calling subagent receives an error result.",
+      "checkCmd": "npx tsx test/agents.test.ts --subagent"
+    },
+    {
+      "title": "Isolation and settlement",
+      "body": "Add setup() with the tool restriction, the delegation note and the two delegation events, then settle(). Check that a child's ask is rejected, that its record shows the policy, and that its closing reply reaches an idle parent as a followup and a busy parent as a steer.",
+      "checkCmd": "npx tsx test/agents.test.ts --settle"
+    },
+    {
+      "title": "A task board with compare-and-set",
+      "body": "Write TaskBoard and the team_task tools. Two agents read task-1 at revision 1; the first claim succeeds with revision 2 and the second throws a stale-revision error. Only the owner or the lead may complete the task.",
+      "checkCmd": "npx tsx test/team.test.ts --board"
+    },
+    {
+      "title": "A workflow over three files",
+      "body": "Write the workflow tool and its hooks. Run the review-and-fix script over 3 files where the second review fails, and check that the tool result is { reviewed: 3, fixed: 2 } with agentsStarted 5 and that the parent inbox received no settlement notices.",
+      "checkCmd": "npx tsx test/team.test.ts --workflow"
+    }
+  ]
+}

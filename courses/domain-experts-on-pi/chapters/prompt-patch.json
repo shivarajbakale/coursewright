@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A log has a full first system message and one later system message with only sections: { skills: \"...\" }. What is the prompt in force after both?",
+      "options": [
+        "Only the skills section, because it is the newest",
+        "The first message with its skills section replaced and every other section unchanged",
+        "The first message unchanged, because patches are ignored",
+        "The later message with all other sections removed"
+      ],
+      "answer": 1,
+      "explanation": "A patch replaces only the sections it names. Replaying the first message and then the patch gives the current prompt.",
+      "conceptKeys": [
+        "prompt-patch"
+      ]
+    },
+    {
+      "prompt": "How does a patch remove a section from the prompt?",
+      "options": [
+        "It sets the section to null",
+        "It sends an empty system message",
+        "It deletes the old system message from the file",
+        "It adds the section name to toolsRemoved"
+      ],
+      "answer": 0,
+      "explanation": "In the sections map, a value of null removes that section. toolsRemoved lists tools, not sections.",
+      "conceptKeys": [
+        "prompt-patch"
+      ]
+    },
+    {
+      "prompt": "Why does the log give an expert value when the prompt is stored this way?",
+      "options": [
+        "The model reads the log faster",
+        "The log alone shows which instructions and tools the model had at every point",
+        "The prompt can no longer change during a session",
+        "The log makes the prompt shorter"
+      ],
+      "answer": 1,
+      "explanation": "Because each change is a message in the log, replaying the log up to any point shows the exact prompt and tools then in force.",
+      "conceptKeys": [
+        "prompt-patch"
+      ]
+    }
+  ],
+  "diagrams": []
+}

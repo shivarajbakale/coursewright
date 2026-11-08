@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A tool_result handler throws an error while masking emails. What does the model receive?",
+      "options": [
+        "Nothing, because pi blocks the result",
+        "The original, unmasked result, and pi reports an extension error",
+        "An empty result with the error flag set",
+        "A result with every field replaced by [email]"
+      ],
+      "answer": 1,
+      "explanation": "A handler that throws does not block the result. pi reports an extension error and lets the original through, so you must test the rewrite.",
+      "conceptKeys": [
+        "result-rewrite"
+      ]
+    },
+    {
+      "prompt": "Two tool_result handlers run on one result. What does the second handler see?",
+      "options": [
+        "The original result from the tool",
+        "Only the fields the first handler left out",
+        "The result with the first handler's changes applied",
+        "An empty event"
+      ],
+      "answer": 2,
+      "explanation": "Handlers chain. Each one sees the changes made by the handler before it.",
+      "conceptKeys": [
+        "result-rewrite"
+      ]
+    },
+    {
+      "prompt": "The example handler returns only a new content field. What happens to the details field?",
+      "options": [
+        "It stays as it was, so your own code can still read the full rows",
+        "It is deleted, because every field must be returned",
+        "It is copied into the content",
+        "It is sent to the model in place of the content"
+      ],
+      "answer": 0,
+      "explanation": "A handler returns only the fields it wants to change. A field it leaves out stays unchanged.",
+      "conceptKeys": [
+        "result-rewrite"
+      ]
+    }
+  ],
+  "diagrams": []
+}

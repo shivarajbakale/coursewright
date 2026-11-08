@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the runner give each task its own copy of the fixture?",
+      "options": [
+        "So tasks can share answers",
+        "So one task's changes cannot change the starting data of the next",
+        "So the model can see all fixtures at once",
+        "Because pi cannot open a file twice"
+      ],
+      "answer": 1,
+      "explanation": "If task one deletes a row, the right answer for task two would change. A fresh copy removes that risk.",
+      "conceptKeys": [
+        "eval-runner"
+      ]
+    },
+    {
+      "prompt": "In JSON mode a model call fails, and the pi process exits with code 0. How does the runner find the failure?",
+      "options": [
+        "It reads the events and checks each assistant message's stop reason",
+        "It waits for a nonzero exit code",
+        "It counts the lines of output",
+        "It reruns the task until the code is 1"
+      ],
+      "answer": 0,
+      "explanation": "The exit code stays 0 after a failed model call. The events carry the stop reason, so the runner reads them.",
+      "conceptKeys": [
+        "eval-runner"
+      ]
+    },
+    {
+      "prompt": "Why pass --session-dir with a folder inside the fresh folder?",
+      "options": [
+        "It makes the run faster",
+        "It keeps the session file, so you can read later what the expert did",
+        "It lets two tasks share one session",
+        "It turns on JSON mode"
+      ],
+      "answer": 1,
+      "explanation": "Without a session file there is nothing to read afterwards. --session-dir keeps it next to the score.",
+      "conceptKeys": [
+        "eval-runner"
+      ]
+    }
+  ],
+  "diagrams": []
+}

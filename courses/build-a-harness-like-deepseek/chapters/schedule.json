@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The hourly task `0 * * * *` was offline from 5:30 to 10:30. How many messages does the agent receive at 10:30?",
+      "options": [
+        "Five, one for each missed hour",
+        "One, for the latest due time, 10:00",
+        "None, because missed times are dropped",
+        "Two, the first and the last missed hour"
+      ],
+      "answer": 1,
+      "explanation": "Five times were due, but the scheduler sends only the newest one. That saves four model requests about the same check.",
+      "conceptKeys": [
+        "schedule"
+      ]
+    },
+    {
+      "prompt": "What does the cron pattern `0 9 * * 1-5` mean?",
+      "options": [
+        "Every 9 minutes on 5 days",
+        "At 9:00 on Monday to Friday",
+        "At 0:09 on the first five days of each month",
+        "Nine times a day, five days a week"
+      ],
+      "answer": 1,
+      "explanation": "The fields are minute, hour, day of month, month and weekday: minute 0, hour 9, any date, any month, weekdays 1 to 5.",
+      "conceptKeys": [
+        "schedule"
+      ]
+    },
+    {
+      "prompt": "Why does the scheduler send the prompt as a followup?",
+      "options": [
+        "A followup opens a new turn on an idle agent, like a person's message",
+        "A followup joins the current step without waking the agent",
+        "A followup skips the session record",
+        "A followup cancels the agent's current turn"
+      ],
+      "answer": 0,
+      "explanation": "Nobody else starts a turn at 9:00. A followup wakes the idle agent and opens a turn for the prompt.",
+      "conceptKeys": [
+        "schedule",
+        "agent-inbox"
+      ]
+    }
+  ],
+  "diagrams": []
+}

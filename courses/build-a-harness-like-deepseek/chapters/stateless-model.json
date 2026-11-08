@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "Request 1 said \"My name is Priya.\" Request 2 holds only \"What is my name?\". Why does the model not know the name?",
+      "options": [
+        "The API key changed between the requests",
+        "The model keeps nothing between requests, and request 2 does not contain the name",
+        "The model forgets names on purpose",
+        "Request 2 was too large for the context window"
+      ],
+      "answer": 1,
+      "explanation": "A stateless model answers from what one request contains. Request 2 has no earlier message, so the name is not there.",
+      "conceptKeys": [
+        "stateless-model"
+      ]
+    },
+    {
+      "prompt": "The chat function has been called 3 times. How many messages does the third request send?",
+      "options": [
+        "3",
+        "1",
+        "6",
+        "5"
+      ],
+      "answer": 3,
+      "explanation": "Before the third request the list holds 2 user and 2 assistant messages from the first two calls, plus the new user message: 5 in all.",
+      "conceptKeys": [
+        "stateless-model"
+      ]
+    },
+    {
+      "prompt": "What is the cost of a stateless model for your program?",
+      "options": [
+        "Each request sends the earlier tokens again, so you pay for them again",
+        "The provider charges for storing your conversation",
+        "The model can only answer one question per day",
+        "The program cannot see the reply"
+      ],
+      "answer": 0,
+      "explanation": "Because the model remembers nothing, every request repeats the conversation so far. Those tokens count and are charged in every request.",
+      "conceptKeys": [
+        "stateless-model",
+        "token"
+      ]
+    }
+  ],
+  "diagrams": []
+}

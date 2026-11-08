@@ -1,0 +1,94 @@
+{
+  "title": "Join mini-dsh into one tested harness",
+  "brief": "Join every module's parts into one mini-dsh: the plugin kernel and a profile mount the record, the DeepSeek adapter, the tool pipeline and sandbox, context management, agents and the JSON-RPC SDK surface. Then prove it works without trusting the model: a mock adapter for the loop, a fault server for the adapter and retry, replay tests that run recorded sessions through the JSON-RPC surface, and outcome checks that compare the files and the record. Finish with a written trace of one request through every layer, naming the dsh package that fills each one.",
+  "starter": [
+    {
+      "path": "mini-dsh/profiles/sdk.yml",
+      "note": "The complete row list for the SDK profile: kernel services, session, persistence, llm, deepseek adapter, retry, tools, sandbox policy, bash, system prompt, compaction, agents, loop, sdk-server."
+    },
+    {
+      "path": "mini-dsh/src/main.ts",
+      "note": "Boots the kernel from --profile, mounts every row, and fails with a clear error when a required row stays pending."
+    },
+    {
+      "path": "mini-dsh/test/mock-adapter.ts",
+      "note": "MockAdapter with a script, recorded requests, 'hang' entries, remaining(), and textReply / toolCallReply helpers."
+    },
+    {
+      "path": "mini-dsh/test/fault-server.ts",
+      "note": "startFaultServer(sequence) on port 0: success, rate_limit with retry-after, server_error, stall; records every request body."
+    },
+    {
+      "path": "mini-dsh/test/replay.ts",
+      "note": "deriveScript(events) from assistant/message blocks, replayAdapter(file), assertConsumed()."
+    },
+    {
+      "path": "mini-dsh/test/scenarios/",
+      "note": "One folder per scenario: workspace/, workspace.expected/, session.jsonl recorded once with a real key."
+    },
+    {
+      "path": "mini-dsh/WALKTHROUGH.md",
+      "note": "Your trace of one session/prompt request through every layer, with the matching dsh package and file for each step."
+    }
+  ],
+  "hints": [
+    "Boot the test harness through the same profile file as the real program and replace only the llm adapter row; a hand-built plugin tree tests a harness you never ship.",
+    "Point the DeepSeek adapter's base URL at the fault server, and give the stall test a short idle timeout so it ends in seconds.",
+    "Record a scenario with MINI_DSH_RECORD=1, then commit its session.jsonl; every later run must work with DEEPSEEK_API_KEY unset.",
+    "Copy workspace/ to a fresh temporary folder for each run, and compare the whole file list as well as each file's bytes.",
+    "Write the walkthrough from the record of a real run: each event type in the file tells you which layer was active."
+  ],
+  "rubric": [
+    {
+      "criterion": "The loop test uses the real tools and record with a scripted adapter and fails when the loop asks for one reply too many",
+      "chapterKey": "mock-adapter"
+    },
+    {
+      "criterion": "A rate limit followed by success gives 2 server requests, 1 llm/retry event and the final answer; a stall ends without hanging",
+      "chapterKey": "fault-server"
+    },
+    {
+      "criterion": "Replay runs a recorded session through the JSON-RPC surface with no key and fails when a recorded reply is unused",
+      "chapterKey": "record-replay"
+    },
+    {
+      "criterion": "Each scenario compares every expected file byte by byte, the file list and the tool results, and never reads the final text",
+      "chapterKey": "verify-the-world"
+    },
+    {
+      "criterion": "The SDK surface answers initialize, session/prompt and session/wait and forwards every session event",
+      "chapterKey": "json-rpc-stdio"
+    },
+    {
+      "criterion": "The walkthrough follows one prompt through kernel, surface, agent loop, record, context, model adapter, tool pipeline and sandbox, each with its dsh package",
+      "chapterKey": "whole-harness"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "One profile mounts the whole harness",
+      "body": "Write profiles/sdk.yml and src/main.ts. In test/boot.test.ts, boot the profile, assert that every row is active, then disable the llm row with a patch and assert that the loop stays pending instead of failing later.",
+      "checkCmd": "npx tsx test/boot.test.ts"
+    },
+    {
+      "title": "The loop under a scripted model",
+      "body": "Boot the profile with the llm row replaced by MockAdapter. Script a count_lines call and a text reply, then assert the second request carries the tool result for call_1 and that a third request throws script exhausted.",
+      "checkCmd": "npx tsx test/loop.test.ts"
+    },
+    {
+      "title": "The adapter and retry under real failures",
+      "body": "Run the real DeepSeek adapter against the fault server with ['rate_limit', 'success'] and then with ['stall']. Assert request counts, the llm/retry event, the final text, and that the stall ends with an error turn within 10 seconds.",
+      "checkCmd": "npx tsx test/retry.test.ts"
+    },
+    {
+      "title": "Replay through the JSON-RPC surface",
+      "body": "Record test/scenarios/add-done once over JSON-RPC with a real key. Then replay it: spawn src/main.ts --profile sdk with the replay adapter, send initialize and session/prompt as JSON lines, wait with session/wait, and call assertConsumed().",
+      "checkCmd": "env -u DEEPSEEK_API_KEY npx tsx test/sdk-replay.test.ts"
+    },
+    {
+      "title": "Outcome checks and the walkthrough",
+      "body": "Compare the replayed run's workspace with workspace.expected/ byte by byte, check the file list and the tool results, and write WALKTHROUGH.md: one session/prompt request, layer by layer, with the dsh package for each step.",
+      "checkCmd": "env -u DEEPSEEK_API_KEY npx tsx test/outcome.test.ts && test -s WALKTHROUGH.md"
+    }
+  ]
+}

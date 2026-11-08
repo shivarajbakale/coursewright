@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A helper adds the current time to the messages array right before the request, without appending an event. What breaks?",
+      "options": [
+        "The model cannot read the time",
+        "The request can no longer be rebuilt from the session, so a later reader cannot explain the answer",
+        "The sequence numbers get a gap",
+        "The tool result loses its call id"
+      ],
+      "answer": 1,
+      "explanation": "The model saw the time but the session has no event for it. Anyone who rebuilds the request from the session gets a different request from the one sent.",
+      "conceptKeys": [
+        "model-visible-logged"
+      ]
+    },
+    {
+      "prompt": "How can a test check that the rule holds?",
+      "options": [
+        "Count the events and compare the count to the number of requests",
+        "Check that every event has a time",
+        "Compare each saved request with the messages built from the events that existed at that moment",
+        "Check that the model never uses a tool twice"
+      ],
+      "answer": 2,
+      "explanation": "If every input was logged, building messages from the events reproduces each sent request exactly. Any difference shows an input that skipped the session.",
+      "conceptKeys": [
+        "model-visible-logged"
+      ]
+    },
+    {
+      "prompt": "In runStep, why is the tool result appended as an event instead of pushed to an array?",
+      "options": [
+        "So the next request, built from the session, contains it",
+        "Because arrays cannot hold tool results",
+        "So the tool runs faster",
+        "Because the model reads the session file directly"
+      ],
+      "answer": 0,
+      "explanation": "The next request is built only from the session. A result that is not an event would never reach the model.",
+      "conceptKeys": [
+        "model-visible-logged",
+        "tool-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

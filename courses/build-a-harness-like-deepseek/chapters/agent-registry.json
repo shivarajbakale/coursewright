@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A web route calls get('s-2') and receives the agent. What can it not do with that object?",
+      "options": [
+        "Send the agent a followup",
+        "Read the agent's session id",
+        "Dispose the agent, because only the handle can",
+        "Steer the agent during a turn"
+      ],
+      "answer": 2,
+      "explanation": "get returns the bare agent. The dispose function lives only on the handle that create or resume returned to the owner.",
+      "conceptKeys": [
+        "agent-registry"
+      ]
+    },
+    {
+      "prompt": "Why does resume take a session id instead of making a new one?",
+      "options": [
+        "The session id names the saved file the agent rebuilds from",
+        "A resumed agent must have a shorter id",
+        "The registry can hold only one agent at a time",
+        "Resume skips the session and starts an empty agent"
+      ],
+      "answer": 0,
+      "explanation": "The id is also the file name, so resume opens that file and rebuilds history and waiting inbox messages from its events.",
+      "conceptKeys": [
+        "agent-registry",
+        "session-resume"
+      ]
+    },
+    {
+      "prompt": "Two agents run. The owner of s-2 calls dispose. What does list() return next?",
+      "options": [
+        "2 agents, because dispose only pauses the loop",
+        "1 agent, because dispose removes s-2 from the map",
+        "0 agents, because dispose stops every agent",
+        "An error, because s-2 still has a session file"
+      ],
+      "answer": 1,
+      "explanation": "dispose stops the loop, deletes the map entry and removes the scope. Only s-1 stays in the map.",
+      "conceptKeys": [
+        "agent-registry"
+      ]
+    }
+  ],
+  "diagrams": []
+}

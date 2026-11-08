@@ -1,0 +1,2005 @@
+{
+  "title": "Build your own agent harness like DeepSeek's",
+  "topic": "How the DeepSeek Harness agent harness is built, from first principles",
+  "summary": "Starting from what a language model is, you learn every part of an agent harness and how the open-source DeepSeek Harness builds it, from its source code. Module by module you write mini-dsh in TypeScript: a plugin kernel, an event log, a DeepSeek adapter, safe tools, a sandbox, context management, subagents and an SDK.",
+  "colour": "indigo",
+  "concepts": [
+    {
+      "key": "language-model",
+      "name": "Language model",
+      "summary": "A language model writes text by predicting one likely next piece at a time.",
+      "terms": [
+        "probability"
+      ]
+    },
+    {
+      "key": "token",
+      "name": "Tokens",
+      "summary": "Models read and write text as numbered chunks called tokens.",
+      "terms": []
+    },
+    {
+      "key": "context-window",
+      "name": "The context window",
+      "summary": "A model can only consider a fixed number of tokens in one request.",
+      "terms": []
+    },
+    {
+      "key": "model-api-call",
+      "name": "A model API call",
+      "summary": "Your program sends a JSON request to a hosted model and reads the reply.",
+      "terms": [
+        "API key",
+        "JSON"
+      ]
+    },
+    {
+      "key": "message-roles",
+      "name": "Message roles",
+      "summary": "A chat request is a list of messages labelled system, user or assistant.",
+      "terms": [
+        "system prompt"
+      ]
+    },
+    {
+      "key": "stateless-model",
+      "name": "A stateless model",
+      "summary": "The model remembers nothing between requests, so the program sends the history every time.",
+      "terms": []
+    },
+    {
+      "key": "streaming",
+      "name": "Streaming",
+      "summary": "A reply can come as a stream of small events, and it ends with a reason the model stopped.",
+      "terms": [
+        "server-sent events",
+        "stop reason"
+      ]
+    },
+    {
+      "key": "tool-schema",
+      "name": "Tool schema",
+      "summary": "Each function is described by a name, a description and a JSON Schema for its arguments.",
+      "terms": [
+        "JSON Schema"
+      ]
+    },
+    {
+      "key": "tool-call",
+      "name": "Tool call",
+      "summary": "Instead of text, the model can reply with a structured request to run one function.",
+      "terms": []
+    },
+    {
+      "key": "tool-result",
+      "name": "Tool result",
+      "summary": "The program runs the function and sends the outcome back, matched by a call id.",
+      "terms": [
+        "call id"
+      ]
+    },
+    {
+      "key": "agent-loop",
+      "name": "The agent loop",
+      "summary": "A program repeats model request, function run and result until the model answers in text.",
+      "terms": []
+    },
+    {
+      "key": "turn-and-step",
+      "name": "Turn",
+      "summary": "A turn answers the user once; each model request inside it is a step, and a limit caps the steps.",
+      "terms": [
+        "step limit"
+      ]
+    },
+    {
+      "key": "tool-error-result",
+      "name": "Tool error result",
+      "summary": "A failed function still returns a result, marked as an error, so the model can try again.",
+      "terms": []
+    },
+    {
+      "key": "first-agent",
+      "name": "The first agent",
+      "summary": "All the pieces so far, joined into one working agent of about sixty lines.",
+      "terms": []
+    },
+    {
+      "key": "append-only-log",
+      "name": "Append-only log",
+      "summary": "Writing every fact in order and never editing an old fact.",
+      "terms": [
+        "append"
+      ]
+    },
+    {
+      "key": "session-event",
+      "name": "Session event",
+      "summary": "Each fact has a type, a sequence number, a time and its data.",
+      "terms": [
+        "sequence number"
+      ]
+    },
+    {
+      "key": "model-visible-logged",
+      "name": "Model-visible means logged",
+      "summary": "Anything the model sees must first be written to the record, so any request can be rebuilt.",
+      "terms": []
+    },
+    {
+      "key": "derived-history",
+      "name": "Derived history",
+      "summary": "The messages sent to the model are made by reading the record from the start.",
+      "terms": [
+        "projection"
+      ]
+    },
+    {
+      "key": "logged-system-prompt",
+      "name": "The logged system prompt",
+      "summary": "The system prompt is written to the record as a message, not passed beside it.",
+      "terms": []
+    },
+    {
+      "key": "jsonl-storage",
+      "name": "JSONL storage",
+      "summary": "The record is saved as a file with one JSON event per line, written before each model call.",
+      "terms": [
+        "flush"
+      ]
+    },
+    {
+      "key": "session-resume",
+      "name": "Session resume",
+      "summary": "Reading the file back and closing any turn that was cut off.",
+      "terms": [
+        "closer"
+      ]
+    },
+    {
+      "key": "orphaned-tool-call",
+      "name": "Orphaned tool call",
+      "summary": "When a call has no result, the program writes a made-up error result so the history stays valid.",
+      "terms": []
+    },
+    {
+      "key": "format-version",
+      "name": "Format versions",
+      "summary": "Each layout version has its own file name, and small steps convert one version to the next.",
+      "terms": [
+        "migration"
+      ]
+    },
+    {
+      "key": "stream-chunk",
+      "name": "Stream chunk",
+      "summary": "A shared list of piece types: block start, text, reasoning, tool arguments, block end, usage, finish.",
+      "terms": [
+        "delta"
+      ]
+    },
+    {
+      "key": "block-assembler",
+      "name": "Block assembler",
+      "summary": "A small function folds the pieces of a stream into complete text and tool-call blocks.",
+      "terms": []
+    },
+    {
+      "key": "adapter-seam",
+      "name": "Adapter seam",
+      "summary": "Every provider sits behind one stream method, so the loop never knows which one it talks to.",
+      "terms": [
+        "adapter"
+      ]
+    },
+    {
+      "key": "deepseek-wire",
+      "name": "The DeepSeek wire",
+      "summary": "DeepSeek accepts a subset of the Anthropic Messages format, which the adapter writes and reads.",
+      "terms": [
+        "wire format"
+      ]
+    },
+    {
+      "key": "reasoning-block",
+      "name": "Reasoning block",
+      "summary": "DeepSeek streams thinking with a signature, and the harness sends it back unchanged on later requests.",
+      "terms": [
+        "signature"
+      ]
+    },
+    {
+      "key": "prefix-caching",
+      "name": "Prefix caching",
+      "summary": "The provider reuses work when a request begins with the same bytes, so the harness only appends.",
+      "terms": [
+        "cache hit"
+      ]
+    },
+    {
+      "key": "retry-backoff",
+      "name": "Retry with backoff",
+      "summary": "A failed request is retried after a growing wait, and each retry is written to the record.",
+      "terms": [
+        "backoff"
+      ]
+    },
+    {
+      "key": "cancellation",
+      "name": "Cancellation",
+      "summary": "An abort signal stops the stream; what arrived is kept and the turn ends with a reason.",
+      "terms": [
+        "AbortSignal"
+      ]
+    },
+    {
+      "key": "plugin-context",
+      "name": "Context",
+      "summary": "Every plugin receives a context object, and child contexts inherit from their parent.",
+      "terms": [
+        "prototype"
+      ]
+    },
+    {
+      "key": "plugin-lifecycle",
+      "name": "Plugin lifecycle",
+      "summary": "A mounted plugin moves from pending to active to disposed.",
+      "terms": [
+        "fiber"
+      ]
+    },
+    {
+      "key": "effect-disposer",
+      "name": "Disposer",
+      "summary": "Every registration returns a function that undoes it, run in reverse order when the plugin stops.",
+      "terms": [
+        "disposer"
+      ]
+    },
+    {
+      "key": "service-inject",
+      "name": "Service",
+      "summary": "A plugin names the services it needs and stays pending until they exist.",
+      "terms": [
+        "inject"
+      ]
+    },
+    {
+      "key": "event-modes",
+      "name": "Events",
+      "summary": "Events can be sent to all listeners at once, in order, or until one answers.",
+      "terms": [
+        "listener"
+      ]
+    },
+    {
+      "key": "waterfall-hook",
+      "name": "Waterfall hook",
+      "summary": "Each listener gets a next function; skipping it stops the chain.",
+      "terms": [
+        "middleware"
+      ]
+    },
+    {
+      "key": "isolate-realm",
+      "name": "Isolate realm",
+      "summary": "A context can replace one service name for everything below it, without changing its parent.",
+      "terms": []
+    },
+    {
+      "key": "agent-scope",
+      "name": "Agent scope",
+      "summary": "A tag on a child context makes its listeners and tools apply only to one agent.",
+      "terms": []
+    },
+    {
+      "key": "config-rows",
+      "name": "Config rows",
+      "summary": "The plugin tree is a list of rows, and patches replace or insert rows by id.",
+      "terms": [
+        "patch"
+      ]
+    },
+    {
+      "key": "profiles-bundles",
+      "name": "Profile",
+      "summary": "A profile stacks bundles of rows in order; reloading disposes and mounts again.",
+      "terms": [
+        "bundle",
+        "hot reload"
+      ]
+    },
+    {
+      "key": "define-tool",
+      "name": "defineTool",
+      "summary": "A tool definition converts its parameters to a schema, checks the arguments and returns one value.",
+      "terms": [
+        "value"
+      ]
+    },
+    {
+      "key": "tool-registry",
+      "name": "Tool registry",
+      "summary": "Tools register on a shared service and disappear when their plugin stops.",
+      "terms": []
+    },
+    {
+      "key": "batch-scheduling",
+      "name": "Batch scheduling",
+      "summary": "Calls run in parallel only when each one says it is safe; all others run alone.",
+      "terms": [
+        "concurrency"
+      ]
+    },
+    {
+      "key": "pre-execute",
+      "name": "Pre-execute decision",
+      "summary": "A waterfall of policies decides allow, deny or ask, and guards can only deny.",
+      "terms": [
+        "guard"
+      ]
+    },
+    {
+      "key": "approval",
+      "name": "Approval",
+      "summary": "An ask goes to a person; with nobody to answer, the call is denied.",
+      "terms": [
+        "fail closed"
+      ]
+    },
+    {
+      "key": "around-execute",
+      "name": "Around-execute wrapper",
+      "summary": "A wrapper around the tool body adds timeouts, retries and timing.",
+      "terms": [
+        "timeout"
+      ]
+    },
+    {
+      "key": "post-execute",
+      "name": "Post-execute",
+      "summary": "After a tool runs, listeners can replace the result, block it or add context.",
+      "terms": []
+    },
+    {
+      "key": "output-spill",
+      "name": "Output spill",
+      "summary": "A result that is too large is saved to a file, and the model sees its start, end and the file name.",
+      "terms": []
+    },
+    {
+      "key": "file-tools",
+      "name": "File tools",
+      "summary": "Read, write and edit tools, and why an edit checks that the file did not change.",
+      "terms": [
+        "stale edit"
+      ]
+    },
+    {
+      "key": "shell-tool",
+      "name": "Shell tool",
+      "summary": "A bash tool starts a process with a clean environment and returns its output.",
+      "terms": [
+        "environment variable"
+      ]
+    },
+    {
+      "key": "sandbox-modes",
+      "name": "Sandbox modes",
+      "summary": "A mode names where commands may write, and the workspace folders are the write roots.",
+      "terms": [
+        "write root"
+      ]
+    },
+    {
+      "key": "sandbox-backend",
+      "name": "Sandbox backend",
+      "summary": "Seatbelt on macOS and bwrap on Linux enforce the mode, and a mode that cannot be enforced stops the call.",
+      "terms": [
+        "Seatbelt",
+        "bwrap"
+      ]
+    },
+    {
+      "key": "escalation",
+      "name": "Escalation",
+      "summary": "After a denial the model may retry the same call once with a justification for a person to approve.",
+      "terms": [
+        "justification"
+      ]
+    },
+    {
+      "key": "permission-presets",
+      "name": "Permission presets",
+      "summary": "Named presets join a sandbox mode with an approval policy for one session.",
+      "terms": []
+    },
+    {
+      "key": "prompt-sections",
+      "name": "Prompt sections",
+      "summary": "Plugins add ordered sections, and the harness renders them into one system prompt.",
+      "terms": []
+    },
+    {
+      "key": "runtime-context",
+      "name": "Runtime context",
+      "summary": "A pre-step hook adds facts such as the time as user messages that are logged.",
+      "terms": [
+        "pre-step"
+      ]
+    },
+    {
+      "key": "project-instructions",
+      "name": "Project instructions",
+      "summary": "The harness reads AGENTS.md and adds it again after a tool changes it.",
+      "terms": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "key": "token-meter",
+      "name": "Token meter",
+      "summary": "An estimate of the request's tokens, checked against a threshold below the context window.",
+      "terms": [
+        "threshold"
+      ]
+    },
+    {
+      "key": "safe-cut",
+      "name": "Safe cut",
+      "summary": "Walk back from the newest message and never split a tool call from its result.",
+      "terms": []
+    },
+    {
+      "key": "surface-replacement",
+      "name": "Surface replacement",
+      "summary": "A summary replaces a range in the model's view while the record keeps every fact.",
+      "terms": [
+        "surface"
+      ]
+    },
+    {
+      "key": "overflow-recovery",
+      "name": "Overflow recovery",
+      "summary": "When the provider rejects a request as too large, the harness summarises and retries the step.",
+      "terms": []
+    },
+    {
+      "key": "mcp-client",
+      "name": "MCP client",
+      "summary": "The Model Context Protocol lets the harness list and call tools that another program offers.",
+      "terms": [
+        "MCP"
+      ]
+    },
+    {
+      "key": "mcp-tools",
+      "name": "MCP tools",
+      "summary": "Each server tool is registered under a prefixed name, so every policy applies to it.",
+      "terms": []
+    },
+    {
+      "key": "skills",
+      "name": "Skills",
+      "summary": "A short catalog sits in the prompt, and one tool loads a skill's full text on request.",
+      "terms": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "key": "run-code",
+      "name": "Programmatic tool calling",
+      "summary": "One run_code tool replaces the others, and the model writes a program that calls them.",
+      "terms": [
+        "PTC"
+      ]
+    },
+    {
+      "key": "typed-sdk-channel",
+      "name": "Code channel",
+      "summary": "A generated typed SDK in the prompt, and a JSON-lines channel back to the harness process.",
+      "terms": [
+        "JSON-lines",
+        "RPC"
+      ]
+    },
+    {
+      "key": "sub-call-limits",
+      "name": "Sub-call limits",
+      "summary": "Each call from the program goes through the same policies, with rate and parallel limits.",
+      "terms": []
+    },
+    {
+      "key": "agent-inbox",
+      "name": "Agent inbox",
+      "summary": "Messages wait in an inbox; steer joins the next step, followup the next turn.",
+      "terms": [
+        "steer",
+        "followup"
+      ]
+    },
+    {
+      "key": "agent-registry",
+      "name": "Agent registry",
+      "summary": "A service creates, finds and resumes agents, each with its own session.",
+      "terms": []
+    },
+    {
+      "key": "subagent",
+      "name": "Subagent",
+      "summary": "A tool starts a child agent with a fresh session, up to a depth limit.",
+      "terms": [
+        "depth limit"
+      ]
+    },
+    {
+      "key": "child-isolation",
+      "name": "Child isolation",
+      "summary": "A child gets a restricted tool list and no approval prompts, and its policy is logged.",
+      "terms": []
+    },
+    {
+      "key": "subagent-result",
+      "name": "Subagent result",
+      "summary": "The child's last answer returns to the parent as a message in the parent's inbox.",
+      "terms": [
+        "settlement"
+      ]
+    },
+    {
+      "key": "agent-team",
+      "name": "Agent team",
+      "summary": "A durable task board where each task has one owner, changed with compare-and-set.",
+      "terms": [
+        "compare-and-set"
+      ]
+    },
+    {
+      "key": "workflow",
+      "name": "Workflow",
+      "summary": "The model writes a script that starts agents in parallel and in steps.",
+      "terms": []
+    },
+    {
+      "key": "todo-list",
+      "name": "Todo list",
+      "summary": "One tool replaces the whole list each time, and the record keeps every version.",
+      "terms": []
+    },
+    {
+      "key": "plan-mode",
+      "name": "Plan mode",
+      "summary": "A mode adds planning guidance before each step, and a person approves the plan.",
+      "terms": []
+    },
+    {
+      "key": "goal-driver",
+      "name": "Goal driver",
+      "summary": "When the agent goes idle, a driver sends a follow-up prompt until the goal is done or a cap is hit.",
+      "terms": [
+        "idle"
+      ]
+    },
+    {
+      "key": "background-job",
+      "name": "Background job",
+      "summary": "A job has an id and an output buffer, and a notice tells the session when it ends.",
+      "terms": []
+    },
+    {
+      "key": "schedule",
+      "name": "Schedule",
+      "summary": "A timer sends a prompt to a session on a cron pattern, and sends only the latest missed run.",
+      "terms": [
+        "cron"
+      ]
+    },
+    {
+      "key": "live-event-stream",
+      "name": "Live event stream",
+      "summary": "Session events and live stream frames let a screen follow the agent as it works.",
+      "terms": []
+    },
+    {
+      "key": "headless-runner",
+      "name": "Headless runner",
+      "summary": "A runner takes one prompt, prints the answer and exits with a status code.",
+      "terms": [
+        "exit code"
+      ]
+    },
+    {
+      "key": "json-rpc-stdio",
+      "name": "JSON-RPC over stdio",
+      "summary": "Requests and notifications as JSON lines over a child process's input and output.",
+      "terms": [
+        "JSON-RPC",
+        "stdio"
+      ]
+    },
+    {
+      "key": "acp",
+      "name": "Agent Client Protocol",
+      "summary": "ACP lets an editor create sessions and send prompts over the same kind of stream.",
+      "terms": [
+        "ACP"
+      ]
+    },
+    {
+      "key": "web-gateway",
+      "name": "Web gateway",
+      "summary": "HTTP routes and generated RPC stubs let a web page drive the agent.",
+      "terms": [
+        "HTTP route"
+      ]
+    },
+    {
+      "key": "mock-adapter",
+      "name": "Mock adapter",
+      "summary": "An adapter that plays back scripted streams, so tests run without a real model.",
+      "terms": []
+    },
+    {
+      "key": "fault-server",
+      "name": "Fault server",
+      "summary": "A local HTTP server that speaks the provider's format and injects errors and stalls.",
+      "terms": []
+    },
+    {
+      "key": "record-replay",
+      "name": "Replay",
+      "summary": "Model streams saved in a session file are played back to test a change.",
+      "terms": [
+        "fixture"
+      ]
+    },
+    {
+      "key": "verify-the-world",
+      "name": "Outcome checks",
+      "summary": "Tests check the files and the record the agent left, not what the agent says it did.",
+      "terms": [
+        "snapshot"
+      ]
+    },
+    {
+      "key": "whole-harness",
+      "name": "The whole harness",
+      "summary": "How every part joins into mini-dsh, traced through one request.",
+      "terms": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "language-model",
+      "to": "token"
+    },
+    {
+      "from": "token",
+      "to": "context-window"
+    },
+    {
+      "from": "language-model",
+      "to": "model-api-call"
+    },
+    {
+      "from": "model-api-call",
+      "to": "message-roles"
+    },
+    {
+      "from": "message-roles",
+      "to": "stateless-model"
+    },
+    {
+      "from": "context-window",
+      "to": "stateless-model"
+    },
+    {
+      "from": "model-api-call",
+      "to": "streaming"
+    },
+    {
+      "from": "message-roles",
+      "to": "tool-schema"
+    },
+    {
+      "from": "tool-schema",
+      "to": "tool-call"
+    },
+    {
+      "from": "streaming",
+      "to": "tool-call"
+    },
+    {
+      "from": "tool-call",
+      "to": "tool-result"
+    },
+    {
+      "from": "tool-result",
+      "to": "agent-loop"
+    },
+    {
+      "from": "stateless-model",
+      "to": "agent-loop"
+    },
+    {
+      "from": "agent-loop",
+      "to": "turn-and-step"
+    },
+    {
+      "from": "tool-result",
+      "to": "tool-error-result"
+    },
+    {
+      "from": "turn-and-step",
+      "to": "first-agent"
+    },
+    {
+      "from": "tool-error-result",
+      "to": "first-agent"
+    },
+    {
+      "from": "first-agent",
+      "to": "append-only-log"
+    },
+    {
+      "from": "append-only-log",
+      "to": "session-event"
+    },
+    {
+      "from": "session-event",
+      "to": "model-visible-logged"
+    },
+    {
+      "from": "model-visible-logged",
+      "to": "derived-history"
+    },
+    {
+      "from": "derived-history",
+      "to": "logged-system-prompt"
+    },
+    {
+      "from": "session-event",
+      "to": "jsonl-storage"
+    },
+    {
+      "from": "jsonl-storage",
+      "to": "session-resume"
+    },
+    {
+      "from": "derived-history",
+      "to": "session-resume"
+    },
+    {
+      "from": "session-resume",
+      "to": "orphaned-tool-call"
+    },
+    {
+      "from": "jsonl-storage",
+      "to": "format-version"
+    },
+    {
+      "from": "streaming",
+      "to": "stream-chunk"
+    },
+    {
+      "from": "tool-call",
+      "to": "stream-chunk"
+    },
+    {
+      "from": "stream-chunk",
+      "to": "block-assembler"
+    },
+    {
+      "from": "block-assembler",
+      "to": "adapter-seam"
+    },
+    {
+      "from": "adapter-seam",
+      "to": "deepseek-wire"
+    },
+    {
+      "from": "deepseek-wire",
+      "to": "reasoning-block"
+    },
+    {
+      "from": "reasoning-block",
+      "to": "prefix-caching"
+    },
+    {
+      "from": "logged-system-prompt",
+      "to": "prefix-caching"
+    },
+    {
+      "from": "adapter-seam",
+      "to": "retry-backoff"
+    },
+    {
+      "from": "session-event",
+      "to": "retry-backoff"
+    },
+    {
+      "from": "retry-backoff",
+      "to": "cancellation"
+    },
+    {
+      "from": "first-agent",
+      "to": "plugin-context"
+    },
+    {
+      "from": "plugin-context",
+      "to": "plugin-lifecycle"
+    },
+    {
+      "from": "plugin-lifecycle",
+      "to": "effect-disposer"
+    },
+    {
+      "from": "effect-disposer",
+      "to": "service-inject"
+    },
+    {
+      "from": "service-inject",
+      "to": "event-modes"
+    },
+    {
+      "from": "event-modes",
+      "to": "waterfall-hook"
+    },
+    {
+      "from": "service-inject",
+      "to": "isolate-realm"
+    },
+    {
+      "from": "isolate-realm",
+      "to": "agent-scope"
+    },
+    {
+      "from": "effect-disposer",
+      "to": "config-rows"
+    },
+    {
+      "from": "config-rows",
+      "to": "profiles-bundles"
+    },
+    {
+      "from": "tool-schema",
+      "to": "define-tool"
+    },
+    {
+      "from": "service-inject",
+      "to": "define-tool"
+    },
+    {
+      "from": "define-tool",
+      "to": "tool-registry"
+    },
+    {
+      "from": "effect-disposer",
+      "to": "tool-registry"
+    },
+    {
+      "from": "tool-registry",
+      "to": "batch-scheduling"
+    },
+    {
+      "from": "batch-scheduling",
+      "to": "pre-execute"
+    },
+    {
+      "from": "waterfall-hook",
+      "to": "pre-execute"
+    },
+    {
+      "from": "pre-execute",
+      "to": "approval"
+    },
+    {
+      "from": "pre-execute",
+      "to": "around-execute"
+    },
+    {
+      "from": "around-execute",
+      "to": "post-execute"
+    },
+    {
+      "from": "post-execute",
+      "to": "output-spill"
+    },
+    {
+      "from": "context-window",
+      "to": "output-spill"
+    },
+    {
+      "from": "define-tool",
+      "to": "file-tools"
+    },
+    {
+      "from": "file-tools",
+      "to": "shell-tool"
+    },
+    {
+      "from": "shell-tool",
+      "to": "sandbox-modes"
+    },
+    {
+      "from": "sandbox-modes",
+      "to": "sandbox-backend"
+    },
+    {
+      "from": "sandbox-backend",
+      "to": "escalation"
+    },
+    {
+      "from": "approval",
+      "to": "escalation"
+    },
+    {
+      "from": "escalation",
+      "to": "permission-presets"
+    },
+    {
+      "from": "logged-system-prompt",
+      "to": "prompt-sections"
+    },
+    {
+      "from": "service-inject",
+      "to": "prompt-sections"
+    },
+    {
+      "from": "prompt-sections",
+      "to": "runtime-context"
+    },
+    {
+      "from": "waterfall-hook",
+      "to": "runtime-context"
+    },
+    {
+      "from": "runtime-context",
+      "to": "project-instructions"
+    },
+    {
+      "from": "runtime-context",
+      "to": "token-meter"
+    },
+    {
+      "from": "context-window",
+      "to": "token-meter"
+    },
+    {
+      "from": "token-meter",
+      "to": "safe-cut"
+    },
+    {
+      "from": "safe-cut",
+      "to": "surface-replacement"
+    },
+    {
+      "from": "derived-history",
+      "to": "surface-replacement"
+    },
+    {
+      "from": "surface-replacement",
+      "to": "overflow-recovery"
+    },
+    {
+      "from": "retry-backoff",
+      "to": "overflow-recovery"
+    },
+    {
+      "from": "tool-registry",
+      "to": "mcp-client"
+    },
+    {
+      "from": "mcp-client",
+      "to": "mcp-tools"
+    },
+    {
+      "from": "pre-execute",
+      "to": "mcp-tools"
+    },
+    {
+      "from": "prompt-sections",
+      "to": "skills"
+    },
+    {
+      "from": "tool-registry",
+      "to": "skills"
+    },
+    {
+      "from": "mcp-tools",
+      "to": "run-code"
+    },
+    {
+      "from": "shell-tool",
+      "to": "run-code"
+    },
+    {
+      "from": "run-code",
+      "to": "typed-sdk-channel"
+    },
+    {
+      "from": "typed-sdk-channel",
+      "to": "sub-call-limits"
+    },
+    {
+      "from": "turn-and-step",
+      "to": "agent-inbox"
+    },
+    {
+      "from": "cancellation",
+      "to": "agent-inbox"
+    },
+    {
+      "from": "agent-inbox",
+      "to": "agent-registry"
+    },
+    {
+      "from": "agent-scope",
+      "to": "agent-registry"
+    },
+    {
+      "from": "agent-registry",
+      "to": "subagent"
+    },
+    {
+      "from": "subagent",
+      "to": "child-isolation"
+    },
+    {
+      "from": "permission-presets",
+      "to": "child-isolation"
+    },
+    {
+      "from": "child-isolation",
+      "to": "subagent-result"
+    },
+    {
+      "from": "subagent-result",
+      "to": "agent-team"
+    },
+    {
+      "from": "agent-team",
+      "to": "workflow"
+    },
+    {
+      "from": "run-code",
+      "to": "workflow"
+    },
+    {
+      "from": "define-tool",
+      "to": "todo-list"
+    },
+    {
+      "from": "session-event",
+      "to": "todo-list"
+    },
+    {
+      "from": "runtime-context",
+      "to": "plan-mode"
+    },
+    {
+      "from": "todo-list",
+      "to": "plan-mode"
+    },
+    {
+      "from": "plan-mode",
+      "to": "goal-driver"
+    },
+    {
+      "from": "agent-inbox",
+      "to": "goal-driver"
+    },
+    {
+      "from": "agent-inbox",
+      "to": "background-job"
+    },
+    {
+      "from": "shell-tool",
+      "to": "background-job"
+    },
+    {
+      "from": "background-job",
+      "to": "schedule"
+    },
+    {
+      "from": "agent-registry",
+      "to": "live-event-stream"
+    },
+    {
+      "from": "stream-chunk",
+      "to": "live-event-stream"
+    },
+    {
+      "from": "live-event-stream",
+      "to": "headless-runner"
+    },
+    {
+      "from": "profiles-bundles",
+      "to": "headless-runner"
+    },
+    {
+      "from": "headless-runner",
+      "to": "json-rpc-stdio"
+    },
+    {
+      "from": "json-rpc-stdio",
+      "to": "acp"
+    },
+    {
+      "from": "json-rpc-stdio",
+      "to": "web-gateway"
+    },
+    {
+      "from": "adapter-seam",
+      "to": "mock-adapter"
+    },
+    {
+      "from": "first-agent",
+      "to": "mock-adapter"
+    },
+    {
+      "from": "mock-adapter",
+      "to": "fault-server"
+    },
+    {
+      "from": "retry-backoff",
+      "to": "fault-server"
+    },
+    {
+      "from": "mock-adapter",
+      "to": "record-replay"
+    },
+    {
+      "from": "jsonl-storage",
+      "to": "record-replay"
+    },
+    {
+      "from": "record-replay",
+      "to": "verify-the-world"
+    },
+    {
+      "from": "verify-the-world",
+      "to": "whole-harness"
+    },
+    {
+      "from": "workflow",
+      "to": "whole-harness"
+    },
+    {
+      "from": "web-gateway",
+      "to": "whole-harness"
+    },
+    {
+      "from": "overflow-recovery",
+      "to": "whole-harness"
+    },
+    {
+      "from": "schedule",
+      "to": "whole-harness"
+    }
+  ],
+  "modules": [
+    {
+      "key": "model-basics",
+      "title": "How a language model answers",
+      "summary": "What a language model is and how a program talks to one.",
+      "chapters": [
+        {
+          "key": "language-model",
+          "title": "Language model: a program that predicts the next word",
+          "conceptKeys": [
+            "language-model"
+          ],
+          "summary": "A language model writes text by predicting one likely next piece at a time."
+        },
+        {
+          "key": "token",
+          "title": "Tokens: the small pieces a model reads",
+          "conceptKeys": [
+            "token"
+          ],
+          "summary": "Models read and write text as numbered chunks called tokens."
+        },
+        {
+          "key": "context-window",
+          "title": "The context window: what the model can see at once",
+          "conceptKeys": [
+            "context-window"
+          ],
+          "summary": "A model can only consider a fixed number of tokens in one request."
+        },
+        {
+          "key": "model-api-call",
+          "title": "A model API call: sending text to a model over HTTP",
+          "conceptKeys": [
+            "model-api-call"
+          ],
+          "summary": "Your program sends a JSON request to a hosted model and reads the reply."
+        },
+        {
+          "key": "message-roles",
+          "title": "Message roles: who said each part of a chat",
+          "conceptKeys": [
+            "message-roles"
+          ],
+          "summary": "A chat request is a list of messages labelled system, user or assistant."
+        },
+        {
+          "key": "stateless-model",
+          "title": "A stateless model: each request carries the whole chat",
+          "conceptKeys": [
+            "stateless-model"
+          ],
+          "summary": "The model remembers nothing between requests, so the program sends the history every time."
+        },
+        {
+          "key": "streaming",
+          "title": "Streaming: the reply arrives in small pieces",
+          "conceptKeys": [
+            "streaming"
+          ],
+          "summary": "A reply can come as a stream of small events, and it ends with a reason the model stopped."
+        }
+      ]
+    },
+    {
+      "key": "tool-basics",
+      "title": "Letting the model ask for actions",
+      "summary": "How a model asks your program to run functions, and the loop that answers it.",
+      "chapters": [
+        {
+          "key": "tool-schema",
+          "title": "Tool schema: describing a function the model may ask for",
+          "conceptKeys": [
+            "tool-schema"
+          ],
+          "summary": "Each function is described by a name, a description and a JSON Schema for its arguments."
+        },
+        {
+          "key": "tool-call",
+          "title": "Tool call: the model asks to run a function",
+          "conceptKeys": [
+            "tool-call"
+          ],
+          "summary": "Instead of text, the model can reply with a structured request to run one function."
+        },
+        {
+          "key": "tool-result",
+          "title": "Tool result: the answer sent back to the model",
+          "conceptKeys": [
+            "tool-result"
+          ],
+          "summary": "The program runs the function and sends the outcome back, matched by a call id."
+        },
+        {
+          "key": "agent-loop",
+          "title": "The agent loop: ask, run, send back, repeat",
+          "conceptKeys": [
+            "agent-loop"
+          ],
+          "summary": "A program repeats model request, function run and result until the model answers in text."
+        },
+        {
+          "key": "turn-and-step",
+          "title": "Turn: one answer made of several model requests",
+          "conceptKeys": [
+            "turn-and-step"
+          ],
+          "summary": "A turn answers the user once; each model request inside it is a step, and a limit caps the steps."
+        },
+        {
+          "key": "tool-error-result",
+          "title": "Tool error result: a failure the model can read",
+          "conceptKeys": [
+            "tool-error-result"
+          ],
+          "summary": "A failed function still returns a result, marked as an error, so the model can try again."
+        },
+        {
+          "key": "first-agent",
+          "title": "The first agent: the whole loop in one small program",
+          "conceptKeys": [
+            "first-agent"
+          ],
+          "summary": "All the pieces so far, joined into one working agent of about sixty lines."
+        }
+      ],
+      "projectKey": "p-first-agent"
+    },
+    {
+      "key": "session-log",
+      "title": "Recording every conversation as events",
+      "summary": "Storing a conversation as a list of facts and rebuilding the model's view from it.",
+      "chapters": [
+        {
+          "key": "append-only-log",
+          "title": "Append-only log: a record you add to and never change",
+          "conceptKeys": [
+            "append-only-log"
+          ],
+          "summary": "Writing every fact in order and never editing an old fact."
+        },
+        {
+          "key": "session-event",
+          "title": "Session event: one typed fact in the record",
+          "conceptKeys": [
+            "session-event"
+          ],
+          "summary": "Each fact has a type, a sequence number, a time and its data."
+        },
+        {
+          "key": "model-visible-logged",
+          "title": "Model-visible means logged: every request can be rebuilt from the record",
+          "conceptKeys": [
+            "model-visible-logged"
+          ],
+          "summary": "Anything the model sees must first be written to the record, so any request can be rebuilt."
+        },
+        {
+          "key": "derived-history",
+          "title": "Derived history: building the message list from the record",
+          "conceptKeys": [
+            "derived-history"
+          ],
+          "summary": "The messages sent to the model are made by reading the record from the start."
+        },
+        {
+          "key": "logged-system-prompt",
+          "title": "The logged system prompt: instructions stored as a message in the record",
+          "conceptKeys": [
+            "logged-system-prompt"
+          ],
+          "summary": "The system prompt is written to the record as a message, not passed beside it."
+        },
+        {
+          "key": "jsonl-storage",
+          "title": "JSONL storage: one JSON event per line in a file",
+          "conceptKeys": [
+            "jsonl-storage"
+          ],
+          "summary": "The record is saved as a file with one JSON event per line, written before each model call."
+        },
+        {
+          "key": "session-resume",
+          "title": "Session resume: continuing after the program stops",
+          "conceptKeys": [
+            "session-resume"
+          ],
+          "summary": "Reading the file back and closing any turn that was cut off."
+        },
+        {
+          "key": "orphaned-tool-call",
+          "title": "Orphaned tool call: a request that never got its answer",
+          "conceptKeys": [
+            "orphaned-tool-call"
+          ],
+          "summary": "When a call has no result, the program writes a made-up error result so the history stays valid."
+        },
+        {
+          "key": "format-version",
+          "title": "Format versions: changing the file layout without breaking old files",
+          "conceptKeys": [
+            "format-version"
+          ],
+          "summary": "Each layout version has its own file name, and small steps convert one version to the next."
+        }
+      ],
+      "projectKey": "p-session-log"
+    },
+    {
+      "key": "providers",
+      "title": "Talking to any model provider",
+      "summary": "One small interface that hides the differences between model providers.",
+      "chapters": [
+        {
+          "key": "stream-chunk",
+          "title": "Stream chunk: one small piece of a streamed reply",
+          "conceptKeys": [
+            "stream-chunk"
+          ],
+          "summary": "A shared list of piece types: block start, text, reasoning, tool arguments, block end, usage, finish."
+        },
+        {
+          "key": "block-assembler",
+          "title": "Block assembler: joining pieces into whole blocks",
+          "conceptKeys": [
+            "block-assembler"
+          ],
+          "summary": "A small function folds the pieces of a stream into complete text and tool-call blocks."
+        },
+        {
+          "key": "adapter-seam",
+          "title": "Adapter seam: one method that any provider can fill in",
+          "conceptKeys": [
+            "adapter-seam"
+          ],
+          "summary": "Every provider sits behind one stream method, so the loop never knows which one it talks to."
+        },
+        {
+          "key": "deepseek-wire",
+          "title": "The DeepSeek wire: the exact request DeepSeek expects",
+          "conceptKeys": [
+            "deepseek-wire"
+          ],
+          "summary": "DeepSeek accepts a subset of the Anthropic Messages format, which the adapter writes and reads."
+        },
+        {
+          "key": "reasoning-block",
+          "title": "Reasoning block: the model's written thinking",
+          "conceptKeys": [
+            "reasoning-block"
+          ],
+          "summary": "DeepSeek streams thinking with a signature, and the harness sends it back unchanged on later requests."
+        },
+        {
+          "key": "prefix-caching",
+          "title": "Prefix caching: reusing work on an unchanged request start",
+          "conceptKeys": [
+            "prefix-caching"
+          ],
+          "summary": "The provider reuses work when a request begins with the same bytes, so the harness only appends."
+        },
+        {
+          "key": "retry-backoff",
+          "title": "Retry with backoff: trying again after a short wait",
+          "conceptKeys": [
+            "retry-backoff"
+          ],
+          "summary": "A failed request is retried after a growing wait, and each retry is written to the record."
+        },
+        {
+          "key": "cancellation",
+          "title": "Cancellation: stopping a turn part way through",
+          "conceptKeys": [
+            "cancellation"
+          ],
+          "summary": "An abort signal stops the stream; what arrived is kept and the turn ends with a reason."
+        }
+      ],
+      "projectKey": "p-deepseek-adapter"
+    },
+    {
+      "key": "plugins",
+      "title": "Building the harness out of plugins",
+      "summary": "The Cordis ideas that make every part of the harness replaceable.",
+      "chapters": [
+        {
+          "key": "plugin-context",
+          "title": "Context: a shared object that holds services",
+          "conceptKeys": [
+            "plugin-context"
+          ],
+          "summary": "Every plugin receives a context object, and child contexts inherit from their parent."
+        },
+        {
+          "key": "plugin-lifecycle",
+          "title": "Plugin lifecycle: how a plugin starts and stops",
+          "conceptKeys": [
+            "plugin-lifecycle"
+          ],
+          "summary": "A mounted plugin moves from pending to active to disposed."
+        },
+        {
+          "key": "effect-disposer",
+          "title": "Disposer: work that undoes itself",
+          "conceptKeys": [
+            "effect-disposer"
+          ],
+          "summary": "Every registration returns a function that undoes it, run in reverse order when the plugin stops."
+        },
+        {
+          "key": "service-inject",
+          "title": "Service: a shared ability plugins can wait for",
+          "conceptKeys": [
+            "service-inject"
+          ],
+          "summary": "A plugin names the services it needs and stays pending until they exist."
+        },
+        {
+          "key": "event-modes",
+          "title": "Events: telling many listeners that something happened",
+          "conceptKeys": [
+            "event-modes"
+          ],
+          "summary": "Events can be sent to all listeners at once, in order, or until one answers."
+        },
+        {
+          "key": "waterfall-hook",
+          "title": "Waterfall hook: middleware that calls the next listener",
+          "conceptKeys": [
+            "waterfall-hook"
+          ],
+          "summary": "Each listener gets a next function; skipping it stops the chain."
+        },
+        {
+          "key": "isolate-realm",
+          "title": "Isolate realm: a different service under one context",
+          "conceptKeys": [
+            "isolate-realm"
+          ],
+          "summary": "A context can replace one service name for everything below it, without changing its parent."
+        },
+        {
+          "key": "agent-scope",
+          "title": "Agent scope: registrations that apply to one agent",
+          "conceptKeys": [
+            "agent-scope"
+          ],
+          "summary": "A tag on a child context makes its listeners and tools apply only to one agent."
+        },
+        {
+          "key": "config-rows",
+          "title": "Config rows: the plugin tree written as YAML",
+          "conceptKeys": [
+            "config-rows"
+          ],
+          "summary": "The plugin tree is a list of rows, and patches replace or insert rows by id."
+        },
+        {
+          "key": "profiles-bundles",
+          "title": "Profile: a named stack of plugin bundles",
+          "conceptKeys": [
+            "profiles-bundles"
+          ],
+          "summary": "A profile stacks bundles of rows in order; reloading disposes and mounts again."
+        }
+      ],
+      "projectKey": "p-plugin-kernel"
+    },
+    {
+      "key": "tool-pipeline",
+      "title": "Running tools safely and predictably",
+      "summary": "The checks every tool call passes before, during and after it runs.",
+      "chapters": [
+        {
+          "key": "define-tool",
+          "title": "defineTool: a typed tool with checked arguments",
+          "conceptKeys": [
+            "define-tool"
+          ],
+          "summary": "A tool definition converts its parameters to a schema, checks the arguments and returns one value."
+        },
+        {
+          "key": "tool-registry",
+          "title": "Tool registry: the list of tools a step can use",
+          "conceptKeys": [
+            "tool-registry"
+          ],
+          "summary": "Tools register on a shared service and disappear when their plugin stops."
+        },
+        {
+          "key": "batch-scheduling",
+          "title": "Batch scheduling: running safe calls side by side",
+          "conceptKeys": [
+            "batch-scheduling"
+          ],
+          "summary": "Calls run in parallel only when each one says it is safe; all others run alone."
+        },
+        {
+          "key": "pre-execute",
+          "title": "Pre-execute decision: allow, deny or ask before a tool runs",
+          "conceptKeys": [
+            "pre-execute"
+          ],
+          "summary": "A waterfall of policies decides allow, deny or ask, and guards can only deny."
+        },
+        {
+          "key": "approval",
+          "title": "Approval: asking a person before a tool runs",
+          "conceptKeys": [
+            "approval"
+          ],
+          "summary": "An ask goes to a person; with nobody to answer, the call is denied."
+        },
+        {
+          "key": "around-execute",
+          "title": "Around-execute wrapper: adding timeouts around a running tool",
+          "conceptKeys": [
+            "around-execute"
+          ],
+          "summary": "A wrapper around the tool body adds timeouts, retries and timing."
+        },
+        {
+          "key": "post-execute",
+          "title": "Post-execute: changing a result before the model sees it",
+          "conceptKeys": [
+            "post-execute"
+          ],
+          "summary": "After a tool runs, listeners can replace the result, block it or add context."
+        },
+        {
+          "key": "output-spill",
+          "title": "Output spill: saving a huge result to a file",
+          "conceptKeys": [
+            "output-spill"
+          ],
+          "summary": "A result that is too large is saved to a file, and the model sees its start, end and the file name."
+        }
+      ],
+      "projectKey": "p-tool-pipeline"
+    },
+    {
+      "key": "sandbox",
+      "title": "Fencing in what commands can change",
+      "summary": "Letting the model run commands while limiting what they can change.",
+      "chapters": [
+        {
+          "key": "file-tools",
+          "title": "File tools: reading and changing files safely",
+          "conceptKeys": [
+            "file-tools"
+          ],
+          "summary": "Read, write and edit tools, and why an edit checks that the file did not change."
+        },
+        {
+          "key": "shell-tool",
+          "title": "Shell tool: running a command for the model",
+          "conceptKeys": [
+            "shell-tool"
+          ],
+          "summary": "A bash tool starts a process with a clean environment and returns its output."
+        },
+        {
+          "key": "sandbox-modes",
+          "title": "Sandbox modes: read-only, workspace-write or full access",
+          "conceptKeys": [
+            "sandbox-modes"
+          ],
+          "summary": "A mode names where commands may write, and the workspace folders are the write roots."
+        },
+        {
+          "key": "sandbox-backend",
+          "title": "Sandbox backend: the operating system feature that confines",
+          "conceptKeys": [
+            "sandbox-backend"
+          ],
+          "summary": "Seatbelt on macOS and bwrap on Linux enforce the mode, and a mode that cannot be enforced stops the call."
+        },
+        {
+          "key": "escalation",
+          "title": "Escalation: one retry with a reason",
+          "conceptKeys": [
+            "escalation"
+          ],
+          "summary": "After a denial the model may retry the same call once with a justification for a person to approve."
+        },
+        {
+          "key": "permission-presets",
+          "title": "Permission presets: a mode and an approval policy together",
+          "conceptKeys": [
+            "permission-presets"
+          ],
+          "summary": "Named presets join a sandbox mode with an approval policy for one session."
+        }
+      ],
+      "projectKey": "p-sandboxed-bash"
+    },
+    {
+      "key": "context",
+      "title": "Managing what the model sees",
+      "summary": "Keeping the model's view useful when a long session no longer fits.",
+      "chapters": [
+        {
+          "key": "prompt-sections",
+          "title": "Prompt sections: ordered pieces of the system prompt",
+          "conceptKeys": [
+            "prompt-sections"
+          ],
+          "summary": "Plugins add ordered sections, and the harness renders them into one system prompt."
+        },
+        {
+          "key": "runtime-context",
+          "title": "Runtime context: facts added before each step",
+          "conceptKeys": [
+            "runtime-context"
+          ],
+          "summary": "A pre-step hook adds facts such as the time as user messages that are logged."
+        },
+        {
+          "key": "project-instructions",
+          "title": "Project instructions: the AGENTS.md file the model reads",
+          "conceptKeys": [
+            "project-instructions"
+          ],
+          "summary": "The harness reads AGENTS.md and adds it again after a tool changes it."
+        },
+        {
+          "key": "token-meter",
+          "title": "Token meter: counting what the next request will use",
+          "conceptKeys": [
+            "token-meter"
+          ],
+          "summary": "An estimate of the request's tokens, checked against a threshold below the context window."
+        },
+        {
+          "key": "safe-cut",
+          "title": "Safe cut: choosing old history to shorten",
+          "conceptKeys": [
+            "safe-cut"
+          ],
+          "summary": "Walk back from the newest message and never split a tool call from its result."
+        },
+        {
+          "key": "surface-replacement",
+          "title": "Surface replacement: swapping old messages for a summary",
+          "conceptKeys": [
+            "surface-replacement"
+          ],
+          "summary": "A summary replaces a range in the model's view while the record keeps every fact."
+        },
+        {
+          "key": "overflow-recovery",
+          "title": "Overflow recovery: shortening and trying again after a too-large request",
+          "conceptKeys": [
+            "overflow-recovery"
+          ],
+          "summary": "When the provider rejects a request as too large, the harness summarises and retries the step."
+        }
+      ],
+      "projectKey": "p-context-manager"
+    },
+    {
+      "key": "outside-tools",
+      "title": "Plugging in outside tools and code",
+      "summary": "Tools from other programs, skills, and letting the model call tools from code.",
+      "chapters": [
+        {
+          "key": "mcp-client",
+          "title": "MCP client: talking to a tool server",
+          "conceptKeys": [
+            "mcp-client"
+          ],
+          "summary": "The Model Context Protocol lets the harness list and call tools that another program offers."
+        },
+        {
+          "key": "mcp-tools",
+          "title": "MCP tools: outside tools as ordinary tools",
+          "conceptKeys": [
+            "mcp-tools"
+          ],
+          "summary": "Each server tool is registered under a prefixed name, so every policy applies to it."
+        },
+        {
+          "key": "skills",
+          "title": "Skills: instructions loaded only when needed",
+          "conceptKeys": [
+            "skills"
+          ],
+          "summary": "A short catalog sits in the prompt, and one tool loads a skill's full text on request."
+        },
+        {
+          "key": "run-code",
+          "title": "Programmatic tool calling: the model writes code that calls tools",
+          "conceptKeys": [
+            "run-code"
+          ],
+          "summary": "One run_code tool replaces the others, and the model writes a program that calls them."
+        },
+        {
+          "key": "typed-sdk-channel",
+          "title": "Code channel: how the program reaches the harness",
+          "conceptKeys": [
+            "typed-sdk-channel"
+          ],
+          "summary": "A generated typed SDK in the prompt, and a JSON-lines channel back to the harness process."
+        },
+        {
+          "key": "sub-call-limits",
+          "title": "Sub-call limits: code calls pass the same checks",
+          "conceptKeys": [
+            "sub-call-limits"
+          ],
+          "summary": "Each call from the program goes through the same policies, with rate and parallel limits."
+        }
+      ],
+      "projectKey": "p-mcp-run-code"
+    },
+    {
+      "key": "agents",
+      "title": "Several agents working together",
+      "summary": "One agent starting and talking to others.",
+      "chapters": [
+        {
+          "key": "agent-inbox",
+          "title": "Agent inbox: where new messages wait",
+          "conceptKeys": [
+            "agent-inbox"
+          ],
+          "summary": "Messages wait in an inbox; steer joins the next step, followup the next turn."
+        },
+        {
+          "key": "agent-registry",
+          "title": "Agent registry: creating and finding live agents",
+          "conceptKeys": [
+            "agent-registry"
+          ],
+          "summary": "A service creates, finds and resumes agents, each with its own session."
+        },
+        {
+          "key": "subagent",
+          "title": "Subagent: an agent started by another agent",
+          "conceptKeys": [
+            "subagent"
+          ],
+          "summary": "A tool starts a child agent with a fresh session, up to a depth limit."
+        },
+        {
+          "key": "child-isolation",
+          "title": "Child isolation: what a child agent may do",
+          "conceptKeys": [
+            "child-isolation"
+          ],
+          "summary": "A child gets a restricted tool list and no approval prompts, and its policy is logged."
+        },
+        {
+          "key": "subagent-result",
+          "title": "Subagent result: how a child reports back",
+          "conceptKeys": [
+            "subagent-result"
+          ],
+          "summary": "The child's last answer returns to the parent as a message in the parent's inbox."
+        },
+        {
+          "key": "agent-team",
+          "title": "Agent team: a shared task board",
+          "conceptKeys": [
+            "agent-team"
+          ],
+          "summary": "A durable task board where each task has one owner, changed with compare-and-set."
+        },
+        {
+          "key": "workflow",
+          "title": "Workflow: a script that runs many agents",
+          "conceptKeys": [
+            "workflow"
+          ],
+          "summary": "The model writes a script that starts agents in parallel and in steps."
+        }
+      ],
+      "projectKey": "p-subagents"
+    },
+    {
+      "key": "long-work",
+      "title": "Work that outlasts one turn",
+      "summary": "Features that keep an agent useful across many turns.",
+      "chapters": [
+        {
+          "key": "todo-list",
+          "title": "Todo list: a checklist the model keeps",
+          "conceptKeys": [
+            "todo-list"
+          ],
+          "summary": "One tool replaces the whole list each time, and the record keeps every version."
+        },
+        {
+          "key": "plan-mode",
+          "title": "Plan mode: planning before changing anything",
+          "conceptKeys": [
+            "plan-mode"
+          ],
+          "summary": "A mode adds planning guidance before each step, and a person approves the plan."
+        },
+        {
+          "key": "goal-driver",
+          "title": "Goal driver: continuing until an objective is met",
+          "conceptKeys": [
+            "goal-driver"
+          ],
+          "summary": "When the agent goes idle, a driver sends a follow-up prompt until the goal is done or a cap is hit."
+        },
+        {
+          "key": "background-job",
+          "title": "Background job: work that runs while the agent continues",
+          "conceptKeys": [
+            "background-job"
+          ],
+          "summary": "A job has an id and an output buffer, and a notice tells the session when it ends."
+        },
+        {
+          "key": "schedule",
+          "title": "Schedule: prompts sent at set times",
+          "conceptKeys": [
+            "schedule"
+          ],
+          "summary": "A timer sends a prompt to a session on a cron pattern, and sends only the latest missed run."
+        }
+      ]
+    },
+    {
+      "key": "surfaces",
+      "title": "Putting the harness in front of people",
+      "summary": "Thin layers that let people and programs drive the same agent.",
+      "chapters": [
+        {
+          "key": "live-event-stream",
+          "title": "Live event stream: watching the agent while it works",
+          "conceptKeys": [
+            "live-event-stream"
+          ],
+          "summary": "Session events and live stream frames let a screen follow the agent as it works."
+        },
+        {
+          "key": "headless-runner",
+          "title": "Headless runner: one task, then exit",
+          "conceptKeys": [
+            "headless-runner"
+          ],
+          "summary": "A runner takes one prompt, prints the answer and exits with a status code."
+        },
+        {
+          "key": "json-rpc-stdio",
+          "title": "JSON-RPC over stdio: the SDK talking to the harness",
+          "conceptKeys": [
+            "json-rpc-stdio"
+          ],
+          "summary": "Requests and notifications as JSON lines over a child process's input and output."
+        },
+        {
+          "key": "acp",
+          "title": "Agent Client Protocol: an editor driving the agent",
+          "conceptKeys": [
+            "acp"
+          ],
+          "summary": "ACP lets an editor create sessions and send prompts over the same kind of stream."
+        },
+        {
+          "key": "web-gateway",
+          "title": "Web gateway: the browser talking to the harness",
+          "conceptKeys": [
+            "web-gateway"
+          ],
+          "summary": "HTTP routes and generated RPC stubs let a web page drive the agent."
+        }
+      ],
+      "projectKey": "p-sdk-server"
+    },
+    {
+      "key": "testing",
+      "title": "Testing and the whole harness",
+      "summary": "Proving the harness works, then joining every part.",
+      "chapters": [
+        {
+          "key": "mock-adapter",
+          "title": "Mock adapter: a scripted model for tests",
+          "conceptKeys": [
+            "mock-adapter"
+          ],
+          "summary": "An adapter that plays back scripted streams, so tests run without a real model."
+        },
+        {
+          "key": "fault-server",
+          "title": "Fault server: a fake provider that fails on purpose",
+          "conceptKeys": [
+            "fault-server"
+          ],
+          "summary": "A local HTTP server that speaks the provider's format and injects errors and stalls."
+        },
+        {
+          "key": "record-replay",
+          "title": "Replay: running recorded model streams again",
+          "conceptKeys": [
+            "record-replay"
+          ],
+          "summary": "Model streams saved in a session file are played back to test a change."
+        },
+        {
+          "key": "verify-the-world",
+          "title": "Outcome checks: testing the files and record an agent leaves",
+          "conceptKeys": [
+            "verify-the-world"
+          ],
+          "summary": "Tests check the files and the record the agent left, not what the agent says it did."
+        },
+        {
+          "key": "whole-harness",
+          "title": "The whole harness: every part working together",
+          "conceptKeys": [
+            "whole-harness"
+          ],
+          "summary": "How every part joins into mini-dsh, traced through one request."
+        }
+      ],
+      "projectKey": "p-capstone"
+    }
+  ]
+}

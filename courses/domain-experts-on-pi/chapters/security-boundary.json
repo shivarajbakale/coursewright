@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "An expert has the bash tool and a gate that blocks rm -rf. The model runs cat ~/.ssh/id_ed25519. Why can it work?",
+      "options": [
+        "bash runs as a different, more powerful user",
+        "The working folder only sets the start path and does not stop access to other paths",
+        "The gate blocks only commands that the model writes in capital letters",
+        "pi disables all gates when bash is on"
+      ],
+      "answer": 1,
+      "explanation": "The working folder does not prevent commands from reaching other paths available to the pi process. No gate named that file, so nothing stopped the command.",
+      "conceptKeys": [
+        "security-boundary"
+      ]
+    },
+    {
+      "prompt": "DEEPSEEK_API_KEY is set when you start pi. What does a bash command receive?",
+      "options": [
+        "No environment variables, unless you list them",
+        "Only variables that start with PI_",
+        "Every variable of the pi process, including the key",
+        "Only PATH"
+      ],
+      "answer": 2,
+      "explanation": "getShellEnv() returns the whole process environment plus PATH, and bash passes it to the child shell.",
+      "conceptKeys": [
+        "security-boundary"
+      ]
+    },
+    {
+      "prompt": "Why is the SQL expert, with read, sql_schema and sql_query, safer than an expert with bash?",
+      "options": [
+        "It has no tool that starts a shell, so it cannot run arbitrary commands",
+        "SQL queries are always harmless",
+        "It runs in a container by default",
+        "pi gives it a smaller environment"
+      ],
+      "answer": 0,
+      "explanation": "Without bash there is no tool that starts a shell with the account's rights, so a command like cat ~/.ssh/id_ed25519 has no way to run.",
+      "conceptKeys": [
+        "security-boundary"
+      ]
+    }
+  ],
+  "diagrams": []
+}

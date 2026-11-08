@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does mini-dsh keep the signature on the finish piece instead of inside the shared reasoning block?",
+      "options": [
+        "The signature is too long for a block",
+        "The signature arrives after message_stop",
+        "The loop must show the signature to the user",
+        "The signature belongs to DeepSeek, while the shared block must work for every provider"
+      ],
+      "answer": 3,
+      "explanation": "The shared reasoning block holds only text so any provider can use it. The signature is DeepSeek's own data, so it travels beside the blocks and only the DeepSeek adapter reads it.",
+      "conceptKeys": [
+        "reasoning-block"
+      ]
+    },
+    {
+      "prompt": "A conversation used deepseek-flash, and the next request goes to a different model. What does mini-dsh send for the old reasoning block?",
+      "options": [
+        "The thinking text with its stored signature",
+        "Nothing, the block is deleted from the record",
+        "The thinking text without a signature",
+        "A new signature that mini-dsh computes"
+      ],
+      "answer": 2,
+      "explanation": "A signature is returned only to the model that made it. The stored model differs, so the thinking text goes out without the signature, and the record stays unchanged.",
+      "conceptKeys": [
+        "reasoning-block"
+      ]
+    },
+    {
+      "prompt": "What does translate do with a signature_delta event?",
+      "options": [
+        "Adds the slice to the stored signature for that block and yields no piece",
+        "Yields a reasoning-delta piece with the slice",
+        "Starts a new block for the signature",
+        "Ends the stream"
+      ],
+      "answer": 0,
+      "explanation": "The loop has no use for the signature while it streams, so translate keeps the slices beside the block and puts the whole signature on the finish piece.",
+      "conceptKeys": [
+        "reasoning-block"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,50 @@
+title One prompt through the whole harness
+
+client "SDK client"
+sdk    "SDK server"
+loop   "Agent loop" state idle
+record "Session record" counter 0
+llm    "DeepSeek adapter"
+api    "DeepSeek API"
+tools  "Tool pipeline"
+
+prompt at client
+
+# One prompt makes a round trip, and every layer writes to the record.
+pause "The question is: how many lines are in notes.txt?"
+
+# The SDK server turns the request line into a followup.
+prompt -> sdk
+prompt -> loop : queued "ctx.agents.create, then followup into the inbox."
+loop : running
+record +1
+
+# Step 1: the loop builds the request from the record and calls the model.
+new req at loop
+req -> llm "The JSONL file is flushed before the call."
+req -> api : running "POST /anthropic/v1/messages"
+req -> llm : done
+remove req
+record +1
+
+# The model asked for a tool, so the pipeline runs it.
+new call at loop
+call -> tools : running "Pre-execute policies, the sandboxed bash, post-execute."
+call -> loop : done "tool/result stores 42."
+remove call
+record +1
+
+# Step 2: the same path again, now with the result.
+new req2 at loop
+req2 -> llm
+req2 -> api : running
+req2 -> llm : done "The model answers in text with end_turn."
+remove req2
+record +1
+
+# The turn ends and the client hears about it.
+loop : idle
+record +1
+new answer at loop
+answer -> sdk
+answer -> client : done "session.event and session.status idle reach the client."

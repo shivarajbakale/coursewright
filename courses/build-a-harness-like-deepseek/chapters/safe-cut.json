@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The walk back reaches the amount to keep at message 5, a tool result. Message 4 is its tool call. Where does the cut go?",
+      "options": [
+        "Before message 5, because the total was reached there",
+        "Before message 4, so the call stays with its result",
+        "After message 5, so both are shortened",
+        "At message 0, so everything is shortened"
+      ],
+      "answer": 1,
+      "explanation": "A cut before message 5 would leave the call in the shortened range and its result in the kept part. The rule moves the cut back to before message 4.",
+      "conceptKeys": [
+        "safe-cut"
+      ]
+    },
+    {
+      "prompt": "Why does the range start at position 1 when position 0 is the system prompt?",
+      "options": [
+        "The system prompt is always shorter than 1 token",
+        "Position 0 is never priced by the meter",
+        "The system prompt stays outside the shortened range",
+        "Providers reject requests that start with a user message"
+      ],
+      "answer": 2,
+      "explanation": "The rule skips a system prompt at position 0, so the instructions stay word for word at the start of the request.",
+      "conceptKeys": [
+        "safe-cut",
+        "logged-system-prompt"
+      ]
+    },
+    {
+      "prompt": "With a window of 10,000 tokens and a reply reserve of 1,000, how much recent history does the rule keep at least?",
+      "options": [
+        "1,440 tokens",
+        "1,600 tokens",
+        "8,000 tokens",
+        "7,000 tokens"
+      ],
+      "answer": 0,
+      "explanation": "The amount to keep is 16% of the window after the reply reserve: (10,000 - 1,000) x 0.16 = 1,440. The trace kept 1,600 because the cut moved back.",
+      "conceptKeys": [
+        "safe-cut"
+      ]
+    }
+  ],
+  "diagrams": []
+}

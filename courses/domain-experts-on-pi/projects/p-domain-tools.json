@@ -1,0 +1,95 @@
+{
+  "title": "Give the SQL expert its own tools",
+  "brief": "Turn the SQL pack into a real expert by adding its tools. You write packs/sql/extension.ts with sql_schema and sql_query, open the database read-only, tighten both schemas, and run the expert with an exact tool list so it has no bash, edit or write. You also write an MCP config example for the Kubernetes expert and a codemode script for the quant expert. When you finish, the SQL expert answers a revenue question using only read, sql_schema and sql_query, a call with a bad argument is refused before the tool runs, and you have seen how MCP tools and codemode scripts fit in.",
+  "starter": [
+    {
+      "path": "fleet/packs/sql/extension.ts",
+      "note": "Edit. A default export that takes the ExtensionAPI. First a session_start notice and a /tables command, then the two tools."
+    },
+    {
+      "path": "fleet/packs/sql/tools.ts",
+      "note": "New. The tool definitions kept apart from the factory so a test can call execute directly."
+    },
+    {
+      "path": "fleet/test/helpers/fake-pi.ts",
+      "note": "New. A fake ExtensionAPI that records registerTool, registerCommand and on calls so tests can read them back."
+    },
+    {
+      "path": "fleet/test/tools.test.ts",
+      "note": "New. Tests for the extension, both tools and the schemas. No network and no model."
+    },
+    {
+      "path": "fleet/agents/sql/settings.json",
+      "note": "Edit. defaultTools becomes read, sql_schema, sql_query."
+    },
+    {
+      "path": "fleet/agents/k8s/mcp.json",
+      "note": "New. An example only. Server name cluster, command kube-mcp as a placeholder, exposure direct, and a toolExposure that hides tools matching delete_*."
+    },
+    {
+      "path": "fleet/packs/quant/examples/ma20.js",
+      "note": "New. A codemode script: one tools.prices call, a 20-day moving average in JavaScript, and a short summary returned."
+    }
+  ],
+  "hints": [
+    "Keep the extension factory light. Do not open the database or start timers in the factory body; open the database when the first query runs or in a session_start handler.",
+    "Open the file with new DatabaseSync(\"data/shop.db\", { readOnly: true }). Then a write fails at the database even if every other layer is wrong.",
+    "Use Type.Integer with minimum 1 and maximum 200 for limit, maxLength 4000 for sql, and additionalProperties false on the object. Remember that a schema cannot tell a SELECT from a DELETE.",
+    "Add promptSnippet to each tool. Without it a custom tool is left out of the prompt's tool list.",
+    "In the fake pi, store the tools by name so the test can call execute(id, params) and read content and details.",
+    "In ma20.js use only tools, console.log and return. The sandbox has no file system, network, timers or require."
+  ],
+  "rubric": [
+    {
+      "criterion": "The default export is a function that takes the API, registers handlers and a command, and starts nothing in the factory body",
+      "chapterKey": "extension"
+    },
+    {
+      "criterion": "sql_schema and sql_query are registered with TypeBox schemas, a promptSnippet and an execute that returns content for the model and details for your code",
+      "chapterKey": "custom-tool"
+    },
+    {
+      "criterion": "sql_query has limit 1 to 200, a maximum sql length and no extra fields, and a wrong call fails the schema check",
+      "chapterKey": "tight-schema"
+    },
+    {
+      "criterion": "The expert runs with --tools read,sql_schema,sql_query and settings.json matches, so it has no bash, edit or write",
+      "chapterKey": "tool-allowlist"
+    },
+    {
+      "criterion": "agents/k8s/mcp.json is valid JSON with a direct exposure, hides delete_* tools, and says in a note that kube-mcp is a placeholder",
+      "chapterKey": "mcp-server"
+    },
+    {
+      "criterion": "ma20.js calls prices once, computes the average in the script and returns a few numbers, and the test runs it with a fake tools object",
+      "chapterKey": "codemode"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "The extension loads",
+      "body": "Write the first version of extension.ts and the fake pi helper. The test loads the default export and checks that it registers a session_start handler and the /tables command. By hand, run pi -e packs/sql/extension.ts to see the notice.",
+      "checkCmd": "npx tsx test/tools.test.ts --only load"
+    },
+    {
+      "title": "sql_schema",
+      "body": "Add sql_schema with no arguments. Calling execute must list customers(id, name, country) and orders(id, customer_id, total, placed_at) in content.",
+      "checkCmd": "npx tsx test/tools.test.ts --only schema"
+    },
+    {
+      "title": "sql_query is read-only and capped",
+      "body": "Add sql_query. A SELECT returns rows as JSON in content and the row count in details. Asking for 500 rows returns at most 200. A DELETE statement must throw, because the database is open read-only.",
+      "checkCmd": "npx tsx test/tools.test.ts --only query"
+    },
+    {
+      "title": "Tight schemas and the allowlist",
+      "body": "Tighten both schemas. The test reads the JSON Schema and checks the limit range, the sql length, and additionalProperties false. Update agents/sql/settings.json. Then run the full expert by hand: PI_CODING_AGENT_DIR=agents/sql pi --model deepseek/deepseek-flash --system-prompt packs/sql/prompt.md -e packs/sql/extension.ts --tools read,sql_schema,sql_query. This needs DEEPSEEK_API_KEY.",
+      "checkCmd": "npx tsx test/tools.test.ts --only schemas"
+    },
+    {
+      "title": "MCP example and a codemode script",
+      "body": "Write agents/k8s/mcp.json and packs/quant/examples/ma20.js. The test parses the JSON, then runs the script with a fake tools.prices that returns 60 closes and checks that it returns numbers, not the 60 prices.",
+      "checkCmd": "npx tsx test/tools.test.ts --only mcp-codemode"
+    }
+  ]
+}

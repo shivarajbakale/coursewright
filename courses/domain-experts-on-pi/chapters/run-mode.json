@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Your program runs a task in JSON mode and gets exit code 0. What can you conclude?",
+      "options": [
+        "The model call worked and the answer is correct",
+        "Nothing about the model call yet, because JSON mode exits 0 even when it failed",
+        "The run was aborted by the user",
+        "The reply was cut by the token limit"
+      ],
+      "answer": 1,
+      "explanation": "JSON mode exits 0 even when the model call failed, so the program must read the events to learn the outcome.",
+      "conceptKeys": [
+        "run-mode"
+      ]
+    },
+    {
+      "prompt": "You send 200 tasks to one expert. Which choice avoids paying full startup 200 times?",
+      "options": [
+        "Print mode with a shorter prompt",
+        "JSON mode piped through head",
+        "RPC or the SDK",
+        "Interactive mode"
+      ],
+      "answer": 2,
+      "explanation": "Print and JSON start a new process for each task. RPC starts once and the SDK has no process to start.",
+      "conceptKeys": [
+        "run-mode"
+      ]
+    },
+    {
+      "prompt": "A task in print mode ends because the reply hit the token limit. What does the program see?",
+      "options": [
+        "Exit code 0 and half an answer",
+        "Exit code 1",
+        "No output and no exit code",
+        "Exit code 0 and an extra JSON line"
+      ],
+      "answer": 1,
+      "explanation": "Print mode returns exit code 1 for an error, an abort or a reply cut by the token limit.",
+      "conceptKeys": [
+        "run-mode"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,49 @@
+title One model request through the adapter seam
+
+loop    "agent-loop"
+runtime "LlmRuntime"
+adapter "DeepSeekAdapter"
+api     "DeepSeek API"
+asm     "BlockAssembler"
+log     "Session record"
+pieces  "Pieces read" counter 0
+
+loop -> runtime -> adapter -> api
+api -> adapter
+adapter -> runtime
+runtime -> loop
+loop -> asm
+asm -> log
+
+req at loop
+
+# The loop needs a reply but must not know which provider sends it.
+pause "The request names provider deepseek and model deepseek-flash, nothing more."
+
+# The runtime picks the adapter that was registered for the provider name.
+req -> runtime "One map from provider name to adapter."
+req -> adapter
+
+# Only the adapter knows DeepSeek's own request shape and address.
+req -> api : waiting "One POST to /anthropic/v1/messages with stream set to true."
+
+# DeepSeek's events come back, and the adapter turns each one into a shared piece.
+new text at api
+text -> adapter
+text -> runtime "A text-delta piece, in the shared list of seven types."
+text -> loop
+text -> asm
+pieces +1
+
+# The last piece is a finish, so the stream ends and the request is done.
+new fin at api
+fin -> adapter
+fin -> runtime
+fin -> loop
+fin -> asm "Finish kind stop: nothing comes after it."
+pieces +1
+req : done
+
+# The assembler gives whole blocks, and the loop writes them to the record.
+remove text
+fin -> log : done "The record holds the assistant message, not the provider's events."

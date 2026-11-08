@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "With W = 10,000, a reply reserve of 1,000 and headroom of 2,000, why is the threshold 7,000 and not 8,000?",
+      "options": [
+        "Because 80% is rounded down to 70%",
+        "Because the reply and the headroom leave only 7,000, which is smaller than 8,000",
+        "Because the meter adds 1,000 tokens of framing",
+        "Because the threshold is always 70% of the window"
+      ],
+      "answer": 1,
+      "explanation": "The threshold is the smaller of 80% of the window (8,000) and the window minus both reserves (7,000). Here the reserves win.",
+      "conceptKeys": [
+        "token-meter"
+      ]
+    },
+    {
+      "prompt": "Why does the meter start from the provider's reported usage, not estimate everything?",
+      "options": [
+        "The provider's count is exact, so only the part added since is a guess",
+        "Estimating is not allowed by the provider",
+        "Usage includes the next reply in advance",
+        "The estimate is always larger than the real count"
+      ],
+      "answer": 0,
+      "explanation": "After each reply the provider reports the exact token count. Only the messages added after that reply need the 4-characters rule.",
+      "conceptKeys": [
+        "token-meter",
+        "stream-chunk"
+      ]
+    },
+    {
+      "prompt": "Why is the reply's max_tokens subtracted from the window?",
+      "options": [
+        "It is the size of the system prompt",
+        "It pays for the headroom",
+        "It is a safety margin for estimation errors only",
+        "The reply uses the same window as the request"
+      ],
+      "answer": 3,
+      "explanation": "The provider counts the reply's tokens in the same context window. A request that fills the window leaves no room to answer.",
+      "conceptKeys": [
+        "token-meter",
+        "context-window"
+      ]
+    }
+  ],
+  "diagrams": []
+}

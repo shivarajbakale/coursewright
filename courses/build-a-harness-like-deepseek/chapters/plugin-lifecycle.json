@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A plugin throws while its function runs. What state does its fiber end in?",
+      "options": [
+        "pending, so it can try again later",
+        "disposed, because the error removed it",
+        "active, with the error stored beside it",
+        "failed, with the error kept on the fiber"
+      ],
+      "answer": 3,
+      "explanation": "start catches the error, stores it in fiber.error and sets the state to failed, so a caller can see which plugin did not start and why.",
+      "conceptKeys": [
+        "plugin-lifecycle"
+      ]
+    },
+    {
+      "prompt": "You dispose a fiber, then want the same plugin running again. What do you do?",
+      "options": [
+        "Call start on the disposed fiber",
+        "Mount the plugin again, which creates a new fiber",
+        "Set the fiber's state back to pending",
+        "Nothing: a disposed fiber restarts by itself"
+      ],
+      "answer": 1,
+      "explanation": "A disposed fiber never runs again. Mounting the plugin a second time makes a new fiber with its own child context.",
+      "conceptKeys": [
+        "plugin-lifecycle"
+      ]
+    },
+    {
+      "prompt": "After await a.dispose() in the trace, what problem remains?",
+      "options": [
+        "The llm service is still in the store, because nothing undid it",
+        "The fiber is stuck in unloading",
+        "The root context was disposed too",
+        "The adapter was mounted twice"
+      ],
+      "answer": 0,
+      "explanation": "dispose only changed the state. The plugin's provide call is not undone, so the old adapter stays in the store.",
+      "conceptKeys": [
+        "plugin-lifecycle"
+      ]
+    }
+  ],
+  "diagrams": []
+}

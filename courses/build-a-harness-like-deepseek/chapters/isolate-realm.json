@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "After helper = root.isolate('llm'), a plugin on helper provides llm. Why does it not throw 'already exists'?",
+      "options": [
+        "isolate deletes the root's llm",
+        "Below helper, llm maps to a new symbol, so it writes an empty slot",
+        "provide never checks for an existing service",
+        "The helper has its own copy of the whole store"
+      ],
+      "answer": 1,
+      "explanation": "The store is keyed by symbols. helper's table gives llm a fresh symbol, so the second adapter fills a different slot from the root's.",
+      "conceptKeys": [
+        "isolate-realm"
+      ]
+    },
+    {
+      "prompt": "A loop plugin mounted on helper injects llm and tools. Which tools does it get?",
+      "options": [
+        "The root's tools, because only llm was isolated",
+        "None: it stays pending until helper provides tools",
+        "A fresh copy of the root's tools",
+        "The second adapter, because it is the nearest service"
+      ],
+      "answer": 0,
+      "explanation": "Only llm got a new key below helper. tools still maps to the root's symbol, so the plugin shares the root's tools.",
+      "conceptKeys": [
+        "isolate-realm",
+        "service-inject"
+      ]
+    },
+    {
+      "prompt": "What does root.get('llm') return after the helper's adapter is mounted?",
+      "options": [
+        "The helper's second adapter, because it was provided last",
+        "undefined, because two services now share the name",
+        "The flash adapter, because the root's table never changed",
+        "An error, because the name is ambiguous"
+      ],
+      "answer": 2,
+      "explanation": "isolate changes the table of the child only. The root still maps llm to its own symbol, which holds the flash adapter.",
+      "conceptKeys": [
+        "isolate-realm"
+      ]
+    }
+  ],
+  "diagrams": []
+}

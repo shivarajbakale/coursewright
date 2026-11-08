@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Your session has entries a, b and c, and the leaf is c. You go back to b and send a new message. What does the file hold, and what does the model see?",
+      "options": [
+        "The file holds a, b, d; the model sees a, b, d",
+        "The file holds a, b, c, d; the model sees a, b, c, d",
+        "The file holds a, b, c, d; the model sees a, b, d",
+        "The file holds a, b, d; the model sees a, b, c"
+      ],
+      "answer": 2,
+      "explanation": "Going back only moves the leaf to b. The new entry d has parent b, so the file keeps c, and the path from the leaf to the root is d, b, a.",
+      "conceptKeys": [
+        "session-tree"
+      ]
+    },
+    {
+      "prompt": "What does branch(id) do in the session manager?",
+      "options": [
+        "It copies the entries after id into a new file",
+        "It deletes every entry after id",
+        "It rewrites the parent of the last entry",
+        "It moves the leaf to id and changes nothing else"
+      ],
+      "answer": 3,
+      "explanation": "The code is this.leafId = branchFromId. Only the pointer moves, so no entry is deleted or rewritten.",
+      "conceptKeys": [
+        "session-tree"
+      ]
+    },
+    {
+      "prompt": "pi loads a saved session file. Where does the leaf start?",
+      "options": [
+        "At the last entry in the file",
+        "At the first entry in the file",
+        "At the entry with the smallest id",
+        "At the entry that has the most children"
+      ],
+      "answer": 0,
+      "explanation": "On load the leaf is set to the last entry in the file, so a resumed session continues from the newest message.",
+      "conceptKeys": [
+        "session-tree"
+      ]
+    }
+  ],
+  "diagrams": []
+}

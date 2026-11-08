@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The model edits AGENTS.md successfully. When does it see the new text?",
+      "options": [
+        "Never, because the harness reads the file only once",
+        "At the next step, as an updated instructions note",
+        "Only after the session restarts",
+        "Immediately, inside the edit tool result"
+      ],
+      "answer": 1,
+      "explanation": "The tools/result listener records the touched path. At the next pre-step, the listener sees that the text changed and adds an updated note.",
+      "conceptKeys": [
+        "project-instructions"
+      ]
+    },
+    {
+      "prompt": "Why does the harness keep the text the model last saw for each file?",
+      "options": [
+        "To add a note only when the file really changed",
+        "To restore the file if the model breaks it",
+        "To send the old text with each request",
+        "To count the tokens in the file"
+      ],
+      "answer": 0,
+      "explanation": "A read also touches the path. Comparing with the last seen text means no note is added when nothing changed.",
+      "conceptKeys": [
+        "project-instructions"
+      ]
+    },
+    {
+      "prompt": "An edit to AGENTS.md fails with an error result. What does the listener do?",
+      "options": [
+        "It adds an updated note anyway",
+        "It removes the old instructions",
+        "It records nothing, because only successful results count",
+        "It retries the edit"
+      ],
+      "answer": 2,
+      "explanation": "The tools/result listener only records a path when the result is not an error, so a failed edit changes nothing.",
+      "conceptKeys": [
+        "project-instructions",
+        "tool-error-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

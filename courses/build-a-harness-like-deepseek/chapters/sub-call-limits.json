@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A run_code call has timeoutMs of 30,000. How many sub-calls may its program make?",
+      "options": [
+        "1,024",
+        "2,048",
+        "30",
+        "512"
+      ],
+      "answer": 3,
+      "explanation": "The limit is 1,024 per minute of run time. 30,000 ms is 0.5 minutes, and 0.5 x 1,024 = 512.",
+      "conceptKeys": [
+        "sub-call-limits"
+      ]
+    },
+    {
+      "prompt": "Why are failed sub-calls counted toward the limit?",
+      "options": [
+        "So a program that keeps retrying a failing call still hits the limit",
+        "Failed calls cost more tokens",
+        "The provider counts them",
+        "Failed calls skip the pipeline"
+      ],
+      "answer": 0,
+      "explanation": "The count goes up before any check. A loop of failing calls would otherwise never stop.",
+      "conceptKeys": [
+        "sub-call-limits"
+      ]
+    },
+    {
+      "prompt": "A program asks for bash, and the approval policy denies it. What does the program get?",
+      "options": [
+        "The command runs anyway, because programs skip approval",
+        "The whole session ends",
+        "A ToolCallError for that call, which it can catch",
+        "An empty result marked as success"
+      ],
+      "answer": 2,
+      "explanation": "Sub-calls pass the same pre-execute decision and approval as direct calls. A denial comes back to the program as a ToolCallError.",
+      "conceptKeys": [
+        "sub-call-limits",
+        "approval"
+      ]
+    }
+  ],
+  "diagrams": []
+}

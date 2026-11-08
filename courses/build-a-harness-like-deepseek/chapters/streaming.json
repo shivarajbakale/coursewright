@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A streamed reply ends with stop reason max_tokens. What does that tell your program?",
+      "options": [
+        "The model finished its answer normally",
+        "The request used more tokens than the context window",
+        "The reply reached the max_tokens limit, so the text is probably cut off",
+        "The model wants to stream a second reply"
+      ],
+      "answer": 2,
+      "explanation": "max_tokens means the model stopped because it reached the length limit, not because it finished. The text is probably incomplete. A finished answer ends with end_turn.",
+      "conceptKeys": [
+        "streaming"
+      ]
+    },
+    {
+      "prompt": "Why does the stream reader keep a buffer instead of parsing each piece of text it receives?",
+      "options": [
+        "A piece of network data can end in the middle of a message, so only complete messages are parsed",
+        "JSON.parse can only read one character at a time",
+        "The provider sends every message twice",
+        "The buffer stores the conversation for the next request"
+      ],
+      "answer": 0,
+      "explanation": "A message ends with an empty line, but network data can split it anywhere. The reader waits for the empty line before it parses the message.",
+      "conceptKeys": [
+        "streaming"
+      ]
+    },
+    {
+      "prompt": "In which part of the stream does the stop reason arrive?",
+      "options": [
+        "In message_start",
+        "In each content_block_delta",
+        "In content_block_start",
+        "In message_delta, near the end"
+      ],
+      "answer": 3,
+      "explanation": "The model only knows why it stopped when it stops. The stop reason comes in message_delta, just before message_stop.",
+      "conceptKeys": [
+        "streaming"
+      ]
+    }
+  ],
+  "diagrams": []
+}

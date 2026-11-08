@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "mini-dsh version 2 opens a folder with only session.v1.jsonl. What happens to that file?",
+      "options": [
+        "It is rewritten in place with the new layout",
+        "It is deleted after the new file is written",
+        "It keeps every byte, and a new session.v2.jsonl holds the converted events",
+        "It is renamed to session.v2.jsonl"
+      ],
+      "answer": 2,
+      "explanation": "The old file is never changed. The converted events go into a new file, so a mistake in a migration can always be checked against the original.",
+      "conceptKeys": [
+        "format-version"
+      ]
+    },
+    {
+      "prompt": "A file says version 3, and the program knows only up to version 2. What should the program do?",
+      "options": [
+        "Refuse to open it and ask for an upgrade",
+        "Run the 1-to-2 migration on it",
+        "Treat it as version 2 and continue",
+        "Drop the events it does not recognise"
+      ],
+      "answer": 0,
+      "explanation": "A newer layout may mean things this program cannot know. Guessing could resume a session wrongly, so the program refuses.",
+      "conceptKeys": [
+        "format-version"
+      ]
+    },
+    {
+      "prompt": "Why does each migration convert only to the next version?",
+      "options": [
+        "Because JSONL files cannot skip versions",
+        "Because each change needs one small step, written once, instead of a converter for every pair of versions",
+        "Because the model reads one version at a time",
+        "Because only the newest version has a header"
+      ],
+      "answer": 1,
+      "explanation": "Old files reach the current layout by running the steps in order. Each step is written when its change is made, so the work grows by one step per version.",
+      "conceptKeys": [
+        "format-version"
+      ]
+    }
+  ],
+  "diagrams": []
+}

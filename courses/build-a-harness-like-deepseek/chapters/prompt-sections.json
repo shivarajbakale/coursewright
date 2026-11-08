@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "The bash plugin starts before the identity plugin. Where does the identity text appear in the rendered prompt?",
+      "options": [
+        "After the bash text, because bash registered first",
+        "First, because its order -1000 is the lowest",
+        "Last, because it registered last",
+        "It depends on the plugin names only"
+      ],
+      "answer": 1,
+      "explanation": "render() sorts by order, not by start time. The identity section has order -1000, so it always comes first.",
+      "conceptKeys": [
+        "prompt-sections"
+      ]
+    },
+    {
+      "prompt": "Why does it matter that the same plugins always render the same bytes?",
+      "options": [
+        "The model reads sorted text faster",
+        "The record becomes shorter",
+        "An unchanged request start gives a prefix cache hit",
+        "Plugins can then skip their disposers"
+      ],
+      "answer": 2,
+      "explanation": "The provider reuses work when a request begins with the same bytes. A fixed sort keeps the system prompt identical between steps.",
+      "conceptKeys": [
+        "prompt-sections",
+        "prefix-caching"
+      ]
+    },
+    {
+      "prompt": "The bash plugin stops. What happens to its section?",
+      "options": [
+        "Its disposer deletes it, and the next render has no bash text",
+        "It stays until the session ends",
+        "Its text becomes an empty line in the prompt",
+        "The harness throws because a section is missing"
+      ],
+      "answer": 0,
+      "explanation": "section() returns a disposer, and the plugin's disposers run when it stops. Empty or removed sections leave no blank lines.",
+      "conceptKeys": [
+        "prompt-sections",
+        "effect-disposer"
+      ]
+    }
+  ],
+  "diagrams": []
+}

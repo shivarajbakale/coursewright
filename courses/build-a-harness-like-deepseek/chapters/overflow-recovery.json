@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the listener not retry the request at once, as it does for a rate limit?",
+      "options": [
+        "The provider forbids a second request",
+        "The same request fails the same way, so something must become smaller first",
+        "A retry would delete the record",
+        "The loop cannot run a step twice"
+      ],
+      "answer": 1,
+      "explanation": "A too-large request does not pass with time. Only a smaller surface can change the result, so the listener shortens it first.",
+      "conceptKeys": [
+        "overflow-recovery",
+        "retry-backoff"
+      ]
+    },
+    {
+      "prompt": "No safe range exists, so no summary lands and replaceCount stays the same. What does the listener do?",
+      "options": [
+        "It calls next(), so the turn ends with the error",
+        "It answers retry anyway",
+        "It deletes the newest message",
+        "It waits and retries with backoff"
+      ],
+      "answer": 0,
+      "explanation": "The listener retries only when replaceCount rose. Without a change, a retry would fail the same way, so it passes the error on.",
+      "conceptKeys": [
+        "overflow-recovery"
+      ]
+    },
+    {
+      "prompt": "Why does the recovery select a range with 0 tokens to keep, not the usual 1,440?",
+      "options": [
+        "Zero makes the summary request free",
+        "The provider requires an empty history",
+        "The request is already over the limit, so it must shrink as much as is safe",
+        "Zero keeps the system prompt out of the range"
+      ],
+      "answer": 2,
+      "explanation": "The provider already said the request is too large. Keeping 0 tokens shortens as much as a safe cut allows, while the newest call and result stay together.",
+      "conceptKeys": [
+        "overflow-recovery",
+        "safe-cut"
+      ]
+    }
+  ],
+  "diagrams": []
+}

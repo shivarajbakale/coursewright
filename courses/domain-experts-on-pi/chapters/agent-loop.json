@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A model replies with a tool call. Your program runs the tool, adds the result, and asks the model again. Why must the second request contain the first request and the first reply?",
+      "options": [
+        "Because the model keeps nothing between requests and reads only what it is sent",
+        "Because the tool result is too large to send on its own",
+        "Because the program must show the user every step",
+        "Because a tool call fails without the earlier token count"
+      ],
+      "answer": 0,
+      "explanation": "The model has no memory of an earlier request. Everything it needs, including the question, the reply and the tool result, must arrive in the same request.",
+      "conceptKeys": [
+        "agent-loop",
+        "context-window"
+      ]
+    },
+    {
+      "prompt": "In the loop, the reply contains no tool calls. What happens next?",
+      "options": [
+        "The program runs the last tool again",
+        "The loop breaks, and the reply is the answer",
+        "The program sends an empty request to the model",
+        "The program starts a second loop with the same list"
+      ],
+      "answer": 1,
+      "explanation": "A reply with no tool calls is the model's plain-text answer. The check finds zero calls and breaks out of the loop.",
+      "conceptKeys": [
+        "agent-loop"
+      ]
+    },
+    {
+      "prompt": "The model replies with two tool calls. The program runs both and adds both results. How many turns is that?",
+      "options": [
+        "Two turns, one for each tool call",
+        "Half a turn, because there is no text",
+        "One turn: the reply and the results that come with it",
+        "Three turns: the reply plus two results"
+      ],
+      "answer": 2,
+      "explanation": "One turn is one assistant reply plus the tool calls and results that come with it. Two calls in one reply still make one turn.",
+      "conceptKeys": [
+        "agent-loop"
+      ]
+    }
+  ],
+  "diagrams": []
+}

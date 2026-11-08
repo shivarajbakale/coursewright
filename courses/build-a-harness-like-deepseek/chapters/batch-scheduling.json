@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A reply asks for read a.txt, then bash, then read b.txt. How does the scheduler group them?",
+      "options": [
+        "All three together, because two of them are reads",
+        "read a.txt alone, then bash alone, then read b.txt alone",
+        "Both reads together first, then bash",
+        "bash first, because it takes longest"
+      ],
+      "answer": 1,
+      "explanation": "Groups follow model order. bash is not safe, so it ends the first group and runs alone; the read after it starts a new group.",
+      "conceptKeys": [
+        "batch-scheduling"
+      ]
+    },
+    {
+      "prompt": "A tool's isConcurrencySafe throws an error for one call. What does the scheduler do?",
+      "options": [
+        "It runs the call alone",
+        "It runs the call with the others",
+        "It skips the call",
+        "It stops the whole batch"
+      ],
+      "answer": 0,
+      "explanation": "Only the exact value true means safe. A thrown error counts as not safe, so the call runs alone.",
+      "conceptKeys": [
+        "batch-scheduling"
+      ]
+    },
+    {
+      "prompt": "read b.txt finishes before read a.txt in the same group. In what order does the model get the results?",
+      "options": [
+        "b.txt first, because it finished first",
+        "In a random order",
+        "a.txt first, because results keep the order of the calls",
+        "Only the first one to finish"
+      ],
+      "answer": 2,
+      "explanation": "Promise.all returns results in call order, so the record and the model always see them in the order the model asked.",
+      "conceptKeys": [
+        "batch-scheduling"
+      ]
+    }
+  ],
+  "diagrams": []
+}

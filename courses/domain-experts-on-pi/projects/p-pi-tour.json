@@ -1,0 +1,107 @@
+{
+  "title": "A guided tour of pi, with your own tools",
+  "brief": "Start the fleet repository and explore pi from the outside. You run pi in print mode and JSON mode, then write small TypeScript tools that read a pi session file the way pi does: list its lines, follow the parent links from the leaf to the root, replay the system messages to rebuild the prompt, and work out when compaction would fire. You also write a short notes file that names each pi package layer and says where a turn cap would go. When you finish, you can open any pi session file and say what the model saw, in which order, and why the run stopped. Nothing here is an expert yet. It is the map you use for the rest of the course.",
+  "starter": [
+    {
+      "path": "fleet/package.json",
+      "note": "New. Node 22 or newer, \"type\": \"module\", tsx as a dev dependency. Install pi with npm install -g @earendil-works/pi-coding-agent@1.5.0."
+    },
+    {
+      "path": "fleet/tour/run-modes.sh",
+      "note": "New. Runs pi -p and pi --mode json -p with --model deepseek/deepseek-flash and checks the first lines. Needs DEEPSEEK_API_KEY."
+    },
+    {
+      "path": "fleet/tour/read-session.ts",
+      "note": "New. Reads a JSONL session file and prints one line per entry: type, id, parentId and a short preview. Counts messages and tool results."
+    },
+    {
+      "path": "fleet/tour/session-tree.ts",
+      "note": "New. pathToLeaf(entries, leafId) walks parentId back to the root. leafOf(entries) is the last entry in the file."
+    },
+    {
+      "path": "fleet/tour/replay-prompt.ts",
+      "note": "New. Replays role system messages in order: sections overwrite, null removes, toolsAdded and toolsRemoved change the tool list."
+    },
+    {
+      "path": "fleet/tour/compaction.ts",
+      "note": "New. shouldCompact(contextTokens, contextWindow, reserveTokens = 16384). Prints the trigger for a 1,000,000-token window."
+    },
+    {
+      "path": "fleet/tour/NOTES.md",
+      "note": "New. Your answers: the three package layers, why a run stops, what a thinking level is, where a turn cap would hook in."
+    },
+    {
+      "path": "fleet/test/tour.test.ts",
+      "note": "New. Tests that run on a small fixture session file at fleet/test/fixtures/sample-session.jsonl. No network."
+    }
+  ],
+  "hints": [
+    "Make the fixture by hand from the line shapes in this module: a header {\"type\":\"session\",\"version\":3,...}, then message lines with id and parentId. Add a fourth message whose parentId is the second one, so the file holds a branch.",
+    "In read-session.ts, parse each line on its own and skip blank lines. One bad line should be reported with its line number, not crash the tool.",
+    "The leaf of a loaded file is the last entry in it. The model sees the path from that leaf back to the root, so reverse the walk before you print it.",
+    "In replay-prompt.ts, treat a section value of null as delete, and keep sections in the order they were first seen.",
+    "pi has no maxTurns or maxSteps. In NOTES.md, say that a finishTurn hook returning end is where a cap would go, and mark your sketch as roughly right, not an exact signature.",
+    "In JSON mode the exit code is 0 even if the model call failed. In run-modes.sh, look at the events, not the exit code."
+  ],
+  "rubric": [
+    {
+      "criterion": "NOTES.md names pi-ai, pi-agent-core and pi-coding-agent, says what each layer owns, and says experts are built on pi-coding-agent",
+      "chapterKey": "pi-packages"
+    },
+    {
+      "criterion": "NOTES.md lists the ways a run ends (no tool calls, a hook says end, error, abort) and says there is no step limit in pi's loop",
+      "chapterKey": "pi-loop"
+    },
+    {
+      "criterion": "NOTES.md explains that parallel is the default, that one sequential tool makes the batch run in order, and that results come back in model order",
+      "chapterKey": "tool-batch"
+    },
+    {
+      "criterion": "session-tree.ts returns the root-to-leaf path, and for a fixture with a branch the path skips the abandoned entry",
+      "chapterKey": "session-tree"
+    },
+    {
+      "criterion": "replay-prompt.ts rebuilds the current sections and tool list from system messages, and null removes a section",
+      "chapterKey": "prompt-patch"
+    },
+    {
+      "criterion": "read-session.ts counts custom entries separately and NOTES.md says they are saved but never shown to the model",
+      "chapterKey": "context-projection"
+    },
+    {
+      "criterion": "run-modes.sh runs with deepseek/deepseek-flash, and NOTES.md says what a thinking level is and how the :high suffix picks one",
+      "chapterKey": "pi-provider"
+    },
+    {
+      "criterion": "compaction.ts reports the trigger as 983,616 tokens for a 1,000,000-token window, and NOTES.md says nothing is deleted from the file",
+      "chapterKey": "pi-compaction"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Run pi in print and JSON mode",
+      "body": "Install pi 1.5.0 and set DEEPSEEK_API_KEY. In tour/run-modes.sh run pi -p --model deepseek/deepseek-flash \"2+2?\" and the same task with --mode json -p. Check that print mode shows only the answer text and that JSON mode starts with a session header line with version 3, then an agent_start event. This step needs DEEPSEEK_API_KEY.",
+      "checkCmd": "sh tour/run-modes.sh"
+    },
+    {
+      "title": "Read a session file",
+      "body": "Write read-session.ts. On the fixture it must print one line per entry and report the counts: messages, tool results and custom entries. A blank line is skipped and a broken line is reported with its line number.",
+      "checkCmd": "npx tsx test/tour.test.ts --only read"
+    },
+    {
+      "title": "Follow the leaf to the root",
+      "body": "Write session-tree.ts. On a fixture with entries a, b, c and then d whose parent is b, the file holds a, b, c, d but the path from the leaf must be a, b, d.",
+      "checkCmd": "npx tsx test/tour.test.ts --only tree"
+    },
+    {
+      "title": "Replay the prompt from system messages",
+      "body": "Write replay-prompt.ts. Feed it a first system message with preamble, tools and cwd, then a patch that sets skills and removes write. The result must hold the new skills section and no write tool.",
+      "checkCmd": "npx tsx test/tour.test.ts --only prompt"
+    },
+    {
+      "title": "Compaction math and your notes",
+      "body": "Write compaction.ts so shouldCompact(983617, 1000000) is true and shouldCompact(983616, 1000000) is false. Then fill in NOTES.md. The test checks that the file names all three package layers and mentions finishTurn.",
+      "checkCmd": "npx tsx test/tour.test.ts --only compaction"
+    }
+  ]
+}

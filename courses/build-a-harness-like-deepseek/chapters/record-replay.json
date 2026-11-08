@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A change makes the loop stop after the tool result. The fixture has 2 recorded replies. What does replay report?",
+      "options": [
+        "Nothing, because the turn ended",
+        "That 1 recorded call was never used",
+        "That the script is exhausted",
+        "That the tool failed"
+      ],
+      "answer": 1,
+      "explanation": "The loop used only reply 1, so assertConsumed finds 1 unused recorded call and fails the test.",
+      "conceptKeys": [
+        "record-replay"
+      ]
+    },
+    {
+      "prompt": "Why can a session file serve as a recording of the model?",
+      "options": [
+        "Each assistant/message event stores the blocks the model wrote, in order",
+        "The file stores the HTTP bytes",
+        "The model saves its own replies in the file",
+        "The file has the system prompt only"
+      ],
+      "answer": 0,
+      "explanation": "The record keeps every assistant message with its blocks, so turning those blocks back into chunks gives each reply in order.",
+      "conceptKeys": [
+        "record-replay",
+        "jsonl-storage"
+      ]
+    },
+    {
+      "prompt": "When does a replay test need an API key?",
+      "options": [
+        "On every run",
+        "Only when the test fails",
+        "Only once, when the fixture is recorded",
+        "Never, not even to record"
+      ],
+      "answer": 2,
+      "explanation": "The live run that makes the fixture calls the real model once. Every later run reads the file and needs no key.",
+      "conceptKeys": [
+        "record-replay"
+      ]
+    }
+  ],
+  "diagrams": []
+}

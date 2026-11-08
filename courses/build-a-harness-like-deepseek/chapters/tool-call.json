@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "The reply has a tool_use block for count_lines. Who runs count_lines?",
+      "options": [
+        "The model, on DeepSeek's servers",
+        "Your program, if it decides to",
+        "The API runs it before it replies",
+        "Nobody, because tool_use blocks are only text to show"
+      ],
+      "answer": 1,
+      "explanation": "A tool call is only a request. The model runs nothing; your program reads the request, checks it and decides whether to run the tool.",
+      "conceptKeys": [
+        "tool-call"
+      ]
+    },
+    {
+      "prompt": "Why must your program check the arguments in a tool call?",
+      "options": [
+        "The model predicts the call, so the arguments can miss a field or name a tool that does not exist",
+        "The API changes the arguments on the way",
+        "Arguments are always sent as numbers",
+        "The id is secret and must be removed"
+      ],
+      "answer": 0,
+      "explanation": "The model writes the call as predicted tokens. It usually fits the schema, but nothing forces it, so the program treats it as a request from outside.",
+      "conceptKeys": [
+        "tool-call",
+        "tool-schema"
+      ]
+    },
+    {
+      "prompt": "A reply ends with stop reason tool_use. What does it mean?",
+      "options": [
+        "The reply reached the max_tokens limit",
+        "The model finished its final answer",
+        "The request had too many tools",
+        "The model stopped to wait for your program to run the tool it asked for"
+      ],
+      "answer": 3,
+      "explanation": "tool_use says the model stopped because it asked for a tool. It needs the result before it can finish.",
+      "conceptKeys": [
+        "tool-call",
+        "streaming"
+      ]
+    }
+  ],
+  "diagrams": []
+}

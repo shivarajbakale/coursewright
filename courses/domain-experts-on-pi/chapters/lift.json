@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Plain pi passes 12 of 20 tasks. The pack passes 18 of 20. What is the lift?",
+      "options": [
+        "6 percentage points",
+        "30 percentage points",
+        "60 percentage points",
+        "90 percentage points"
+      ],
+      "answer": 1,
+      "explanation": "12 of 20 is 60%. 18 of 20 is 90%. The lift is 90% minus 60%, which is 30 percentage points.",
+      "conceptKeys": [
+        "lift"
+      ]
+    },
+    {
+      "prompt": "Both arms pass 19 of 20 tasks. What does this tell you?",
+      "options": [
+        "The pack is perfect",
+        "The tasks are too easy to tell the arms apart, so you should add harder ones",
+        "The control run was broken",
+        "The lift is 95 points"
+      ],
+      "answer": 1,
+      "explanation": "Both arms pass 95%, so the lift is 0. The tasks are saturated: they cannot show whether the pack helps.",
+      "conceptKeys": [
+        "lift"
+      ]
+    },
+    {
+      "prompt": "Why does the control run use the same model and the same fixture?",
+      "options": [
+        "So the only difference between the arms is the pack",
+        "So the control passes more tasks",
+        "So the runner needs only one folder",
+        "So tokens cost less"
+      ],
+      "answer": 0,
+      "explanation": "If anything else changed, you could not say that the pack caused the difference in pass rate.",
+      "conceptKeys": [
+        "lift"
+      ]
+    }
+  ],
+  "diagrams": []
+}

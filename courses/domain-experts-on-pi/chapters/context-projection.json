@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "An extension saves a custom entry holding 200 query rows. What does the model see of it?",
+      "options": [
+        "All 200 rows, in order",
+        "The first row only",
+        "Nothing, because custom entries are not in the model's context",
+        "A message that says the entry exists"
+      ],
+      "answer": 2,
+      "explanation": "A custom entry is extension state. It is saved in the session but never sent to the model.",
+      "conceptKeys": [
+        "context-projection"
+      ]
+    },
+    {
+      "prompt": "A context edit has a targetId and a replacement. What happens to the old entry?",
+      "options": [
+        "It is deleted from the file",
+        "It stays in the file, and the model sees the replacement instead",
+        "It is overwritten with the replacement",
+        "It is moved to the end of the file"
+      ],
+      "answer": 1,
+      "explanation": "The edit is itself appended as a new entry. The old entry stays in the log, and the projection shows the replacement.",
+      "conceptKeys": [
+        "context-projection"
+      ]
+    },
+    {
+      "prompt": "Two context edits point at the same target entry. Which one decides what the model sees?",
+      "options": [
+        "The first one",
+        "Both, joined together",
+        "Neither, because they conflict",
+        "The latest one"
+      ],
+      "answer": 3,
+      "explanation": "The latest edit per target wins, so a newer edit can correct an older one.",
+      "conceptKeys": [
+        "context-projection"
+      ]
+    }
+  ],
+  "diagrams": []
+}

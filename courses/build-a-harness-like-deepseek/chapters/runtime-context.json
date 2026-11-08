@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the time go into a user message at the end of the history, not into a prompt section?",
+      "options": [
+        "The model cannot read times in the system prompt",
+        "A changing system prompt would change the request start and lose the cache hit",
+        "User messages are cheaper per token than system messages",
+        "Prompt sections cannot contain numbers"
+      ],
+      "answer": 1,
+      "explanation": "The system prompt sits at the start of every request. Adding the fact at the end keeps every earlier byte the same, so the prefix cache still matches.",
+      "conceptKeys": [
+        "runtime-context",
+        "prefix-caching"
+      ]
+    },
+    {
+      "prompt": "Step 2 of a turn starts 5 seconds after step 1, which got a time note. What does the listener do?",
+      "options": [
+        "It adds a new time note",
+        "It replaces the old note",
+        "It adds nothing, because less than 600,000 ms passed",
+        "It throws, because two steps are too close"
+      ],
+      "answer": 2,
+      "explanation": "The listener only adds a note when the last one is at least 600,000 ms (10 minutes) old. 5 seconds is far less.",
+      "conceptKeys": [
+        "runtime-context"
+      ]
+    },
+    {
+      "prompt": "Why does the loop append each time note to the record as a user/message event?",
+      "options": [
+        "So any request the model saw can be rebuilt from the record",
+        "So the person sees the time in the chat",
+        "So the note is sent twice",
+        "So the next step can delete it"
+      ],
+      "answer": 0,
+      "explanation": "Anything the model sees must first be written to the record. A logged note lets a reader rebuild the exact request.",
+      "conceptKeys": [
+        "runtime-context",
+        "model-visible-logged"
+      ]
+    }
+  ],
+  "diagrams": []
+}

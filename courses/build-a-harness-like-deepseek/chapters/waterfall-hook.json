@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "In the trace, a request has max_tokens 16000. Why does DeepSeek never receive it?",
+      "options": [
+        "The timing listener did not call next()",
+        "The kernel rejects any request above 8192 tokens",
+        "The budget listener returned an error without calling next(), so the inner work never ran",
+        "The loop checks max_tokens before sending"
+      ],
+      "answer": 2,
+      "explanation": "The chain reaches the inner work only through next(). Budget returned its error instead, so inner() never ran and the error went back through timing.",
+      "conceptKeys": [
+        "waterfall-hook"
+      ]
+    },
+    {
+      "prompt": "A logging listener on a waterfall prints the request and returns nothing, without calling next(). What happens?",
+      "options": [
+        "The request is sent, and the log is printed",
+        "The kernel calls next() for it",
+        "The kernel throws an error",
+        "The work stops silently, and the result is undefined"
+      ],
+      "answer": 3,
+      "explanation": "Not calling next() stops the chain. A listener that only watches must call next() once and return what it gives back.",
+      "conceptKeys": [
+        "waterfall-hook"
+      ]
+    },
+    {
+      "prompt": "Why does the timing listener print a time for the refused request too?",
+      "options": [
+        "It runs before budget, so its next() returns budget's error and it continues after that",
+        "It runs after DeepSeek replies",
+        "The kernel calls every listener twice",
+        "Budget calls timing when it refuses"
+      ],
+      "answer": 0,
+      "explanation": "Timing is the outer layer. Its next() call returns whatever the inner layers return, here the error, and then the rest of its code runs.",
+      "conceptKeys": [
+        "waterfall-hook"
+      ]
+    }
+  ],
+  "diagrams": []
+}

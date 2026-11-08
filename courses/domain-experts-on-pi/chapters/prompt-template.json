@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "You type /revenue Germany. The template says ${1:-all countries} in ${2:-the last 12 months}. What does pi send?",
+      "options": [
+        "Germany in all countries",
+        "Germany in the last 12 months",
+        "all countries in the last 12 months",
+        "The text /revenue Germany unchanged"
+      ],
+      "answer": 1,
+      "explanation": "Germany fills $1. You typed no second word, so $2 uses its default, the last 12 months.",
+      "conceptKeys": [
+        "prompt-template"
+      ]
+    },
+    {
+      "prompt": "What is the difference between a prompt template and a skill?",
+      "options": [
+        "A template is chosen by the person, a skill by the model",
+        "A template is code and a skill is Markdown",
+        "A template is chosen by the model, a skill by the person",
+        "A template can hold arguments and a skill never can"
+      ],
+      "answer": 0,
+      "explanation": "A person chooses a template by typing its command. The model chooses a skill by reading its description.",
+      "conceptKeys": [
+        "prompt-template"
+      ]
+    },
+    {
+      "prompt": "A template file has no description in its front matter. What does pi show as its description?",
+      "options": [
+        "Nothing",
+        "The file name",
+        "The first line, cut to 60 characters",
+        "The whole first paragraph"
+      ],
+      "answer": 2,
+      "explanation": "Without a description, pi uses the first line of the file, cut to 60 characters.",
+      "conceptKeys": [
+        "prompt-template"
+      ]
+    }
+  ],
+  "diagrams": []
+}

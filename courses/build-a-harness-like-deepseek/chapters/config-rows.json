@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "The llm row has config { model: deepseek-flash, max_tokens: 4096 }. A patch gives { id: llm, config: { max_tokens: 8192 } }. What is the row's config now?",
+      "options": [
+        "{ model: deepseek-flash, max_tokens: 8192 }",
+        "{ max_tokens: 8192 }",
+        "{ model: deepseek-flash, max_tokens: 4096 }",
+        "Two rows, one with each config"
+      ],
+      "answer": 1,
+      "explanation": "A patch replaces each key it gives as a whole. The config key is replaced, so model is gone unless the patch repeats it.",
+      "conceptKeys": [
+        "config-rows"
+      ]
+    },
+    {
+      "prompt": "The loop row comes before the llm row in the file. Does the loop start before the adapter exists?",
+      "options": [
+        "Yes, and its first request fails",
+        "Yes, because rows mount from top to bottom and start at once",
+        "No, the loader sorts rows by id",
+        "No, the loop's inject list keeps it pending until llm exists"
+      ],
+      "answer": 3,
+      "explanation": "The loader mounts every row, and each plugin's inject list decides when it starts. Row order does not decide start order.",
+      "conceptKeys": [
+        "config-rows",
+        "service-inject"
+      ]
+    },
+    {
+      "prompt": "Why does every row carry an id that stays the same?",
+      "options": [
+        "So a patch can find the row it changes",
+        "So the loader can sort rows alphabetically",
+        "So two rows can load the same module",
+        "So YAML can parse the file"
+      ],
+      "answer": 0,
+      "explanation": "A patch that is not an insert names its target by id. Without a stable id, a correction could not say which row it changes.",
+      "conceptKeys": [
+        "config-rows"
+      ]
+    }
+  ],
+  "diagrams": []
+}

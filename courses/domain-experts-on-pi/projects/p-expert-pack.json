@@ -1,0 +1,107 @@
+{
+  "title": "The SQL pack: prompt, skill, template and agent folder",
+  "brief": "Build the first half of the SQL analyst in fleet. You seed the shop.db example database, write packs/sql/prompt.md as the role, add the monthly-revenue skill and a /revenue prompt template, put notes about the tables in data/AGENTS.md, give the expert its own agent folder with a settings file, and wrap the pack in a package.json so pi can install it. When you finish, you can start the SQL expert by hand with its own prompt, see only its own skill and sessions, and install the whole pack with one command. It has no tools of its own yet, so it can only read.",
+  "starter": [
+    {
+      "path": "fleet/data/seed.ts",
+      "note": "New. Creates data/shop.db with customers(id, name, country) and orders(id, customer_id, total, placed_at) using node:sqlite. Some orders have a total of 0 or less."
+    },
+    {
+      "path": "fleet/data/AGENTS.md",
+      "note": "New. Notes for the data folder: orders.total is in cents, placed_at is UTC."
+    },
+    {
+      "path": "fleet/packs/sql/prompt.md",
+      "note": "New. About 8 lines: the role, the rules (read only, never guess column names, show the query, revenue excludes totals <= 0) and the output format (answer, then the SQL)."
+    },
+    {
+      "path": "fleet/packs/sql/skills/monthly-revenue/SKILL.md",
+      "note": "New. Front matter name and description, then 4 steps: check schema, group by month and country, exclude totals <= 0, convert cents to currency."
+    },
+    {
+      "path": "fleet/packs/sql/prompts/revenue.md",
+      "note": "New. A template with ${1:-all countries} and ${2:-the last 12 months}."
+    },
+    {
+      "path": "fleet/agents/sql/settings.json",
+      "note": "New. Sets defaultTools to read only for now. Add agents/*/auth.json and agents/*/sessions to .gitignore."
+    },
+    {
+      "path": "fleet/packs/sql/package.json",
+      "note": "New. Name @fleet/sql-pack, a pi field with extensions, skills and prompts, and pi packages under peerDependencies."
+    },
+    {
+      "path": "fleet/test/pack.test.ts",
+      "note": "New. File and format checks for the pack. No network."
+    }
+  ],
+  "hints": [
+    "Write the prompt as short rules, one per line. A model follows a short list better than a paragraph.",
+    "The skill name must be lowercase letters, digits and hyphens, at most 64 characters, and the description is required. A skill without a description is not loaded.",
+    "Keep read in the tool list. Skills reach the model through the read tool, so without it the skill section disappears.",
+    "Run the expert with --system-prompt packs/sql/prompt.md. That replaces pi's preamble and drops pi's own tools, rules and docs sections, which is what you want for SQL.",
+    "Give the agent folder a key through DEEPSEEK_API_KEY in the environment. A new agent folder has no saved login.",
+    "Do not put pi packages under dependencies. They go in peerDependencies with \"*\"."
+  ],
+  "rubric": [
+    {
+      "criterion": "The pack is described in files: prompt, skill, template, package.json, and the README line says which of the five parts (role, knowledge, tools, guards, evals) exist so far",
+      "chapterKey": "domain-expert"
+    },
+    {
+      "criterion": "prompt.md states the role, the read-only rule, the revenue rule and the output format, and the expert is started with --system-prompt",
+      "chapterKey": "expert-prompt"
+    },
+    {
+      "criterion": "data/AGENTS.md holds the table notes and the expert, run from data, receives them; a run with -nc does not",
+      "chapterKey": "context-files"
+    },
+    {
+      "criterion": "SKILL.md has a valid name and a description under 1024 characters, and read stays in the tool list",
+      "chapterKey": "skill"
+    },
+    {
+      "criterion": "revenue.md uses $1 and $2 defaults, and typing /revenue Germany fills the first one",
+      "chapterKey": "prompt-template"
+    },
+    {
+      "criterion": "agents/sql is used through PI_CODING_AGENT_DIR, its sessions land inside it, and auth.json and sessions are ignored by git",
+      "chapterKey": "agent-dir"
+    },
+    {
+      "criterion": "settings.json in the agent folder sets defaultTools, and you can say why a project .pi/settings.json only loads in a trusted folder",
+      "chapterKey": "settings-layers"
+    },
+    {
+      "criterion": "package.json has a pi field and peerDependencies, and pi install ./packs/sql adds the pack to the SQL agent folder",
+      "chapterKey": "pi-package"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Seed the shop database",
+      "body": "Write data/seed.ts and run it. The database must have both tables, at least 30 orders, customers from at least three countries, and a few orders with a total of 0 or less. Write data/AGENTS.md with the table notes.",
+      "checkCmd": "npx tsx test/pack.test.ts --only data"
+    },
+    {
+      "title": "The role prompt",
+      "body": "Write packs/sql/prompt.md. The test checks that it names the role, says read only, says revenue excludes totals <= 0 and asks for the SQL after the answer. Then try it by hand with PI_CODING_AGENT_DIR=agents/sql pi --model deepseek/deepseek-flash --system-prompt packs/sql/prompt.md --tools read. This needs DEEPSEEK_API_KEY.",
+      "checkCmd": "npx tsx test/pack.test.ts --only prompt"
+    },
+    {
+      "title": "Skill and template",
+      "body": "Write the monthly-revenue skill and the revenue template. The test parses the front matter, checks the name rule and the 1024-character limit, and checks that the template has both defaults.",
+      "checkCmd": "npx tsx test/pack.test.ts --only skill"
+    },
+    {
+      "title": "The agent folder",
+      "body": "Create agents/sql with settings.json and the .gitignore lines. The test checks that defaultTools is exactly [\"read\"], that auth.json and sessions are ignored, and that no secret is written into the folder.",
+      "checkCmd": "npx tsx test/pack.test.ts --only agent"
+    },
+    {
+      "title": "Package the pack",
+      "body": "Write packs/sql/package.json and check it with the test. Then run PI_CODING_AGENT_DIR=agents/sql pi install ./packs/sql and look at agents/sql/settings.json to see the entry.",
+      "checkCmd": "npx tsx test/pack.test.ts --only package"
+    }
+  ]
+}

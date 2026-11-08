@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "You run pi inside fleet/data. Which context file comes first in the prompt?",
+      "options": [
+        "The AGENTS.md in fleet/data",
+        "The AGENTS.md in the file system root folder",
+        "The file in ~/.pi/agent/",
+        "All files are merged with no order"
+      ],
+      "answer": 2,
+      "explanation": "The global file in ~/.pi/agent/ comes first. Then each parent folder from the root down to the working folder follows.",
+      "conceptKeys": [
+        "context-files"
+      ]
+    },
+    {
+      "prompt": "A folder holds both AGENTS.md and CLAUDE.md. What does pi load from that folder?",
+      "options": [
+        "Both files",
+        "Only CLAUDE.md",
+        "Only the first one that exists in its list, AGENTS.md",
+        "Neither, because the names clash"
+      ],
+      "answer": 2,
+      "explanation": "In each folder pi takes the first file that exists from its list. AGENTS.md comes before CLAUDE.md.",
+      "conceptKeys": [
+        "context-files"
+      ]
+    },
+    {
+      "prompt": "Your SQL expert must ignore a general AGENTS.md in your home folder. What do you do?",
+      "options": [
+        "Run pi with --no-context-files and put the knowledge in the pack",
+        "Rename the file to CLAUDE.md",
+        "Run pi from the root folder",
+        "Delete the file shop.db"
+      ],
+      "answer": 0,
+      "explanation": "The flag --no-context-files (-nc) turns the loading off. The expert then gets its knowledge from the pack.",
+      "conceptKeys": [
+        "context-files"
+      ]
+    }
+  ],
+  "diagrams": []
+}

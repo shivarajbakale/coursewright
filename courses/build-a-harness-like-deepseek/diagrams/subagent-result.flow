@@ -1,0 +1,36 @@
+title A child reports back
+
+parent "Parent agent" state running
+tool   "subagent tool"
+child  "agent-1" state idle
+inbox  "Parent inbox" queue
+steps  "Child steps" counter 0
+
+task at parent
+
+# A parent hands a search to a child so its own history stays short.
+pause "The parent asks for a search it does not want in its own history."
+
+# The tool starts the child and returns at once.
+task -> tool
+task -> child : running "The tool result is only: started subagent agent-1."
+child : running
+
+# The parent has nothing else to do, so its turn ends.
+parent : idle "Its step ended while the child still works."
+
+# The child works alone; its tool results stay in its own record.
+steps +1
+steps +1
+steps +1 "Three steps, none of them in the parent's history."
+
+# Settlement: the child's closing reply becomes one message.
+child : done
+remove task
+new notice at child
+notice -> inbox "The parent is idle, so the notice goes in as a followup."
+
+# The notice wakes the parent and opens its next turn.
+notice -> parent
+parent : running "Turn 2 starts with the child's closing message."
+remove notice

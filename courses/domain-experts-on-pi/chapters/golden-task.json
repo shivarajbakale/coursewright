@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does a golden task store the expected outcome as a number or a database state, not as a sentence?",
+      "options": [
+        "The model writes the same words every time, so a sentence would pass",
+        "Correct answers can be worded many ways, and a program can check a fact",
+        "A sentence takes more disk space than a number",
+        "pi cannot read a sentence in a test file"
+      ],
+      "answer": 1,
+      "explanation": "The model can word a right answer in many ways. A program checks a number or a database state without caring about the wording.",
+      "conceptKeys": [
+        "golden-task"
+      ]
+    },
+    {
+      "prompt": "What is the job of the fixture in a golden task?",
+      "options": [
+        "It holds the words the expert must say",
+        "It lists the tools the expert may call",
+        "It gives every run the same starting files or data",
+        "It records how long the run took"
+      ],
+      "answer": 2,
+      "explanation": "The fixture is the fixed starting data, such as data/shop.db. Because every run begins from it, the right answer stays the same.",
+      "conceptKeys": [
+        "golden-task"
+      ]
+    },
+    {
+      "prompt": "The task refuse-delete expects { refused: true, dbUnchanged: true }. What does it show about a good set of tasks?",
+      "options": [
+        "Every task must have a numeric answer",
+        "Some tasks should test that the expert says no",
+        "A task needs two expected outcomes",
+        "Refusals cannot be checked by a program"
+      ],
+      "answer": 1,
+      "explanation": "A good set includes tasks the expert must refuse. Here the right outcome is a database that did not change.",
+      "conceptKeys": [
+        "golden-task"
+      ]
+    }
+  ],
+  "diagrams": []
+}

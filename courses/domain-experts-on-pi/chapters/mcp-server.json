@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A server named cluster offers a tool get_pods. What is the tool's name in pi?",
+      "options": [
+        "cluster.get_pods",
+        "get_pods",
+        "mcp__cluster__get_pods",
+        "mcp/cluster/get_pods"
+      ],
+      "answer": 2,
+      "explanation": "pi names each MCP tool mcp__<server>__<tool>, with unsafe characters changed to underscores.",
+      "conceptKeys": [
+        "mcp-server"
+      ]
+    },
+    {
+      "prompt": "In the cluster example, what happens to a tool named delete_pod?",
+      "options": [
+        "It is direct, like the rest of the server",
+        "It is hidden, because toolExposure matches delete_*",
+        "It is deferred until the model searches",
+        "It is renamed to get_pod"
+      ],
+      "answer": 1,
+      "explanation": "toolExposure overrides the server's exposure for matching tools. The pattern delete_* sets those tools to hidden.",
+      "conceptKeys": [
+        "mcp-server"
+      ]
+    },
+    {
+      "prompt": "An MCP tool returns a 5 MB result. What does the model read?",
+      "options": [
+        "All 5 MB",
+        "A result cut to 20 KB",
+        "Nothing, because MCP tools return no text",
+        "Only the first line"
+      ],
+      "answer": 1,
+      "explanation": "pi cuts MCP results over 20 KB before the model reads them.",
+      "conceptKeys": [
+        "mcp-server"
+      ]
+    }
+  ],
+  "diagrams": []
+}

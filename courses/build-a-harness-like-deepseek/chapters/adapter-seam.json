@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "prompt": "mini-dsh gets a second provider. Which code must change?",
+      "options": [
+        "Only a new adapter, registered under the new provider name",
+        "The agent loop and the block assembler",
+        "The list of seven piece types",
+        "Every tool schema"
+      ],
+      "answer": 0,
+      "explanation": "The loop reads only shared pieces and picks an adapter by provider name. A new provider needs one new adapter with a stream method, and nothing else changes.",
+      "conceptKeys": [
+        "adapter-seam"
+      ]
+    },
+    {
+      "prompt": "The loop calls stream with provider 'nobody', and no adapter has that name. What does the loop receive?",
+      "options": [
+        "An exception thrown out of the for await loop",
+        "An empty stream with no pieces",
+        "One finish piece with kind error",
+        "A text block that says the provider is missing"
+      ],
+      "answer": 2,
+      "explanation": "The shared stream function catches the failure and converts it into a finish piece with kind error, so the loop checks for failure in one place.",
+      "conceptKeys": [
+        "adapter-seam"
+      ]
+    },
+    {
+      "prompt": "Why can the scripted adapter test the loop without any network?",
+      "options": [
+        "The loop skips the assembler for scripted providers",
+        "The loop sees only shared pieces, so any code that yields them looks like a provider",
+        "The scripted adapter sends requests to a local copy of DeepSeek",
+        "Tests turn off the finish piece"
+      ],
+      "answer": 1,
+      "explanation": "The loop never knows who produced the pieces. A function that yields a text delta, usage and finish is enough for the loop to run.",
+      "conceptKeys": [
+        "adapter-seam"
+      ]
+    }
+  ],
+  "diagrams": [],
+  "diagramRequest": {
+    "title": "One model request through the adapter seam",
+    "show": "The agent loop sends a request to LlmRuntime, which picks DeepSeekAdapter by provider name; the adapter sends one HTTP POST to DeepSeek. A text piece and a finish piece come back through the adapter and runtime to the loop and the BlockAssembler, and the whole block is written to the session record.",
+    "shape": "process"
+  }
+}

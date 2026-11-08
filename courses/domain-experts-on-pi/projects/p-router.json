@@ -1,0 +1,96 @@
+{
+  "title": "A router in front of many experts",
+  "brief": "Build router/ so one program can hold several experts and send each task to the right one. You write a small RPC client for one expert process, put the shared rules in a base pack, create one SDK session per expert with its own prompt, tools and session folder, and write the router: cheap rules first, then a classifier session that can only answer sql, k8s, quant or unsure. Every decision goes to a log. You add a chain that hands one expert's answer to the next and stops at three steps. When you finish, a task such as \"Monthly revenue in Germany for 2025\" reaches the SQL expert, an unclear task asks the user, and a two-part task runs as a logged chain. Code tests use stub experts. Real runs need DEEPSEEK_API_KEY.",
+  "starter": [
+    {
+      "path": "fleet/router/rpc-expert.ts",
+      "note": "New. Spawns pi --mode rpc, writes a prompt command, waits for agent_settled, then asks get_last_assistant_text. Answers extension_ui_request so a dialog never waits forever."
+    },
+    {
+      "path": "fleet/packs/base/extension.ts",
+      "note": "Edit. Add the house_rules section, a gate that blocks any argument containing DEEPSEEK_API_KEY, a fleet-log entry on tool_result, and keep the scrubbed bash."
+    },
+    {
+      "path": "fleet/router/experts.ts",
+      "note": "New. makeExpert(name, promptFile, extensionFactory, tools) returns a session. sql uses agents/sql/sessions."
+    },
+    {
+      "path": "fleet/router/router.ts",
+      "note": "New. route(task): rules, then the classifier, then experts[choice].prompt(task). Unsure returns a question for the user."
+    },
+    {
+      "path": "fleet/router/classifier.ts",
+      "note": "New. A session with no tools except choose_expert, whose parameter is a string enum of sql, k8s, quant, unsure, with terminate true."
+    },
+    {
+      "path": "fleet/router/chain.ts",
+      "note": "New. Runs up to 3 steps, fills {previous} with the last answer and logs each step."
+    },
+    {
+      "path": "fleet/router/test/router.test.ts",
+      "note": "New. Tests with stub experts and a fake child process for RPC. No network."
+    }
+  ],
+  "hints": [
+    "Closing stdin shuts the RPC process down. The prompt response only says it started; the answer is ready at the agent_settled event.",
+    "Frame RPC as one JSON object per line and split on newline only. It is not JSON-RPC 2.0: messages have type and an optional id.",
+    "Load the base pack first. Handlers run in load order, and the first tool_call handler that blocks ends the chain, so base gates run before the domain ones.",
+    "In SDK sessions, MCP and codemode are not loaded unless you add them. Raise PI_CODEMODE_MAX_WORKERS if several experts use codemode in one process.",
+    "Put the router rules in a plain function that takes the task and returns an expert name or undefined, so you can test it with no session at all.",
+    "Log every decision as one JSON line in router/decisions.jsonl: task, choice, reason. Wrong routes become golden tasks later.",
+    "Hand off through the router, not through an expert calling another. Each expert then keeps its own guards and only sees its own part."
+  ],
+  "rubric": [
+    {
+      "criterion": "A print or JSON run is used for one-off tasks, and rpc-expert.ts documents which mode it uses and why, with an exit code check where print mode is used",
+      "chapterKey": "run-mode"
+    },
+    {
+      "criterion": "rpc-expert.ts sends one JSON command per line, waits for agent_settled rather than the prompt response, and answers extension dialogs",
+      "chapterKey": "rpc-mode"
+    },
+    {
+      "criterion": "makeExpert builds one SDK session per expert with its own prompt, tools, extension factories and session folder, and session.prompt resolves after the run",
+      "chapterKey": "sdk-session"
+    },
+    {
+      "criterion": "The base pack loads first, adds the house_rules section, blocks arguments that contain the key name, and appends a fleet-log entry without sending it to the model",
+      "chapterKey": "base-pack"
+    },
+    {
+      "criterion": "route applies rules first, then a classifier that can only answer from the allowed set, logs every decision, and asks the user when the answer is unsure",
+      "chapterKey": "router"
+    },
+    {
+      "criterion": "chain.ts passes one answer into the next task through {previous}, caps the chain at 3 steps and logs each step",
+      "chapterKey": "handoff"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Drive one expert over RPC",
+      "body": "Write rpc-expert.ts. The test starts a small fake process that speaks the same line protocol: a prompt response with disposition started, events, agent_settled, then get_last_assistant_text. The client must return the text only after agent_settled. A run against the real SQL expert needs DEEPSEEK_API_KEY.",
+      "checkCmd": "npx tsx router/test/router.test.ts --only rpc"
+    },
+    {
+      "title": "The base pack",
+      "body": "Extend packs/base/extension.ts. With the fake pi, check that house_rules is added in before_agent_start, that an argument holding DEEPSEEK_API_KEY is blocked, and that a tool_result appends a fleet-log entry with the tool name and duration.",
+      "checkCmd": "npx tsx router/test/router.test.ts --only base"
+    },
+    {
+      "title": "One SDK session per expert",
+      "body": "Write experts.ts. The test builds the sql expert with the base pack first, checks that its session folder is agents/sql/sessions, and that two experts do not share a session folder. A real prompt through one session needs DEEPSEEK_API_KEY.",
+      "checkCmd": "npx tsx router/test/router.test.ts --only experts"
+    },
+    {
+      "title": "Rules, classifier and the decision log",
+      "body": "Write the rules, the classifier and route. A task that mentions pod goes to k8s by rule. A stubbed classifier answering unsure must return a question for the user. Every call must add one line to router/decisions.jsonl.",
+      "checkCmd": "npx tsx router/test/router.test.ts --only route"
+    },
+    {
+      "title": "Hand off between experts",
+      "body": "Write chain.ts. With a stub sql expert that returns twelve numbers and a stub quant expert, the second task must contain the first answer in place of {previous}. A chain of four steps must stop at three and say so.",
+      "checkCmd": "npx tsx router/test/router.test.ts --only chain"
+    }
+  ]
+}

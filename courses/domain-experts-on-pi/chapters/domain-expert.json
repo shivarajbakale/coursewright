@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does a smaller tool list help an expert?",
+      "options": [
+        "The model has fewer wrong actions to pick from, and the prompt is shorter",
+        "The model runs on a faster server when it has fewer tools",
+        "pi refuses to start with more than four tools",
+        "Tools can only be used by one expert at a time"
+      ],
+      "answer": 0,
+      "explanation": "Fewer tools means fewer wrong actions, and a shorter prompt leaves more room in the context window.",
+      "conceptKeys": [
+        "domain-expert"
+      ]
+    },
+    {
+      "prompt": "Two experts in fleet answer different kinds of question. What differs between them?",
+      "options": [
+        "They use different language models",
+        "They use different packs on the same model",
+        "They use different agent loops",
+        "They use different session log formats"
+      ],
+      "answer": 1,
+      "explanation": "The model is the same for all three experts. Only the domain pack differs.",
+      "conceptKeys": [
+        "domain-expert"
+      ]
+    },
+    {
+      "prompt": "Where should the rule 'revenue excludes refunded orders' live?",
+      "options": [
+        "In the model, which will learn it by guessing",
+        "In the pi source code",
+        "In the domain pack, as a file the expert reads",
+        "In the tool list"
+      ],
+      "answer": 2,
+      "explanation": "A model cannot guess a rule that is true only for your shop. The domain pack holds such rules as files.",
+      "conceptKeys": [
+        "domain-expert"
+      ]
+    }
+  ],
+  "diagrams": []
+}

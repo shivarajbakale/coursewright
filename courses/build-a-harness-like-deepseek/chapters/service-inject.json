@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "You mount the loop plugin (inject: llm, tools) before any adapter. What happens?",
+      "options": [
+        "The loop starts and fails on its first request",
+        "The kernel throws an error at mount time",
+        "The loop's fiber stays pending until llm and tools both exist",
+        "The loop starts with a default adapter"
+      ],
+      "answer": 2,
+      "explanation": "The fiber is not ready while a name in inject is missing, so refresh never starts it. It loads when the adapter's provide call adds llm.",
+      "conceptKeys": [
+        "service-inject"
+      ]
+    },
+    {
+      "prompt": "The DeepSeek adapter is disposed while the loop is active. What does the loop do?",
+      "options": [
+        "It keeps running with the old adapter",
+        "It unloads, its own agent service leaves, and its fiber goes back to pending",
+        "It is disposed and can never start again",
+        "It switches to the next adapter in mount order"
+      ],
+      "answer": 1,
+      "explanation": "Removing llm refreshes every fiber. The loop is no longer ready, so it runs its disposers and waits in pending until some plugin provides llm again.",
+      "conceptKeys": [
+        "service-inject",
+        "effect-disposer"
+      ]
+    },
+    {
+      "prompt": "In dsh, why does a provider wait for its dependents to unload before running its own disposers?",
+      "options": [
+        "So dependents can still use the service during their own teardown",
+        "So the provider can restart faster",
+        "So the dependents load in alphabetical order",
+        "So the service can change its name"
+      ],
+      "answer": 0,
+      "explanation": "Cordis keeps the provider's effects until every dependent has unloaded, so a dependent's disposer can still call the service it used.",
+      "conceptKeys": [
+        "service-inject"
+      ]
+    }
+  ],
+  "diagrams": []
+}

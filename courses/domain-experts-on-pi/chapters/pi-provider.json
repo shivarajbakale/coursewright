@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why can pi run DeepSeek with so little code?",
+      "options": [
+        "DeepSeek is a copy of an Anthropic model",
+        "DeepSeek speaks the OpenAI-compatible chat format, so pi reuses that adapter",
+        "The loop has a special DeepSeek branch",
+        "The key is stored inside the model file"
+      ],
+      "answer": 1,
+      "explanation": "The definition sets api: openAICompletionsApi(). The adapter for that format already exists, so DeepSeek needs only its id, address, key and models.",
+      "conceptKeys": [
+        "pi-provider"
+      ]
+    },
+    {
+      "prompt": "You run pi --model deepseek/deepseek-flash:high. What does high set?",
+      "options": [
+        "The thinking level",
+        "The maximum number of tool calls",
+        "The size of the context window",
+        "The number of retries"
+      ],
+      "answer": 0,
+      "explanation": "The suffix after the colon is the thinking level, which says how much the model reasons before it answers.",
+      "conceptKeys": [
+        "pi-provider"
+      ]
+    },
+    {
+      "prompt": "A model does not support the thinking level you choose. What does pi do?",
+      "options": [
+        "It stops with an error",
+        "It turns thinking off",
+        "It rounds to the nearest level the model supports",
+        "It asks the model to choose"
+      ],
+      "answer": 2,
+      "explanation": "Each model maps levels to its own values, and unsupported levels are rounded to the nearest supported one.",
+      "conceptKeys": [
+        "pi-provider"
+      ]
+    }
+  ],
+  "diagrams": []
+}

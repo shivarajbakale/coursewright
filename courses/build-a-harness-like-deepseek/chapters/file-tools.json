@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The model reads app.ts, you then save a change to app.ts, and the model edits it. What happens?",
+      "options": [
+        "The edit goes in and your change is kept below it",
+        "The edit is refused because the stored version no longer matches, and the model must read the file again",
+        "The harness merges both changes",
+        "The edit overwrites your change"
+      ],
+      "answer": 1,
+      "explanation": "The tool stored v1 at the read, the file is now v2, so the versions differ and the tool throws before it writes. That error tells the model to read again.",
+      "conceptKeys": [
+        "file-tools"
+      ]
+    },
+    {
+      "prompt": "The model edits a file it never read in this session. Why is that refused?",
+      "options": [
+        "Because the file might be too large",
+        "Because only write can change unread files",
+        "Because the model would be changing text it has never seen",
+        "Because the edit tool cannot open files by itself"
+      ],
+      "answer": 2,
+      "explanation": "With no stored version there is no proof the model saw the current text, so the edit fails and asks for a read first.",
+      "conceptKeys": [
+        "file-tools"
+      ]
+    },
+    {
+      "prompt": "An edit's old_string appears 3 times in the file. What does the tool do?",
+      "options": [
+        "Refuses, because it cannot know which of the 3 the model meant",
+        "Replaces the first one",
+        "Replaces all 3",
+        "Replaces the last one"
+      ],
+      "answer": 0,
+      "explanation": "Unless the model asks to replace every match, old_string must appear exactly once. Otherwise the change would be a guess.",
+      "conceptKeys": [
+        "file-tools"
+      ]
+    }
+  ],
+  "diagrams": []
+}

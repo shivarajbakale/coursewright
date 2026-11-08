@@ -1,0 +1,28 @@
+title One denied command and its approved retry
+
+model  "Model"
+tool   "bash tool"
+runner "Sandbox runner"
+appr   "Approval"
+usr    "/usr/local"
+asks   "Approvals asked" counter 0
+
+c1, c2 at model
+
+# The session is in workspace-write, so writes outside the project fail.
+pause "The model wants to run npm install -g typescript, which writes to /usr/local."
+
+# The first try runs confined, and the kernel refuses the write.
+c1 -> tool : running "The standing mode is workspace-write."
+c1 -> runner : running "Writes are allowed only under the project and temp folders."
+c1 : failed "Writing /usr/local/lib is outside the write roots."
+c1 -> model : failed "The result carries the denial line and the hint to retry once."
+
+# The retry names a wider mode and says why.
+c2 -> tool : waiting "sandbox_permissions is danger-full-access, with a one-sentence justification."
+c2 -> appr : waiting "The person sees the command, the mode and the reason."
+asks +1
+
+# A yes covers this one call only.
+c2 -> usr : done "allowed-once: this call alone runs without the runner."
+pause "The next command runs in workspace-write again."

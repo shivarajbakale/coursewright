@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A screen connects after the agent has answered. What can it still show?",
+      "options": [
+        "The text as it grew, from the saved live frames",
+        "The finished answer, from the session events",
+        "Nothing, because both channels are gone",
+        "Only the last live frame"
+      ],
+      "answer": 1,
+      "explanation": "Session events are written to the record and can be read again. Live frames exist only in the running process, so the growing text is gone.",
+      "conceptKeys": [
+        "live-event-stream"
+      ]
+    },
+    {
+      "prompt": "A model request fails after 3 chunk frames, and the harness retries it. What should the screen do with its draft?",
+      "options": [
+        "Save the draft as the answer",
+        "Keep the draft and add the retry's text after it",
+        "Drop the draft, because the end frame names no committed message",
+        "Wait for a session event with the draft's text"
+      ],
+      "answer": 2,
+      "explanation": "The end frame of the failed request names no record event, so the draft was never a fact. The retry starts a new draft with its own start frame.",
+      "conceptKeys": [
+        "live-event-stream"
+      ]
+    },
+    {
+      "prompt": "Why do live frames not go into the record?",
+      "options": [
+        "They are unfinished pieces, and only complete facts belong in the record",
+        "The record cannot store text",
+        "Frames are too small to have a sequence number",
+        "Screens cannot read the record"
+      ],
+      "answer": 0,
+      "explanation": "The record keeps complete facts such as the finished assistant message. Frames show work in progress, which may still be dropped.",
+      "conceptKeys": [
+        "live-event-stream",
+        "stream-chunk"
+      ]
+    }
+  ],
+  "diagrams": []
+}

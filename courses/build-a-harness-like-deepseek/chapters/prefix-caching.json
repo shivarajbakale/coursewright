@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "A programmer puts the current time at the top of the system prompt. What happens to prefix caching?",
+      "options": [
+        "Nothing changes, because the time is short",
+        "Each request differs from its first line, so the provider can reuse nothing",
+        "Only the newest message is read again",
+        "The provider caches the time and reuses it"
+      ],
+      "answer": 1,
+      "explanation": "The prefix ends at the first byte that differs. The time changes on every request, and it sits at the very start, so no part of the request matches the earlier one.",
+      "conceptKeys": [
+        "prefix-caching"
+      ]
+    },
+    {
+      "prompt": "The system prompt changes in the middle of a session on deepseek-flash. Which choice keeps the most reuse?",
+      "options": [
+        "Edit the first system message in place",
+        "Start a new session with the new prompt",
+        "Add the new prompt as a later message after the history",
+        "Move the tool schemas to the end"
+      ],
+      "answer": 2,
+      "explanation": "Appending leaves every earlier byte unchanged, so the provider can still reuse the whole old history. An edit in place makes the request differ from that message onwards.",
+      "conceptKeys": [
+        "prefix-caching",
+        "logged-system-prompt"
+      ]
+    },
+    {
+      "prompt": "How does mini-dsh learn whether a request was a cache hit?",
+      "options": [
+        "From cache_read_input_tokens in DeepSeek's usage",
+        "From a flag it sets in the request",
+        "By comparing two requests with keepsPrefix",
+        "From the finish reason"
+      ],
+      "answer": 0,
+      "explanation": "The provider decides on its own and reports reused tokens in usage. keepsPrefix only checks that the program kept the start the same; it cannot see what the provider reused.",
+      "conceptKeys": [
+        "prefix-caching"
+      ]
+    }
+  ],
+  "diagrams": []
+}

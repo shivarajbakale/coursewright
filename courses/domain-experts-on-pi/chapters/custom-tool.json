@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Which part of a tool result does the model read?",
+      "options": [
+        "details",
+        "content",
+        "Both content and details",
+        "Neither; it reads only the tool name"
+      ],
+      "answer": 1,
+      "explanation": "content is the text or image the model reads. details is data for your own code and the screen, and pi does not send it to the model.",
+      "conceptKeys": [
+        "custom-tool"
+      ]
+    },
+    {
+      "prompt": "The sql_query function throws an error halfway through. What does the model see?",
+      "options": [
+        "Nothing, because the session ends",
+        "An error result it can read",
+        "The old rows from the last call",
+        "A request to restart pi"
+      ],
+      "answer": 1,
+      "explanation": "pi turns a thrown error into an error result, so the model can read it and try a different query.",
+      "conceptKeys": [
+        "custom-tool"
+      ]
+    },
+    {
+      "prompt": "You register a tool without a promptSnippet. What is the effect?",
+      "options": [
+        "The tool cannot run at all",
+        "The tool is left out of the tools list in the system prompt",
+        "The tool runs without a schema",
+        "The tool returns no content"
+      ],
+      "answer": 1,
+      "explanation": "promptSnippet adds the tool's line to the prompt's tools list. Without it, a custom tool is left out of that list.",
+      "conceptKeys": [
+        "custom-tool"
+      ]
+    }
+  ],
+  "diagrams": []
+}

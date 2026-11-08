@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Which of these can a pi package carry?",
+      "options": [
+        "The system prompt",
+        "MCP server settings",
+        "Skills and prompt templates",
+        "The saved login in auth.json"
+      ],
+      "answer": 2,
+      "explanation": "A package bundles extensions, skills, prompt templates and themes. The manifest has no field for MCP, settings or the system prompt.",
+      "conceptKeys": [
+        "pi-package"
+      ]
+    },
+    {
+      "prompt": "You run pi install -l ./packs/sql. Where is the package recorded?",
+      "options": [
+        "In the project's .pi/settings.json",
+        "In ~/.pi/agent/settings.json",
+        "In package.json",
+        "In trust.json"
+      ],
+      "answer": 0,
+      "explanation": "Without -l, pi install adds the package for the user. With -l, it writes to the project's .pi/settings.json.",
+      "conceptKeys": [
+        "pi-package"
+      ]
+    },
+    {
+      "prompt": "Where do pi's own packages go in your package.json?",
+      "options": [
+        "In dependencies with a fixed version",
+        "In peerDependencies with \"*\"",
+        "In the pi field",
+        "Nowhere, pi adds them itself"
+      ],
+      "answer": 1,
+      "explanation": "pi's own packages go in peerDependencies with \"*\", never in dependencies.",
+      "conceptKeys": [
+        "pi-package"
+      ]
+    }
+  ],
+  "diagrams": []
+}

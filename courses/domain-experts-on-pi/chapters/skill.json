@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "What does pi put in the prompt for each skill?",
+      "options": [
+        "The full list of steps",
+        "The name, the description and the file path",
+        "Only the folder name",
+        "The first 60 characters of the file"
+      ],
+      "answer": 1,
+      "explanation": "Only the name, description and path sit in the prompt. The model reads the full SKILL.md when the task matches.",
+      "conceptKeys": [
+        "skill"
+      ]
+    },
+    {
+      "prompt": "An expert has only domain tools and no read or bash tool. What happens to its skills?",
+      "options": [
+        "They load as normal",
+        "pi shows an error at start",
+        "The skills section is left out, so the skills are silently lost",
+        "pi adds the read tool by itself"
+      ],
+      "answer": 2,
+      "explanation": "The skills section appears only if the read or bash tool is available, because the model needs one of them to open the file.",
+      "conceptKeys": [
+        "skill"
+      ]
+    },
+    {
+      "prompt": "A SKILL.md has a name but no description. What does pi do?",
+      "options": [
+        "It loads the skill and uses the name as the description",
+        "It does not load the skill",
+        "It uses the first line of the steps",
+        "It loads the skill only for /skill:name"
+      ],
+      "answer": 1,
+      "explanation": "The description is required. Without one, the skill is not loaded.",
+      "conceptKeys": [
+        "skill"
+      ]
+    }
+  ],
+  "diagrams": []
+}

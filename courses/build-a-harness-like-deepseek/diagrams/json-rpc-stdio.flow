@@ -1,0 +1,50 @@
+title One JSON-RPC exchange over stdio
+
+client "SDK client"
+stdin  "Standard input"
+server "Harness server"
+agent  "Agent" state idle
+stdout "Standard output"
+
+client -> stdin -> server -> agent
+server -> stdout -> client
+
+init at client
+prompt at client
+
+# The client launched the harness as a child process and owns both pipes.
+pause "One JSON object per line goes in on standard input and comes back on standard output."
+
+# Request 1 is the handshake; it carries id 1.
+init -> stdin
+init -> server : running "The server records the working folder and the model."
+
+# The answer reuses id 1, so the client knows which request it answers.
+init -> stdout : done
+init -> client "Response 1 carries a result with the server's name."
+remove init
+
+# Request 2 sends a prompt for session s1, which does not exist yet.
+prompt -> stdin
+prompt -> server : running
+prompt -> agent : queued "The server creates the agent and calls followup."
+agent : running
+
+# Response 2 returns at once with only a message id.
+new ack at server
+ack -> stdout
+ack -> client "The turn has not ended; the response only says the message is queued."
+remove ack
+
+# Notifications have no id; they stream every session event.
+new ev at agent
+ev -> server
+ev -> stdout
+ev -> client "session.event carries turn/start, then each event of the turn."
+remove ev
+
+# When the turn ends, the agent is idle again.
+agent : idle
+new status at server
+status -> stdout
+status -> client "session.status says idle, so the client can send the next prompt."

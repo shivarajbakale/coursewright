@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "In the loop, what makes the program stop and return an answer?",
+      "options": [
+        "The model replies with a stop reason other than tool_use",
+        "The program has run one tool",
+        "The history has more than 3 messages",
+        "The tool returns an empty result"
+      ],
+      "answer": 0,
+      "explanation": "The program stops only when the stop reason is not tool_use, because then the model answered in text and asked for nothing more.",
+      "conceptKeys": [
+        "agent-loop"
+      ]
+    },
+    {
+      "prompt": "Why does the program send all 3 messages on the second request, not only the tool result?",
+      "options": [
+        "The API rejects requests with a single message",
+        "The model is stateless, so it does not remember the first request",
+        "The tool result must come before the question",
+        "Sending more messages makes the model answer faster"
+      ],
+      "answer": 1,
+      "explanation": "The model keeps nothing between requests. Without the question and its own tool call, the result 42 means nothing to it.",
+      "conceptKeys": [
+        "agent-loop",
+        "stateless-model"
+      ]
+    },
+    {
+      "prompt": "In the cook and helper picture, which part decides which tool runs next?",
+      "options": [
+        "The helper, which is your program",
+        "The recipe, which is the tool schema",
+        "The cook, which is the model",
+        "The kitchen, which is the API"
+      ],
+      "answer": 2,
+      "explanation": "The model chooses every next action. The program only runs what the model asked for and reports the result.",
+      "conceptKeys": [
+        "agent-loop"
+      ]
+    }
+  ],
+  "diagrams": []
+}

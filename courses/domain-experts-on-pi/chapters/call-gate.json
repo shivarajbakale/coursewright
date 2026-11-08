@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A handler on tool_call throws an error while checking a call. What happens to the call?",
+      "options": [
+        "The tool runs anyway, because the handler did not block",
+        "The tool does not run, and the model gets an error result",
+        "pi retries the handler until it succeeds",
+        "pi skips the handler and checks the schema again"
+      ],
+      "answer": 1,
+      "explanation": "A handler that throws also stops the call. The error becomes an error result, so the gate fails closed.",
+      "conceptKeys": [
+        "call-gate"
+      ]
+    },
+    {
+      "prompt": "A handler changes event.input.sql to a new string. What does pi do next?",
+      "options": [
+        "It checks the new value against the schema again",
+        "It ignores the change and uses the model's original value",
+        "It runs the tool with the new value and does not check the schema again",
+        "It asks the model to confirm the new value"
+      ],
+      "answer": 2,
+      "explanation": "pi performs no re-validation after mutation, so a handler that changes an argument must keep it valid.",
+      "conceptKeys": [
+        "call-gate"
+      ]
+    },
+    {
+      "prompt": "Why does the SQL pack open shop.db read-only when the gate already blocks non-SELECT statements?",
+      "options": [
+        "The gate cannot block anything",
+        "A second independent layer still protects the data if a query slips past the pattern",
+        "Read-only files make the gate run faster",
+        "pi requires every database to be read-only"
+      ],
+      "answer": 1,
+      "explanation": "The gate and the read-only database are independent. If a query passes the pattern, the database still refuses to write.",
+      "conceptKeys": [
+        "call-gate"
+      ]
+    }
+  ],
+  "diagrams": []
+}

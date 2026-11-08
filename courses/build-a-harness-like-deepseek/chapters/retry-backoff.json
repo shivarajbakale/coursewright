@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "Without the random part, how long does mini-dsh wait before retry 4?",
+      "options": [
+        "2,000 milliseconds",
+        "8,000 milliseconds",
+        "4,000 milliseconds",
+        "10,000 milliseconds"
+      ],
+      "answer": 2,
+      "explanation": "The wait starts at 500 milliseconds and doubles each retry: 500, 1,000, 2,000, then 4,000 for retry 4, which is still below the 10,000 cap.",
+      "conceptKeys": [
+        "retry-backoff"
+      ]
+    },
+    {
+      "prompt": "A request fails because the API key is wrong. What does mini-dsh do?",
+      "options": [
+        "Stops the turn, because that code is not in the retry list",
+        "Retries five times with backoff",
+        "Retries at once without a wait",
+        "Writes llm/retry and waits 10,000 milliseconds"
+      ],
+      "answer": 0,
+      "explanation": "A wrong key fails the same way every time, so its code is not in the retry list. Only codes that may pass, such as RATE_LIMIT or SERVER, are retried.",
+      "conceptKeys": [
+        "retry-backoff"
+      ]
+    },
+    {
+      "prompt": "Why does mini-dsh count retries by reading llm/retry events in the record instead of a variable?",
+      "options": [
+        "Variables cannot hold numbers above 5",
+        "The record is faster to read",
+        "The provider reads the record to decide the wait",
+        "A program that restarts reads the same count, so a step never gets more than five retries"
+      ],
+      "answer": 3,
+      "explanation": "Each retry is written before its wait. A restarted program reads those events and continues the count instead of starting again at zero.",
+      "conceptKeys": [
+        "retry-backoff",
+        "session-event"
+      ]
+    }
+  ],
+  "diagrams": []
+}

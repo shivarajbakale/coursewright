@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "One question took 3 model requests before the text answer. How many turns and steps is that?",
+      "options": [
+        "3 turns of 1 step each",
+        "1 turn of 1 step",
+        "1 turn of 3 steps",
+        "3 turns of 3 steps"
+      ],
+      "answer": 2,
+      "explanation": "A turn answers one user message, so this is 1 turn. Each model request inside it is a step, so it has 3 steps.",
+      "conceptKeys": [
+        "turn-and-step"
+      ]
+    },
+    {
+      "prompt": "A task must read 12 files, one per step, and then answer. What happens with a step limit of 10?",
+      "options": [
+        "The loop stops before the answer, because the task needs at least 13 steps",
+        "It works, because tool results do not count as steps",
+        "The model reads all 12 files in step 1",
+        "The program raises the limit by itself"
+      ],
+      "answer": 0,
+      "explanation": "Each file takes one step and the answer takes one more, so the task needs 13 steps. A limit of 10 stops it halfway.",
+      "conceptKeys": [
+        "turn-and-step"
+      ]
+    },
+    {
+      "prompt": "Why does the program count the steps instead of trusting the model to stop?",
+      "options": [
+        "The model can only count to 10",
+        "The API charges a fee for each turn",
+        "Steps are free, so the count is only for logs",
+        "The model often cannot tell that it repeats itself, and each step costs more tokens"
+      ],
+      "answer": 3,
+      "explanation": "A stuck model may ask for the same tool again and again. Each step resends a longer conversation, so the program must cap the steps.",
+      "conceptKeys": [
+        "turn-and-step",
+        "stateless-model"
+      ]
+    }
+  ],
+  "diagrams": []
+}

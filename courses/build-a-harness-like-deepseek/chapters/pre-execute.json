@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A plugin's pre-execute listener returns allow without calling next. A later listener would deny the call. What happens?",
+      "options": [
+        "The later listener still runs and denies the call",
+        "The later listener never runs, so the call is allowed unless a guard refuses it",
+        "The harness runs the call twice",
+        "The harness throws an error because next was not called"
+      ],
+      "answer": 1,
+      "explanation": "In a waterfall, skipping next stops every listener after it. Guards still run after the chain, which is why a final refusal belongs in a guard.",
+      "conceptKeys": [
+        "pre-execute"
+      ]
+    },
+    {
+      "prompt": "Why can a pre-execute listener not rewrite a call's arguments?",
+      "options": [
+        "Because arguments are too large to copy",
+        "Because the model would not notice the change",
+        "Because the call is already recorded exactly as the model wrote it, and a rewrite would make the record wrong",
+        "Because guards run before listeners"
+      ],
+      "answer": 2,
+      "explanation": "The arguments are already in the record. Changing them later would make the record disagree with what ran, so a listener can only allow, deny or ask.",
+      "conceptKeys": [
+        "pre-execute"
+      ]
+    },
+    {
+      "prompt": "What can a guard function return?",
+      "options": [
+        "A reason to refuse, or undefined to leave the call as it is",
+        "Allow, deny or ask",
+        "New arguments for the call",
+        "A replacement tool result"
+      ],
+      "answer": 0,
+      "explanation": "A guard has no allow answer. It only refuses or abstains, so no ordering of plugins can turn its refusal into permission.",
+      "conceptKeys": [
+        "pre-execute"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,48 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does the harness put TypeScript declarations of the tools into the system prompt?",
+      "options": [
+        "So the model writes calls with the exact names, arguments and result types",
+        "So the program runs faster",
+        "So the provider can check the types",
+        "So the tools run without the pipeline"
+      ],
+      "answer": 0,
+      "explanation": "The declarations come from the tool schemas, so the model knows each function's name, arguments and result before it writes the program.",
+      "conceptKeys": [
+        "typed-sdk-channel"
+      ]
+    },
+    {
+      "prompt": "Why do the call messages use a separate pipe, not the program's normal output?",
+      "options": [
+        "Normal output is too slow",
+        "JSON cannot pass through normal output",
+        "So text the program prints never mixes with the call messages",
+        "So the model can read the messages"
+      ],
+      "answer": 2,
+      "explanation": "A program may print anything. A separate pipe keeps every control line a clean JSON object that the harness can parse.",
+      "conceptKeys": [
+        "typed-sdk-channel"
+      ]
+    },
+    {
+      "prompt": "The harness replies to id 2 with an error. What happens inside the program?",
+      "options": [
+        "The program stops at once",
+        "The promise for that call rejects with a ToolCallError, which the program can catch",
+        "The call returns an empty object",
+        "The harness retries the call"
+      ],
+      "answer": 1,
+      "explanation": "An error reply rejects the waiting promise with a ToolCallError naming the tool, so the program can handle it and continue.",
+      "conceptKeys": [
+        "typed-sdk-channel",
+        "tool-error-result"
+      ]
+    }
+  ],
+  "diagrams": []
+}

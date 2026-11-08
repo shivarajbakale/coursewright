@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "prompt": "The file ends with step/start for step 2 of turn 1, and no later events. Which closers does closersFor return?",
+      "options": [
+        "Only turn/end, because the turn is what is open",
+        "step/end for step 2, then turn/end with reason interrupted",
+        "turn/end with reason completed",
+        "None, because the last event is a start event"
+      ],
+      "answer": 1,
+      "explanation": "Both step 2 and turn 1 are open. The step closes first, then the turn, with reason interrupted to show a crash ended it.",
+      "conceptKeys": [
+        "session-resume"
+      ]
+    },
+    {
+      "prompt": "Why does resume append closers instead of deleting the events of the unfinished turn?",
+      "options": [
+        "Deleting events would break the JSON on each line",
+        "The stored events are true facts, and the model must see the work done before the crash",
+        "The closers are smaller than the deleted events",
+        "The model refuses requests with fewer events"
+      ],
+      "answer": 1,
+      "explanation": "An append-only log never removes facts. The turn may have changed files, so the model must still see the call and its result in its history.",
+      "conceptKeys": [
+        "session-resume",
+        "append-only-log"
+      ]
+    },
+    {
+      "prompt": "loadEvents meets a line that is not valid JSON in the middle of the file. What does it do, and why?",
+      "options": [
+        "It skips the line, because crashes cut lines",
+        "It drops every line after it",
+        "It throws, because a crash can only cut the last line",
+        "It replaces the line with a closer"
+      ],
+      "answer": 2,
+      "explanation": "Each flush adds whole lines at the end, so a crash can only cut the last line. A bad line in the middle means the file is damaged.",
+      "conceptKeys": [
+        "session-resume",
+        "jsonl-storage"
+      ]
+    }
+  ],
+  "diagrams": []
+}

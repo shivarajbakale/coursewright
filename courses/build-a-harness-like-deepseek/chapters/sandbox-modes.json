@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "A session runs in workspace-write mode with workspace /home/ana/app. A command reads ~/.ssh/id_rsa and sends it to a web server. What does the mode stop?",
+      "options": [
+        "Both the read and the web request",
+        "Only the read",
+        "Neither, because a mode only limits writing",
+        "Only the web request"
+      ],
+      "answer": 2,
+      "explanation": "Modes only name where a process may write. Reading and the network are outside what a mode controls, in every mode.",
+      "conceptKeys": [
+        "sandbox-modes"
+      ]
+    },
+    {
+      "prompt": "Why does mayWrite call realpath before comparing the path with the write roots?",
+      "options": [
+        "To make the comparison faster",
+        "So a link inside the workspace that points elsewhere cannot carry a write out of the write roots",
+        "Because write roots are stored as links",
+        "To create the folder if it is missing"
+      ],
+      "answer": 1,
+      "explanation": "A link such as app/keys -> ~/.ssh looks like it is inside the workspace. Following it first shows where the write would really land.",
+      "conceptKeys": [
+        "sandbox-modes"
+      ]
+    },
+    {
+      "prompt": "A session switches to read-only, then stops and is resumed the next day. Which mode does it have?",
+      "options": [
+        "read-only, because the switch is an event in the record",
+        "The deployment default, because modes are not saved",
+        "danger-full-access, because a resumed session starts open",
+        "No mode until a person picks one"
+      ],
+      "answer": 0,
+      "explanation": "The switch is written as a sandbox/mode event. The policy reads the session's last such event, so the resumed session gets the same mode.",
+      "conceptKeys": [
+        "sandbox-modes"
+      ]
+    }
+  ],
+  "diagrams": []
+}

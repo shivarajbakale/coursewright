@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "Why does fleet let the router pass results between experts instead of letting one expert call another?",
+      "options": [
+        "Experts cannot read text",
+        "Each expert stays inside its own limits, and the router can log every step",
+        "pi forbids an expert from using tools",
+        "Chains run faster that way"
+      ],
+      "answer": 1,
+      "explanation": "If an expert called another, its guards would cover another expert's work. With a router handoff each expert answers only its part.",
+      "conceptKeys": [
+        "handoff"
+      ]
+    },
+    {
+      "prompt": "In chain.ts the quant task contains {previous}. What happens before the quant expert sees it?",
+      "options": [
+        "The text is sent as it is",
+        "The code replaces {previous} with the SQL expert's result",
+        "The quant expert is asked to fetch the SQL result itself",
+        "The router deletes the placeholder and sends nothing"
+      ],
+      "answer": 1,
+      "explanation": "The loop replaces {previous} with the last result, so the quant expert reads one task that holds the data.",
+      "conceptKeys": [
+        "handoff"
+      ]
+    },
+    {
+      "prompt": "Why does chain.ts stop a chain at 3 steps?",
+      "options": [
+        "pi cannot run more than 3 prompts",
+        "Each step costs tokens and can drift, so a limit keeps the cost known",
+        "The log file holds only 3 lines",
+        "The classifier only knows 3 experts"
+      ],
+      "answer": 1,
+      "explanation": "A chain can grow without end, and every step adds cost. A hard cap keeps the cost bounded.",
+      "conceptKeys": [
+        "handoff"
+      ]
+    }
+  ],
+  "diagrams": []
+}

@@ -1,0 +1,47 @@
+{
+  "questions": [
+    {
+      "prompt": "The model replies with a tool call that names get_weather and gives the city Paris. What has happened?",
+      "options": [
+        "The model ran get_weather and read the weather itself",
+        "The model asked your program to run get_weather with Paris",
+        "The model wrote its final answer without any result",
+        "The model changed the tool schema to add a city field"
+      ],
+      "answer": 1,
+      "explanation": "A tool call is a request, not an action. The model writes the name and the arguments, and your program decides whether to run the function.",
+      "conceptKeys": [
+        "tool-call"
+      ]
+    },
+    {
+      "prompt": "Why does a tool result carry the id of the call it answers?",
+      "options": [
+        "So the result matches the call that asked for it",
+        "So the model can check that the result is true",
+        "So the result uses fewer tokens in the request",
+        "So the program can skip the tool schema"
+      ],
+      "answer": 0,
+      "explanation": "The id on the result matches it to the call it answers, so the model knows which request the outcome belongs to.",
+      "conceptKeys": [
+        "tool-call"
+      ]
+    },
+    {
+      "prompt": "A tool schema has a name, a description and parameters. Which part tells the model which arguments the function accepts?",
+      "options": [
+        "The name",
+        "The description",
+        "The parameters",
+        "The tool result"
+      ],
+      "answer": 2,
+      "explanation": "The parameters part is a JSON Schema of the arguments. It gives the fields, their types and which fields are required, so the model can form a valid call.",
+      "conceptKeys": [
+        "tool-call"
+      ]
+    }
+  ],
+  "diagrams": []
+}
