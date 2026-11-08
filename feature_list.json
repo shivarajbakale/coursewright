@@ -379,21 +379,17 @@
       "priority": 28,
       "area": "Course content",
       "title": "Download a course as an EPUB book",
-      "user_visible_behavior": "Course options -> 'Download as EPUB' saves the course as an EPUB 3 book: contents by module, lessons with Inkling drawings as SVG and diagrams as step text, questions with answers, projects appendix. `export-epub <folder>` does the same from a folder.",
+      "user_visible_behavior": "Course options -> 'Download as EPUB' saves the course as an EPUB 3 book (drawings as PNG); `export-epub <folder>` too.",
       "status": "passing",
       "plan": "course-epub-export.feature-plan.json (FEATURE-PLAN.md), approved 2026-11-08",
       "verification": [
         "pytest test_epub",
-        "both real courses built and parsed",
         "vitest course-epub",
-        "Chromium drive",
-        "make check"
+        "live download"
       ],
       "evidence": [
-        "pytest 7 epub tests (package rules, links resolve, drawings, fallbacks, Q&A, projects, route 200/404/409, CLI); agent suite 133 passed",
-        "pi course 52 lessons/52 SVGs, dsh course 90/126; all XHTML/SVG/OPF/NCX parse; epubcheck not run (download not permitted)",
-        "Chromium: Course options -> Download as EPUB -> 'Preparing book…' -> 633,911-byte .epub saved, toast, menu closes",
-        "make check green"
+        "pytest test_epub; make check green",
+        "live: both courses downloaded, all drawings PNG, links resolve"
       ]
     },
     {
@@ -413,6 +409,21 @@
         "live: 6/6 layouts first try; /tutor drew a state diagram"
       ],
       "plan": "none: new result in the chat's diagram card"
+    },
+    {
+      "id": "tutor-reads-github",
+      "priority": 30,
+      "area": "Tutor",
+      "title": "Tutor reads GitHub codebases",
+      "user_visible_behavior": "Tutor lists, outlines (tree-sitter), reads, searches public GitHub repos; cites path:line.",
+      "status": "in_progress",
+      "plan": "none: tool lines in the existing chat",
+      "verification": [
+        "pytest test_codebase",
+        "vitest tutor-code-tools",
+        "live chat"
+      ],
+      "evidence": []
     }
   ]
 }

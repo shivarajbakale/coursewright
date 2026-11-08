@@ -98,7 +98,7 @@ Dockerfile, start.sh, litestream.yml, fly.toml   deployment (see Deploy)
   again before it lands. Materialise loads `diagrams/<key>.flow` (kind
   `flow`, preferred) or `.mmd` (kind `mermaid`) into the `diagrams` table, titled from the request.
 - **Tutor**: `create_deep_agent` with `search_course`, `read_chapter`, `read_notes`, `get_progress`,
-  `make_drawing`, `make_flow`, `make_quiz`, `CopilotKitMiddleware` and `WebSearchToggle`, wrapped in
+  `make_drawing`, `make_flow`, `make_quiz`, the codebase tools, `CopilotKitMiddleware` and `WebSearchToggle`, wrapped in
   `copilotkit.LangGraphAGUIAgent`, mounted with `ag_ui_langgraph.add_langgraph_fastapi_endpoint(app, agent,
   "/agents/tutor")`. Frontend tools sent in the AG-UI `tools` field land in `state.copilotkit.actions`; the
   middleware adds them to the model's tools and intercepts their calls so they run in the browser (the prompt
@@ -115,6 +115,12 @@ Dockerfile, start.sh, litestream.yml, fly.toml   deployment (see Deploy)
     1.0, and `test_tutor_drawing` keeps them clean.
   - `make_flow(spec)` -> `{"kind": "flow"|"mermaid", "title", "source"}`; a flow source passed the checker
     (3 tries, then Mermaid).
+  - Codebase tools (`app/codebase.py`, outlines by tree-sitter in `app/code_outline.py`), on any public
+    GitHub repository: `repo_tree(repo, path)`, `file_outline(repo, path)`, `read_repo_file(repo, path,
+    start_line, end_line)`, `search_repo(repo, query, path)`, `find_definition(repo, name, path)`; each
+    returns JSON with a `url` to the lines on GitHub, or `{"error"}`. Tree and metadata use the REST API
+    (two calls per repository, cached 10 min; `GITHUB_TOKEN` raises the 60/hour limit and enables code
+    search), file contents come from raw.githubusercontent.com.
   - `make_quiz(concept_or_chapter, n)` -> `{"questions": [{"prompt", "options": [...], "answer": <0-based>,
     "explanation", "chapterId"}]}` grounded in that chapter's chunks or a search (plus `"note"` when empty).
   - Web search: `WebSearchToggle` adds Claude's `web_search_20260209` server tool to a model call only when

@@ -250,6 +250,96 @@ async def make_drawing(
     return diagrammer.public_drawing(await diagrammer.make_drawing(spec, layout=chosen, context=context))
 
 
+# ---- reading a GitHub codebase (app/codebase.py; outlines by tree-sitter in app/code_outline.py) ----------
+
+
+async def _code_call(coro) -> str:
+    from app.codebase import CodebaseError
+
+    try:
+        return json.dumps(await coro, ensure_ascii=False)
+    except CodebaseError as e:
+        return json.dumps({"error": str(e)})
+    except Exception as e:  # network trouble: tell the model, never crash the run
+        return json.dumps({"error": f"Could not reach GitHub ({type(e).__name__})."})
+
+
+@tool
+async def repo_tree(repo: str, path: str = "") -> str:
+    """List a public GitHub repository's folders and files: the files directly in `path` and each folder
+    below with its file count. Start here to find your way around a codebase.
+
+    Args:
+        repo: owner/repo or a github.com link (a /tree/<branch>/<folder> link picks the branch and folder).
+        path: a folder inside the repository; empty for the top.
+    Returns JSON {"repo", "ref", "path", "entries", "more", "totalFiles"} or {"error"}.
+    """
+    from app import codebase
+
+    return await _code_call(codebase.tree(repo, path))
+
+
+@tool
+async def file_outline(repo: str, path: str) -> str:
+    """The classes, functions, methods and types in a source file with their line ranges (tree-sitter;
+    Python, JavaScript, TypeScript, Go, Rust, Java). Use it before reading a long file, then read only the
+    lines you need.
+
+    Returns JSON {"repo", "ref", "path", "url", "totalLines", "symbols": [{"name", "kind", "line", "endLine",
+    "depth", "signature"}]} or {"error"}.
+    """
+    from app import codebase
+
+    return await _code_call(codebase.outline(repo, path))
+
+
+@tool
+async def read_repo_file(repo: str, path: str, start_line: int = 1, end_line: int = 0) -> str:
+    """Read lines of a file in a public GitHub repository, numbered; at most 400 lines a call.
+
+    Args:
+        repo: owner/repo or a github.com link.
+        path: the file's path (a unique file name is enough).
+        start_line, end_line: the lines to read; end_line 0 reads 400 lines from start_line.
+    Returns JSON {"repo", "ref", "path", "startLine", "endLine", "totalLines", "url", "text"} or {"error"}.
+    """
+    from app import codebase
+
+    return await _code_call(codebase.read_file(repo, path, start_line, end_line))
+
+
+@tool
+async def search_repo(repo: str, query: str, path: str = "") -> str:
+    """Find the lines in a public GitHub repository that contain some text (case-insensitive, plain text).
+    Large repositories are searched in their likeliest files only: pass a folder `path` to search it fully.
+
+    Returns JSON {"hits": [{"path", "line", "text", "url"}], "searchedFiles", "filesInScope", "note"} or
+    {"error"}.
+    """
+    from app import codebase
+
+    return await _code_call(codebase.search(repo, query, path))
+
+
+@tool
+async def find_definition(repo: str, name: str, path: str = "") -> str:
+    """Find where a class, function, method or type is defined in a public GitHub repository, by tree-sitter.
+
+    Args:
+        repo: owner/repo or a github.com link.
+        name: the symbol, e.g. runLoop, Agent.run or Server::new (the last part is matched).
+        path: a folder to look in, when you know it.
+    Returns JSON {"definitions": [{"name", "kind", "path", "line", "endLine", "signature", "url"}], "note"} or
+    {"error"}.
+    """
+    from app import codebase
+
+    return await _code_call(codebase.find_definition(repo, name, path))
+
+
+CODE_TOOLS = [repo_tree, file_outline, read_repo_file, search_repo, find_definition]
+
+
 class QuizDraftQuestion(BaseModel):
     prompt: str
     options: list[str]
@@ -361,7 +451,7 @@ class WebSearchToggle(AgentMiddleware):
         return await handler(self._with_tool(request))
 
 
-TOOLS = [search_course, read_chapter, read_notes, get_progress, make_drawing, make_flow, make_quiz]
+TOOLS = [search_course, read_chapter, read_notes, get_progress, make_drawing, make_flow, make_quiz, *CODE_TOOLS]
 
 
 def build_tutor_graph(checkpointer=None):

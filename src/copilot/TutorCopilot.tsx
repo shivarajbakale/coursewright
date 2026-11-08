@@ -27,7 +27,7 @@ import '@copilotkit/react-core/v2/styles.css';
 import { useCreateNote } from '@/hooks/useCoursewright';
 import { toast } from '@/lib/notify';
 import { useTutor } from './tutorStore';
-import { TutorPageTools, TutorToolRenderers } from './TutorToolRenderers';
+import { CodeToolRenderers, TutorPageTools, TutorToolRenderers } from './TutorToolRenderers';
 
 export const TUTOR_AGENT = 'tutor';
 
@@ -52,6 +52,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
     >
       <TutorBridge />
       <TutorToolRenderers />
+      <CodeToolRenderers />
       <TutorPageTools />
       {children}
     </CopilotKitProvider>

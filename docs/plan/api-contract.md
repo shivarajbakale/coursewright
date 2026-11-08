@@ -168,6 +168,7 @@ Tutor backend tool results the chat renders (JSON strings):
 - `search_course` → `{query, hits: [{n, chunkId, title, chapterId, courseId, text}], note?}` (cite as `[n]`)
 - `make_drawing` → `{kind: 'inkling', title, source}` (passes the Inkling checker) or `{kind: 'none', title, note}`
 - `make_flow` → `{kind: 'flow' | 'mermaid', title, source}` (flow sources pass the Flowmovie checker)
+- `repo_tree`, `file_outline`, `read_repo_file`, `search_repo`, `find_definition` → a GitHub codebase read, with `url`, or `{error}`
 - `make_quiz` → `{questions: [{prompt, options, answer, explanation, chapterId}], note?}`
 
 Context may also carry `webSearch: true` to let the tutor use web search for that turn.

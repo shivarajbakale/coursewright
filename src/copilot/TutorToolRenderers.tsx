@@ -6,6 +6,7 @@
  *   search_course -> { hits: [{ n, chunkId, title, chapterId, courseId, text }] }  the [n] citations
  *   make_flow     -> { kind: 'flow' | 'mermaid', title, source }                  a checked movie or diagram
  *   make_drawing  -> { kind: 'inkling', title, source } | { kind: 'none', title }  a checked hand-drawn diagram
+ *   repo_tree, file_outline, read_repo_file, search_repo, find_definition -> a look at a GitHub codebase
  *   make_quiz     -> { questions: [{ prompt, options, answer, explanation, chapterId }] }
  * Frontend tools (run here): highlight_passage, start_quiz.
  */
@@ -17,6 +18,8 @@ import { modals } from '@mantine/modals';
 import { useRenderTool, useFrontendTool } from '@copilotkit/react-core/v2';
 import { BookOpen, ListChecks } from 'lucide-react';
 import { AnchorLink } from '@/components/links';
+import { CodeToolResult } from './CodeToolResult';
+import { codeWorkingLabel, type CodeResult, type CodeTool } from './codeTools';
 import { DiagramCard, type Diagram } from './DiagramCard';
 import { useTutor } from './tutorStore';
 
@@ -48,6 +51,32 @@ function parse<T>(result: unknown): T | null {
 }
 
 const anyArgs = z.record(z.string(), z.unknown());
+const CODE_TOOLS: CodeTool[] = ['repo_tree', 'file_outline', 'read_repo_file', 'search_repo', 'find_definition'];
+
+/** One renderer per codebase tool; the list is fixed, so the hooks run in the same order every render. */
+function CodeToolRenderer({ tool }: { tool: CodeTool }) {
+  useRenderTool({
+    name: tool,
+    parameters: anyArgs,
+    render: ({ status, parameters, result }) =>
+      status !== 'complete' ? (
+        <Working label={codeWorkingLabel(tool, parameters)} />
+      ) : (
+        <CodeToolResult tool={tool} result={parse<CodeResult>(result)} />
+      ),
+  });
+  return null;
+}
+
+export function CodeToolRenderers() {
+  return (
+    <>
+      {CODE_TOOLS.map((t) => (
+        <CodeToolRenderer key={t} tool={t} />
+      ))}
+    </>
+  );
+}
 
 export function TutorToolRenderers() {
   useRenderTool({
