@@ -77,8 +77,10 @@ def test_lessons_drawings_questions_and_projects(tmp_path):
         for lesson in m.lessons:
             assert lesson.title.replace("'", "&#x27;") in nav or lesson.title in nav
     first = z.read("OEBPS/lesson-01-01.xhtml").decode()
-    assert '<img src="images/m01-l01-1.svg" alt="Hash to bucket"/>' in first
-    assert "OEBPS/images/m01-l01-1.svg" in z.namelist()
+    # drawings ship as PNG: many readers (Kindle among them) show an SVG picture as a broken image
+    assert '<img src="images/m01-l01-1.png" alt="Hash to bucket"/>' in first
+    png = z.read("OEBPS/images/m01-l01-1.png")
+    assert png.startswith(b"\x89PNG")
     assert "```inkling" not in first and "step 1:" not in first
     assert "&amp; a &lt;tag&gt;" in first  # text is escaped, raw HTML is not passed through
     assert "Check yourself" in first and "Answers" in first
@@ -88,12 +90,31 @@ def test_lessons_drawings_questions_and_projects(tmp_path):
     assert any(n.startswith("OEBPS/project-") for n in z.namelist())
 
 
+def test_drawing_stays_svg_when_it_cannot_become_png(tmp_path):
+    book = epub.book_from_folder(folder_with_drawing(tmp_path))
+    z = open_book(epub.build_epub(book, render=fake_render, to_png=lambda svg: None))
+    assert '<img src="images/m01-l01-1.svg"' in z.read("OEBPS/lesson-01-01.xhtml").decode()
+    assert "OEBPS/images/m01-l01-1.svg" in z.namelist()
+
+
+def test_real_drawing_text_uses_the_bundled_hand_font():
+    assert epub.FONT.exists()
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60">'
+        "<text x=\"10\" y=\"40\" font-family=\"'Caveat', cursive\" font-size=\"30\">Hello</text></svg>"
+    )
+    png = epub.svg_to_png(svg)
+    assert png and png.startswith(b"\x89PNG")
+    blank = epub.svg_to_png('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"></svg>')
+    assert blank and len(png) > len(blank)  # the text was drawn, not dropped for want of a font
+
+
 def test_drawing_without_node_becomes_its_title(tmp_path):
     book = epub.book_from_folder(folder_with_drawing(tmp_path))
     z = open_book(epub.build_epub(book, render=lambda s, p: None))
     first = z.read("OEBPS/lesson-01-01.xhtml").decode()
     assert "Drawing: Hash to bucket" in first
-    assert not any(n.endswith(".svg") for n in z.namelist())
+    assert not any(n.endswith((".svg", ".png")) for n in z.namelist())
 
 
 def test_flow_diagram_becomes_its_scene_captions(monkeypatch):

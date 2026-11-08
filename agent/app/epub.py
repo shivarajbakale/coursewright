@@ -2,7 +2,8 @@
 
 The book is built on request and never stored. It holds a title page, one page per module, every lesson
 as XHTML (markdown through markdown-it-py), the lesson's Inkling drawings as SVG pictures (their finished
-frame, drawn by the vendored Inkling command line under Node), each Flowmovie diagram as its numbered
+frame, drawn by the vendored Inkling command line under Node, then turned into PNG with resvg and the bundled
+Caveat font, because many readers, Kindle among them, show an SVG picture as a broken image), each Flowmovie diagram as its numbered
 scene captions, the lesson's questions followed by their answers, and the module projects as an appendix.
 
 Two loaders feed the same builder: `book_from_db` (a course in the database, for the web download) and
@@ -32,6 +33,8 @@ from app.flowmovie import node_bin
 from app.rag.chunk import slugify
 
 RENDER_TIMEOUT_SECONDS = 30
+FONT = Path(__file__).resolve().parent.parent / "vendor" / "fonts" / "Caveat.ttf"
+PNG_ZOOM = 1.5
 LETTERS = "ABCDEF"
 
 
@@ -208,6 +211,17 @@ def render_inkling(source: str, id_prefix: str) -> str | None:
     return out if p.returncode == 0 and "<svg" in out else None
 
 
+def svg_to_png(svg: str) -> bytes | None:
+    """The drawing as PNG in its own hand font, or None when it cannot be converted (the SVG is kept)."""
+    try:
+        import resvg_py
+
+        fonts = [str(FONT)] if FONT.exists() else None
+        return bytes(resvg_py.svg_to_bytes(svg_string=svg, font_files=fonts, cursive_family="Caveat", zoom=PNG_ZOOM))
+    except Exception:  # noqa: BLE001 - a drawing that does not convert stays an SVG
+        return None
+
+
 _SCENE = re.compile(r"^Scene \d+ \([^)]*\): (?P<caption>.+)$", re.M)
 
 
@@ -338,9 +352,9 @@ ol.options { list-style-type: upper-alpha; }
 # ---------------------------------------------------------------- package
 
 
-def build_epub(book: Book, *, render=render_inkling) -> bytes:
+def build_epub(book: Book, *, render=render_inkling, to_png=svg_to_png) -> bytes:
     """The whole book as EPUB 3 bytes (with an EPUB 2 toc.ncx for older readers)."""
-    files: list[tuple[str, str, str, str]] = []  # (href, media type, content, id)
+    files: list[tuple[str, str, str | bytes, str]] = []  # (href, media type, content, id)
     spine: list[str] = []
     nav_modules: list[tuple[str, str, list[tuple[str, str]]]] = []
 
@@ -352,6 +366,8 @@ def build_epub(book: Book, *, render=render_inkling) -> bytes:
                 jobs.append(((mi, li, di), f.source, f"m{mi}l{li}d{di}-"))
     with ThreadPoolExecutor(max_workers=4) as pool:
         drawn = dict(zip([j[0] for j in jobs], pool.map(lambda j: render(j[1], j[2]), jobs)))
+        keys = [k for k, v in drawn.items() if v]
+        pngs = dict(zip(keys, pool.map(lambda k: to_png(drawn[k]), keys))) if to_png else {}
 
     stats = f"{len(book.modules)} modules · {book.lesson_count} lessons"
     title_body = (f'<section class="title-page" epub:type="titlepage"><h1>{escape(book.title)}</h1>'
@@ -370,10 +386,17 @@ def build_epub(book: Book, *, render=render_inkling) -> bytes:
         for li, lesson in enumerate(m.lessons):
             n = len(inkling.fences(lesson.markdown))
             svgs = [drawn.get((mi, li, di)) for di in range(n)]
-            images = [f"m{mi + 1:02d}-l{li + 1:02d}-{di + 1}.svg" for di in range(n)]
+            images = []
             for di, svg in enumerate(svgs):
-                if svg:
-                    files.append((f"images/{images[di]}", "image/svg+xml", svg, f"img-{mi + 1}-{li + 1}-{di + 1}"))
+                stem = f"m{mi + 1:02d}-l{li + 1:02d}-{di + 1}"
+                png = pngs.get((mi, li, di))
+                if png:
+                    images.append(f"{stem}.png")
+                    files.append((f"images/{stem}.png", "image/png", png, f"img-{mi + 1}-{li + 1}-{di + 1}"))
+                else:
+                    images.append(f"{stem}.svg")
+                    if svg:
+                        files.append((f"images/{stem}.svg", "image/svg+xml", svg, f"img-{mi + 1}-{li + 1}-{di + 1}"))
             href = f"lesson-{mi + 1:02d}-{li + 1:02d}.xhtml"
             lid = f"lesson{mi + 1}-{li + 1}"
             files.append((href, "application/xhtml+xml", _page(lesson.title, lesson_body(lesson, svgs, images)), lid))
