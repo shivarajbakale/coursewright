@@ -416,14 +416,17 @@
       "area": "Tutor",
       "title": "Tutor reads GitHub codebases",
       "user_visible_behavior": "Tutor lists, outlines (tree-sitter), reads, searches public GitHub repos; cites path:line.",
-      "status": "in_progress",
+      "status": "passing",
       "plan": "none: tool lines in the existing chat",
       "verification": [
         "pytest test_codebase",
         "vitest tutor-code-tools",
         "live chat"
       ],
-      "evidence": []
+      "evidence": [
+        "make check green",
+        "live: pi loop walk-through answered with path:line links"
+      ]
     }
   ]
 }
