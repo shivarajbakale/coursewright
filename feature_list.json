@@ -406,13 +406,16 @@
       "area": "Reading",
       "title": "Drawings open large; sidebar tutor starts new threads",
       "user_visible_behavior": "Every Inkling drawing has Open large (modal, fill screen, arrow keys); phone reader full screen. Tutor sidebar: New conversation.",
-      "status": "in_progress",
+      "status": "passing",
       "plan": "none: one button each on existing surfaces",
       "verification": [
         "vitest",
         "live"
       ],
-      "evidence": []
+      "evidence": [
+        "make check green",
+        "live: drawing 790px inline, 1132 in modal, 1406 full; sidebar new thread clears chat"
+      ]
     }
   ]
 }
