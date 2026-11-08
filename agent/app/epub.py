@@ -18,6 +18,7 @@ import json
 import re
 import sqlite3
 import subprocess
+import tempfile
 import uuid
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
@@ -200,15 +201,20 @@ def render_inkling(source: str, id_prefix: str) -> str | None:
     node = node_bin()
     if not node or not inkling.CLI.exists():
         return None
-    try:
-        p = subprocess.run(
-            [node, str(inkling.CLI), "render", "-", "-o", "-", "--font-css", "none", "--id-prefix", id_prefix],
-            input=source, capture_output=True, text=True, timeout=RENDER_TIMEOUT_SECONDS,
-        )
-    except (subprocess.TimeoutExpired, OSError):
-        return None
-    out = p.stdout.strip()
-    return out if p.returncode == 0 and "<svg" in out else None
+    # Written to a file, not stdout: on Linux the CLI exits before a piped stdout drains, which cut drawings
+    # off at 8 or 16 KB and left invalid SVG.
+    with tempfile.TemporaryDirectory() as tmp:
+        out_file = Path(tmp) / "drawing.svg"
+        try:
+            p = subprocess.run(
+                [node, str(inkling.CLI), "render", "-", "-o", str(out_file), "--font-css", "none",
+                 "--id-prefix", id_prefix, "--quiet"],
+                input=source, capture_output=True, text=True, timeout=RENDER_TIMEOUT_SECONDS,
+            )
+        except (subprocess.TimeoutExpired, OSError):
+            return None
+        out = out_file.read_text().strip() if out_file.exists() else ""
+    return out if p.returncode == 0 and out.startswith("<?xml") and out.endswith("</svg>") else None
 
 
 def svg_to_png(svg: str) -> bytes | None:

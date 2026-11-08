@@ -155,3 +155,19 @@ def test_cli_export(tmp_path, capsys):
     assert cli.main(["export-epub", str(FIXTURES / "course_min"), "-o", str(out)]) == 0
     assert out.exists() and open_book(out.read_bytes()).namelist()[0] == "mimetype"
     assert "Wrote" in capsys.readouterr().out
+
+
+def test_a_large_drawing_is_rendered_whole():
+    """The CLI writes to a file: a piped stdout was cut at 8 or 16 KB on Linux, leaving invalid SVG."""
+    import pytest
+
+    from app.flowmovie import node_bin
+
+    if not node_bin():
+        pytest.skip("node is not installed")
+    boxes = "\n".join(f'b{i}: box "Box number {i}"' for i in range(9))
+    arrows = "\n".join(f"b{i} -> b{i + 1}" for i in range(8))
+    steps = "\n".join(f'step {i + 1}: b{i} "Step {i + 1}"' for i in range(6))
+    svg = epub.render_inkling(f'title "A long chain"\nlayout down\n{boxes}\n{arrows}\n{steps}', "t-")
+    assert svg and len(svg) > 16384 and svg.endswith("</svg>")
+    xml.dom.minidom.parseString(svg)
